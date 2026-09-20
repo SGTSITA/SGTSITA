@@ -1,7 +1,7 @@
 ---
 title: Mask
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - mask
+    - mask
 ---

@@ -1,8 +1,8 @@
 ---
 title: Shield check
 categories:
-  - Security
+    - Security
 tags:
-  - privacy
-  - security
+    - privacy
+    - security
 ---

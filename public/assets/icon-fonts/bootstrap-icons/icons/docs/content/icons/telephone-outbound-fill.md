@@ -1,9 +1,9 @@
 ---
 title: Telephone outbound fill
 categories:
-  - Communications
+    - Communications
 tags:
-  - telephone
-  - phone
-  - call
+    - telephone
+    - phone
+    - call
 ---

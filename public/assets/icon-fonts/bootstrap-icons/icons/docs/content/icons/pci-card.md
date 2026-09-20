@@ -1,8 +1,8 @@
 ---
 title: PCI card
 categories:
-  - Devices
+    - Devices
 tags:
-  - card
-  - expansion
+    - card
+    - expansion
 ---

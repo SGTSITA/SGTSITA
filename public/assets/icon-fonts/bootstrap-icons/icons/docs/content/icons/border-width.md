@@ -1,8 +1,8 @@
 ---
 title: Border width
 categories:
-  - Typography
+    - Typography
 tags:
-  - borders
-  - wysiwyg
+    - borders
+    - wysiwyg
 ---

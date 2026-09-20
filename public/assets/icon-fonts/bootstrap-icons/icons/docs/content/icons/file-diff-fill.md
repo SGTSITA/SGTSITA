@@ -1,10 +1,10 @@
 ---
 title: File diff fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - version
-  - development
+    - doc
+    - document
+    - version
+    - development
 ---

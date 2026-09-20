@@ -1,684 +1,804 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <title>Shipex Webfont</title>
-    <link rel="stylesheet" type="text/css" href="pbmit_shipex.css"/>
-    <meta charset="UTF-8">
-    <style>
-        html, body, div, span, applet, object, iframe,
-        h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-        a, abbr, acronym, address, big, cite, code,
-        del, dfn, em, img, ins, kbd, q, s, samp,
-        small, strike, strong, sub, sup, tt, var,
-        b, u, i, center,
-        dl, dt, dd, ol, ul, li,
-        fieldset, form, label, legend,
-        table, caption, tbody, tfoot, thead, tr, th, td,
-        article, aside, canvas, details, embed,
-        figure, figcaption, footer, header, hgroup,
-        menu, nav, output, ruby, section, summary,
-        time, mark, audio, video {
-            margin: 0;
-            padding: 0;
-            border: 0;
-            font-size: 100%;
-            font: inherit;
-            vertical-align: baseline;
-        }
-
-        /* HTML5 display-role reset for older browsers */
-        article, aside, details, figcaption, figure,
-        footer, header, hgroup, menu, nav, section {
-            display: block;
-        }
-
-        body {
-            line-height: 1;
-        }
-
-        ol, ul {
-            list-style: none;
-        }
-
-        blockquote, q {
-            quotes: none;
-        }
-
-        blockquote:before, blockquote:after,
-        q:before, q:after {
-            content: '';
-            content: none;
-        }
-
-        table {
-            border-collapse: collapse;
-            border-spacing: 0;
-        }
-
-        body {
-            font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 15px;
-            line-height: 1.6;
-            color: #777777;
-        }
-
-        a {
-            color: #52D999;
-            font-weight: bold;
-            text-decoration: none;
-        }
-
-        * {
-            -moz-box-sizing: border-box;
-            -webkit-box-sizing: border-box;
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        [class^="pbmit-shipex-icon-"]:before, [class*=" pbmit-shipex-icon-"]:before, [class^="pbmit-shipex-icon-"]:after, [class*=" pbmit-shipex-icon-"]:after {
-            font-family: pbmit_shipex;
-            font-size: 32px;
-            line-height: 1.25;
-            font-style: normal;
-            margin-left: 20px;
-            color: #424242;
-        }
-    
-        .wrapper {
-            max-width: 600px;
-            margin: auto;
-            padding: 0 1em;
-        }
-
-        .title {
-            margin-bottom: 24px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        header {
-            text-align: center;
-            padding: 24px;
-        }
-
-        header .logo {
-            height: auto;
-            border: none;
-            display: inline-block;
-        }
-
-        header strong {
-            font-size: 24px;
-            line-height: 1.25;
-            font-weight: 500;
-            vertical-align: middle;
-        }
-
-        .demo {
-            margin: 2em auto;
-            line-height: 1.25;
-        }
-
-        .demo ul li {
-            margin-bottom: 12px;
-        }
-
-        .demo ul li code {
-            background-color: #121212;
-            border-radius: 3px;
-            padding: 12px;
-            display: inline-block;
-            color: #fff;
-            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-            font-weight: lighter;
-            margin-top: 12px;
-            font-size: 13px;
-            word-break: break-all;
-        }
-
-        .demo ul li code .red {
-            color: #EB644C;
-        }
-
-        .demo ul li code .green {
-            color: #52D999;
-        }
-
-        .demo ul li code .yellow {
-            color: #FFF4D9;
-        }
-
-        .demo ul li code .blue {
-            color: #648EEF;
-        }
-
-        .demo ul li code .purple {
-            color: #6569BD;
-        }
-
-        .demo ul li code .dots {
-            margin-top: 0.5em;
-            display: block;
-        }
-
-        #glyphs {
-            border-bottom: 1px solid #E5E5E5;
-            padding: 2em 0;
-            text-align: center;
-        }
-
-        .glyph {
-            display: inline-block;
-            width: 9em;
-            margin: 1em;
-            text-align: center;
-            vertical-align: top;
-            background: #FFF;
-        }
-    
-		.glyph .pbmit-shipex-icon {
-			padding: 10px;
-			display: block;
-			font-family: "pbmit_shipex";
-			font-size: 64px;
-			line-height: 1;
-		}
-
-		.glyph .pbmit-shipex-icon:before {
-			font-size: 64px;
-			color: #777777;
-			margin-left: 0;
-		}
-
-        .class-name {
-            font-size: 0.65em;
-            background-color: #E5E5E5;
-            color: #9C9C9C;
-            border-radius: 4px 4px 0 0;
-            padding: 0.5em;
-            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .author-name {
-            font-size: 0.6em;
-            background-color: #EFF3F6;
-            border-top: 0;
-            border-radius: 0 0 4px 4px;
-            padding: 0.5em;
-        }
-
-        .author-name a {
-            color: #121212;
-        }
-
-        .class-name:last-child {
-            font-size: 10px;
-            line-height: 1.75;
-            color: #888;
-        }
-
-        .class-name:last-child a {
-            font-size: 10px;
-            line-height: 1.75;
-            color: #555;
-        }
-
-        .glyph > input {
-            display: block;
-            width: 100px;
-            margin: 5px auto;
-            text-align: center;
-            font-size: 12px;
-            line-height: 1.75;
-            cursor: text;
-        }
-
-        .glyph > input.icon-input {
-            font-family: "pbmit_shipex";
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-
-        .attribution .title {
-            margin-top: 2em;
-        }
-
-        .attribution textarea {
-            background-color: #F8FAFB;
-            color: #121212;
-            padding: 1em;
-            border: none;
-            box-shadow: none;
-            border: 1px solid #E5E5E5;
-            border-radius: 4px;
-            resize: none;
-            width: 100%;
-            height: 150px;
-            font-size: 13px;
-            line-height: 1.6;
-            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-            -webkit-appearance: none;
-        }
-
-        .attribution textarea:hover {
-            border-color: #CFD9E0;
-        }
-
-        .attribution textarea:focus {
-            border-color: #52D999;
-        }
-
-        .iconsuse {
-            margin: 2em auto;
-            text-align: center;
-            max-width: 1200px;
-        }
-
-        .iconsuse:after {
-            content: '';
-            display: table;
-            clear: both;
-        }
-
-        .iconsuse .image {
-            float: left;
-            width: 25%;
-            padding: 0 1em;
-        }
-
-        .iconsuse .image p {
-            margin-bottom: 1em;
-        }
-
-        .iconsuse .image span {
-            display: block;
-            font-size: 0.65em;
-            background-color: #222;
-            color: #fff;
-            border-radius: 4px;
-            padding: 10px;
-            color: #FFFF99;
-            margin-top: 1em;
-            font-family: Consolas, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-
-        .pbmit-shipex-icon:before {
-            color: #777777;
-        }
-
-        #footer {
-            text-align: center;
-            background-color: #121212;
-            color: #9C9C9C;
-            padding: 12px;
-            font-size: 13px;
-            line-height: 1.6;
-        }
-
-        #footer a {
-            font-weight: normal;
-        }
-
-        @media (max-width: 960px) {
-            .iconsuse .image {
-                width: 50%;
+    <head>
+        <title>Shipex Webfont</title>
+        <link rel="stylesheet" type="text/css" href="pbmit_shipex.css" />
+        <meta charset="UTF-8" />
+        <style>
+            html,
+            body,
+            div,
+            span,
+            applet,
+            object,
+            iframe,
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6,
+            p,
+            blockquote,
+            pre,
+            a,
+            abbr,
+            acronym,
+            address,
+            big,
+            cite,
+            code,
+            del,
+            dfn,
+            em,
+            img,
+            ins,
+            kbd,
+            q,
+            s,
+            samp,
+            small,
+            strike,
+            strong,
+            sub,
+            sup,
+            tt,
+            var,
+            b,
+            u,
+            i,
+            center,
+            dl,
+            dt,
+            dd,
+            ol,
+            ul,
+            li,
+            fieldset,
+            form,
+            label,
+            legend,
+            table,
+            caption,
+            tbody,
+            tfoot,
+            thead,
+            tr,
+            th,
+            td,
+            article,
+            aside,
+            canvas,
+            details,
+            embed,
+            figure,
+            figcaption,
+            footer,
+            header,
+            hgroup,
+            menu,
+            nav,
+            output,
+            ruby,
+            section,
+            summary,
+            time,
+            mark,
+            audio,
+            video {
+                margin: 0;
+                padding: 0;
+                border: 0;
+                font-size: 100%;
+                font: inherit;
+                vertical-align: baseline;
             }
-        }
 
-        .preview {
-            width: 100px;
-            display: inline-block;
-            margin: 10px;
-        }
+            /* HTML5 display-role reset for older browsers */
+            article,
+            aside,
+            details,
+            figcaption,
+            figure,
+            footer,
+            header,
+            hgroup,
+            menu,
+            nav,
+            section {
+                display: block;
+            }
 
-        .preview .inner {
-            display: inline-block;
-            width: 100%;
-            text-align: center;
-            background: #F7F7F7;
-            -webkit-border-radius: 3px 3px 0 0;
-            -moz-border-radius: 3px 3px 0 0;
-            border-radius: 3px 3px 0 0;
-        }
+            body {
+                line-height: 1;
+            }
 
-        .preview .inner  {
-            line-height: 85px;
-            font-size: 40px;
-            color: #424242;
-        }
+            ol,
+            ul {
+                list-style: none;
+            }
 
-        .label {
-            display: inline-block;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 5px;
-            font-size: 10px;
-            font-family: Monaco, monospace;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            background: #ddd;
-            -webkit-border-radius: 0 0 3px 3px;
-            -moz-border-radius: 0 0 3px 3px;
-            border-radius: 0 0 3px 3px;
-            color: #777;
-        }
-    </style>
-</head>
-<body>
-    <section class="demo wrapper">
+            blockquote,
+            q {
+                quotes: none;
+            }
 
-        <p class="title">Webfont Instructions</p>
+            blockquote:before,
+            blockquote:after,
+            q:before,
+            q:after {
+                content: '';
+                content: none;
+            }
 
-        <ul>
-            <li>
-                <span class="num">1. </span>Copy the "Fonts" files and CSS files to your website CSS folder.
-            </li>
-            <li>
-                <span class="num">2. </span>Add the CSS link to your website source code on header.
-                <code class="big">
-                    &lt;<span class="red">head</span>&gt;
-                    <br/><span class="dots">...</span>
-                    <br/>&lt;<span class="red">link</span> <span class="green">rel</span>=<span
-                        class="yellow">"stylesheet"</span> <span class="green">type</span>=<span
-                        class="yellow">"text/css"</span> <span class="green">href</span>=<span class="yellow">"your_website_domain/css_root/pbmit_shipex.css"</span>&gt;
-                    <br/><span class="dots">...</span>
-                    <br/>&lt;/<span class="red">head</span>&gt;
-                </code>
-            </li>
+            table {
+                border-collapse: collapse;
+                border-spacing: 0;
+            }
 
-            <li>
-                <p>
-                    <span class="num">3. </span>Use the icon class on <code>"<span class="blue">display</span>:<span
-                        class="purple"> inline</span>"</code> elements:
-                    <br/>
-                    Use example: <code>&lt;<span class="red">i</span> <span class="green">class</span>=<span class="yellow">&quot;pbmit-airplane49&quot;</span>&gt;&lt;/<span
-                        class="red">i</span>&gt;</code> or <code>&lt;<span class="red">span</span> <span
-                        class="green">class</span>=<span class="yellow">&quot;pbmit-airplane49&quot;</span>&gt;&lt;/<span
-                        class="red">span</span>&gt;</code>
-            </li>
-        </ul>
+            body {
+                font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                font-size: 15px;
+                line-height: 1.6;
+                color: #777777;
+            }
 
-    </section>
-    <section id="glyphs">
+            a {
+                color: #52d999;
+                font-weight: bold;
+                text-decoration: none;
+            }
+
+            * {
+                -moz-box-sizing: border-box;
+                -webkit-box-sizing: border-box;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            [class^='pbmit-shipex-icon-']:before,
+            [class*=' pbmit-shipex-icon-']:before,
+            [class^='pbmit-shipex-icon-']:after,
+            [class*=' pbmit-shipex-icon-']:after {
+                font-family: pbmit_shipex;
+                font-size: 32px;
+                line-height: 1.25;
+                font-style: normal;
+                margin-left: 20px;
+                color: #424242;
+            }
+
+            .wrapper {
+                max-width: 600px;
+                margin: auto;
+                padding: 0 1em;
+            }
+
+            .title {
+                margin-bottom: 24px;
+                text-transform: uppercase;
+                font-weight: bold;
+            }
+
+            header {
+                text-align: center;
+                padding: 24px;
+            }
+
+            header .logo {
+                height: auto;
+                border: none;
+                display: inline-block;
+            }
+
+            header strong {
+                font-size: 24px;
+                line-height: 1.25;
+                font-weight: 500;
+                vertical-align: middle;
+            }
+
+            .demo {
+                margin: 2em auto;
+                line-height: 1.25;
+            }
+
+            .demo ul li {
+                margin-bottom: 12px;
+            }
+
+            .demo ul li code {
+                background-color: #121212;
+                border-radius: 3px;
+                padding: 12px;
+                display: inline-block;
+                color: #fff;
+                font-family:
+                    Consolas,
+                    Monaco,
+                    Lucida Console,
+                    Liberation Mono,
+                    DejaVu Sans Mono,
+                    Bitstream Vera Sans Mono,
+                    Courier New,
+                    monospace;
+                font-weight: lighter;
+                margin-top: 12px;
+                font-size: 13px;
+                word-break: break-all;
+            }
+
+            .demo ul li code .red {
+                color: #eb644c;
+            }
+
+            .demo ul li code .green {
+                color: #52d999;
+            }
+
+            .demo ul li code .yellow {
+                color: #fff4d9;
+            }
+
+            .demo ul li code .blue {
+                color: #648eef;
+            }
+
+            .demo ul li code .purple {
+                color: #6569bd;
+            }
+
+            .demo ul li code .dots {
+                margin-top: 0.5em;
+                display: block;
+            }
+
+            #glyphs {
+                border-bottom: 1px solid #e5e5e5;
+                padding: 2em 0;
+                text-align: center;
+            }
+
+            .glyph {
+                display: inline-block;
+                width: 9em;
+                margin: 1em;
+                text-align: center;
+                vertical-align: top;
+                background: #fff;
+            }
+
+            .glyph .pbmit-shipex-icon {
+                padding: 10px;
+                display: block;
+                font-family: 'pbmit_shipex';
+                font-size: 64px;
+                line-height: 1;
+            }
+
+            .glyph .pbmit-shipex-icon:before {
+                font-size: 64px;
+                color: #777777;
+                margin-left: 0;
+            }
+
+            .class-name {
+                font-size: 0.65em;
+                background-color: #e5e5e5;
+                color: #9c9c9c;
+                border-radius: 4px 4px 0 0;
+                padding: 0.5em;
+                font-family:
+                    Consolas,
+                    Monaco,
+                    Lucida Console,
+                    Liberation Mono,
+                    DejaVu Sans Mono,
+                    Bitstream Vera Sans Mono,
+                    Courier New,
+                    monospace;
+            }
+
+            .author-name {
+                font-size: 0.6em;
+                background-color: #eff3f6;
+                border-top: 0;
+                border-radius: 0 0 4px 4px;
+                padding: 0.5em;
+            }
+
+            .author-name a {
+                color: #121212;
+            }
+
+            .class-name:last-child {
+                font-size: 10px;
+                line-height: 1.75;
+                color: #888;
+            }
+
+            .class-name:last-child a {
+                font-size: 10px;
+                line-height: 1.75;
+                color: #555;
+            }
+
+            .glyph > input {
+                display: block;
+                width: 100px;
+                margin: 5px auto;
+                text-align: center;
+                font-size: 12px;
+                line-height: 1.75;
+                cursor: text;
+            }
+
+            .glyph > input.icon-input {
+                font-family: 'pbmit_shipex';
+                font-size: 15px;
+                line-height: 1.6;
+                margin-bottom: 10px;
+            }
+
+            .attribution .title {
+                margin-top: 2em;
+            }
+
+            .attribution textarea {
+                background-color: #f8fafb;
+                color: #121212;
+                padding: 1em;
+                border: none;
+                box-shadow: none;
+                border: 1px solid #e5e5e5;
+                border-radius: 4px;
+                resize: none;
+                width: 100%;
+                height: 150px;
+                font-size: 13px;
+                line-height: 1.6;
+                font-family:
+                    Consolas,
+                    Monaco,
+                    Lucida Console,
+                    Liberation Mono,
+                    DejaVu Sans Mono,
+                    Bitstream Vera Sans Mono,
+                    Courier New,
+                    monospace;
+                -webkit-appearance: none;
+            }
+
+            .attribution textarea:hover {
+                border-color: #cfd9e0;
+            }
+
+            .attribution textarea:focus {
+                border-color: #52d999;
+            }
+
+            .iconsuse {
+                margin: 2em auto;
+                text-align: center;
+                max-width: 1200px;
+            }
+
+            .iconsuse:after {
+                content: '';
+                display: table;
+                clear: both;
+            }
+
+            .iconsuse .image {
+                float: left;
+                width: 25%;
+                padding: 0 1em;
+            }
+
+            .iconsuse .image p {
+                margin-bottom: 1em;
+            }
+
+            .iconsuse .image span {
+                display: block;
+                font-size: 0.65em;
+                background-color: #222;
+                color: #fff;
+                border-radius: 4px;
+                padding: 10px;
+                color: #ffff99;
+                margin-top: 1em;
+                font-family:
+                    Consolas,
+                    Monaco,
+                    Lucida Console,
+                    Liberation Mono,
+                    DejaVu Sans Mono,
+                    Bitstream Vera Sans Mono,
+                    Courier New,
+                    monospace;
+            }
+
+            .pbmit-shipex-icon:before {
+                color: #777777;
+            }
+
+            #footer {
+                text-align: center;
+                background-color: #121212;
+                color: #9c9c9c;
+                padding: 12px;
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            #footer a {
+                font-weight: normal;
+            }
+
+            @media (max-width: 960px) {
+                .iconsuse .image {
+                    width: 50%;
+                }
+            }
+
+            .preview {
+                width: 100px;
+                display: inline-block;
+                margin: 10px;
+            }
+
+            .preview .inner {
+                display: inline-block;
+                width: 100%;
+                text-align: center;
+                background: #f7f7f7;
+                -webkit-border-radius: 3px 3px 0 0;
+                -moz-border-radius: 3px 3px 0 0;
+                border-radius: 3px 3px 0 0;
+            }
+
+            .preview .inner {
+                line-height: 85px;
+                font-size: 40px;
+                color: #424242;
+            }
+
+            .label {
+                display: inline-block;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 5px;
+                font-size: 10px;
+                font-family: Monaco, monospace;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                background: #ddd;
+                -webkit-border-radius: 0 0 3px 3px;
+                -moz-border-radius: 0 0 3px 3px;
+                border-radius: 0 0 3px 3px;
+                color: #777;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="demo wrapper">
+            <p class="title">Webfont Instructions</p>
+
+            <ul>
+                <li><span class="num">1. </span>Copy the "Fonts" files and CSS files to your website CSS folder.</li>
+                <li>
+                    <span class="num">2. </span>Add the CSS link to your website source code on header.
+                    <code class="big">
+                        &lt;<span class="red">head</span>&gt; <br /><span class="dots">...</span> <br />&lt;<span
+                            class="red"
+                            >link</span
+                        >
+                        <span class="green">rel</span>=<span class="yellow">"stylesheet"</span>
+                        <span class="green">type</span>=<span class="yellow">"text/css"</span>
+                        <span class="green">href</span>=<span class="yellow"
+                            >"your_website_domain/css_root/pbmit_shipex.css"</span
+                        >&gt; <br /><span class="dots">...</span> <br />&lt;/<span class="red">head</span>&gt;
+                    </code>
+                </li>
+
+                <li>
+                    <p>
+                        <span class="num">3. </span>Use the icon class on
+                        <code>"<span class="blue">display</span>:<span class="purple"> inline</span>"</code> elements:
+                        <br />
+                        Use example:
+                        <code
+                            >&lt;<span class="red">i</span> <span class="green">class</span>=<span class="yellow"
+                                >&quot;pbmit-airplane49&quot;</span
+                            >&gt;&lt;/<span class="red">i</span>&gt;</code
+                        >
+                        or
+                        <code
+                            >&lt;<span class="red">span</span> <span class="green">class</span>=<span class="yellow"
+                                >&quot;pbmit-airplane49&quot;</span
+                            >&gt;&lt;/<span class="red">span</span>&gt;</code
+                        >
+                    </p>
+                </li>
+            </ul>
+        </section>
+        <section id="glyphs">
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-logistics-delievry"></i>
                 <div class="class-name">.pbmit-logistics-delievry</div>
-                <div class="author-name">Author: #author-link-pbmit-logistics-delievry# </div>
+                <div class="author-name">Author: #author-link-pbmit-logistics-delievry#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-warehouse"></i>
                 <div class="class-name">.pbmit-warehouse</div>
-                <div class="author-name">Author: #author-link-pbmit-warehouse# </div>
+                <div class="author-name">Author: #author-link-pbmit-warehouse#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-delivery-truck"></i>
                 <div class="class-name">.pbmit-delivery-truck</div>
-                <div class="author-name">Author: #author-link-pbmit-delivery-truck# </div>
+                <div class="author-name">Author: #author-link-pbmit-delivery-truck#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-delivery-truck-1"></i>
                 <div class="class-name">.pbmit-delivery-truck-1</div>
-                <div class="author-name">Author: #author-link-pbmit-delivery-truck-1# </div>
+                <div class="author-name">Author: #author-link-pbmit-delivery-truck-1#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-up-sign"></i>
                 <div class="class-name">.pbmit-up-sign</div>
-                <div class="author-name">Author: #author-link-pbmit-up-sign# </div>
+                <div class="author-name">Author: #author-link-pbmit-up-sign#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-box"></i>
                 <div class="class-name">.pbmit-box</div>
-                <div class="author-name">Author: #author-link-pbmit-box# </div>
+                <div class="author-name">Author: #author-link-pbmit-box#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-online-store"></i>
                 <div class="class-name">.pbmit-online-store</div>
-                <div class="author-name">Author: #author-link-pbmit-online-store# </div>
+                <div class="author-name">Author: #author-link-pbmit-online-store#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-checklist"></i>
                 <div class="class-name">.pbmit-checklist</div>
-                <div class="author-name">Author: #author-link-pbmit-checklist# </div>
+                <div class="author-name">Author: #author-link-pbmit-checklist#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-correspondence"></i>
                 <div class="class-name">.pbmit-correspondence</div>
-                <div class="author-name">Author: #author-link-pbmit-correspondence# </div>
+                <div class="author-name">Author: #author-link-pbmit-correspondence#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-delivery-box"></i>
                 <div class="class-name">.pbmit-delivery-box</div>
-                <div class="author-name">Author: #author-link-pbmit-delivery-box# </div>
+                <div class="author-name">Author: #author-link-pbmit-delivery-box#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-package"></i>
                 <div class="class-name">.pbmit-package</div>
-                <div class="author-name">Author: #author-link-pbmit-package# </div>
+                <div class="author-name">Author: #author-link-pbmit-package#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-delivery-courier"></i>
                 <div class="class-name">.pbmit-delivery-courier</div>
-                <div class="author-name">Author: #author-link-pbmit-delivery-courier# </div>
+                <div class="author-name">Author: #author-link-pbmit-delivery-courier#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-map-location"></i>
                 <div class="class-name">.pbmit-map-location</div>
-                <div class="author-name">Author: #author-link-pbmit-map-location# </div>
+                <div class="author-name">Author: #author-link-pbmit-map-location#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-delivery-time"></i>
                 <div class="class-name">.pbmit-delivery-time</div>
-                <div class="author-name">Author: #author-link-pbmit-delivery-time# </div>
+                <div class="author-name">Author: #author-link-pbmit-delivery-time#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-letter-box"></i>
                 <div class="class-name">.pbmit-letter-box</div>
-                <div class="author-name">Author: #author-link-pbmit-letter-box# </div>
+                <div class="author-name">Author: #author-link-pbmit-letter-box#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-calendar"></i>
                 <div class="class-name">.pbmit-calendar</div>
-                <div class="author-name">Author: #author-link-pbmit-calendar# </div>
+                <div class="author-name">Author: #author-link-pbmit-calendar#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-airplane"></i>
                 <div class="class-name">.pbmit-airplane</div>
-                <div class="author-name">Author: #author-link-pbmit-airplane# </div>
+                <div class="author-name">Author: #author-link-pbmit-airplane#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-email"></i>
                 <div class="class-name">.pbmit-email</div>
-                <div class="author-name">Author: #author-link-pbmit-email# </div>
+                <div class="author-name">Author: #author-link-pbmit-email#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-factory"></i>
                 <div class="class-name">.pbmit-factory</div>
-                <div class="author-name">Author: #author-link-pbmit-factory# </div>
+                <div class="author-name">Author: #author-link-pbmit-factory#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-fragile"></i>
                 <div class="class-name">.pbmit-fragile</div>
-                <div class="author-name">Author: #author-link-pbmit-fragile# </div>
+                <div class="author-name">Author: #author-link-pbmit-fragile#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-house"></i>
                 <div class="class-name">.pbmit-house</div>
-                <div class="author-name">Author: #author-link-pbmit-house# </div>
+                <div class="author-name">Author: #author-link-pbmit-house#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-location"></i>
                 <div class="class-name">.pbmit-location</div>
-                <div class="author-name">Author: #author-link-pbmit-location# </div>
+                <div class="author-name">Author: #author-link-pbmit-location#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-targeting"></i>
                 <div class="class-name">.pbmit-targeting</div>
-                <div class="author-name">Author: #author-link-pbmit-targeting# </div>
+                <div class="author-name">Author: #author-link-pbmit-targeting#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-cargo-ship"></i>
                 <div class="class-name">.pbmit-cargo-ship</div>
-                <div class="author-name">Author: #author-link-pbmit-cargo-ship# </div>
+                <div class="author-name">Author: #author-link-pbmit-cargo-ship#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-container"></i>
                 <div class="class-name">.pbmit-container</div>
-                <div class="author-name">Author: #author-link-pbmit-container# </div>
+                <div class="author-name">Author: #author-link-pbmit-container#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-quote"></i>
                 <div class="class-name">.pbmit-quote</div>
-                <div class="author-name">Author: #author-link-pbmit-quote# </div>
+                <div class="author-name">Author: #author-link-pbmit-quote#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-menu"></i>
                 <div class="class-name">.pbmit-menu</div>
-                <div class="author-name">Author: #author-link-pbmit-menu# </div>
+                <div class="author-name">Author: #author-link-pbmit-menu#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-arrow"></i>
                 <div class="class-name">.pbmit-arrow</div>
-                <div class="author-name">Author: #author-link-pbmit-arrow# </div>
+                <div class="author-name">Author: #author-link-pbmit-arrow#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-check-mark"></i>
                 <div class="class-name">.pbmit-check-mark</div>
-                <div class="author-name">Author: #author-link-pbmit-check-mark# </div>
+                <div class="author-name">Author: #author-link-pbmit-check-mark#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-play-button"></i>
                 <div class="class-name">.pbmit-play-button</div>
-                <div class="author-name">Author: #author-link-pbmit-play-button# </div>
+                <div class="author-name">Author: #author-link-pbmit-play-button#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-telephone"></i>
                 <div class="class-name">.pbmit-telephone</div>
-                <div class="author-name">Author: #author-link-pbmit-telephone# </div>
+                <div class="author-name">Author: #author-link-pbmit-telephone#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-phone-call"></i>
                 <div class="class-name">.pbmit-phone-call</div>
-                <div class="author-name">Author: #author-link-pbmit-phone-call# </div>
+                <div class="author-name">Author: #author-link-pbmit-phone-call#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-arrow-up"></i>
                 <div class="class-name">.pbmit-arrow-up</div>
-                <div class="author-name">Author: #author-link-pbmit-arrow-up# </div>
+                <div class="author-name">Author: #author-link-pbmit-arrow-up#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-right-arrow"></i>
                 <div class="class-name">.pbmit-right-arrow</div>
-                <div class="author-name">Author: #author-link-pbmit-right-arrow# </div>
+                <div class="author-name">Author: #author-link-pbmit-right-arrow#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-top-right"></i>
                 <div class="class-name">.pbmit-top-right</div>
-                <div class="author-name">Author: #author-link-pbmit-top-right# </div>
+                <div class="author-name">Author: #author-link-pbmit-top-right#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-up-right-arrow"></i>
                 <div class="class-name">.pbmit-up-right-arrow</div>
-                <div class="author-name">Author: #author-link-pbmit-up-right-arrow# </div>
+                <div class="author-name">Author: #author-link-pbmit-up-right-arrow#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-arrow-down"></i>
                 <div class="class-name">.pbmit-arrow-down</div>
-                <div class="author-name">Author: #author-link-pbmit-arrow-down# </div>
+                <div class="author-name">Author: #author-link-pbmit-arrow-down#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-arrow-down-1"></i>
                 <div class="class-name">.pbmit-arrow-down-1</div>
-                <div class="author-name">Author: #author-link-pbmit-arrow-down-1# </div>
+                <div class="author-name">Author: #author-link-pbmit-arrow-down-1#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-tick"></i>
                 <div class="class-name">.pbmit-tick</div>
-                <div class="author-name">Author: #author-link-pbmit-tick# </div>
+                <div class="author-name">Author: #author-link-pbmit-tick#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-levels"></i>
                 <div class="class-name">.pbmit-levels</div>
-                <div class="author-name">Author: #author-link-pbmit-levels# </div>
+                <div class="author-name">Author: #author-link-pbmit-levels#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-messages"></i>
                 <div class="class-name">.pbmit-messages</div>
-                <div class="author-name">Author: #author-link-pbmit-messages# </div>
+                <div class="author-name">Author: #author-link-pbmit-messages#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-location-point"></i>
                 <div class="class-name">.pbmit-location-point</div>
-                <div class="author-name">Author: #author-link-pbmit-location-point# </div>
+                <div class="author-name">Author: #author-link-pbmit-location-point#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-location-1"></i>
                 <div class="class-name">.pbmit-location-1</div>
-                <div class="author-name">Author: #author-link-pbmit-location-1# </div>
+                <div class="author-name">Author: #author-link-pbmit-location-1#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-call"></i>
                 <div class="class-name">.pbmit-call</div>
-                <div class="author-name">Author: #author-link-pbmit-call# </div>
+                <div class="author-name">Author: #author-link-pbmit-call#</div>
             </div>
 
             <div class="glyph">
                 <i class="pbmit-shipex-icon pbmit-shipex-icon-schedule"></i>
                 <div class="class-name">.pbmit-schedule</div>
-                <div class="author-name">Author: #author-link-pbmit-schedule# </div>
+                <div class="author-name">Author: #author-link-pbmit-schedule#</div>
             </div>
+        </section>
 
-    </section>
-
-    <div id="footer">
-        <div>Generated by <a href="https://www.pbminfotech.com">PBMinfotech</a>
+        <div id="footer">
+            <div>Generated by <a href="https://www.pbminfotech.com">PBMinfotech</a></div>
         </div>
-    </div>
-
-</body>
+    </body>
 </html>

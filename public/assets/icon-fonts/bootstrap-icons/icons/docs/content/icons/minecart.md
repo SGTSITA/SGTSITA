@@ -1,8 +1,8 @@
 ---
 title: Minecart
 categories:
-  - Real world
+    - Real world
 tags:
-  - mining
-  - cart
+    - mining
+    - cart
 ---

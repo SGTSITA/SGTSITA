@@ -1,8 +1,8 @@
 ---
 title: Bricks
 categories:
-  - Real world
+    - Real world
 tags:
-  - wall
-  - firewall
+    - wall
+    - firewall
 ---

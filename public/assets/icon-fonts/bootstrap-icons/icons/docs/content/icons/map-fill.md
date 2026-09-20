@@ -1,9 +1,9 @@
 ---
 title: Map fill
 categories:
-  - Geo
+    - Geo
 tags:
-  - geography
-  - directions
-  - location
+    - geography
+    - directions
+    - location
 ---

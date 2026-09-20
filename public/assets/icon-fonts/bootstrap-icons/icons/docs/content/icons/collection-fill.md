@@ -1,8 +1,8 @@
 ---
 title: Collection fill
 categories:
-  - Media
+    - Media
 tags:
-  - library
-  - group
+    - library
+    - group
 ---

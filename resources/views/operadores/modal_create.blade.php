@@ -5,42 +5,39 @@
                 <h5 class="modal-title">Crear Operadores</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" action="{{ route('store.operadores') }}" id="" enctype="multipart/form-data"
-                role="form">
+            <form method="POST" action="{{ route('store.operadores') }}" id="operadorform"
+                enctype="multipart/form-data" role="form">
                 @csrf
 
                 <div class="modal-body">
                     <div class="row">
-
                         <div class="col-12 form-group">
                             <label for="name">Nombre Completo*</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
-                                        width="25px">
+                                        width="25px" />
                                 </span>
-                                <input name="nombre" id="nombre" type="text" class="form-control">
+                                <input name="nombre" id="nombre" type="text" class="form-control" />
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-6 form-group">
                                 <label for="curp">CURP *</label>
                                 <div class="input-group mb-3">
-                                    <span class="input-group-text" id="basic-addon1">
-                                    </span>
-                                    <input name="curp" id="curp" type="text" class="form-control" required>
+                                    <span class="input-group-text" id="basic-addon1"></span>
+                                    <input name="curp" id="curp" type="text" class="form-control" required />
                                 </div>
                             </div>
                         </div>
-
 
                         <div class="col-6 form-group">
                             <label for="name">correo *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/sobre.png.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/sobre.png.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input name="correo" id="correo" type="email" class="form-control">
+                                <input name="correo" id="correo" type="email" class="form-control" />
                             </div>
                         </div>
 
@@ -48,9 +45,10 @@
                             <label for="name">Telefono *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/telefono.png.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input name="telefono" id="telefono" type="number" class="form-control">
+                                <input name="telefono" id="telefono" type="number" class="form-control" />
                             </div>
                         </div>
 
@@ -59,9 +57,9 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt=""
-                                        width="25px">
+                                        width="25px" />
                                 </span>
-                                <input name="domicilio" id="domicilio" type="text" class="form-control">
+                                <input name="domicilio" id="domicilio" type="text" class="form-control" />
                             </div>
                         </div>
 
@@ -69,10 +67,11 @@
                             <label for="name">Fecha nacimiento *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
                                 <input name="fecha_nacimiento" id="fecha_nacimiento" type="date"
-                                    class="form-control">
+                                    class="form-control" />
                             </div>
                         </div>
 
@@ -80,9 +79,10 @@
                             <label for="name">Acceso *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/iniciar-sesion.png') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/iniciar-sesion.png') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input name="acceso" id="acceso" type="text" class="form-control">
+                                <input name="acceso" id="acceso" type="text" class="form-control" />
                             </div>
                         </div>
 
@@ -90,9 +90,9 @@
                             <label for="name">Tipo Sangre *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/sangre.png') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/sangre.png') }}" alt="" width="25px" />
                                 </span>
-                                <input name="tipo_sangre" id="tipo_sangre" type="text" class="form-control">
+                                <input name="tipo_sangre" id="tipo_sangre" type="text" class="form-control" />
                             </div>
                         </div>
 
@@ -100,9 +100,9 @@
                             <label for="name">NNS *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/fuente.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input name="nss" id="nss" type="text" class="form-control">
+                                <input name="nss" id="nss" type="text" class="form-control" />
                             </div>
                         </div>
 
@@ -110,9 +110,10 @@
                             <label for="name">Recomendacion *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/megafono.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/megafono.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input name="recomendacion" id="recomendacion" type="text" class="form-control">
+                                <input name="recomendacion" id="recomendacion" type="text"
+                                    class="form-control" />
                             </div>
                         </div>
 
@@ -120,10 +121,10 @@
                             <label for="name">Comprobante Domicilio *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/quotes.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/quotes.webp') }}" alt="" width="25px" />
                                 </span>
                                 <input name="comprobante_domicilio" id="comprobante_domicilio" type="file"
-                                    class="form-control">
+                                    class="form-control" />
                             </div>
                         </div>
 
@@ -132,9 +133,9 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/business-card-design.webp') }}" alt=""
-                                        width="25px">
+                                        width="25px" />
                                 </span>
-                                <input name="ine" id="ine" type="file" class="form-control">
+                                <input name="ine" id="ine" type="file" class="form-control" />
                             </div>
                         </div>
 
@@ -142,9 +143,11 @@
                             <label for="name">Cedula Fiscal *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/catalogo.webp') }}" alt=""
+                                        width="25px" />
                                 </span>
-                                <input name="cedula_fiscal" id="cedula_fiscal" type="file" class="form-control">
+                                <input name="cedula_fiscal" id="cedula_fiscal" type="file"
+                                    class="form-control" />
                             </div>
                         </div>
 
@@ -153,10 +156,10 @@
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
                                     <img src="{{ asset('img/icon/factura.png.webp') }}" alt=""
-                                        width="25px">
+                                        width="25px" />
                                 </span>
                                 <input name="licencia_conducir" id="licencia_conducir" type="file"
-                                    class="form-control">
+                                    class="form-control" />
                             </div>
                         </div>
 
@@ -164,9 +167,9 @@
                             <label for="name">Foto *</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text" id="basic-addon1">
-                                    <img src="{{ asset('img/icon/imagen.webp') }}" alt="" width="25px">
+                                    <img src="{{ asset('img/icon/imagen.webp') }}" alt="" width="25px" />
                                 </span>
-                                <input name="foto" id="foto" type="file" class="form-control">
+                                <input name="foto" id="foto" type="file" class="form-control" />
                             </div>
                         </div>
                     </div>
@@ -180,15 +183,3 @@
         </div>
     </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-@if (session('curp_error'))
-    <script>
-        Swal.fire({
-            icon: 'error',
-            title: 'CURP duplicado',
-            html: `{!! addslashes(session('curp_error')) !!}`, // escapa comillas
-            confirmButtonText: 'Entendido'
-        });
-    </script>
-@endif

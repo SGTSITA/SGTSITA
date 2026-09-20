@@ -1,9 +1,9 @@
 ---
 title: Layer forward
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - arrange
-  - layers
-  - front
+    - arrange
+    - layers
+    - front
 ---

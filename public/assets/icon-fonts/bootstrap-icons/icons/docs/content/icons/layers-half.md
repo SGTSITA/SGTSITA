@@ -1,8 +1,8 @@
 ---
 title: Layers half
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - perspective
-  - stacked
+    - perspective
+    - stacked
 ---

@@ -1,7 +1,7 @@
 ---
 title: Headphones
 categories:
-  - Devices
+    - Devices
 tags:
-  - headphones
+    - headphones
 ---

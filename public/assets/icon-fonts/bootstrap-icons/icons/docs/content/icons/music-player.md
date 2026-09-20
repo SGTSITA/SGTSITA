@@ -1,8 +1,8 @@
 ---
 title: Music player
 categories:
-  - Devices
+    - Devices
 tags:
-  - ipod
-  - mp3
+    - ipod
+    - mp3
 ---

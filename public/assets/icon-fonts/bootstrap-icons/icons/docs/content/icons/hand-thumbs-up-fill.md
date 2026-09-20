@@ -1,10 +1,10 @@
 ---
 title: Hand thumbs up fill
 categories:
-  - Hands
+    - Hands
 tags:
-  - hand
-  - pointer
-  - thumbs-up
-  - "+1"
+    - hand
+    - pointer
+    - thumbs-up
+    - '+1'
 ---

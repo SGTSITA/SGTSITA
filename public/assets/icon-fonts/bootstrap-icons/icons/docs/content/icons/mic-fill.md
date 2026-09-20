@@ -1,12 +1,12 @@
 ---
 title: Mic fill
 categories:
-  - Media
+    - Media
 tags:
-  - audio
-  - video
-  - av
-  - sound
-  - input
-  - microphone
+    - audio
+    - video
+    - av
+    - sound
+    - input
+    - microphone
 ---

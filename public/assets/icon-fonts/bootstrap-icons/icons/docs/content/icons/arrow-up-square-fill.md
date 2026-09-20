@@ -1,8 +1,8 @@
 ---
 title: Arrow up square fill
 categories:
-  - Shape Arrows
+    - Shape Arrows
 tags:
-  - arrow
-  - square
+    - arrow
+    - square
 ---

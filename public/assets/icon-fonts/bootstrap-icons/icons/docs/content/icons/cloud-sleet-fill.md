@@ -1,9 +1,9 @@
 ---
 title: Cloud sleet fill
 categories:
-  - Weather
+    - Weather
 tags:
-  - cloud
-  - blizzard
-  - flurries
+    - cloud
+    - blizzard
+    - flurries
 ---

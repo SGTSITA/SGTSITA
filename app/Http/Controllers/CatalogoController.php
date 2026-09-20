@@ -1,37 +1,40 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Client;
 use App\Models\Catalogo;
 use Carbon\Carbon;
-use Session;
-use PDF;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
-
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CatalogoController extends Controller
 {
-    public function index(){
+    public function index()
+    {
 
-        $catalogos = Catalogo::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $catalogos = Catalogo::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         return view('catalogo.index', compact('catalogos'));
     }
 
-    public function create(){
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->get();
+    public function create()
+    {
+        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->get();
 
-        return view('catalogo.crear',compact('clientes'));
+        return view('catalogo.crear', compact('clientes'));
     }
 
-    public function store(Request $request){
+    public function store(Request $request)
+    {
 
-        if($request->get('nombre_cliente') == NULL){
+        if ($request->get('nombre_cliente') == null) {
             $cliente = $request->get('id_cliente');
-        }else{
-            $cliente = new Client;
+        } else {
+            $cliente = new Client();
             $cliente->nombre = $request->get('nombre_cliente');
             $cliente->correo = $request->get('correo_cliente');
             $cliente->telefono = $request->get('telefono_cliente');
@@ -41,7 +44,7 @@ class CatalogoController extends Controller
             $cliente = $cliente->id;
         }
 
-        $catalogo = new Catalogo;
+        $catalogo = new Catalogo();
         $catalogo->id_cliente = $cliente;
         $catalogo->id_subcliente = $request->get('id_subcliente');
         $catalogo->destino = $request->get('destino');
@@ -69,14 +72,15 @@ class CatalogoController extends Controller
 
     }
 
-    public function pdf($id){
+    public function pdf($id)
+    {
         $catalogo = Catalogo::where('id', '=', $id)->first();
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-        $pdf = PDF::loadView('catalogo.pdf', compact('catalogo','fecha', 'fechaCarbon'))->setPaper([0, 0, 595, 1200], 'landscape');
-       return $pdf->stream();
-       //  return $pdf->download('catalogo'.$catalogo->Cliente->nombre.'_#'.$catalogo->id.'.pdf');
+        $pdf = PDF::loadView('catalogo.pdf', compact('catalogo', 'fecha', 'fechaCarbon'))->setPaper([0, 0, 595, 1200], 'landscape');
+        return $pdf->stream();
+        //  return $pdf->download('catalogo'.$catalogo->Cliente->nombre.'_#'.$catalogo->id.'.pdf');
     }
 }

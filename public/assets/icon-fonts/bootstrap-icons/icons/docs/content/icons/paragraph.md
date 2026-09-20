@@ -1,10 +1,10 @@
 ---
 title: Paragraph
 categories:
-  - Typography
+    - Typography
 tags:
-  - paragraph
-  - text
-  - body
-  - content
+    - paragraph
+    - text
+    - body
+    - content
 ---

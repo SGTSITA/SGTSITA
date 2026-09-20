@@ -1,10 +1,10 @@
 ---
 title: Ethernet
 categories:
-  - Devices
+    - Devices
 tags:
-  - internet
-  - connection
-  - port
-  - plug
+    - internet
+    - connection
+    - port
+    - plug
 ---

@@ -1,8 +1,8 @@
 ---
 title: Folder symlink fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - directory
-  - symbolic-link
+    - directory
+    - symbolic-link
 ---

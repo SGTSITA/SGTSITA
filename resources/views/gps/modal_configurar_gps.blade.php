@@ -1,27 +1,36 @@
-<div class="modal fade" id="modal-gps-form" tabindex="-1" role="dialog" aria-labelledby="modal-gps-form" aria-hidden="true">
+<div class="modal fade" id="modal-gps-form" tabindex="-1" role="dialog" aria-labelledby="modal-gps-form" aria-hidden="true"
+    data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-md" role="document">
         <div class="modal-content">
-        <div class="modal-body p-0">
-            <div class="card card-plain">
-            <div class="card-header pb-0 text-left">
-                <h3 class="font-weight-bolder text-info  text-gradient" data-gps-company="0" id="gpsCompany">...</h3>
-                <p class="text-sm mb-0">Para su tranquilidad, sus credenciales son cifradas y almacenadas de manera segura.</p>
-            </div>
-            <div class="card-body">
-               
-              
-                <div id="form-account"></div>
-                <div class="text-center">
-                    <button type="button" id="btnConfigurar" onclick ="guardarConfigGps()" class="btn btn-sm btn-round bg-gradient-info  w-100 mt-4 mb-0">Guardar</button>
+            <div class="modal-body p-0">
+                <div class="card card-plain">
+                    <div class="card-header pb-0 text-left">
+                        <h3 class="font-weight-bolder text-info  text-gradient" data-gps-company="0" id="gpsCompany">...
+                        </h3>
+                        <p class="text-sm mb-0">Para su tranquilidad, sus credenciales son cifradas y almacenadas de
+                            manera segura.</p>
+                    </div>
+                    <div class="card-body">
+
+
+                        <div id="form-account"></div>
+                        <div class="text-center">
+                            <button type="button" id="btnConfigurar" onclick ="guardarConfigGps()"
+                                class="btn btn-sm btn-round bg-gradient-info  w-100 mt-4 mb-0">Guardar</button>
+                        </div>
+                        <div class="text-center mt-2">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                Cancelar
+                            </button>
+                        </div>
+
+                    </div>
+                    <div class="card-footer text-center pt-0 px-lg-2 px-1">
+
+                    </div>
                 </div>
-               
-            </div>
-            <div class="card-footer text-center pt-0 px-lg-2 px-1">
-             
-            </div>
             </div>
         </div>
-        </div>
     </div>
-    </div>
+</div>
 </div>

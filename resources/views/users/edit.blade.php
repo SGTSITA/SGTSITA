@@ -90,11 +90,13 @@
                     </div>
 
                     <div class="card-body">
-                        {!! Form::model($user, [
-                            'route' => ['users.update', $user->id],
-                            'method' => 'PATCH',
-                            'id' => 'formEditarUsuario',
-                        ]) !!}
+                        {!!
+                            Form::model($user, [
+                                'route' => ['users.update', $user->id],
+                                'method' => 'PATCH',
+                                'id' => 'formEditarUsuario',
+                            ])
+                        !!}
                         <div class="row g-3">
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Nombre</label>
@@ -114,8 +116,10 @@
                                 <select name="id_empresa" class="form-select">
                                     <option value="">Selecciona una empresa</option>
                                     @foreach ($listaEmpresas as $empresa)
-                                        <option value="{{ $empresa->id }}"
-                                            @if ($empresa->id == $user->id_empresa) selected @endif>
+                                        <option
+                                            value="{{ $empresa->id }}"
+                                            @if ($empresa->id == $user->id_empresa) selected @endif
+                                        >
                                             {{ $empresa->nombre }}
                                         </option>
                                     @endforeach
@@ -125,15 +129,25 @@
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Contraseña (opcional)</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" name="password" id="password" class="form-control"
-                                    placeholder="Nueva contraseña">
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="password"
+                                    class="form-control"
+                                    placeholder="Nueva contraseña"
+                                />
                             </div>
 
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Confirmar Contraseña</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" name="confirm-password" id="confirm-password" class="form-control"
-                                    placeholder="Confirmar nueva contraseña">
+                                <input
+                                    type="password"
+                                    name="confirm-password"
+                                    id="confirm-password"
+                                    class="form-control"
+                                    placeholder="Confirmar nueva contraseña"
+                                />
                             </div>
 
                             <div class="col-md-12">
@@ -141,21 +155,28 @@
                                 <div class="radio-group-ios">
                                     @foreach ($roles as $key => $rol)
                                         <label>
-                                            <input type="radio" name="roles[]" value="{{ $key }}"
-                                                class="radio-ios" @if (in_array($key, $userRole)) checked @endif>
+                                            <input
+                                                type="radio"
+                                                name="roles[]"
+                                                value="{{ $key }}"
+                                                class="radio-ios"
+                                                @if (in_array($key, $userRole)) checked @endif
+                                            />
                                             {{ $rol }}
                                         </label>
                                     @endforeach
                                 </div>
                             </div>
 
-                            <div class="col-md-6" id="clienteGroup" style="display: none;">
+                            <div class="col-md-6" id="clienteGroup" style="display: none">
                                 <label class="form-label">Selecciona el Cliente</label>
                                 <select name="id_cliente" id="id_cliente" class="form-select">
                                     <option value="0">Sin cliente</option>
                                     @foreach ($clientes as $cliente)
-                                        <option value="{{ $cliente->id }}"
-                                            @if ($cliente->id == $user->id_cliente) selected @endif>
+                                        <option
+                                            value="{{ $cliente->id }}"
+                                            @if ($cliente->id == $user->id_cliente) selected @endif
+                                        >
                                             {{ $cliente->nombre }}
                                         </option>
                                     @endforeach
@@ -177,7 +198,7 @@
 @push('custom-javascript')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+        document.getElementById('formEditarUsuario').addEventListener('submit', function (e) {
             const password = document.getElementById('password')?.value.trim();
             const confirmPassword = document.getElementById('confirm-password')?.value.trim();
 
@@ -188,7 +209,7 @@
                         icon: 'warning',
                         title: 'Contraseñas no coinciden',
                         text: 'La nueva contraseña y su confirmación deben ser iguales.',
-                        confirmButtonColor: '#007aff'
+                        confirmButtonColor: '#007aff',
                     });
                     return;
                 }
@@ -200,8 +221,8 @@
             const clienteGroup = document.getElementById('clienteGroup');
             const clienteSelect = document.getElementById('id_cliente');
 
-            const selectedLabel = selected?.parentElement?.innerText?.trim().toUpperCase() || "";
-            if (selectedLabel === "CLIENTE") {
+            const selectedLabel = selected?.parentElement?.innerText?.trim().toUpperCase() || '';
+            if (selectedLabel === 'CLIENTE') {
                 clienteGroup.style.display = 'block';
             } else {
                 clienteGroup.style.display = 'none';
@@ -209,10 +230,10 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const radios = document.querySelectorAll('input[name="roles[]"]');
             toggleClienteField();
-            radios.forEach(radio => {
+            radios.forEach((radio) => {
                 radio.addEventListener('change', toggleClienteField);
             });
         });

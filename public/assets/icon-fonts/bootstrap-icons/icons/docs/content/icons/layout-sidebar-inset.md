@@ -1,8 +1,8 @@
 ---
 title: Layout sidebar nested
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---

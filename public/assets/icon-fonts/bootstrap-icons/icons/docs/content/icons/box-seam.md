@@ -1,8 +1,8 @@
 ---
 title: Box seam
 categories:
-  - Real world
+    - Real world
 tags:
-  - cardboard
-  - package
+    - cardboard
+    - package
 ---

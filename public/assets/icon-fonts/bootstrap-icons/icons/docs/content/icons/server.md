@@ -1,8 +1,8 @@
 ---
 title: Server
 categories:
-  - Devices
+    - Devices
 tags:
-  - server
-  - network
+    - server
+    - network
 ---

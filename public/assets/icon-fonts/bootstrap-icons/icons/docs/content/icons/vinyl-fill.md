@@ -1,9 +1,9 @@
 ---
 title: Vinyl fill
 categories:
-  - Media
+    - Media
 tags:
-  - audio
-  - music
-  - record
+    - audio
+    - music
+    - record
 ---

@@ -1,8 +1,8 @@
 ---
 title: Clouds
 categories:
-  - Weather
+    - Weather
 tags:
-  - clouds
-  - overcast
+    - clouds
+    - overcast
 ---

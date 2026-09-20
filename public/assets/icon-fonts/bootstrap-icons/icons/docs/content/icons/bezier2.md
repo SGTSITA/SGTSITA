@@ -1,9 +1,9 @@
 ---
 title: Bezier2
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - graphics
-  - vector
-  - pen
+    - graphics
+    - vector
+    - pen
 ---

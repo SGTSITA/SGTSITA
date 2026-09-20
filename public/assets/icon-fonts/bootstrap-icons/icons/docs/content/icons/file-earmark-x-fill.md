@@ -1,9 +1,9 @@
 ---
 title: File earmark x fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - document
-  - remove
-  - delete
+    - document
+    - remove
+    - delete
 ---

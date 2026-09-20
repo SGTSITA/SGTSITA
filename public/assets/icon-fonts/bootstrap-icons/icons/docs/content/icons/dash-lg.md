@@ -1,7 +1,7 @@
 ---
 title: Dash lg
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - minus
+    - minus
 ---

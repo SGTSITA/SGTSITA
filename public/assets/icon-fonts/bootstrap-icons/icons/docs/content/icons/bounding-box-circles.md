@@ -1,10 +1,10 @@
 ---
 title: Bounding box circles
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - text
-  - shape
-  - resize
-  - dimensions
+    - text
+    - shape
+    - resize
+    - dimensions
 ---

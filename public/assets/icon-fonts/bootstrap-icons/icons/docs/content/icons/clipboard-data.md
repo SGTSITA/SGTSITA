@@ -1,12 +1,12 @@
 ---
 title: Clipboard data
 categories:
-  - Real world
+    - Real world
 tags:
-  - copy
-  - paste
-  - data
-  - analytics
-  - graph
-  - chart
+    - copy
+    - paste
+    - data
+    - analytics
+    - graph
+    - chart
 ---

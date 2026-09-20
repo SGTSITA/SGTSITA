@@ -2,10 +2,7 @@
     "name": "scrollbar",
     "title": "jQuery Scrollbar",
     "description": "Cross-browser CSS customizable scrollbar with advanced features: standard scroll behavior in all browsers/devices, responsive design support (no fixed height or width required), horizontal/vertical scrollbar or both, external scrollbars, automatically hide/show scrollbars (if content/container size is changed) and more...",
-    "keywords": [
-        "scroll",
-        "scrollbar"
-    ],
+    "keywords": ["scroll", "scrollbar"],
     "version": "0.2.11",
     "author": {
         "name": "Yuriy Khabarov",

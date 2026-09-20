@@ -1,8 +1,8 @@
 ---
 title: Moon stars
 categories:
-  - Weather
+    - Weather
 tags:
-  - night
-  - sky
+    - night
+    - sky
 ---

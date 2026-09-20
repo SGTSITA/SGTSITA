@@ -1,9 +1,9 @@
 ---
 title: File earmark post
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - post
+    - doc
+    - document
+    - post
 ---

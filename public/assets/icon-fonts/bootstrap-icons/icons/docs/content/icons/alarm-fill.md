@@ -1,9 +1,9 @@
 ---
 title: Alarm Fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - alarm
-  - clock
-  - time
+    - alarm
+    - clock
+    - time
 ---

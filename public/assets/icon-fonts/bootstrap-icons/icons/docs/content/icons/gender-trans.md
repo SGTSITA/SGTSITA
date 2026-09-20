@@ -1,8 +1,8 @@
 ---
 title: Gender trans
 categories:
-  - People
+    - People
 tags:
-  - gender
-  - identity
+    - gender
+    - identity
 ---

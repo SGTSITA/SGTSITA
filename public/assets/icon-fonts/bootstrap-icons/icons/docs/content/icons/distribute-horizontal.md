@@ -1,8 +1,8 @@
 ---
 title: Distribute horizontal
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - space
-  - align
+    - space
+    - align
 ---

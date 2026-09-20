@@ -1,9 +1,9 @@
 ---
 title: Incognito
 categories:
-  - Miscellaneous
+    - Miscellaneous
 tags:
-  - private
-  - investigator
-  - secret
+    - private
+    - investigator
+    - secret
 ---

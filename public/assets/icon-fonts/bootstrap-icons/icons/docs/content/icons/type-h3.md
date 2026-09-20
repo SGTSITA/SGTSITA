@@ -1,9 +1,9 @@
 ---
 title: Type H3
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - heading
+    - text
+    - type
+    - heading
 ---

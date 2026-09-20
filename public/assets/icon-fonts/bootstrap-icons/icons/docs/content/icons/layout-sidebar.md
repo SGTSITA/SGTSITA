@@ -1,9 +1,9 @@
 ---
 title: Layout sidebar
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
-  - sidebar
+    - grid
+    - layout
+    - sidebar
 ---

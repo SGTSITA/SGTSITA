@@ -20,13 +20,13 @@
 
                     </div>
                     <div class="card-body">
-                        <!-- Mostrar advertencia si no se ha seleccionado proveedor -->
-                        @if (isset($showWarning) && $showWarning)
+                        <!-- Mostrar advertencia si no se ha seleccionado proveedor , se hizo opcional a tener el nu edo cuenta-->
+                        {{-- @if (isset($showWarning) && $showWarning)
                             <div class="alert alert-warning">
                                 <strong>Advertencia!</strong> No se ha seleccionado un proveedor. Por favor, elija un
                                 proveedor para realizar la búsqueda.
                             </div>
-                        @endif
+                        @endif --}}
                         <form action="{{ route('ruta_advance_cxp') }}" method="GET">
                             <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
                                 <div class="row">
@@ -72,6 +72,20 @@
                                         </select>
                                     </div>
 
+                                    <div class="col-md-2">
+                                        <label for="numero_edo_cuenta">Numero de Estado de Cuenta</label>
+                                        <select name="numero_edo_cuenta" id="numero_edo_cuenta"
+                                            class="form-control numero_edo_cuenta">
+                                            <option value="">Seleccionar numero</option>
+                                            @foreach ($estadosCuentas as $edoCuenta)
+                                                <option value="{{ $edoCuenta->id }}"
+                                                    {{ request('numero_edo_cuenta') == $edoCuenta->id ? 'selected' : '' }}>
+                                                    {{ $edoCuenta->numero }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <div class="col-3">
                                         <br>
                                         <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit"
@@ -82,6 +96,21 @@
                         </form>
 
 
+                        @if (!empty($advertenciasCuentas))
+                            <div class="alert alert-warning text-dark my-3 p-3" role="alert"
+                                style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning fs-4"></i>
+                                    <strong>Atención de Configuración de Cuentas Bancarias:</strong>
+                                </div>
+                                <ul class="mb-0 ps-4">
+                                    @foreach ($advertenciasCuentas as $msg)
+                                        <li>{{ $msg }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="table-responsive">
                             <div class="mb-3">
                             </div>
@@ -91,14 +120,13 @@
                             </div>
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
-                                @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
-                                @endif
+
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
                                         <tr>
                                             <th></th>
                                             <th>#</th>
+                                            <th>Edo. Cuenta</th>
                                             <th><img src="{{ asset('img/icon/gps.webp') }}" alt=""
                                                     width="25px">Origen</th>
                                             <th><img src="{{ asset('img/icon/origen.png') }}" alt=""
@@ -117,6 +145,7 @@
                                                             value="{{ $cotizacion->id }}"
                                                             class="select-checkbox visually-hidden"></td>
                                                     <td>{{ $cotizacion->id }}</td>
+                                                    <td>{{ $cotizacion->numero_edo_cuenta ?? 'NA' }}</td>
                                                     <td>{{ $cotizacion->origen }}</td>
                                                     <td>{{ $cotizacion->destino }}</td>
                                                     @php
@@ -176,8 +205,8 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                                             <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="0"
                                                     href="#">Exportar Tablero</a></li>
-                                            <li><a class="dropdown-item exportButton" data-filetype="pdf" id="exportButton"
-                                                    href="#">PDF Cuentas por Pagar</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="pdf"
+                                                    id="exportButton" href="#">PDF Cuentas por Pagar</a></li>
                                             <li><a class="dropdown-item exportButton" data-filetype="xlsx"
                                                     id="exportButtonXlsx" href="#">Excel Cuentas por Pagar</a></li>
                                         </ul>
@@ -218,6 +247,8 @@
         $(document).ready(function() {
             // Inicializar select2 para el campo de proveedor
             $('.cliente').select2();
+            $('.proveedor').select2();
+            $('.numero_edo_cuenta').select2();
 
             // Inicializar la tabla con DataTable
             const table = $('#datatable-search').DataTable({
@@ -278,8 +309,16 @@
 
                 // Verificar si no se seleccionó ninguna fila
                 if (selectedIds.length === 0) {
-                    // Mostrar el mensaje de advertencia si no se seleccionó ninguna fila
-                    $('#warningMessage').removeClass('d-none');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: 'Por favor, elija al menos una cotización para realizar la exportación.',
+                            confirmButtonColor: '#F82018'
+                        });
+                    } else {
+                        $('#warningMessage').removeClass('d-none');
+                    }
                     return; // Detener la ejecución del código
                 }
 
@@ -323,12 +362,9 @@
                         // Limpiar después de la descarga
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
-
-                        alert('El archivo se ha descargado correctamente.');
                     },
                     error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Ocurrió un error al exportar los datos.');
+                        console.error('Export Error:', xhr, error);
                     }
                 });
             });

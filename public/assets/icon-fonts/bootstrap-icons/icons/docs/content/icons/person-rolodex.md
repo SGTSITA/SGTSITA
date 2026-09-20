@@ -1,12 +1,12 @@
 ---
 title: Person rolodex
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - account
-  - contact
+    - human
+    - individual
+    - avatar
+    - user
+    - account
+    - contact
 ---

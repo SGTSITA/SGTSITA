@@ -1,10 +1,10 @@
 ---
 title: Sliders2 vertical
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - equalizer
-  - settings
-  - preferences
-  - dials
+    - equalizer
+    - settings
+    - preferences
+    - dials
 ---

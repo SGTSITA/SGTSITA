@@ -1,9 +1,9 @@
 ---
 title: Trash3 fill
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - trash-can
-  - garbage
-  - delete
+    - trash-can
+    - garbage
+    - delete
 ---

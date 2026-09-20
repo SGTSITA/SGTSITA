@@ -1,10 +1,10 @@
 ---
 title: Journal text
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - folder
-  - journal
-  - notebook
+    - file
+    - folder
+    - journal
+    - notebook
 ---

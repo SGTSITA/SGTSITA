@@ -1,10 +1,10 @@
 ---
 title: Chat dots fill
 categories:
-  - Communications
+    - Communications
 tags:
-  - chat bubble
-  - text
-  - message
-  - typing
+    - chat bubble
+    - text
+    - message
+    - typing
 ---

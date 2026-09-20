@@ -1,8 +1,8 @@
 ---
 title: Shield exclamation
 categories:
-  - Security
+    - Security
 tags:
-  - privacy
-  - security
+    - privacy
+    - security
 ---

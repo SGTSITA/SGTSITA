@@ -1,9 +1,9 @@
 ---
 title: Bar chart line
 categories:
-  - Data
+    - Data
 tags:
-  - chart
-  - graph
-  - analytics
+    - chart
+    - graph
+    - analytics
 ---

@@ -1,9 +1,9 @@
 ---
 title: TV
 categories:
-  - Devices
+    - Devices
 tags:
-  - television
-  - monitor
-  - display
+    - television
+    - monitor
+    - display
 ---

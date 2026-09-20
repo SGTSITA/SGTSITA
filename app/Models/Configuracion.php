@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Configuracion extends Model
 {
     use HasFactory;
+    use Auditable;
     public $timestamps = false;
 
     protected $table = 'configuracion';
@@ -27,5 +29,5 @@ class Configuracion extends Model
         'user_id',
     ];
 
-   
+
 }

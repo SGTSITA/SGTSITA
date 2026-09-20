@@ -1,10 +1,10 @@
 ---
 title: Text left
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
+    - text
+    - type
+    - justify
+    - alignment
 ---

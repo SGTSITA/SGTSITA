@@ -1,8 +1,8 @@
 ---
 title: Grid 1x2
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
+    - grid
+    - layout
 ---

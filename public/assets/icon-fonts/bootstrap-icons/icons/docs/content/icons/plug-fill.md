@@ -1,8 +1,8 @@
 ---
 title: Plug fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - power
-  - outlet
+    - power
+    - outlet
 ---

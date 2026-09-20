@@ -19,18 +19,28 @@
                 <td>{{ number_format(floatval($c['restante'] ?? 0), 2) }}</td>
                 <td>{{ $c['tipo_viaje'] ?? '-' }}</td>
                 <td>{{ $c['estatus'] ?? '-' }}</td>
-                <td>{{ !empty($c['carta_porte']) ? '✅' : '❌' }}</td>
-                <td>{{ !empty($c['carta_porte_xml']) ? '✅' : '❌' }}</td>
+                <td>{{ ! empty($c['carta_porte']) ? '✅' : '❌' }}</td>
+                <td>{{ ! empty($c['carta_porte_xml']) ? '✅' : '❌' }}</td>
             </tr>
         @endforeach
+
         <tr>
-            <td colspan="7"><strong>Total generado:</strong> ${{ number_format(floatval($totalGenerado), 2) }}</td>
+            <td colspan="7">
+                <strong>Total generado:</strong>
+                ${{ number_format(floatval($totalGenerado), 2) }}
+            </td>
         </tr>
         <tr>
-            <td colspan="7"><strong>Retenido:</strong> ${{ number_format(floatval($retenido), 2) }}</td>
+            <td colspan="7">
+                <strong>Retenido:</strong>
+                ${{ number_format(floatval($retenido), 2) }}
+            </td>
         </tr>
         <tr>
-            <td colspan="7"><strong>Pago neto:</strong> ${{ number_format(floatval($pagoNeto), 2) }}</td>
+            <td colspan="7">
+                <strong>Pago neto:</strong>
+                ${{ number_format(floatval($pagoNeto), 2) }}
+            </td>
         </tr>
     </tbody>
 </table>

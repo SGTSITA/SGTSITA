@@ -1,8 +1,8 @@
 ---
 title: Lightbulb fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - lights
-  - lamp
+    - lights
+    - lamp
 ---

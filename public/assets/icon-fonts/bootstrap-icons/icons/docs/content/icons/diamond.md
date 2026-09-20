@@ -1,7 +1,7 @@
 ---
 title: Diamond
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

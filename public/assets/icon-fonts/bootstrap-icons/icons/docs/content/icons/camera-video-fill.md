@@ -1,9 +1,9 @@
 ---
 title: Camera video fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - av
-  - video
-  - film
+    - av
+    - video
+    - film
 ---
