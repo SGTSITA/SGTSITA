@@ -1060,8 +1060,8 @@ class ApiValidationController extends Controller
 
     public function checkAppVersion(Request $request)
     {
-        $version = \App\Models\GlobalConfig::getVal('app_movil_version', '1.0.2');
-        $build = (int) \App\Models\GlobalConfig::getVal('app_movil_build', 2);
+        $version = \App\Models\GlobalConfig::getVal('app_movil_version', '1.0.3');
+        $build = (int) \App\Models\GlobalConfig::getVal('app_movil_build', 3);
         $force = (bool) \App\Models\GlobalConfig::getVal('app_movil_force_update', false);
         $apkUrl = \App\Models\GlobalConfig::getVal('app_movil_apk_url', asset('downloads/operador_app.apk'));
         $notes = \App\Models\GlobalConfig::getVal('app_movil_release_notes', 'Nueva actualización de la app móvil SGT Logistics.');
