@@ -863,6 +863,32 @@ class ReporteriaController extends Controller
             'Contenedor.Cotizacion.estadoCuenta'
         ])->whereIn('id', $cotizacionIds)->get();
 
+        // Validar que todos los proveedores seleccionados tengan predeterminada la Cuenta 1
+        $proveedoresSinCuenta1 = [];
+        foreach ($cotizaciones as $item) {
+            $prov = $item->Proveedor;
+            if ($prov) {
+                $hasCuenta1 = $prov->CuentasBancarias->contains(function ($c) {
+                    return (bool) $c->cuenta_1;
+                });
+
+                if (!$hasCuenta1) {
+                    if (!in_array($prov->nombre, $proveedoresSinCuenta1)) {
+                        $proveedoresSinCuenta1[] = $prov->nombre;
+                    }
+                }
+            }
+        }
+
+        if (!empty($proveedoresSinCuenta1)) {
+            $nombres = implode(', ', $proveedoresSinCuenta1);
+            $mensaje = "El proveedor ({$nombres}) no tiene predeterminada la Cuenta 1. Por favor configure sus cuentas bancarias en el catálogo de proveedores primero.";
+            if ($request->ajax()) {
+                return response()->json(['message' => $mensaje], 422);
+            }
+            return redirect()->back()->with('error', $mensaje);
+        }
+
 
 
 

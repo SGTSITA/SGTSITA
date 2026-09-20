@@ -346,7 +346,22 @@
                     },
                     error: function(xhr, status, error) {
                         console.error(error);
-                        alert('Ocurrió un error al exportar los datos.');
+                        if (xhr.response instanceof Blob) {
+                            var reader = new FileReader();
+                            reader.onload = function() {
+                                try {
+                                    var json = JSON.parse(reader.result);
+                                    alert(json.message || json.error || 'Ocurrió un error al exportar los datos.');
+                                } catch(e) {
+                                    alert('Ocurrió un error al exportar los datos.');
+                                }
+                            };
+                            reader.readAsText(xhr.response);
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            alert(xhr.responseJSON.message);
+                        } else {
+                            alert('Ocurrió un error al exportar los datos.');
+                        }
                     }
                 });
             });
