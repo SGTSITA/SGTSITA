@@ -97,7 +97,8 @@
 
 
                         @if (!empty($advertenciasCuentas))
-                            <div class="alert alert-warning text-dark my-3 p-3" role="alert" style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
+                            <div class="alert alert-warning text-dark my-3 p-3" role="alert"
+                                style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
                                 <div class="d-flex align-items-center mb-1">
                                     <i class="fas fa-exclamation-triangle me-2 text-warning fs-4"></i>
                                     <strong>Atención de Configuración de Cuentas Bancarias:</strong>
@@ -119,9 +120,7 @@
                             </div>
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
-                                @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
-                                @endif
+
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
                                         <tr>
@@ -206,8 +205,8 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                                             <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="0"
                                                     href="#">Exportar Tablero</a></li>
-                                            <li><a class="dropdown-item exportButton" data-filetype="pdf" id="exportButton"
-                                                    href="#">PDF Cuentas por Pagar</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="pdf"
+                                                    id="exportButton" href="#">PDF Cuentas por Pagar</a></li>
                                             <li><a class="dropdown-item exportButton" data-filetype="xlsx"
                                                     id="exportButtonXlsx" href="#">Excel Cuentas por Pagar</a></li>
                                         </ul>
