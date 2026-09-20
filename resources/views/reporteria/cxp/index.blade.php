@@ -353,42 +353,49 @@
                     error: function(xhr, status, error) {
                         console.error('Export Error:', xhr);
 
-                        function mostrarAlerta(mensaje) {
+                        function mostrarAlerta(mensajeText) {
+                            var textoFinal = (typeof mensajeText === 'string' && mensajeText.trim().length > 0)
+                                ? mensajeText
+                                : 'Ocurrió un error al exportar los datos.';
+
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'warning',
                                     title: 'Configuración Requerida',
-                                    text: mensaje || 'Ocurrió un error al exportar los datos.',
+                                    text: textoFinal,
                                     confirmButtonColor: '#F82018',
                                     confirmButtonText: 'Entendido'
                                 });
                             } else {
-                                alert(mensaje || 'Ocurrió un error al exportar los datos.');
+                                alert(textoFinal);
                             }
                         }
 
-                        if (xhr.response instanceof Blob) {
+                        var responseObj = xhr.response || xhr.responseText;
+
+                        if (responseObj instanceof Blob) {
                             var reader = new FileReader();
                             reader.onload = function() {
+                                var resText = reader.result;
                                 try {
-                                    var json = JSON.parse(reader.result);
-                                    mostrarAlerta(json.message || json.error);
+                                    var json = JSON.parse(resText);
+                                    mostrarAlerta(json.message || json.error || resText);
                                 } catch(e) {
-                                    mostrarAlerta(reader.result || 'Ocurrió un error al exportar los datos.');
+                                    mostrarAlerta(resText);
                                 }
                             };
                             reader.onerror = function() {
                                 mostrarAlerta('Ocurrió un error al procesar la respuesta del servidor.');
                             };
-                            reader.readAsText(xhr.response);
+                            reader.readAsText(responseObj);
                         } else if (xhr.responseJSON && xhr.responseJSON.message) {
                             mostrarAlerta(xhr.responseJSON.message);
-                        } else if (xhr.responseText) {
+                        } else if (typeof responseObj === 'string') {
                             try {
-                                var json = JSON.parse(xhr.responseText);
-                                mostrarAlerta(json.message || json.error);
+                                var json = JSON.parse(responseObj);
+                                mostrarAlerta(json.message || json.error || responseObj);
                             } catch(e) {
-                                mostrarAlerta(xhr.responseText);
+                                mostrarAlerta(responseObj);
                             }
                         } else {
                             mostrarAlerta('Ocurrió un error al exportar los datos.');
