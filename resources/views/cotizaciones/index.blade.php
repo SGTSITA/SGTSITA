@@ -225,6 +225,14 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label for="id_proveedor" class="form-label fw-semibold">Línea de transporte / Proveedor (opcional)</label>
+                            <div class="input-group">
+                                <select class="form-select border-start-0" id="id_proveedor" name="id_proveedor">
+                                    <option value="">Ninguno</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="modal-footer border-top-0 pt-3">
@@ -327,8 +335,14 @@
     @endcan
 @endsection
 
+@section('select2')
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
+@endsection
+
 @push('custom-javascript')
     <!-- AG Grid -->
+
+
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -341,11 +355,49 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // Evitar que Bootstrap modal bloquee el foco del campo de búsqueda de Select2 (Fase de captura)
+            document.addEventListener('focusin', function(e) {
+                if (e.target.closest && e.target.closest('.select2-container, .select2-dropdown, .select2-search')) {
+                    e.stopImmediatePropagation();
+                }
+            }, true);
+
             flatpickr(".dateInput", {
                 dateFormat: "d/m/Y",
                 locale: "es"
+            });
+
+            // Cargar proveedores al cambiar empresa en modalCambioEmpresa
+            $('#modalCambioEmpresa #id_empresa').on('change', function() {
+                var proveedor = $(this).val();
+                var _token = $('meta[name="csrf-token"]').attr("content");
+                var selectProveedor = $('#modalCambioEmpresa #id_proveedor');
+
+                if (!proveedor) {
+                    selectProveedor.html('<option value="">Ninguno</option>');
+                    return;
+                }
+
+                $.ajax({
+                    type: "post",
+                    url: "/mec/transportistas/list",
+                    data: { proveedor: proveedor, _token: _token },
+                    success: function(response) {
+                        selectProveedor.empty();
+                        selectProveedor.append(new Option("Ninguno", ""));
+                        response.forEach(function(opcion) {
+                            selectProveedor.append(new Option(opcion.nombre, opcion.id));
+                        });
+                    },
+                    error: function() {
+                        selectProveedor.html('<option value="">Ninguno</option>');
+                    }
+                });
             });
 
             @can('mep-asignacion-unidad')

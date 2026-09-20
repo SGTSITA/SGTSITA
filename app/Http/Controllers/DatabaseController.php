@@ -4,67 +4,112 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
+use ZipArchive;
 
 class DatabaseController extends Controller
 {
     public function descargarBaseDeDatos()
     {
-        // Datos de la base de datos
         $databaseName = env('DB_DATABASE');
         $username = env('DB_USERNAME');
         $password = env('DB_PASSWORD');
         $host = env('DB_HOST');
 
-        // Obtener la fecha y hora actual
-        $fechaActual = date('Ymd_His'); // Formato: AñoMesDía_HoraMinutoSegundo
-        $databaseName = env('DB_DATABASE'); // Obtener el nombre de la base de datos desde el archivo .env
+        $fechaActual = date('Ymd_His');
 
-        // Construir el nombre del archivo con la fecha, hora y nombre de la base de datos
         $dumpFileName = "{$databaseName}_backup_{$fechaActual}.sql";
         $dumpFile = storage_path("app/{$dumpFileName}");
 
-        // $mysqldumpPath = 'C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin\mysqldump.exe';
-        $mysqldumpPath = '/usr/bin/mysqldump';
-
+        $mysqldumpPath = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN'
+            ? 'C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin\mysqldump.exe'
+            : '/usr/bin/mysqldump';
 
         $command = [
-            $mysqldumpPath,
-            '--user=' . $username,
-            '--password=' . $password,
-            '--host=' . $host,
-            '--databases', // Incluye la instrucción CREATE DATABASE en el archivo de volcado
-            $databaseName,
-            '--result-file=' . $dumpFile,
-            '--add-drop-database', // Añadir un DROP DATABASE IF EXISTS antes de la creación
-            '--add-drop-table', // Añadir un DROP TABLE IF EXISTS antes de la creación
-            '--default-character-set=utf8', // Establecer el conjunto de caracteres a UTF-8
-            '--skip-comments', // Omitir los comentarios predeterminados de mysqldump
+            '"' . $mysqldumpPath . '"',
+            '--user=' . escapeshellarg($username),
+            '--password=' . escapeshellarg($password),
+            '--host=' . escapeshellarg($host),
+            '--single-transaction',
+            '--databases',
+            escapeshellarg($databaseName),
+            '--result-file=' . escapeshellarg($dumpFile),
+            '--add-drop-database',
+            '--add-drop-table',
+            '--default-character-set=utf8',
+            '--skip-comments',
         ];
 
+        $output = shell_exec(implode(' ', $command) . ' 2>&1');
 
-        $respuesta = shell_exec(implode(' ', $command));
+        if (file_exists($dumpFile) && filesize($dumpFile) > 0) {
+            $directory = 'historial_backups';
+            if (!\Storage::exists($directory)) {
+                \Storage::makeDirectory($directory);
+            }
 
-        if ($respuesta === null) { // Si el comando se ejecuta correctamente
-            // Añadir el comando USE para seleccionar la base de datos al inicio del archivo
-            $contenido = file_get_contents($dumpFile);
+            $zipFileName = "database_backup_{$databaseName}_{$fechaActual}.zip";
+            $zipFile = storage_path("app/{$directory}/{$zipFileName}");
 
-            // Insertar el comando USE después del CREATE DATABASE
-            $nuevoContenido = preg_replace(
-                "/(CREATE DATABASE IF NOT EXISTS `{$databaseName}`.*?;)/s",
-                "$1\nUSE `{$databaseName}`;\n",
-                $contenido
-            );
+            $zip = new ZipArchive();
+            if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                $zip->addFile($dumpFile, $dumpFileName);
+                $zip->close();
+                unlink($dumpFile);
 
-            // Sobrescribir el archivo con el nuevo contenido
-            file_put_contents($dumpFile, $nuevoContenido);
+                return redirect()->route('backups.historiales')->with('success', 'Respaldo completo de la Base de Datos generado correctamente en el servidor.');
+            }
 
-            return response()->download($dumpFile)->deleteFileAfterSend(true);
+            return redirect()->route('backups.historiales')->with('error', 'No se pudo empaquetar el respaldo de la base de datos.');
         } else {
-            return back()->with('error', 'No se pudo generar la copia de la base de datos.');
+            \Illuminate\Support\Facades\Log::error("Error en mysqldump. Comando: " . implode(' ', $command) . " | Mensaje de error: " . $output);
+            return back()->with('error', 'No se pudo generar la copia de la base de datos. Verifique los logs de Laravel para más detalles.');
+        }
+    }
+
+    public function listarBackupsHistoriales()
+    {
+        $directory = 'historial_backups';
+        $files = \Storage::exists($directory) ? \Storage::files($directory) : [];
+        
+        $backups = [];
+        foreach ($files as $file) {
+            if (pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
+                $backups[] = [
+                    'name' => basename($file),
+                    'path' => $file,
+                    'size' => \App\Traits\CommonTrait::calculateFileSize(\Storage::size($file)) ?? (\Storage::size($file) . ' B'),
+                    'date' => date('d/m/Y H:i:s', \Storage::lastModified($file)),
+                ];
+            }
+        }
+
+        // Sort backups by date descending
+        usort($backups, function ($a, $b) {
+            return \Storage::lastModified($b['path']) <=> \Storage::lastModified($a['path']);
+        });
+
+        return view('configuracion.backups_historiales', compact('backups'));
+    }
+
+    public function descargarBackupHistorial($file)
+    {
+        $path = 'historial_backups/' . $file;
+        if (!\Storage::exists($path)) {
+            abort(404, 'El archivo de respaldo no existe.');
+        }
+
+        return \Storage::download($path);
+    }
+
+    public function ejecutarLimpiezaAhora()
+    {
+        try {
+            \Artisan::call('db:limpiar-historiales');
+            return back()->with('success', 'Limpieza y archivado ejecutados correctamente. Nuevos respaldos generados.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error ejecutando limpieza: " . $e->getMessage());
+            return back()->with('error', 'Ocurrió un error al ejecutar la limpieza: ' . $e->getMessage());
         }
     }
 }

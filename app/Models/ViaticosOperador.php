@@ -13,12 +13,26 @@ class ViaticosOperador extends Model
     protected $table = "viaticos_operadores";
     protected $appends = ['contenedor'];
 
+      protected $fillable = [
+        'id_cotizacion',
+        'descripcion_gasto',
+        'monto',
+        'fecha_comprobante',
+        'comprobante',
+    ];
+
     public function getContenedorAttribute()
     {
-        $contenedor = DocumCotizacion::where('id_cotizacion', $this->id_cotizacion)->first();
-        return (!is_null($contenedor)) ? $contenedor->num_contenedor : 'S/N';
+        /* $contenedor = DocumCotizacion::where('id_cotizacion', $this->id_cotizacion)->first();
+        return (!is_null($contenedor)) ? $contenedor->num_contenedor : 'S/N'; */
+
+         return $this->Cotizacion?->DocCotizacion?->num_contenedor ?? 'S/N';
     }
 
+    public function Cotizacion()
+    {
+        return $this->belongsTo(Cotizaciones::class, 'id_cotizacion', 'id');
+    }
 
     public function getAuditoriaData($old = [], $new = [])
     {
