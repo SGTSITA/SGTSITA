@@ -120,14 +120,7 @@
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
                                 @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>
-                                        {{ $proveedor_cxp->nombre }}
-                                        @if (isset($advertenciasPorProveedor[$proveedor_cxp->id]))
-                                            <span class="badge bg-warning text-dark ms-2" style="font-size: 0.55em;" title="Verifique la configuración del proveedor">
-                                                <i class="fas fa-exclamation-triangle me-1"></i> {{ $advertenciasPorProveedor[$proveedor_cxp->id] }}
-                                            </span>
-                                        @endif
-                                    </h3>
+                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
                                 @endif
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
@@ -197,11 +190,6 @@
                                                             {{ $cotizacion->estatus }}
                                                             </button>
                                                         @endcan
-                                                        @if (isset($advertenciasPorProveedor[$cotizacion->id_proveedor]))
-                                                            <span class="badge bg-warning text-dark ms-1" style="font-size: 0.75em;" title="Verifique la configuración del proveedor">
-                                                                <i class="fas fa-exclamation-triangle"></i> {{ $advertenciasPorProveedor[$cotizacion->id_proveedor] }}
-                                                            </span>
-                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
