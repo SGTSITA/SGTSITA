@@ -96,6 +96,20 @@
                         </form>
 
 
+                        @if (!empty($advertenciasCuentas))
+                            <div class="alert alert-warning text-dark my-3 p-3" role="alert" style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning fs-4"></i>
+                                    <strong>Atención de Configuración de Cuentas Bancarias:</strong>
+                                </div>
+                                <ul class="mb-0 ps-4">
+                                    @foreach ($advertenciasCuentas as $msg)
+                                        <li>{{ $msg }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <div class="table-responsive">
                             <div class="mb-3">
                             </div>
@@ -106,7 +120,14 @@
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
                                 @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
+                                    <h3>
+                                        {{ $proveedor_cxp->nombre }}
+                                        @if (isset($advertenciasPorProveedor[$proveedor_cxp->id]))
+                                            <span class="badge bg-warning text-dark ms-2" style="font-size: 0.55em;" title="Verifique la configuración del proveedor">
+                                                <i class="fas fa-exclamation-triangle me-1"></i> {{ $advertenciasPorProveedor[$proveedor_cxp->id] }}
+                                            </span>
+                                        @endif
+                                    </h3>
                                 @endif
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
@@ -176,6 +197,11 @@
                                                             {{ $cotizacion->estatus }}
                                                             </button>
                                                         @endcan
+                                                        @if (isset($advertenciasPorProveedor[$cotizacion->id_proveedor]))
+                                                            <span class="badge bg-warning text-dark ms-1" style="font-size: 0.75em;" title="Verifique la configuración del proveedor">
+                                                                <i class="fas fa-exclamation-triangle"></i> {{ $advertenciasPorProveedor[$cotizacion->id_proveedor] }}
+                                                            </span>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
@@ -351,55 +377,7 @@
                         document.body.removeChild(a);
                     },
                     error: function(xhr, status, error) {
-                        console.error('Export Error:', xhr);
-
-                        function mostrarAlerta(mensajeText) {
-                            var textoFinal = (typeof mensajeText === 'string' && mensajeText.trim().length > 0)
-                                ? mensajeText
-                                : 'Ocurrió un error al exportar los datos.';
-
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Configuración Requerida',
-                                    text: textoFinal,
-                                    confirmButtonColor: '#F82018',
-                                    confirmButtonText: 'Entendido'
-                                });
-                            } else {
-                                alert(textoFinal);
-                            }
-                        }
-
-                        var responseObj = xhr.response || xhr.responseText;
-
-                        if (responseObj instanceof Blob) {
-                            var reader = new FileReader();
-                            reader.onload = function() {
-                                var resText = reader.result;
-                                try {
-                                    var json = JSON.parse(resText);
-                                    mostrarAlerta(json.message || json.error || resText);
-                                } catch(e) {
-                                    mostrarAlerta(resText);
-                                }
-                            };
-                            reader.onerror = function() {
-                                mostrarAlerta('Ocurrió un error al procesar la respuesta del servidor.');
-                            };
-                            reader.readAsText(responseObj);
-                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                            mostrarAlerta(xhr.responseJSON.message);
-                        } else if (typeof responseObj === 'string') {
-                            try {
-                                var json = JSON.parse(responseObj);
-                                mostrarAlerta(json.message || json.error || responseObj);
-                            } catch(e) {
-                                mostrarAlerta(responseObj);
-                            }
-                        } else {
-                            mostrarAlerta('Ocurrió un error al exportar los datos.');
-                        }
+                        console.error('Export Error:', xhr, error);
                     }
                 });
             });

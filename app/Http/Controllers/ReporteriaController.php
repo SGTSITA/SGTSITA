@@ -839,8 +839,48 @@ class ReporteriaController extends Controller
             $proveedor_cxp = Proveedor::find($id_proveedor);
         }
 
+        $advertenciasCuentas = [];
+        $advertenciasPorProveedor = [];
+
+        if ($cotizaciones->isNotEmpty()) {
+            $provIds = $cotizaciones->pluck('id_proveedor')->filter()->unique();
+            $provsInvolucrados = Proveedor::with('CuentasBancarias')->whereIn('id', $provIds)->get();
+
+            foreach ($provsInvolucrados as $p) {
+                if ($p->CuentasBancarias->isEmpty()) {
+                    $advertenciasCuentas[] = "El proveedor \"{$p->nombre}\" no tiene cuentas bancarias registradas.";
+                    $advertenciasPorProveedor[$p->id] = 'Sin Cuentas Bancarias';
+                } else {
+                    $hasC1 = $p->CuentasBancarias->contains('cuenta_1', true);
+                    $hasC2 = $p->CuentasBancarias->contains('cuenta_2', true);
+
+                    if (!$hasC1 && !$hasC2) {
+                        $advertenciasCuentas[] = "El proveedor \"{$p->nombre}\" no tiene predeterminadas la Cuenta 1 ni la Cuenta 2.";
+                        $advertenciasPorProveedor[$p->id] = 'Falta Cuenta 1 y 2';
+                    } elseif (!$hasC1) {
+                        $advertenciasCuentas[] = "El proveedor \"{$p->nombre}\" no tiene predeterminada la Cuenta 1.";
+                        $advertenciasPorProveedor[$p->id] = 'Falta Cuenta 1';
+                    } elseif (!$hasC2) {
+                        $advertenciasCuentas[] = "El proveedor \"{$p->nombre}\" no tiene predeterminada la Cuenta 2.";
+                        $advertenciasPorProveedor[$p->id] = 'Falta Cuenta 2';
+                    }
+                }
+            }
+        }
+
         // Retornar la vista con los datos necesarios
-        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'cotizaciones', 'proveedor_cxp', 'showWarning', 'id_proveedor', 'subclientes', 'estadosCuentas'));
+        return view('reporteria.cxp.index', compact(
+            'proveedores',
+            'clientes',
+            'cotizaciones',
+            'proveedor_cxp',
+            'showWarning',
+            'id_proveedor',
+            'subclientes',
+            'estadosCuentas',
+            'advertenciasCuentas',
+            'advertenciasPorProveedor'
+        ));
     }
 
 
@@ -863,41 +903,11 @@ class ReporteriaController extends Controller
             'Contenedor.Cotizacion.estadoCuenta'
         ])->whereIn('id', $cotizacionIds)->get();
 
-        // Validar que todos los proveedores seleccionados tengan predeterminada la Cuenta 1
-        $proveedoresSinCuenta1 = [];
-        foreach ($cotizaciones as $item) {
-            $prov = $item->Proveedor;
-            if ($prov) {
-                $hasCuenta1 = $prov->CuentasBancarias->contains(function ($c) {
-                    return (bool) $c->cuenta_1;
-                });
-
-                if (!$hasCuenta1) {
-                    if (!in_array($prov->nombre, $proveedoresSinCuenta1)) {
-                        $proveedoresSinCuenta1[] = $prov->nombre;
-                    }
-                }
-            }
-        }
-
-        if (!empty($proveedoresSinCuenta1)) {
-            $nombres = implode(', ', $proveedoresSinCuenta1);
-            $mensaje = "El proveedor ({$nombres}) no tiene predeterminada la Cuenta 1. Por favor configure sus cuentas bancarias en el catálogo de proveedores primero.";
-            if ($request->ajax()) {
-                return response()->json(['message' => $mensaje], 422);
-            }
-            return redirect()->back()->with('error', $mensaje);
-        }
-
-
-
-
         $bancos_oficiales = Bancos::where('tipo', '=', 'Oficial')->get();
         $bancos_no_oficiales = Bancos::where('tipo', '=', 'No Oficial')->get();
 
         // Obtener la primera cotización (si es necesario)
         $cotizacion = Asignaciones::with('Contenedor.Cotizacion.estadoCuenta')->where('id', $cotizacionIds)->first();
-        //  dd($cotizacion);
 
         // Obtener los datos del usuario autenticado
         $user = User::where('id', '=', auth()->user()->id)->first();
