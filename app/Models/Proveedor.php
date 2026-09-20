@@ -29,7 +29,8 @@ class Proveedor extends Model
 
     public function CuentasBancarias()
     {
-        return $this->hasMany(CuentasBancarias::class, 'id_proveedores');
+        return $this->hasMany(CuentasBancarias::class, 'id_proveedores')
+                    ->orderByRaw('cuenta_1 DESC, cuenta_2 DESC, id ASC');
     }
 
     public function empresa()
