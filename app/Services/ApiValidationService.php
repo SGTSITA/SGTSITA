@@ -1616,7 +1616,7 @@ class ApiValidationService
         // 2. Operadores
         $operadores = DB::table('operadores')
             ->where('id_empresa', $empresaId)
-            ->whereNotNull('deleted_at')
+            ->whereNull('deleted_at')
             ->select('nombre', 'id')
             ->get();
 
