@@ -119,9 +119,7 @@
                             </div>
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
-                                @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
-                                @endif
+
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
                                         <tr>
@@ -206,8 +204,8 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                                             <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="0"
                                                     href="#">Exportar Tablero</a></li>
-                                            <li><a class="dropdown-item exportButton" data-filetype="pdf" id="exportButton"
-                                                    href="#">PDF Cuentas por Pagar</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="pdf"
+                                                    id="exportButton" href="#">PDF Cuentas por Pagar</a></li>
                                             <li><a class="dropdown-item exportButton" data-filetype="xlsx"
                                                     id="exportButtonXlsx" href="#">Excel Cuentas por Pagar</a></li>
                                         </ul>
