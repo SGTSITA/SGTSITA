@@ -220,17 +220,18 @@ class CotizacionesService
     }
 
     /**
-     * Reutilizador específico para clientes externos (mis-viajes).
+     * Reutilizador específico para clientes externos (mis-viajes / documentacion).
      */
-    public function getContenedoresCliente($idCliente, $fechaInicio = null, $fechaFin = null)
+    public function getContenedoresCliente($idCliente, $fechaInicio = null, $fechaFin = null, $estatusSearch = null)
     {
         return $this->obtenerCotizacionesparametros(
-            $estatusSearch = null,
+            $estatusSearch = $estatusSearch,
             $estatus_planeacion = null,
             $validarNoplaneadas = null,
             $idCliente = $idCliente,
             $fechaInicio = $fechaInicio,
             $fechaFin = $fechaFin,
+            true // $excluirLocales
         );
     }
 
