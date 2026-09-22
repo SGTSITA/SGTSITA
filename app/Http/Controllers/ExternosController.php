@@ -260,10 +260,13 @@ class ExternosController extends Controller
 
     public function getContenedoresPendientes(Request $request, CotizacionesService $cotizacionesService)
     {
+        $estatus = $request->estatus ?? null;
+
         $result = $cotizacionesService->getContenedoresCliente(
             Auth::user()->id_cliente,
             $request->fechaInicioViajes,
-            $request->fechaFinViajes
+            $request->fechaFinViajes,
+            $estatus
         );
 
         return response()->json($result);
