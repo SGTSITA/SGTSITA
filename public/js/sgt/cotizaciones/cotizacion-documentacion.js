@@ -51,9 +51,14 @@ function applyCurrentFilters() {
         ? $("#inputSearchGeneral").val().trim().toLowerCase()
         : "";
 
+    const hasStatusTabs = ($("#statusTabsViajes").length > 0);
+
     let filtered = allViajesData.filter(item => {
-        const category = getTabStatusCategory(item.Estatus);
-        const matchesTab = (category === currentTabStatus);
+        let matchesTab = true;
+        if (hasStatusTabs) {
+            const category = getTabStatusCategory(item.Estatus);
+            matchesTab = (category === currentTabStatus);
+        }
 
         let matchesSearch = true;
         if (term !== "") {
@@ -526,6 +531,8 @@ const gridOptions = {
                     customStyle = "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
                 } else if (val === "Cancelada" || val === "Cancelado" || val === "Canceladas") {
                     customStyle = "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
+                } else if (val === "Documentos Faltantes") {
+                    customStyle = "background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5;";
                 }
 
                 return `<span class="badge fs-7 px-3 py-2 fw-bold" style="${customStyle}">${val}</span>`;
