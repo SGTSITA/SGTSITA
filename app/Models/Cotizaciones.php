@@ -121,22 +121,22 @@ class Cotizaciones extends Model
 
     public function Bancos1()
     {
-        return $this->hasOne(Bancos::class, 'id_banco1');
+        return $this->belongsTo(Bancos::class, 'id_banco1');
     }
 
     public function Bancos2()
     {
-        return $this->hasOne(Bancos::class, 'id_banco2');
+        return $this->belongsTo(Bancos::class, 'id_banco2');
     }
 
     public function BancoProv()
     {
-        return $this->hasOne(CuentasBancarias::class, 'id_cuenta_prov');
+        return $this->belongsTo(CuentasBancarias::class, 'id_cuenta_prov');
     }
 
     public function BancoProv2()
     {
-        return $this->hasOne(CuentasBancarias::class, 'id_cuenta_prov2');
+        return $this->belongsTo(CuentasBancarias::class, 'id_cuenta_prov2');
     }
 
     public function Empresa()

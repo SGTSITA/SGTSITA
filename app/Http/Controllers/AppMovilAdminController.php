@@ -614,6 +614,33 @@ class AppMovilAdminController extends Controller
             'Día de la semana (1-7) y hora (HH:mm) para enviar recordatorio de captura de gastos al operador'
         );
 
+        // 3. Gestión de Versión de App Móvil y Archivo APK
+        if ($request->has('app_movil_version')) {
+            GlobalConfig::setVal('app_movil_version', trim($request->input('app_movil_version')), 'Versión visible del APK de la App Móvil');
+        }
+        if ($request->has('app_movil_build')) {
+            GlobalConfig::setVal('app_movil_build', trim($request->input('app_movil_build')), 'Número de build/compilación del APK');
+        }
+        GlobalConfig::setVal('app_movil_force_update', $request->has('app_movil_force_update') ? '1' : '0', 'Indica si la actualización es obligatoria');
+        if ($request->has('app_movil_release_notes')) {
+            GlobalConfig::setVal('app_movil_release_notes', trim($request->input('app_movil_release_notes')), 'Novedades y notas de la versión del APK');
+        }
+        if ($request->filled('app_movil_apk_url')) {
+            GlobalConfig::setVal('app_movil_apk_url', trim($request->input('app_movil_apk_url')), 'URL pública para la descarga directa del archivo APK de la App Móvil');
+        }
+
+        if ($request->hasFile('apk_file')) {
+            $file = $request->file('apk_file');
+            $destinationPath = public_path('downloads');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+            $fileName = 'operador_app.apk';
+            $file->move($destinationPath, $fileName);
+            $apkUrl = asset('downloads/' . $fileName);
+            GlobalConfig::setVal('app_movil_apk_url', $apkUrl, 'URL pública para la descarga directa del archivo APK de la App Móvil');
+        }
+
         Session::flash('success', 'Configuraciones de la App Móvil actualizadas con éxito.');
         return redirect()->route('app-movil-admin.index', ['tab' => 'config']);
     }

@@ -511,7 +511,7 @@ const gridOptions = {
         },
         {
             field: "Estatus",
-            width: 150,
+            width: 140,
             filter: true,
             floatingFilter: true,
             cellRenderer: (params) => {

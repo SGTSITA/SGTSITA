@@ -586,16 +586,32 @@ class CoordenadasController extends Controller
 
     public function getEntidadesPC()
     {
-        $proveedores = Proveedor::catalogoPrincipal()
-            ->where('id_empresa', auth()->user()->id_empresa)
-            ->orderBy('created_at', 'desc')
-            ->get(['id', 'nombre']);
+        $user = auth()->user();
+        if ($user->id_cliente != 0) {
+            $clientes = Client::where('id', $user->id_cliente)
+                            ->get(['id', 'nombre']);
 
-        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
-                        ->where('ce.id_empresa', Auth::User()->id_empresa)
-                        ->where('is_active', 1)
-                        ->orderBy('nombre')
-                        ->get(['clients.id', 'clients.nombre']);
+            $proveedores = Proveedor::catalogoPrincipal()
+                ->whereIn('id', function($q) use ($user) {
+                    $q->select('id_proveedor')
+                      ->from('cotizaciones')
+                      ->where('id_cliente', $user->id_cliente)
+                      ->whereNotNull('id_proveedor');
+                })
+                ->orderBy('created_at', 'desc')
+                ->get(['id', 'nombre']);
+        } else {
+            $proveedores = Proveedor::catalogoPrincipal()
+                ->where('id_empresa', $user->id_empresa)
+                ->orderBy('created_at', 'desc')
+                ->get(['id', 'nombre']);
+
+            $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+                            ->where('ce.id_empresa', $user->id_empresa)
+                            ->where('is_active', 1)
+                            ->orderBy('nombre')
+                            ->get(['clients.id', 'clients.nombre']);
+        }
 
         return response()->json([
             'proveedor' => $proveedores,
@@ -683,9 +699,7 @@ $filters = [
 ];
         //  dd($filters);
 
-$baseFiltro = $this->coordenadasService->getContenedoresBase([
-            'fecha' => $hoy,'isAdmin' => $isAdmin
-        ]);
+$baseFiltro = $this->coordenadasService->getContenedoresBase($filters);
 
 $datosAll = $baseFiltro->get();
 
