@@ -58,16 +58,16 @@ class SociosService
         $reporteriaService = app(ReporteriaService::class);
         $viajesData = $reporteriaService->getContenedorUtilidad($startDate, $endDate, $idEmpresa);
 
-        // Fetch general expenses of the period (imputacion = periodo)
-        $gastosGeneralesPeriodo = Gasto::where('id_empresa', $idEmpresa)
-            ->where('tipo_gasto', 'periodo')
+        // Fetch general expenses of the period (tipo_gasto = periodo or general)
+        $gastosGeneralesPeriodo = (float) Gasto::where('id_empresa', $idEmpresa)
+            ->whereIn('tipo_gasto', ['periodo', 'general'])
             ->whereBetween('fecha_gasto', [$startDate, $endDate])
             ->sum('monto_total');
 
         $configsQuery = SocioConfiguracion::whereHas('socio', function ($query) {
                 $query->where('activo', 1)->whereNull('deleted_at');
             })
-            ->with('socio')
+            ->with(['socio', 'equipo'])
             ->where('id_empresa', $idEmpresa)
             ->where('activo', true);
 
@@ -80,16 +80,54 @@ class SociosService
 
         $configs = $configsQuery->get();
 
+        // Count unique active teams/equipos configured
+        $uniqueEquiposCount = $configs->pluck('equipo_id')->unique()->filter()->count();
+        $gastoGeneralPorEquipo = $uniqueEquiposCount > 0 ? ($gastosGeneralesPeriodo / $uniqueEquiposCount) : $gastosGeneralesPeriodo;
+
         // 1. Group trips and calculate totals per Socio
         $sociosSplit = [];
+        foreach ($configs as $c) {
+            $sId = $c->socio_id;
+            $socioNombre = $c->socio?->nombre ?? 'Socio Desconocido';
+            $configUnidad = $c->equipo ? (($c->equipo->id_equipo ? $c->equipo->id_equipo . ' ' : '') . $c->equipo->placas . ' (' . $c->equipo->marca . ')') : 'N/A';
+
+            if (!isset($sociosSplit[$sId])) {
+                $sociosSplit[$sId] = [
+                    'socio_id' => $sId,
+                    'socio' => $socioNombre,
+                    'unidad_configurada' => $configUnidad,
+                    'tipo_pago' => $c->tipo_pago,
+                    'valor' => (float) $c->valor,
+                    'equipo_id' => $c->equipo_id,
+                    'utilidad_bruta_acumulada' => 0,
+                    'gastos_operativos_acumulados' => 0,
+                    'numero_viajes' => 0,
+                    'distribucion_socio' => 0
+                ];
+            }
+        }
+
         $totalUtilidadBruta = 0;
-        
+        $totalGastosOperativosViajes = 0;
         $viajesDesglose = [];
 
         foreach ($viajesData as $v) {
             $numContenedor = $v['numContenedor'];
             $cliente = $v['cliente'];
-            $utilidadBruta = (float) $v['utilidad'];
+            $precioViaje = (float) ($v['precioViaje'] ?? 0);
+            $pagoOperacion = (float) ($v['pagoOperacion'] ?? 0);
+            $gastosViaje = (float) ($v['gastosViaje'] ?? 0);
+            $gastosExtra = (float) ($v['gastosExtra'] ?? 0);
+            $gastosDiferidos = (float) ($v['gastosDiferidos'] ?? 0);
+            $dineroSinJustificar = (float) ($v['dineroViajeSinJustificar'] ?? 0);
+
+            // Utilidad bruta del viaje = Flete / Ingreso - Pago de Operación / Sueldo
+            $utilidadBrutaViaje = $precioViaje - $pagoOperacion;
+            // Gastos operativos directos del viaje/unidad
+            $gastosOperativosViaje = $gastosViaje + $gastosExtra + $gastosDiferidos + $dineroSinJustificar;
+            // Utilidad neta real del viaje (coincide con $v['utilidad'])
+            $utilidadNetaViaje = (float) ($v['utilidad'] ?? ($utilidadBrutaViaje - $gastosOperativosViaje));
+
             $viajeInicia = $v['viajeInicia']; // Y-m-d
 
             // Find matching asignacion to get the truck (id_camion)
@@ -108,7 +146,7 @@ class SociosService
             $matchedConfigs = $configs->filter(function ($c) use ($camionId, $viajeInicia, $socioId) {
                 if ($c->equipo_id != $camionId) return false;
                 if ($socioId && $c->socio_id != $socioId) return false;
-                
+
                 $startValid = is_null($c->fecha_inicio) || ($viajeInicia >= $c->fecha_inicio);
                 $endValid = is_null($c->fecha_fin) || ($viajeInicia <= $c->fecha_fin);
 
@@ -119,7 +157,8 @@ class SociosService
                 continue;
             }
 
-            $totalUtilidadBruta += $utilidadBruta;
+            $totalUtilidadBruta += $utilidadBrutaViaje;
+            $totalGastosOperativosViajes += $gastosOperativosViaje;
             $camion = $camionId ? Equipo::find($camionId) : null;
             $camionName = $camion ? (($camion->id_equipo ? $camion->id_equipo . ' ' : '') . $camion->placas . ' (' . $camion->marca . ')') : 'Desconocido';
 
@@ -127,17 +166,16 @@ class SociosService
                 'contenedor' => $numContenedor,
                 'cliente' => $cliente,
                 'unidad' => $camionName,
-                'utilidad_viaje' => $utilidadBruta,
+                'utilidad_viaje' => $utilidadNetaViaje,
                 'fecha_viaje' => $viajeInicia,
                 'estatus_viaje' => $v['estatusViaje'] ?? 'S/N'
             ];
 
             foreach ($matchedConfigs as $c) {
                 $sId = $c->socio_id;
-                $socioNombre = $c->socio?->nombre ?? 'Socio Desconocido';
-                $configUnidad = $c->equipo ? (($c->equipo->id_equipo ? $c->equipo->id_equipo . ' ' : '') . $c->equipo->placas . ' (' . $c->equipo->marca . ')') : 'N/A';
-
                 if (!isset($sociosSplit[$sId])) {
+                    $socioNombre = $c->socio?->nombre ?? 'Socio Desconocido';
+                    $configUnidad = $c->equipo ? (($c->equipo->id_equipo ? $c->equipo->id_equipo . ' ' : '') . $c->equipo->placas . ' (' . $c->equipo->marca . ')') : 'N/A';
                     $sociosSplit[$sId] = [
                         'socio_id' => $sId,
                         'socio' => $socioNombre,
@@ -146,12 +184,14 @@ class SociosService
                         'valor' => (float) $c->valor,
                         'equipo_id' => $c->equipo_id,
                         'utilidad_bruta_acumulada' => 0,
+                        'gastos_operativos_acumulados' => 0,
                         'numero_viajes' => 0,
                         'distribucion_socio' => 0
                     ];
                 }
 
-                $sociosSplit[$sId]['utilidad_bruta_acumulada'] += $utilidadBruta;
+                $sociosSplit[$sId]['utilidad_bruta_acumulada'] += $utilidadBrutaViaje;
+                $sociosSplit[$sId]['gastos_operativos_acumulados'] += $gastosOperativosViaje;
                 $sociosSplit[$sId]['numero_viajes']++;
             }
         }
@@ -167,10 +207,10 @@ class SociosService
 
         foreach ($sociosSplit as $sId => &$split) {
             $camionId = $split['equipo_id'];
-            
-            // While we don't have id_equipo directly in gastos and refactor, subtract monthly general expenses (gastos del mes)
-            $split['gastos_camion'] = (float)$gastosGeneralesPeriodo;
-            // Utilidad Neta = Utilidad Bruta - Gastos del Mes
+
+            // Gastos Camión = Gastos operativos acumulados de sus viajes/unidad + parte proporcional de gastos generales de la empresa
+            $split['gastos_camion'] = $split['gastos_operativos_acumulados'] + (float)$gastoGeneralPorEquipo;
+            // Utilidad Neta = Utilidad Bruta - Gastos del Camión
             $split['utilidad_neta_camion'] = $split['utilidad_bruta_acumulada'] - $split['gastos_camion'];
 
             // Apply factor based on payment type
@@ -232,14 +272,16 @@ class SociosService
             ->whereBetween('fecha_aplicacion', [$startDate, $endDate])
             ->sum('monto');
 
+        $totalGastosTotalesPeriodo = $totalGastosOperativosViajes + (float)$gastosGeneralesPeriodo;
+
         return [
             'fecha_desde' => $startDate,
             'fecha_hasta' => $endDate,
             'total_utilidad_bruta_viajes' => $totalUtilidadBruta,
-            'total_gastos_periodo' => (float) $gastosGeneralesPeriodo,
-            'utilidad_neta_distribuible' => $totalUtilidadBruta - $gastosGeneralesPeriodo,
+            'total_gastos_periodo' => (float) $totalGastosTotalesPeriodo,
+            'utilidad_neta_distribuible' => $totalUtilidadBruta - $totalGastosTotalesPeriodo,
             'total_distribuido_socios' => $totalPagosSocios,
-            'utilidad_neta_empresa' => ($totalUtilidadBruta - $gastosGeneralesPeriodo) - $totalPagosSocios,
+            'utilidad_neta_empresa' => ($totalUtilidadBruta - $totalGastosTotalesPeriodo) - $totalPagosSocios,
             'total_pagado_periodo' => (float) $totalPagadoPeriodo,
             'socios_desglose' => $sociosFinal,
             'viajes_desglose' => $viajesDesglose
@@ -461,7 +503,7 @@ class SociosService
             $pagosQuery->where('fecha_aplicacion', '<=', $endDate);
         }
         $totalPagado = $pagosQuery->sum('monto');
-        
+
         return [
             'total_asignado' => (float)$totalAsignado,
             'total_pagado' => (float)$totalPagado,
@@ -473,7 +515,7 @@ class SociosService
     {
         return DB::transaction(function () use ($data, $idEmpresa, $userId) {
             $socio = Socio::findOrFail($data['socio_id']);
-            
+
             $pago = \App\Models\SocioPago::create([
                 'id_empresa' => $idEmpresa,
                 'socio_id' => $data['socio_id'],

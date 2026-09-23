@@ -816,6 +816,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::get('/descargar-db', [App\Http\Controllers\DatabaseController::class, 'descargarBaseDeDatos'])->name('descargar.db');
     Route::get('/backups-historiales', [App\Http\Controllers\DatabaseController::class, 'listarBackupsHistoriales'])->name('backups.historiales');
     Route::get('/backups-historiales/descargar/{file}', [App\Http\Controllers\DatabaseController::class, 'descargarBackupHistorial'])->name('backups.historiales.descargar');
+    Route::delete('/backups-historiales/eliminar/{file}', [App\Http\Controllers\DatabaseController::class, 'eliminarBackupHistorial'])->name('backups.historiales.eliminar');
     Route::post('/backups-historiales/limpiar-ahora', [App\Http\Controllers\DatabaseController::class, 'ejecutarLimpiezaAhora'])->name('backups.historiales.limpiar');
 
 
