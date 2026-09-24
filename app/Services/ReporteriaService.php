@@ -161,8 +161,6 @@ class ReporteriaService
             $sumGastosOperador = $gastosOperador->sum('monto_total');
 
             $Columns = [
-                "id_camion" => $d->id_camion,
-                "id_cotizacion" => $d->id_cotizacion,
                 "numContenedor" => $contenedor,
                 "cliente" => $d->cliente,
                 "precioViaje" => $d->total + $sumGastosExtra,
