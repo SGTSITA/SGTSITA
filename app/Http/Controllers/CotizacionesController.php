@@ -62,40 +62,39 @@ class CotizacionesController extends Controller
     {
         $empresas = Empresas::get();
 
-        //dd($empresas);
-        $userProveedores = User::find(auth()->user()->id);
-        $idempresa = auth()->user()->id_empresa;
-        $gpsCompanyIds = GpsCompanyProveedor::where('id_empresa', auth()->user()->id_empresa)
-         ->where('estado', 1)
-            ->pluck('id_gps_company');
+        $userActual = User::find(auth()->id());
+        $proveedorIds = $userActual ? $userActual->proveedores()->pluck('proveedor_id')->toArray() : [];
 
-        if ($userProveedores->proveedores()->exists()) {
+        $usuariosRelacionados = [auth()->id()];
+        if (!empty($proveedorIds)) {
+            $relacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+                $q->whereIn('proveedor_id', $proveedorIds);
+            })->pluck('id')->toArray();
+            $usuariosRelacionados = array_unique(array_merge($usuariosRelacionados, $relacionados));
+        }
 
-            $gpsCompanyIds = GpsCompanyProveedor::when($idempresa != 0, function ($query) use ($idempresa) {
-                $query->where('id_empresa', $idempresa);
-            })
-                ->whereIn('id_proveedor', $userProveedores->proveedores()->pluck('proveedor_id'))
+        $gpsCompanyIds = collect();
+
+        // 1. Configuraciones de la ruta /gps/setup (gps_company_proveedores) por proveedor compartido
+        if (!empty($proveedorIds)) {
+            $gpsFromProveedores = GpsCompanyProveedor::whereIn('id_proveedor', $proveedorIds)
                 ->where('estado', 1)
                 ->pluck('id_gps_company');
+            $gpsCompanyIds = $gpsCompanyIds->merge($gpsFromProveedores);
+        }
 
+        // 2. Configuraciones personalizadas y compañías GPS de equipos de los usuarios relacionados
+        $gpsEquipos = Equipo::whereIn('user_id', $usuariosRelacionados)
+            ->whereNotNull('gps_company_id')
+            ->pluck('gps_company_id');
 
-            $gpsEquipos = Equipo::where('usar_config_global', 0)
-    ->whereNotNull('credenciales_gps')
-    ->where('id_empresa', auth()->user()->id_empresa)
-    ->where('user_id', auth()->user()->id)
-    ->pluck('gps_company_id');
-
-            $gpsCompanyIds = $gpsCompanyIds
+        $gpsCompanyIds = $gpsCompanyIds
             ->merge($gpsEquipos)
+            ->filter()
             ->unique()
             ->values();
 
-
-
-            // dd($gpsEquipos, $gpsCompanyIds);
-        }
-
-        $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->get();
+        $gpsCompanies = GpsCompany::whereIn('id', $gpsCompanyIds)->orderBy('nombre')->get();
 
 
 

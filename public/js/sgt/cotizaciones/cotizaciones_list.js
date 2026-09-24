@@ -194,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ''}')" title="Cambiar Empresa">
+                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ""}')" title="Cambiar Empresa">
                             <i class="fa fa-exchange-alt"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-warning" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
@@ -240,7 +240,7 @@ document.addEventListener("DOMContentLoaded", function () {
                      <a href="${params.data.edit_url}" class="btn btn-sm btn-outline-secondary" title="Editar">
                             <i class="fa fa-edit"></i>
                         </a>
-                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ''}')" title="Cambiar Empresa">
+                        <button class="btn btn-sm btn-outline-primary" onclick="abrirCambioEmpresa(${params.data.id}, ${params.data.estatus_planeacion || 0}, '${params.data.coordenadas || ""}')" title="Cambiar Empresa">
                             <i class="fa fa-exchange-alt"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-info" onclick="abrirDocumentos(${params.data.id})" title="Ver Documentos">
@@ -309,14 +309,19 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(url, { signal })
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
+                    throw new Error(
+                        `Error en la petición: ${response.status} ${response.statusText}`,
+                    );
                 }
                 return response.json();
             })
             .then((data) => {
                 // Solo aplicar datos si esta respuesta pertenece a la última petición
                 // y el usuario continúa en la misma pestaña
-                if (requestId === currentRequestId && currentTab === requestedTab) {
+                if (
+                    requestId === currentRequestId &&
+                    currentTab === requestedTab
+                ) {
                     if (gridApi) {
                         gridApi.setGridOption("rowData", data.list || []);
                     }
@@ -444,69 +449,164 @@ document.addEventListener("DOMContentLoaded", function () {
                         txtOperador.value = data.operador?.nombre ?? "";
                         txtTelefono.value = data.operador?.telefono ?? "";
 
+                        // Helper para asegurar opción de equipo y actualizar visualmente Select2 sin disparar limpieza destructiva
+                        const setEquipoAsignado = (selectEl, equipo) => {
+                            if (!selectEl || !equipo) return;
+                            const idEquipo = equipo.id_equipo ?? "";
+                            const unitId = equipo.id ?? "0";
+
+                            let opt = Array.from(selectEl.options).find(
+                                (o) => String(o.value) === String(idEquipo),
+                            );
+                            if (!opt && idEquipo) {
+                                opt = document.createElement("option");
+                                opt.value = idEquipo;
+                                opt.textContent = `${idEquipo} ${equipo.placas ? "(" + equipo.placas + ")" : ""}`;
+                                opt.dataset.unitId = unitId;
+                                selectEl.appendChild(opt);
+                            } else if (opt) {
+                                opt.dataset.unitId = unitId;
+                            }
+
+                            selectEl.value = idEquipo;
+                            selectEl.dataset.mepUnidad = unitId;
+
+                            if (
+                                typeof jQuery !== "undefined" &&
+                                typeof jQuery.fn.select2 !== "undefined"
+                            ) {
+                                jQuery(selectEl)
+                                    .val(idEquipo)
+                                    .trigger("change.select2");
+                            }
+                        };
+
+                        // Helper para asegurar opción de GPS en el select
+                        const setGpsAsignado = (
+                            selectGpsId,
+                            gpsId,
+                            gpsNombre,
+                        ) => {
+                            const selectGps =
+                                document.getElementById(selectGpsId);
+                            if (!selectGps) return;
+                            if (gpsId) {
+                                let opt = Array.from(selectGps.options).find(
+                                    (o) => String(o.value) === String(gpsId),
+                                );
+                                if (!opt) {
+                                    opt = document.createElement("option");
+                                    opt.value = gpsId;
+                                    opt.textContent =
+                                        gpsNombre || `GPS ${gpsId}`;
+                                    selectGps.appendChild(opt);
+                                }
+                                selectGps.value = gpsId;
+                            } else {
+                                selectGps.selectedIndex = 0;
+                            }
+                        };
+
                         // ----- CAMIÓN -----
-                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
-                            jQuery(txtNumUnidad).val(data.camion?.id_equipo ?? "").trigger('change');
-                        } else {
-                            txtNumUnidad.value = data.camion?.id_equipo ?? "";
-                        }
-                        txtNumUnidad.dataset.mepUnidad = data.camion?.id ?? "0";
+                        setEquipoAsignado(txtNumUnidad, data.camion);
                         txtPlacas.value = data.camion?.placas ?? "";
                         txtSerie.value = data.camion?.num_serie ?? "";
                         txtImei.value = data.camion?.imei ?? "";
-
-                        document.getElementById("selectGPS").value =
-                            data.camion?.gps_company_id ?? "";
+                        setGpsAsignado(
+                            "selectGPS",
+                            data.camion?.gps_company_id,
+                            data.camion?.gps?.nombre,
+                        );
 
                         // ----- CHASIS A -----
-                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
-                            jQuery(txtNumChasisA).val(data.chasis?.id_equipo ?? "").trigger('change');
-                        } else {
-                            txtNumChasisA.value = data.chasis?.id_equipo ?? "";
-                        }
-                        txtNumChasisA.dataset.mepUnidad = data.chasis?.id ?? "0";
+                        setEquipoAsignado(txtNumChasisA, data.chasis);
                         txtPlacasA.value = data.chasis?.placas ?? "";
+                        if (document.getElementById("txtSerieChasisA")) {
+                            document.getElementById("txtSerieChasisA").value =
+                                data.chasis?.num_serie ?? "";
+                        }
                         txtImeiChasisA.value = data.chasis?.imei ?? "";
-                        document.getElementById("selectChasisAGPS").value =
-                            data.chasis?.gps_company_id ?? "";
+                        setGpsAsignado(
+                            "selectChasisAGPS",
+                            data.chasis?.gps_company_id,
+                            data.chasis?.gps?.nombre,
+                        );
 
                         // ----- CHASIS B -----
-                        if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
-                            jQuery(txtNumChasisB).val(data.chasis2?.id_equipo ?? "").trigger('change');
-                        } else {
-                            txtNumChasisB.value = data.chasis2?.id_equipo ?? "";
-                        }
-                        txtNumChasisB.dataset.mepUnidad = data.chasis2?.id ?? "0";
+                        setEquipoAsignado(txtNumChasisB, data.chasis2);
                         txtPlacasB.value = data.chasis2?.placas ?? "";
+                        if (document.getElementById("txtSerieChasisB")) {
+                            document.getElementById("txtSerieChasisB").value =
+                                data.chasis2?.num_serie ?? "";
+                        }
                         txtImeiChasisB.value = data.chasis2?.imei ?? "";
-                        document.getElementById("selectChasisBGPS").value =
-                            data.chasis2?.gps_company_id ?? "";
+                        setGpsAsignado(
+                            "selectChasisBGPS",
+                            data.chasis2?.gps_company_id,
+                            data.chasis2?.gps?.nombre,
+                        );
+
+                        // Botones actualizar GPS
+                        const btnActUnidad = document.getElementById(
+                            "btnActualizarGPSUnidad",
+                        );
+                        if (btnActUnidad) {
+                            btnActUnidad.style.display =
+                                data.camion?.imei && data.camion?.gps_company_id
+                                    ? "inline-block"
+                                    : "none";
+                        }
+                        const btnActChasisA = document.getElementById(
+                            "btnActualizarGPSChasisA",
+                        );
+                        if (btnActChasisA) {
+                            btnActChasisA.style.display =
+                                data.chasis?.imei && data.chasis?.gps_company_id
+                                    ? "inline-block"
+                                    : "none";
+                        }
+                        const btnActChasisB = document.getElementById(
+                            "btnActualizarGPSChasisB",
+                        );
+                        if (btnActChasisB) {
+                            btnActChasisB.style.display =
+                                data.chasis2?.imei &&
+                                data.chasis2?.gps_company_id
+                                    ? "inline-block"
+                                    : "none";
+                        }
 
                         //FECHAS -- AGREGADO NUEVO
-
                         dtpFechaSalida.value = data.fecha_inicio;
                         dtpFechaEntrega.value = data.fecha_fin;
+
+                        const equipoIdUnidad =
+                            data.camion?.id || data.id_camion;
+                        const equipoIdChasisA =
+                            data.chasis?.id || data.id_chasis;
+                        const equipoIdChasisB =
+                            data.chasis2?.id || data.id_chasis2;
 
                         await Promise.all([
                             validarConexionGPS(
                                 "Unidad",
                                 data.camion?.imei,
                                 data.camion?.gps_company_id,
-                                [data.id_camion],
+                                equipoIdUnidad ? [equipoIdUnidad] : [],
                             ),
 
                             validarConexionGPS(
                                 "ChasisA",
                                 data.chasis?.imei,
                                 data.chasis?.gps_company_id,
-                                [data.id_chasis],
+                                equipoIdChasisA ? [equipoIdChasisA] : [],
                             ),
 
                             validarConexionGPS(
                                 "ChasisB",
                                 data.chasis2?.imei,
                                 data.chasis2?.gps_company_id,
-                                [data.id_chasis2],
+                                equipoIdChasisB ? [equipoIdChasisB] : [],
                             ),
                         ]);
 
@@ -962,21 +1062,21 @@ function abrirCambioEmpresa(idCotizacion, estatusPlaneacion, coordenadas) {
     form.setAttribute("action", route);
 
     // Si ya está planeada, interceptar submit para mostrar advertencia al usuario
-    if (estatusPlaneacion == 1 || coordenadas === 'Ver') {
-        form.onsubmit = function(e) {
+    if (estatusPlaneacion == 1 || coordenadas === "Ver") {
+        form.onsubmit = function (e) {
             e.preventDefault();
             Swal.fire({
-                title: '¿Confirmar cambio?',
-                text: 'Esta cotización ya cuenta con planeación. Al cambiar de empresa o proveedor, la planeación se deshará (se eliminarán operadores, chasis, camiones, etc. de las asignaciones) y se registrará este movimiento en la auditoría para aclaraciones. ¿Desea continuar?',
-                icon: 'warning',
+                title: "¿Confirmar cambio?",
+                text: "Esta cotización ya cuenta con planeación. Al cambiar de empresa o proveedor, la planeación se deshará (se eliminarán operadores, chasis, camiones, etc. de las asignaciones) y se registrará este movimiento en la auditoría para aclaraciones. ¿Desea continuar?",
+                icon: "warning",
                 showCancelButton: true,
-                confirmButtonText: 'Sí, continuar y deshacer planeación',
-                cancelButtonText: 'Cancelar',
+                confirmButtonText: "Sí, continuar y deshacer planeación",
+                cancelButtonText: "Cancelar",
                 customClass: {
-                    confirmButton: 'btn btn-danger me-2',
-                    cancelButton: 'btn btn-secondary'
+                    confirmButton: "btn btn-danger me-2",
+                    cancelButton: "btn btn-secondary",
                 },
-                buttonsStyling: false
+                buttonsStyling: false,
             }).then((result) => {
                 if (result.isConfirmed) {
                     form.onsubmit = null; // quitar interceptor

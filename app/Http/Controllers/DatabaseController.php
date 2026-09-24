@@ -71,7 +71,7 @@ class DatabaseController extends Controller
     {
         $directory = 'historial_backups';
         $files = \Storage::exists($directory) ? \Storage::files($directory) : [];
-        
+
         $backups = [];
         foreach ($files as $file) {
             if (pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
@@ -100,6 +100,24 @@ class DatabaseController extends Controller
         }
 
         return \Storage::download($path);
+    }
+
+    public function eliminarBackupHistorial($file)
+    {
+        $cleanFileName = basename($file);
+        $path = 'historial_backups/' . $cleanFileName;
+
+        if (!\Storage::exists($path)) {
+            return back()->with('error', 'El archivo de respaldo no existe o ya fue eliminado.');
+        }
+
+        try {
+            \Storage::delete($path);
+            return back()->with('success', 'El archivo de respaldo "' . $cleanFileName . '" se ha eliminado correctamente.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error al eliminar archivo de respaldo: " . $e->getMessage());
+            return back()->with('error', 'Ocurrió un error al intentar eliminar el archivo de respaldo.');
+        }
     }
 
     public function ejecutarLimpiezaAhora()
