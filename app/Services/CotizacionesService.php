@@ -114,8 +114,8 @@ class CotizacionesService
             $docCCP = $doc ? !empty($doc->doc_ccp) : false;
             $doda = $doc ? !empty($doc->doda) : false;
             $boletaLiberacion = $doc ? !empty($doc->boleta_liberacion) : false;
-            $boletaVacio = $doc ? !empty($doc->img_boleta) : false;
-            $docEir = $doc ? $doc->doc_eir : null;
+            $boletaVacio = !empty($cotizacion->img_boleta) || ($doc && !empty($doc->boleta_vacio) && $doc->boleta_vacio === 'si');
+            $docEir = $doc ? !empty($doc->doc_eir) : false;
             $fotoPatio = $doc ? !empty($doc->foto_patio) : false;
             $boletaPatio = $doc ? !empty($doc->boleta_patio) : false;
             $cartaPortepdf = !empty($cotizacion->carta_porte);
@@ -137,7 +137,7 @@ class CotizacionesService
                     $boletaLiberacion = ($boletaLiberacion && !empty($secundaria->DocCotizacion->boleta_liberacion));
                     $cartaPortepdf = ($cartaPortepdf && !empty($secundaria->carta_porte));
                     $carta_porte_xml = ($carta_porte_xml && !empty($secundaria->carta_porte_xml));
-                    $boletaVacio = ($boletaVacio && !empty($secundaria->img_boleta));
+                    $boletaVacio = ($boletaVacio && (!empty($secundaria->img_boleta) || ($secundaria->DocCotizacion && !empty($secundaria->DocCotizacion->boleta_vacio) && $secundaria->DocCotizacion->boleta_vacio === 'si')));
                     $fotoPatio = ($fotoPatio && !empty($secundaria->foto_patio));
                     $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
                 }

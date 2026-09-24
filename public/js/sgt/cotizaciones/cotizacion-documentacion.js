@@ -33,8 +33,15 @@ function getTabStatusCategory(estatusStr) {
 }
 
 function updateTabCounts(data) {
-    let counts = { planeadas: 0, pendientes: 0, por_asignar: 0, aprobadas: 0, finalizadas: 0, canceladas: 0 };
-    data.forEach(item => {
+    let counts = {
+        planeadas: 0,
+        pendientes: 0,
+        por_asignar: 0,
+        aprobadas: 0,
+        finalizadas: 0,
+        canceladas: 0,
+    };
+    data.forEach((item) => {
         let cat = getTabStatusCategory(item.Estatus);
         if (cat && counts[cat] !== undefined) counts[cat]++;
     });
@@ -47,29 +54,31 @@ function updateTabCounts(data) {
 }
 
 function applyCurrentFilters() {
-    const term = $("#inputSearchGeneral").length && $("#inputSearchGeneral").val()
-        ? $("#inputSearchGeneral").val().trim().toLowerCase()
-        : "";
+    const term =
+        $("#inputSearchGeneral").length && $("#inputSearchGeneral").val()
+            ? $("#inputSearchGeneral").val().trim().toLowerCase()
+            : "";
 
-    const hasStatusTabs = ($("#statusTabsViajes").length > 0);
+    const hasStatusTabs = $("#statusTabsViajes").length > 0;
 
-    let filtered = allViajesData.filter(item => {
+    let filtered = allViajesData.filter((item) => {
         let matchesTab = true;
         if (hasStatusTabs) {
             const category = getTabStatusCategory(item.Estatus);
-            matchesTab = (category === currentTabStatus);
+            matchesTab = category === currentTabStatus;
         }
 
         let matchesSearch = true;
         if (term !== "") {
-            matchesSearch = (
-                (item.NumContenedor && item.NumContenedor.toLowerCase().includes(term)) ||
+            matchesSearch =
+                (item.NumContenedor &&
+                    item.NumContenedor.toLowerCase().includes(term)) ||
                 (item.cliente && item.cliente.toLowerCase().includes(term)) ||
                 (item.Origen && item.Origen.toLowerCase().includes(term)) ||
                 (item.Destino && item.Destino.toLowerCase().includes(term)) ||
-                (item.transportista && item.transportista.toLowerCase().includes(term)) ||
-                (item.Estatus && item.Estatus.toLowerCase().includes(term))
-            );
+                (item.transportista &&
+                    item.transportista.toLowerCase().includes(term)) ||
+                (item.Estatus && item.Estatus.toLowerCase().includes(term));
         }
 
         return matchesTab && matchesSearch;
@@ -82,7 +91,7 @@ function applyCurrentFilters() {
 }
 
 function updateRastreoButtonState() {
-    const isPlaneadas = (currentTabStatus === "planeadas");
+    const isPlaneadas = currentTabStatus === "planeadas";
     const $btn = $("#btnRastreo");
     const $menuItem = $("#menuItemRastreo");
 
@@ -244,23 +253,35 @@ $(document).ready(function () {
             if (term !== "") {
                 const matches = allViajesData.filter((item) => {
                     return (
-                        (item.NumContenedor && item.NumContenedor.toLowerCase().includes(term)) ||
-                        (item.cliente && item.cliente.toLowerCase().includes(term)) ||
-                        (item.Origen && item.Origen.toLowerCase().includes(term)) ||
-                        (item.Destino && item.Destino.toLowerCase().includes(term)) ||
-                        (item.transportista && item.transportista.toLowerCase().includes(term)) ||
-                        (item.Estatus && item.Estatus.toLowerCase().includes(term))
+                        (item.NumContenedor &&
+                            item.NumContenedor.toLowerCase().includes(term)) ||
+                        (item.cliente &&
+                            item.cliente.toLowerCase().includes(term)) ||
+                        (item.Origen &&
+                            item.Origen.toLowerCase().includes(term)) ||
+                        (item.Destino &&
+                            item.Destino.toLowerCase().includes(term)) ||
+                        (item.transportista &&
+                            item.transportista.toLowerCase().includes(term)) ||
+                        (item.Estatus &&
+                            item.Estatus.toLowerCase().includes(term))
                     );
                 });
 
                 if (matches.length > 0) {
-                    const categoriesFound = new Set(matches.map((m) => getTabStatusCategory(m.Estatus)).filter(Boolean));
+                    const categoriesFound = new Set(
+                        matches
+                            .map((m) => getTabStatusCategory(m.Estatus))
+                            .filter(Boolean),
+                    );
                     if (categoriesFound.size === 1) {
                         const targetTab = Array.from(categoriesFound)[0];
                         if (targetTab !== currentTabStatus) {
                             currentTabStatus = targetTab;
                             $(".status-tab-btn").removeClass("active");
-                            $(`.status-tab-btn[data-status="${targetTab}"]`).addClass("active");
+                            $(
+                                `.status-tab-btn[data-status="${targetTab}"]`,
+                            ).addClass("active");
                         }
                     }
                 }
@@ -462,14 +483,6 @@ const gridOptions = {
             headerClass: "header-center",
             cellRenderer: MissionResultRenderer,
         },
-        {
-            field: "FormatoCartaPorte",
-            wrapHeaderText: true,
-            autoHeaderHeight: true,
-            width: 100,
-            headerClass: "header-center",
-            cellRenderer: MissionResultRenderer,
-        },
         { field: "PreAlta", width: 100, cellRenderer: MissionResultRenderer },
         {
             field: "foto_patio",
@@ -517,26 +530,50 @@ const gridOptions = {
             cellRenderer: (params) => {
                 if (!params.value) return "";
                 const val = params.value.trim();
-                let customStyle = "background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;";
+                let customStyle =
+                    "background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;";
 
                 if (val === "Planeado" || val === "Planeadas") {
-                    customStyle = "background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74;";
-                } else if (val === "Viaje solicitado" || val === "Pendiente" || val === "NO ASIGNADA") {
-                    customStyle = "background-color: #fefce8; color: #a16207; border: 1px solid #fde047;";
+                    customStyle =
+                        "background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74;";
+                } else if (
+                    val === "Viaje solicitado" ||
+                    val === "Pendiente" ||
+                    val === "NO ASIGNADA"
+                ) {
+                    customStyle =
+                        "background-color: #fefce8; color: #a16207; border: 1px solid #fde047;";
                 } else if (val === "Por Asignar") {
-                    customStyle = "background-color: #f5f3ff; color: #6d28d9; border: 1px solid #c4b5fd;";
-                } else if (val === "Aprobada" || val === "Aprobado" || val === "Aprobadas") {
-                    customStyle = "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd;";
-                } else if (val === "Finalizado" || val === "Finalizada" || val === "Finalizadas") {
-                    customStyle = "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
-                } else if (val === "Cancelada" || val === "Cancelado" || val === "Canceladas") {
-                    customStyle = "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
+                    customStyle =
+                        "background-color: #f5f3ff; color: #6d28d9; border: 1px solid #c4b5fd;";
+                } else if (
+                    val === "Aprobada" ||
+                    val === "Aprobado" ||
+                    val === "Aprobadas"
+                ) {
+                    customStyle =
+                        "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd;";
+                } else if (
+                    val === "Finalizado" ||
+                    val === "Finalizada" ||
+                    val === "Finalizadas"
+                ) {
+                    customStyle =
+                        "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
+                } else if (
+                    val === "Cancelada" ||
+                    val === "Cancelado" ||
+                    val === "Canceladas"
+                ) {
+                    customStyle =
+                        "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
                 } else if (val === "Documentos Faltantes") {
-                    customStyle = "background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5;";
+                    customStyle =
+                        "background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5;";
                 }
 
                 return `<span class="badge fs-7 px-3 py-2 fw-bold" style="${customStyle}">${val}</span>`;
-            }
+            },
         },
         { field: "Origen", width: 100, filter: true, floatingFilter: true },
         { field: "Destino", width: 100 },
@@ -636,7 +673,10 @@ function goToUploadDocuments(numContenedorFromBtn = null) {
             selectContenedores.remove(0);
         }
 
-        let contenedores = numContenedor.replace(/\s+/g, "*").split("*").filter(Boolean);
+        let contenedores = numContenedor
+            .replace(/\s+/g, "*")
+            .split("*")
+            .filter(Boolean);
 
         contenedores.forEach((c) => {
             let option = document.createElement("option");
@@ -650,10 +690,12 @@ function goToUploadDocuments(numContenedorFromBtn = null) {
 
         // Fetch documents info for the first container
         fetch(`/viajes/file-manager/get-file-list/${contenedores[0]}`)
-            .then(response => response.json())
-            .then(json => {
+            .then((response) => response.json())
+            .then((json) => {
                 docsData = json.data;
-                let seleccionado = document.querySelector(".CheckTypeFile:checked");
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
                 if (seleccionado) {
                     actualizarFolio(seleccionado);
                 }
@@ -1128,10 +1170,12 @@ if (selectContenedores) {
         let container = e.target.value;
         localStorage.setItem("numContenedor", container);
         fetch(`/viajes/file-manager/get-file-list/${container}`)
-            .then(response => response.json())
-            .then(json => {
+            .then((response) => response.json())
+            .then((json) => {
                 docsData = json.data;
-                let seleccionado = document.querySelector(".CheckTypeFile:checked");
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
                 if (seleccionado) {
                     actualizarFolio(seleccionado);
                 }
