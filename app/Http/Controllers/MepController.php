@@ -145,17 +145,55 @@ class MepController extends Controller
         return response()->json(['list' => $cotizaciones]);
     }
 
-    public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo)
+    public function validarEquiposEmpresa($numUnidad, $imei, $placas, $serie, $provGps, $tipoEquipo, $idEquipoUnico = null)
     {
-        if (empty($numUnidad)) {
-            return null; // Si no se proporciona número de unidad, no hacemos nada
+        if (empty($numUnidad) && empty($idEquipoUnico)) {
+            return null;
         }
 
-        $unidad = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numUnidad)->where('user_id', auth()->user()->id);
+        $numUnidad = !empty($numUnidad) ? strtoupper(trim($numUnidad)) : null;
+        $imei = !empty($imei) ? strtoupper(trim($imei)) : null;
+        $placas = !empty($placas) ? strtoupper(trim($placas)) : null;
+        $serie = !empty($serie) ? strtoupper(trim($serie)) : null;
 
+        $userActual = User::find(auth()->id());
+        $proveedorIds = $userActual ? $userActual->proveedores()->pluck('proveedor_id')->toArray() : [];
 
-        if (!$unidad->exists()) {
+        $usuariosRelacionados = [];
+        if (!empty($proveedorIds)) {
+            $usuariosRelacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+                $q->whereIn('proveedor_id', $proveedorIds);
+            })->pluck('id')->toArray();
+        }
+
+        $unidad = null;
+
+        if (!empty($idEquipoUnico)) {
+            $unidad = Equipo::find($idEquipoUnico);
+        }
+
+        if (!$unidad) {
+            $unidadQuery = Equipo::where(function ($q) use ($usuariosRelacionados) {
+                $q->where('user_id', auth()->id())
+                  ->orWhere('id_empresa', auth()->user()->id_empresa);
+
+                if (!empty($usuariosRelacionados)) {
+                    $q->orWhereIn('user_id', $usuariosRelacionados);
+                }
+            });
+
+            if (!empty($numUnidad)) {
+                $unidad = (clone $unidadQuery)->where('id_equipo', $numUnidad)->first();
+            }
+
+            if (!$unidad && !empty($imei)) {
+                $unidad = (clone $unidadQuery)->where('imei', $imei)->first();
+            }
+        }
+
+        if (!$unidad) {
             $unidad = new Equipo();
+            $unidad->id_empresa = auth()->user()->id_empresa;
             $unidad->id_equipo = $numUnidad;
             $unidad->imei = $imei;
             $unidad->placas = $placas;
@@ -165,11 +203,10 @@ class MepController extends Controller
             $unidad->user_id = auth()->user()->id;
             $unidad->save();
         } else {
-            $unidad = $unidad->first();
-            $unidad->imei = $imei;
-            $unidad->placas = $placas;
-            $unidad->num_serie = $serie;
-            $unidad->gps_company_id = $provGps;
+            if (!empty($imei)) $unidad->imei = $imei;
+            if (!empty($placas)) $unidad->placas = $placas;
+            if (!empty($serie)) $unidad->num_serie = $serie;
+            if (!empty($provGps)) $unidad->gps_company_id = $provGps;
             $unidad->update();
         }
 
@@ -229,40 +266,39 @@ class MepController extends Controller
         }
 
 
-        $numeroUnidad = strtoupper(trim($formData['txtNumUnidad']));
-        //TractoCamion
-        // $idUnidad = self::validarEquiposEmpresa($formData['txtNumUnidad'], $formData['txtImei'],$formData['txtPlacas'],$formData['txtSerie'],$formData['selectGPS'],'Tractos / Camiones');
-        $unidadQuery = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('id_equipo', $numeroUnidad)->where('user_id', auth()->user()->id);
+        $idEquipoUnico = $formData['id_equipo_unico'] ?? null;
+        $idChasisAUnico = $formData['id_chasis_a_unico'] ?? null;
+        $idChasisBUnico = $formData['id_chasis_b_unico'] ?? null;
 
+        $idunidad = self::validarEquiposEmpresa(
+            $formData['txtNumUnidad'] ?? null,
+            $formData['txtImei'] ?? null,
+            $formData['txtPlacas'] ?? null,
+            $formData['txtSerie'] ?? null,
+            $formData['selectGPS'] ?? null,
+            'Tractos / Camiones',
+            $idEquipoUnico
+        );
 
-        if (!$unidadQuery->exists()) {
+        $idChasisA = self::validarEquiposEmpresa(
+            $formData['txtNumChasisA'] ?? null,
+            $formData['txtImeiChasisA'] ?? null,
+            $formData['txtPlacasA'] ?? null,
+            '',
+            $formData['selectChasisAGPS'] ?? null,
+            'Chasis / Plataforma',
+            $idChasisAUnico
+        );
 
-            $unidad = new Equipo();
-            $unidad->id_empresa = auth()->user()->id_empresa;
-            $unidad->id_equipo = $numeroUnidad;
-            $unidad->imei = strtoupper(trim($formData['txtImei']));
-            $unidad->placas = strtoupper(trim($formData['txtPlacas']));
-            $unidad->num_serie = strtoupper(trim($formData['txtSerie']));
-            $unidad->gps_company_id = $formData['selectGPS'];
-            $unidad->tipo = 'Tractos / Camiones';
-            $unidad->user_id = auth()->user()->id;
-            $unidad->save();
-
-        } else {
-
-            $unidad = $unidadQuery->first();
-            $unidad->imei = strtoupper(trim($formData['txtImei']));
-            $unidad->placas = strtoupper(trim($formData['txtPlacas']));
-            $unidad->num_serie = strtoupper(trim($formData['txtSerie']));
-            $unidad->gps_company_id = $formData['selectGPS'];
-            $unidad->update();
-        }
-
-        $idunidad = $unidad->id;
-        //Chasis / Plataforma
-        $idChasisA = self::validarEquiposEmpresa($formData['txtNumChasisA'], $formData['txtImeiChasisA'], $formData['txtPlacasA'], '', $formData['selectChasisAGPS'], 'Chasis / Plataforma');
-
-        $idChasisB = self::validarEquiposEmpresa($formData['txtNumChasisB'], $formData['txtImeiChasisB'], $formData['txtPlacasB'], '', $formData['selectChasisBGPS'], 'Chasis / Plataforma');
+        $idChasisB = self::validarEquiposEmpresa(
+            $formData['txtNumChasisB'] ?? null,
+            $formData['txtImeiChasisB'] ?? null,
+            $formData['txtPlacasB'] ?? null,
+            '',
+            $formData['selectChasisBGPS'] ?? null,
+            'Chasis / Plataforma',
+            $idChasisBUnico
+        );
 
 
         $idContenedor = $r->input('idContenedor');

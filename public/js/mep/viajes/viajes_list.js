@@ -41,7 +41,7 @@ const formFieldsMep = [
         field: "txtSerie",
         id: "txtSerie",
         label: "Núm Serie / VIN",
-        required: true,
+        required: false,
         type: "text",
         trigger: "none",
     },
@@ -360,6 +360,26 @@ function asignarOperador2(planear = 0) {
             "warning",
         );
         return false;
+    }
+
+    const selUnidad = document.getElementById("txtNumUnidad");
+    const selChasisA = document.getElementById("txtNumChasisA");
+    const selChasisB = document.getElementById("txtNumChasisB");
+
+    if (selUnidad && selUnidad.selectedIndex >= 0) {
+        const opt = selUnidad.options[selUnidad.selectedIndex];
+        formData["id_equipo_unico"] =
+            opt?.dataset?.unitId || selUnidad.dataset.mepUnidad || null;
+    }
+    if (selChasisA && selChasisA.selectedIndex >= 0) {
+        const opt = selChasisA.options[selChasisA.selectedIndex];
+        formData["id_chasis_a_unico"] =
+            opt?.dataset?.unitId || selChasisA.dataset.mepUnidad || null;
+    }
+    if (selChasisB && selChasisB.selectedIndex >= 0) {
+        const opt = selChasisB.options[selChasisB.selectedIndex];
+        formData["id_chasis_b_unico"] =
+            opt?.dataset?.unitId || selChasisB.dataset.mepUnidad || null;
     }
 
     formData["planear"] = planear;
@@ -714,7 +734,8 @@ async function validarConexionGPS(tipoKey, imei, gpsCompanyId, equipos = []) {
         });
 
         const data = await response.json();
-        const itemRes = (data && Array.isArray(data) && data.length > 0) ? data[0] : null;
+        const itemRes =
+            data && Array.isArray(data) && data.length > 0 ? data[0] : null;
         const ubi = itemRes?.ubicacion ?? null;
 
         if (ubi && ubi.lat && ubi.lng) {
@@ -1207,14 +1228,11 @@ function googleMapsReady() {
         lng: parseFloat(equiposValidos[0].data.longitud),
     };
 
-    mapaEquiposInstance = new google.maps.Map(
-        mapaEl,
-        {
-            zoom: 10,
-            center: centro,
-            mapTypeId: "roadmap",
-        },
-    );
+    mapaEquiposInstance = new google.maps.Map(mapaEl, {
+        zoom: 10,
+        center: centro,
+        mapTypeId: "roadmap",
+    });
 
     const bounds = new google.maps.LatLngBounds();
 

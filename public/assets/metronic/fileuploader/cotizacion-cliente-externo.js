@@ -12,7 +12,11 @@ var [BoletaLib, Doda, CartaPorte, PreAlta] = [
         agGrid: "BoletaLiberacion",
     },
     { opcion: "Doda", titulo: "DODA", agGrid: "DODA" },
-    { opcion: "CartaPorte", titulo: "Carta Porte", agGrid: "CartaPorte" },
+    {
+        opcion: "CartaPorte",
+        titulo: "Carta Porte",
+        agGrid: "FormatoCartaPorte",
+    },
     { opcion: "PreAlta", titulo: "Pre Alta", agGrid: "PreAlta" },
 ];
 
@@ -77,7 +81,8 @@ function getUploadConfig() {
         data: {
             urlRepo: fileSettings.opcion,
             numContenedor: currentContenedor,
-            tipo_documento: document.querySelector(".CheckTypeFile:checked")?.value,
+            tipo_documento: document.querySelector(".CheckTypeFile:checked")
+                ?.value,
             folio: document.getElementById("inputFolio")?.value,
             _token: _token,
         },
@@ -106,9 +111,13 @@ function getUploadConfig() {
             // Sincronizar datos dinámicos justo antes del envío
             if (item && item.upload && item.upload.data) {
                 item.upload.data.urlRepo = fileSettings.opcion;
-                item.upload.data.numContenedor = localStorage.getItem("numContenedor");
-                item.upload.data.tipo_documento = document.querySelector(".CheckTypeFile:checked")?.value;
-                item.upload.data.folio = document.getElementById("inputFolio")?.value;
+                item.upload.data.numContenedor =
+                    localStorage.getItem("numContenedor");
+                item.upload.data.tipo_documento = document.querySelector(
+                    ".CheckTypeFile:checked",
+                )?.value;
+                item.upload.data.folio =
+                    document.getElementById("inputFolio")?.value;
                 item.upload.data._token = _token;
             }
 
@@ -203,19 +212,28 @@ function getUploadConfig() {
 
             // Actualizar documentos en memoria si existe docsData
             let cNum = localStorage.getItem("numContenedor");
-            if (typeof docsData !== "undefined" && cNum && typeof fetch === "function") {
+            if (
+                typeof docsData !== "undefined" &&
+                cNum &&
+                typeof fetch === "function"
+            ) {
                 fetch(`/viajes/file-manager/get-file-list/${cNum}`)
-                    .then(response => response.json())
-                    .then(json => {
+                    .then((response) => response.json())
+                    .then((json) => {
                         if (json && json.data) {
                             docsData = json.data;
-                            let seleccionado = document.querySelector(".CheckTypeFile:checked");
-                            if (seleccionado && typeof actualizarFolio === "function") {
+                            let seleccionado = document.querySelector(
+                                ".CheckTypeFile:checked",
+                            );
+                            if (
+                                seleccionado &&
+                                typeof actualizarFolio === "function"
+                            ) {
                                 actualizarFolio(seleccionado);
                             }
                         }
                     })
-                    .catch(err => console.log(err));
+                    .catch((err) => console.log(err));
             }
         },
         onError: function (item) {
@@ -252,7 +270,8 @@ function getUploadConfig() {
         onComplete: (listEl) => {
             let hasErrors = false;
             if (listEl && listEl.find) {
-                hasErrors = listEl.find(".upload-failed, .has-warnings").length > 0;
+                hasErrors =
+                    listEl.find(".upload-failed, .has-warnings").length > 0;
             }
 
             // Reiniciar automáticamente el fileuploader si subió sin error para preparar el siguiente documento
@@ -299,37 +318,39 @@ function adjuntarDocumentos() {
 
     container.innerHTML = '<input type="file" name="files" id="fileuploader">';
 
-    $("#content-file-input").find('input[type="file"]').fileuploader({
-        captions: "es",
-        enableApi: true,
-        start: true,
-        changeInput:
-            '<div class="fileuploader-input">' +
-            '<div class="fileuploader-input-inner">' +
-            '<div class="fileuploader-icon-main"></div>' +
-            '<h3 class="fileuploader-input-caption"><span>${captions.feedback}</span></h3>' +
-            "<p>${captions.or}</p>" +
-            '<button type="button" class="fileuploader-input-button"><span>${captions.button}</span></button>' +
-            "</div>" +
-            "</div>",
-        theme: "dragdrop",
-        upload: getUploadConfig(),
-        beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
-            resetUploadConfig();
-        },
-        onRemove: function (item) {
-            $.post("remove", {
-                _token: _token,
-                _Folio: typeof _Folio !== "undefined" ? _Folio : null,
-                file: item.name,
-            });
-        },
-        captions: $.extend(true, {}, $.fn.fileuploader.languages["es"], {
-            feedback: "Arrastre y suelte sus archivos aquí",
-            feedback2: "Arrastre y suelte sus archivos aquí",
-            drop: "Arrastre y suelte sus archivos aquí",
-            or: "o",
-            button: "Examinar archivos",
-        }),
-    });
+    $("#content-file-input")
+        .find('input[type="file"]')
+        .fileuploader({
+            captions: "es",
+            enableApi: true,
+            start: true,
+            changeInput:
+                '<div class="fileuploader-input">' +
+                '<div class="fileuploader-input-inner">' +
+                '<div class="fileuploader-icon-main"></div>' +
+                '<h3 class="fileuploader-input-caption"><span>${captions.feedback}</span></h3>' +
+                "<p>${captions.or}</p>" +
+                '<button type="button" class="fileuploader-input-button"><span>${captions.button}</span></button>' +
+                "</div>" +
+                "</div>",
+            theme: "dragdrop",
+            upload: getUploadConfig(),
+            beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
+                resetUploadConfig();
+            },
+            onRemove: function (item) {
+                $.post("remove", {
+                    _token: _token,
+                    _Folio: typeof _Folio !== "undefined" ? _Folio : null,
+                    file: item.name,
+                });
+            },
+            captions: $.extend(true, {}, $.fn.fileuploader.languages["es"], {
+                feedback: "Arrastre y suelte sus archivos aquí",
+                feedback2: "Arrastre y suelte sus archivos aquí",
+                drop: "Arrastre y suelte sus archivos aquí",
+                or: "o",
+                button: "Examinar archivos",
+            }),
+        });
 }
