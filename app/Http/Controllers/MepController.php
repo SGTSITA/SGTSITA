@@ -32,17 +32,20 @@ class MepController extends Controller
     {
         $userProveedores = User::find(auth()->user()->id);
 
-        $proveedorIds = $userProveedores->proveedores()->pluck('proveedor_id');
+        $proveedorIds = $userProveedores ? $userProveedores->proveedores()->pluck('proveedor_id')->toArray() : [];
 
-
-        $usuariosRelacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
-            $q->whereIn('proveedor_id', $proveedorIds);
-        })->pluck('id');
+        $usuariosRelacionados = [auth()->id()];
+        if (!empty($proveedorIds)) {
+            $relacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+                $q->whereIn('proveedor_id', $proveedorIds);
+            })->pluck('id')->toArray();
+            $usuariosRelacionados = array_unique(array_merge($usuariosRelacionados, $relacionados));
+        }
 
         $unidades = Equipo::whereIn('user_id', $usuariosRelacionados)
              ->where('equipos.activo', true)
-         ->orderBy('equipos.created_at', 'desc')
-                 ->get();
+             ->orderBy('equipos.created_at', 'desc')
+             ->get();
         //$unidades = Equipo::where('id_empresa', auth()->user()->id_empresa)->where('user_id', auth()->user()->id)->get();
         // $operadores = Operador::where('id_empresa', auth()->user()->id_empresa)->get();
         $operadores = Operador::whereHas('proveedores', function ($q) use ($proveedorIds) {
@@ -159,11 +162,12 @@ class MepController extends Controller
         $userActual = User::find(auth()->id());
         $proveedorIds = $userActual ? $userActual->proveedores()->pluck('proveedor_id')->toArray() : [];
 
-        $usuariosRelacionados = [];
+        $usuariosRelacionados = [auth()->id()];
         if (!empty($proveedorIds)) {
-            $usuariosRelacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
+            $relacionados = User::whereHas('proveedores', function ($q) use ($proveedorIds) {
                 $q->whereIn('proveedor_id', $proveedorIds);
             })->pluck('id')->toArray();
+            $usuariosRelacionados = array_unique(array_merge($usuariosRelacionados, $relacionados));
         }
 
         $unidad = null;
@@ -173,14 +177,7 @@ class MepController extends Controller
         }
 
         if (!$unidad) {
-            $unidadQuery = Equipo::where(function ($q) use ($usuariosRelacionados) {
-                $q->where('user_id', auth()->id())
-                  ->orWhere('id_empresa', auth()->user()->id_empresa);
-
-                if (!empty($usuariosRelacionados)) {
-                    $q->orWhereIn('user_id', $usuariosRelacionados);
-                }
-            });
+            $unidadQuery = Equipo::whereIn('user_id', $usuariosRelacionados);
 
             if (!empty($numUnidad)) {
                 $unidad = (clone $unidadQuery)->where('id_equipo', $numUnidad)->first();
@@ -397,20 +394,25 @@ class MepController extends Controller
 
     public function verAsignacion(Request $request)
     {
+        $documento = DocumCotizacion::where('id_cotizacion', $request->idContenedor)->first();
+        if (!$documento) {
+            return response()->json([]);
+        }
 
-    $documento= DocumCotizacion::where('id_cotizacion', $request->idContenedor)->first(); // mandan asi y el valor es cotizacion id
-
-        $asignacion = Asignaciones::with(['Camion', 'Chasis', 'Chasis2','Operador',
-                'Contenedor' => function ($q) {
-                    $q->select('id', 'id_cotizacion');
-                },
+        $asignacion = Asignaciones::with([
+            'Camion.gps',
+            'Chasis.gps',
+            'Chasis2.gps',
+            'Operador',
+            'Contenedor' => function ($q) {
+                $q->select('id', 'id_cotizacion');
+            },
             'Contenedor.Cotizacion' => function ($q) {
                 $q->select('id', 'estatus', 'origen', 'destino', 'estatus_planeacion');
             }
-
         ])->where('id_contenedor', $documento->id)->get();
-        return $asignacion;
 
+        return $asignacion;
     }
     public function parseFecha($fecha)
     {
@@ -471,21 +473,31 @@ class MepController extends Controller
                 if ($equipo->usar_config_global == 0) {
                     if (!empty($equipo->credenciales_gps)) {
                         try {
-                            $credenciales = json_decode(Crypt::decryptString($equipo->credenciales_gps), true) ?? [];
+                            $rawCreds = json_decode(Crypt::decryptString($equipo->credenciales_gps), true) ?? [];
                         } catch (\Throwable $e) {
-                            $credenciales = json_decode($equipo->credenciales_gps, true) ?? [];
+                            $rawCreds = json_decode($equipo->credenciales_gps, true) ?? [];
+                        }
+                        if (is_array($rawCreds)) {
+                            if (isset($rawCreds[0]) && is_array($rawCreds[0]) && array_key_exists('field', $rawCreds[0])) {
+                                $credenciales = collect($rawCreds)->pluck('valor', 'field')->toArray();
+                            } else {
+                                $credenciales = $rawCreds;
+                            }
                         }
                     }
                 } else {
-                    // 1. Buscar si el usuario actual tiene proveedor
+                    // Consolidar proveedores del usuario en sesión y del usuario creador del equipo
+                    $proveedorIds = [];
                     $userActual = User::find(auth()->id());
-                    $proveedorIds = $userActual ? $userActual->proveedores()->pluck('proveedor_id')->toArray() : [];
+                    if ($userActual) {
+                        $proveedorIds = $userActual->proveedores()->pluck('proveedor_id')->toArray();
+                    }
 
-                    // 2. Si el usuario actual es admin o no tiene proveedor asignado, buscar por el creador del equipo
-                    if (empty($proveedorIds) && !empty($equipo->user_id)) {
+                    if (!empty($equipo->user_id)) {
                         $userEquipo = User::find($equipo->user_id);
                         if ($userEquipo) {
-                            $proveedorIds = $userEquipo->proveedores()->pluck('proveedor_id')->toArray();
+                            $equipoProvIds = $userEquipo->proveedores()->pluck('proveedor_id')->toArray();
+                            $proveedorIds = array_unique(array_merge($proveedorIds, $equipoProvIds));
                         }
                     }
 
@@ -499,29 +511,19 @@ class MepController extends Controller
                             ->value('account_info');
                     }
 
-                    if (!$credencialesGlobal && !empty(auth()->user()->id_empresa)) {
-                        $credencialesGlobal = DB::table('gps_company_proveedores')
-                            ->where('id_empresa', auth()->user()->id_empresa)
-                            ->where('id_gps_company', $equipo->gps_company_id)
-                            ->where('estado', 1)
-                            ->value('account_info');
-                    }
-
-                    if (!$credencialesGlobal && !empty($equipo->id_empresa)) {
-                        $credencialesGlobal = DB::table('gps_company_proveedores')
-                            ->where('id_empresa', $equipo->id_empresa)
-                            ->where('id_gps_company', $equipo->gps_company_id)
-                            ->where('estado', 1)
-                            ->value('account_info');
-                    }
-
                     if (!empty($credencialesGlobal)) {
                         try {
                             $raw = json_decode(Crypt::decryptString($credencialesGlobal), true) ?? [];
                         } catch (\Throwable $e) {
                             $raw = json_decode($credencialesGlobal, true) ?? [];
                         }
-                        $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+                        if (is_array($raw)) {
+                            if (isset($raw[0]) && is_array($raw[0]) && array_key_exists('field', $raw[0])) {
+                                $credenciales = collect($raw)->pluck('valor', 'field')->toArray();
+                            } else {
+                                $credenciales = $raw;
+                            }
+                        }
                     }
                 }
 

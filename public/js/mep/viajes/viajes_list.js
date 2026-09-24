@@ -964,12 +964,14 @@ function initAutocompleteUnidad(tipoKey) {
         config.longitud = null;
         actualizarEstadoGPS(config.statusGps, "secondary", "Sin validar");
 
-        if (config.placas) document.getElementById(config.placas).value = "";
-        if (config.serie) document.getElementById(config.serie).value = "";
-        if (config.imei) document.getElementById(config.imei).value = "";
-        if (config.gps) document.getElementById(config.gps).selectedIndex = 0;
+        if (!val) {
+            if (config.placas)
+                document.getElementById(config.placas).value = "";
+            if (config.serie) document.getElementById(config.serie).value = "";
+            if (config.imei) document.getElementById(config.imei).value = "";
+            if (config.gps)
+                document.getElementById(config.gps).selectedIndex = 0;
 
-        if (!val || !unitId) {
             this.dataset.mepUnidad = 0;
             const btnActualizar = document.getElementById(
                 `btnActualizarGPS${tipoKey}`,
@@ -978,7 +980,10 @@ function initAutocompleteUnidad(tipoKey) {
             return;
         }
 
-        const u = unidades.find((unit) => String(unit.id) === String(unitId));
+        const effectiveUnitId = unitId || this.dataset.mepUnidad;
+        const u = unidades.find(
+            (unit) => String(unit.id) === String(effectiveUnitId),
+        );
         if (u) {
             this.dataset.mepUnidad = u.id;
 
@@ -993,14 +998,23 @@ function initAutocompleteUnidad(tipoKey) {
 
             if (config.gps) {
                 let selectGps = document.getElementById(config.gps);
+                let encontrado = false;
                 for (let i = 0; i < selectGps.options.length; i++) {
                     if (
                         String(selectGps.options[i].value) ===
                         String(u.gps_company_id)
                     ) {
                         selectGps.selectedIndex = i;
+                        encontrado = true;
                         break;
                     }
+                }
+                if (!encontrado && u.gps_company_id) {
+                    const opt = document.createElement("option");
+                    opt.value = u.gps_company_id;
+                    opt.textContent = `GPS ${u.gps_company_id}`;
+                    selectGps.appendChild(opt);
+                    selectGps.value = u.gps_company_id;
                 }
             }
 
@@ -1026,7 +1040,28 @@ function initAutocompleteUnidad(tipoKey) {
                 );
             }
         } else {
-            this.dataset.mepUnidad = 0;
+            // Si la unidad no está en la memoria (unidades) pero los inputs ya tienen datos (ej. cargados por asignación previa)
+            const currentImei = document.getElementById(config.imei)?.value;
+            const currentGps = document.getElementById(config.gps)?.value;
+            const btnActualizar = document.getElementById(
+                `btnActualizarGPS${tipoKey}`,
+            );
+            if (currentImei && currentGps) {
+                if (btnActualizar) btnActualizar.style.display = "inline-block";
+                actualizarEstadoGPS(
+                    config.statusGps,
+                    "warning",
+                    "GPS listo para consultar",
+                );
+                validarConexionGPS(
+                    tipoKey,
+                    currentImei,
+                    currentGps,
+                    effectiveUnitId ? [effectiveUnitId] : [],
+                );
+            } else {
+                if (btnActualizar) btnActualizar.style.display = "none";
+            }
         }
     });
 }
