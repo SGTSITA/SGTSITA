@@ -17,6 +17,8 @@ class SocioPago extends Model
         'monto',
         'banco_id',
         'fecha_aplicacion',
+        'concepto',
+        'calculo_periodo_id',
         'user_id'
     ];
 

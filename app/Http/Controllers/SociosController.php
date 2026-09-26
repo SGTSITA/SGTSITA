@@ -271,12 +271,17 @@ class SociosController extends Controller
                     $periodo = \App\Models\SocioCalculoPeriodo::find($pData['id']);
                     $periodoLabel = $periodo ? (' (Periodo #' . $periodo->id . ' del ' . \Carbon\Carbon::parse($periodo->fecha_desde)->format('d-m-Y') . ' al ' . \Carbon\Carbon::parse($periodo->fecha_hasta)->format('d-m-Y') . ')') : ' (Periodo #' . $pData['id'] . ')';
 
+                    $pagoConcepto = !empty($validated['concepto']) 
+                        ? $validated['concepto'] 
+                        : ('Liquidación de Utilidad' . $periodoLabel);
+
                     $pago = \App\Models\SocioPago::create([
                         'id_empresa' => $idEmpresa,
                         'socio_id' => $validated['socio_id'],
                         'monto' => $pData['monto'],
                         'banco_id' => $validated['banco_id'],
                         'fecha_aplicacion' => $validated['fecha_aplicacion'],
+                        'concepto' => $pagoConcepto,
                         'calculo_periodo_id' => $pData['id'],
                         'user_id' => $userId
                     ]);
@@ -296,17 +301,22 @@ class SociosController extends Controller
                     $pagos[] = $pago;
                 }
             } else {
+                $pagoConcepto = !empty($validated['concepto']) 
+                    ? $validated['concepto'] 
+                    : ('Abono a Cuenta: ' . $socio->nombre);
+
                 $pago = \App\Models\SocioPago::create([
                     'id_empresa' => $idEmpresa,
                     'socio_id' => $validated['socio_id'],
                     'monto' => $validated['monto'],
                     'banco_id' => $validated['banco_id'],
                     'fecha_aplicacion' => $validated['fecha_aplicacion'],
+                    'concepto' => $pagoConcepto,
                     'calculo_periodo_id' => null,
                     'user_id' => $userId
                 ]);
 
-                $conceptoBanco = !empty($validated['concepto']) ? $validated['concepto'] : ('Pago a Socio: ' . $socio->nombre);
+                $conceptoBanco = $pagoConcepto;
 
                 app(\App\Services\BancosService::class)->registrarMovimiento([
                     'cuenta_bancaria_id' => $validated['banco_id'],
@@ -443,7 +453,7 @@ class SociosController extends Controller
                 'id' => 'pago_' . $pago->id,
                 'fecha' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('Y-m-d') : $pago->created_at->format('Y-m-d'),
                 'socio_nombre' => $pago->socio->nombre ?? 'S/N',
-                'concepto' => 'Pago de utilidades' . ($pago->calculo_periodo_id ? ' (Periodo #' . $pago->calculo_periodo_id . ')' : ' (Abono General)'),
+                'concepto' => !empty($pago->concepto) ? $pago->concepto : ('Pago de utilidades' . ($pago->calculo_periodo_id ? ' (Periodo #' . $pago->calculo_periodo_id . ')' : ' (Abono General)')),
                 'banco' => $pago->banco ? $pago->banco->nombre_banco . ' (' . $pago->banco->cuenta_bancaria . ')' : 'N/A',
                 'cargo' => 0.0,
                 'abono' => (float)$pago->monto,
