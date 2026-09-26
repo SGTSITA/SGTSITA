@@ -231,14 +231,14 @@ class SociosController extends Controller
 
         if ($fileType === 'xlsx') {
             return \Maatwebsite\Excel\Facades\Excel::download(
-                new \App\Exports\SociosUtilidadExport($data, $empresa, $tipoReporte),
+                new \App\Exports\SociosUtilidadExport($data, $empresa, $tipoReporte, $socioId),
                 'reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.xlsx'
             );
         }
 
         if ($fileType === 'pdf') {
             $fechaGeneracion = now()->format('d-m-Y H:i');
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('socios.pdf_reporte', compact('data', 'empresa', 'fechaGeneracion', 'tipoReporte'));
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('socios.pdf_reporte', compact('data', 'empresa', 'fechaGeneracion', 'tipoReporte', 'socioId'));
             return $pdf->setPaper('a4', 'portrait')->setOption('isPhpEnabled', true)->download('reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.pdf');
         }
 
