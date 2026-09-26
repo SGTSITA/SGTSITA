@@ -10,8 +10,10 @@
             <div class="card mb-4 shadow-sm border-0">
                 <div class="card-header bg-gradient-dark py-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <h5 class="text-white mb-0"><i class="fas fa-chart-bar me-2"></i>Reportería de Utilidades y Socios</h5>
-                        <p class="text-xs text-white opacity-8 mb-0">Genere, visualice y exporte los reportes financieros de socios de negocios.</p>
+                        <h5 class="text-white mb-0"><i class="fas fa-chart-bar me-2"></i>Reportería de Utilidades y Socios
+                        </h5>
+                        <p class="text-xs text-white opacity-8 mb-0">Genere, visualice y exporte los reportes financieros de
+                            socios de negocios.</p>
                     </div>
                 </div>
                 <div class="card-body">
@@ -20,13 +22,14 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-md-3">
                                 <label class="form-label text-xs font-weight-bold text-uppercase">Rango de Fecha</label>
-                                <input type="text" id="reporteDaterange" readonly class="form-control form-control-sm bg-white cursor-pointer">
+                                <input type="text" id="reporteDaterange" readonly
+                                    class="form-control form-control-sm bg-white cursor-pointer">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label text-xs font-weight-bold text-uppercase">Socio de Negocio</label>
                                 <select class="form-select form-select-sm" id="filtro_socio_id">
                                     <option value="">Todos los Socios</option>
-                                    @foreach($socios as $socio)
+                                    @foreach ($socios as $socio)
                                         <option value="{{ $socio->id }}">{{ $socio->nombre }}</option>
                                     @endforeach
                                 </select>
@@ -35,8 +38,9 @@
                                 <label class="form-label text-xs font-weight-bold text-uppercase">Unidad / Camión</label>
                                 <select class="form-select form-select-sm" id="filtro_equipo_id">
                                     <option value="">Todas las Unidades</option>
-                                    @foreach($equipos as $eq)
-                                        <option value="{{ $eq->id }}">{{ ($eq->id_equipo ? $eq->id_equipo . ' ' : '') . $eq->placas }}</option>
+                                    @foreach ($equipos as $eq)
+                                        <option value="{{ $eq->id }}">
+                                            {{ ($eq->id_equipo ? $eq->id_equipo . ' ' : '') . $eq->placas }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -72,7 +76,8 @@
                             <div class="col-lg-3 col-md-6 col-12 mb-3">
                                 <div class="card border shadow-xs">
                                     <div class="card-body p-3">
-                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad Bruta Viajes</p>
+                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad Bruta
+                                            Viajes</p>
                                         <h4 class="font-weight-bolder mb-0 text-dark" id="lblBruto">$ 0.00</h4>
                                     </div>
                                 </div>
@@ -80,7 +85,8 @@
                             <div class="col-lg-3 col-md-6 col-12 mb-3">
                                 <div class="card border shadow-xs">
                                     <div class="card-body p-3">
-                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Gastos Indirectos Periodo</p>
+                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Gastos Indirectos
+                                            Periodo</p>
                                         <h4 class="font-weight-bolder mb-0 text-danger" id="lblGastos">$ 0.00</h4>
                                     </div>
                                 </div>
@@ -88,7 +94,8 @@
                             <div class="col-lg-3 col-md-6 col-12 mb-3">
                                 <div class="card border shadow-xs">
                                     <div class="card-body p-3">
-                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Distribución Socios</p>
+                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Distribución
+                                            Socios</p>
                                         <h4 class="font-weight-bolder mb-0 text-warning" id="lblDistribucion">$ 0.00</h4>
                                     </div>
                                 </div>
@@ -96,7 +103,8 @@
                             <div class="col-lg-3 col-md-6 col-12 mb-3">
                                 <div class="card border shadow-xs">
                                     <div class="card-body p-3">
-                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad Neta Empresa</p>
+                                        <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad Neta
+                                            Empresa</p>
                                         <h4 class="font-weight-bolder mb-0 text-success" id="lblNeta">$ 0.00</h4>
                                     </div>
                                 </div>
@@ -105,21 +113,31 @@
 
                         <!-- Grilla Agrupada de Socios -->
                         <div class="card border shadow-none p-3 mb-4">
-                            <h6 class="mb-3 text-sm font-weight-bold text-uppercase text-muted"><i class="fas fa-users me-2"></i>Desglose de Rendimiento por Socio</h6>
+                            <h6 class="mb-3 text-sm font-weight-bold text-uppercase text-muted"><i
+                                    class="fas fa-users me-2"></i>Desglose de Rendimiento por Socio</h6>
                             <div id="gridReporteUtilidad" class="ag-theme-alpine" style="height: 280px; width: 100%;"></div>
                         </div>
 
                         <!-- Grilla de Viajes (Solo visible en reporte Completo) -->
                         <div class="card border shadow-none p-3" id="cardDesgloseViajes">
-                            <h6 class="mb-3 text-sm font-weight-bold text-uppercase text-muted"><i class="fas fa-truck me-2"></i>Desglose de Viajes Realizados</h6>
+                            <h6 class="mb-3 text-sm font-weight-bold text-uppercase text-muted"><i
+                                    class="fas fa-truck me-2"></i>Desglose de Viajes Realizados</h6>
                             <div id="gridReporteViajes" class="ag-theme-alpine" style="height: 350px; width: 100%;"></div>
+                        </div>
+
+                        <!-- Grilla de Pagos (Solo visible en reporte Por Socio) -->
+                        <div class="card border shadow-none p-3 d-none" id="cardDesglosePagos">
+                            <h6 class="mb-3 text-sm font-weight-bold text-uppercase text-muted"><i
+                                    class="fas fa-money-check-alt me-2"></i>Desglose de Pagos Realizados en el Periodo</h6>
+                            <div id="gridReportePagos" class="ag-theme-alpine" style="height: 350px; width: 100%;"></div>
                         </div>
                     </div>
 
                     <div id="resultadoVacio" class="text-center py-5 text-muted">
                         <i class="fas fa-chart-line fa-3x mb-3 text-secondary"></i>
                         <h5>Generación de Reportes</h5>
-                        <p class="text-sm">Seleccione los criterios de búsqueda arriba y haga click en "Generar" para ver los resultados.</p>
+                        <p class="text-sm">Seleccione los criterios de búsqueda arriba y haga click en "Generar" para ver
+                            los resultados.</p>
                     </div>
                 </div>
             </div>
@@ -134,8 +152,8 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script>
-        let gridReporteUtilidadOptions, gridReporteViajesOptions;
-        let gridReporteUtilidadApi, gridReporteViajesApi;
+        let gridReporteUtilidadOptions, gridReporteViajesOptions, gridReportePagosOptions;
+        let gridReporteUtilidadApi, gridReporteViajesApi, gridReportePagosApi;
 
         function formatCurrency(val) {
             return `$ ${parseFloat(val || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -162,41 +180,201 @@
                     toLabel: 'Hasta',
                     customRangeLabel: 'Personalizado',
                     daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ],
                     firstDay: 1
                 }
             });
 
             // Init Grids
             gridReporteUtilidadOptions = {
-                columnDefs: [
-                    { headerName: 'Socio', field: 'socio', width: 150, sortable: true, filter: true },
-                    { headerName: 'Unidad Pactada', field: 'unidad', width: 140, sortable: true, filter: true },
-                    { headerName: 'Regla de Pago', field: 'factor', width: 100 },
-                    { headerName: 'Viajes', field: 'viajes_realizados', width: 80, sortable: true },
-                    { headerName: 'Util. Bruta', field: 'utilidad_bruta', width: 110, cellRenderer: params => formatCurrency(params.value) },
-                    { headerName: 'Gastos Camión', field: 'gastos_camion', width: 120, cellRenderer: params => formatCurrency(params.value) },
-                    { headerName: 'Util. Neta', field: 'utilidad_neta', width: 110, cellRenderer: params => formatCurrency(params.value) },
-                    { headerName: 'Acumulado (Cortes)', field: 'saldo_acumulado', width: 140, cellRenderer: params => formatCurrency(params.value) },
-                    { headerName: 'Total Pagado', field: 'total_pagado', width: 120, cellRenderer: params => formatCurrency(params.value) },
-                    { headerName: 'Saldo Pendiente', field: 'saldo_pendiente', width: 130, cellRenderer: params => formatCurrency(params.value) }
+                columnDefs: [{
+                        headerName: 'Socio',
+                        field: 'socio',
+                        width: 160,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Unidad Pactada',
+                        field: 'unidad',
+                        width: 140,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Regla de Pago',
+                        field: 'factor',
+                        width: 110
+                    },
+                    {
+                        headerName: 'Viajes',
+                        field: 'viajes_realizados',
+                        width: 85,
+                        sortable: true
+                    },
+                    {
+                        headerName: 'Util. Bruta',
+                        field: 'utilidad_bruta',
+                        width: 110,
+                        hide: true,
+                        cellRenderer: params => formatCurrency(params.value)
+                    },
+                    {
+                        headerName: 'Gastos Camión',
+                        field: 'gastos_camion',
+                        width: 120,
+                        hide: true,
+                        cellRenderer: params => formatCurrency(params.value)
+                    },
+                    {
+                        headerName: 'Utilidad a Repartir',
+                        field: 'utilidad_a_repartir',
+                        width: 140,
+                        sortable: true,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    {
+                        headerName: 'Utilidad Socio',
+                        field: 'monto_distribuido',
+                        width: 130,
+                        sortable: true,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold',
+                            color: '#28a745'
+                        }
+                    },
+                    {
+                        headerName: 'Total Pagado',
+                        field: 'total_pagado',
+                        width: 130,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold'
+                        }
+                    },
+                    {
+                        headerName: 'Saldo Pendiente',
+                        field: 'saldo_pendiente',
+                        width: 130,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold'
+                        }
+                    }
                 ],
                 rowData: []
             };
-            gridReporteUtilidadApi = agGrid.createGrid(document.querySelector('#gridReporteUtilidad'), gridReporteUtilidadOptions);
+            gridReporteUtilidadApi = agGrid.createGrid(document.querySelector('#gridReporteUtilidad'),
+                gridReporteUtilidadOptions);
 
             gridReporteViajesOptions = {
-                columnDefs: [
-                    { headerName: 'Fecha Viaje', field: 'fecha_viaje', width: 120, sortable: true, cellRenderer: params => formatDate(params.value) },
-                    { headerName: 'Contenedor', field: 'contenedor', width: 170, sortable: true, filter: true },
-                    { headerName: 'Cliente', field: 'cliente', width: 160, sortable: true, filter: true },
-                    { headerName: 'Unidad', field: 'unidad', width: 130, sortable: true },
-                    { headerName: 'Estatus', field: 'estatus_viaje', width: 110, cellRenderer: params => `<span class="badge ${params.value === 'Planeada' ? 'bg-info' : 'bg-success'}">${params.value}</span>` },
-                    { headerName: 'Utilidad Viaje', field: 'utilidad_viaje', width: 130, cellRenderer: params => formatCurrency(params.value) }
+                columnDefs: [{
+                        headerName: 'Fecha Viaje',
+                        field: 'fecha_viaje',
+                        width: 120,
+                        sortable: true,
+                        cellRenderer: params => formatDate(params.value)
+                    },
+                    {
+                        headerName: 'Contenedor',
+                        field: 'contenedor',
+                        width: 170,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Cliente',
+                        field: 'cliente',
+                        width: 160,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Unidad',
+                        field: 'unidad',
+                        width: 130,
+                        sortable: true
+                    },
+                    {
+                        headerName: 'Estatus',
+                        field: 'estatus_viaje',
+                        width: 110,
+                        cellRenderer: params =>
+                            `<span class="badge ${params.value === 'Planeada' ? 'bg-info' : 'bg-success'}">${params.value}</span>`
+                    },
+                    {
+                        headerName: 'Utilidad Viaje',
+                        field: 'utilidad_viaje',
+                        width: 130,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold'
+                        }
+                    }
                 ],
                 rowData: []
             };
-            gridReporteViajesApi = agGrid.createGrid(document.querySelector('#gridReporteViajes'), gridReporteViajesOptions);
+            gridReporteViajesApi = agGrid.createGrid(document.querySelector('#gridReporteViajes'),
+                gridReporteViajesOptions);
+
+            gridReportePagosOptions = {
+                columnDefs: [{
+                        headerName: 'Fecha Pago',
+                        field: 'fecha_pago',
+                        width: 130,
+                        sortable: true,
+                        sort: 'desc',
+                        cellRenderer: params => formatDate(params.value)
+                    },
+                    {
+                        headerName: 'Socio',
+                        field: 'socio',
+                        width: 180,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Concepto / Referencia',
+                        field: 'concepto',
+                        width: 280,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Cuenta / Banco Origen',
+                        field: 'banco',
+                        width: 230,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Monto Pagado',
+                        field: 'monto',
+                        width: 140,
+                        sortable: true,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right',
+                            fontWeight: 'bold',
+                            color: '#28a745'
+                        }
+                    }
+                ],
+                rowData: []
+            };
+            gridReportePagosApi = agGrid.createGrid(document.querySelector('#gridReportePagos'),
+                gridReportePagosOptions);
         });
 
         async function generarReporte() {
@@ -217,7 +395,9 @@
             });
 
             try {
-                const res = await fetch(`{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&socio_id=${socioId}&equipo_id=${equipoId}`);
+                const res = await fetch(
+                    `{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&socio_id=${socioId}&equipo_id=${equipoId}`
+                    );
                 const json = await res.json();
 
                 // Fill totals cards
@@ -236,14 +416,14 @@
                     cardBruto.classList.add('d-none');
                     cardGastos.classList.add('d-none');
                     cardNeta.classList.add('d-none');
-                    
+
                     cardDistribucion.className = 'col-12 mb-3';
                     cardDistribucion.querySelector('p').textContent = 'Total Asignado a Socio';
                 } else {
                     cardBruto.classList.remove('d-none');
                     cardGastos.classList.remove('d-none');
                     cardNeta.classList.remove('d-none');
-                    
+
                     cardBruto.className = 'col-lg-3 col-md-6 col-12 mb-3';
                     cardGastos.className = 'col-lg-3 col-md-6 col-12 mb-3';
                     cardNeta.className = 'col-lg-3 col-md-6 col-12 mb-3';
@@ -261,15 +441,21 @@
                     gridReporteUtilidadApi.setGridOption('rowData', json.socios_desglose);
                 }
 
-                // Show or hide voyages grid based on report type
+                // Show or hide voyages grid / payments grid based on report type
                 const cardViajes = document.getElementById('cardDesgloseViajes');
+                const cardPagos = document.getElementById('cardDesglosePagos');
                 if (tipoReporte === 'completo') {
                     cardViajes.classList.remove('d-none');
+                    cardPagos.classList.add('d-none');
                     if (gridReporteViajesApi) {
                         gridReporteViajesApi.setGridOption('rowData', json.viajes_desglose);
                     }
                 } else {
                     cardViajes.classList.add('d-none');
+                    cardPagos.classList.remove('d-none');
+                    if (gridReportePagosApi) {
+                        gridReportePagosApi.setGridOption('rowData', json.pagos_desglose);
+                    }
                 }
 
                 Swal.close();
@@ -288,7 +474,8 @@
             const tipoReporte = document.getElementById('filtro_tipo_reporte').value;
 
             // Direct download link trigger
-            window.location.href = `{{ route('socios.exportar') }}?from=${from}&to=${to}&fileType=${fileType}&socio_id=${socioId}&equipo_id=${equipoId}&tipo_reporte=${tipoReporte}`;
+            window.location.href =
+                `{{ route('socios.exportar') }}?from=${from}&to=${to}&fileType=${fileType}&socio_id=${socioId}&equipo_id=${equipoId}&tipo_reporte=${tipoReporte}`;
         }
     </script>
 @endsection

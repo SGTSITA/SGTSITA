@@ -6,9 +6,10 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, WithStyles
+class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, WithStyles, ShouldAutoSize
 {
     private array $data;
     private string $empresa;
@@ -84,6 +85,32 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
             }
         }
 
+        if ($this->tipoReporte === 'socio') {
+            // 3. Payments Breakdown headings (ordered newest to oldest)
+            $rows[] = ['DESGLOSE DE PAGOS REALIZADOS EN EL PERIODO'];
+            $rows[] = ['Fecha Pago', 'Socio', 'Concepto / Referencia', 'Cuenta / Banco Origen', 'Monto Pagado'];
+            if (!empty($this->data['pagos_desglose'])) {
+                foreach ($this->data['pagos_desglose'] as $pago) {
+                    $rows[] = [
+                        $pago['fecha_formateada'],
+                        $pago['socio'],
+                        $pago['concepto'],
+                        $pago['banco'],
+                        (float)$pago['monto']
+                    ];
+                }
+                $rows[] = [
+                    'TOTAL PAGADO EN EL PERIODO:',
+                    '',
+                    '',
+                    '',
+                    (float)collect($this->data['pagos_desglose'])->sum('monto')
+                ];
+            } else {
+                $rows[] = ['No se encontraron pagos o anticipos registrados en este periodo.'];
+            }
+        }
+
         return collect($rows);
     }
 
@@ -101,9 +128,12 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
         $highestRow = $sheet->getHighestRow();
         for ($i = 1; $i <= $highestRow; $i++) {
             $val = $sheet->getCell('A' . $i)->getValue();
-            if (in_array($val, ['RESUMEN DEL PERIODO', 'DISTRIBUCIÓN AGRUPADA POR SOCIO', 'DESGLOSE INDIVIDUAL DE VIAJES'])) {
+            if (in_array($val, ['RESUMEN DEL PERIODO', 'DISTRIBUCIÓN AGRUPADA POR SOCIO', 'DESGLOSE INDIVIDUAL DE VIAJES', 'DESGLOSE DE PAGOS REALIZADOS EN EL PERIODO'])) {
                 $sheet->getStyle('A' . $i)->getFont()->setBold(true)->setSize(12);
-                $sheet->getStyle('A' . ($i + 1) . ':E' . ($i + 1))->getFont()->setBold(true);
+                $sheet->getStyle('A' . ($i + 1) . ':H' . ($i + 1))->getFont()->setBold(true);
+            }
+            if ($val === 'TOTAL PAGADO EN EL PERIODO:') {
+                $sheet->getStyle('A' . $i . ':E' . $i)->getFont()->setBold(true);
             }
         }
         return [];

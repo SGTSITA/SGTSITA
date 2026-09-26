@@ -274,10 +274,45 @@ class SociosService
             ];
         }
 
-        $totalPagadoPeriodo = \App\Models\SocioPago::where('id_empresa', $idEmpresa)
-            ->whereBetween('fecha_aplicacion', [$startDate, $endDate])
-            ->sum('monto');
+        // 3. Pagos Desglose (Chronological order: newest to oldest)
+        $pagosQuery = \App\Models\SocioPago::with(['socio', 'banco', 'user', 'calculoPeriodo'])
+            ->where('id_empresa', $idEmpresa)
+            ->whereBetween('fecha_aplicacion', [$startDate, $endDate]);
 
+        if ($socioId) {
+            $pagosQuery->where('socio_id', $socioId);
+        }
+        if ($equipoId) {
+            $pagosQuery->whereHas('socio.configurations', function($q) use ($equipoId) {
+                $q->where('equipo_id', $equipoId);
+            });
+        }
+
+        $pagosDesglose = $pagosQuery->orderBy('fecha_aplicacion', 'desc')
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($pago) {
+                $periodoTexto = '';
+                if ($pago->calculoPeriodo) {
+                    $periodoTexto = ' (Corte #' . $pago->calculo_periodo_id . ': ' .
+                        \Carbon\Carbon::parse($pago->calculoPeriodo->fecha_desde)->format('d/m/Y') . ' al ' .
+                        \Carbon\Carbon::parse($pago->calculoPeriodo->fecha_hasta)->format('d/m/Y') . ')';
+                }
+                return [
+                    'id' => $pago->id,
+                    'fecha_pago' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('Y-m-d') : null,
+                    'fecha_formateada' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('d-m-Y') : 'S/N',
+                    'socio' => $pago->socio->nombre ?? 'S/N',
+                    'concepto' => $pago->calculo_periodo_id ? ('Liquidación de Utilidad' . $periodoTexto) : 'Abono / Anticipo a Cuenta',
+                    'banco' => $pago->banco ? ($pago->banco->nombre_banco . ($pago->banco->cuenta_bancaria ? ' (' . $pago->banco->cuenta_bancaria . ')' : '')) : 'N/A',
+                    'monto' => (float)$pago->monto,
+                    'registrado_por' => $pago->user->name ?? 'Sistema'
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        $totalPagadoPeriodo = collect($pagosDesglose)->sum('monto');
         $totalPagadoSociosColumna = collect($sociosFinal)->sum('total_pagado');
 
         return [
@@ -291,7 +326,8 @@ class SociosService
             'utilidad_neta_empresa' => round(($totalUtilidadBrutaReporte - $gastosGeneralesPeriodo) - $totalPagosSocios, 2),
             'total_pagado_periodo' => (float) $totalPagadoPeriodo,
             'socios_desglose' => $sociosFinal,
-            'viajes_desglose' => $viajesDesglose
+            'viajes_desglose' => $viajesDesglose,
+            'pagos_desglose' => $pagosDesglose
         ];
     }
 

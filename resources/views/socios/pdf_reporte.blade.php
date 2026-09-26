@@ -94,6 +94,16 @@
         .text-danger {
             color: #dc3545;
         }
+
+        table.data-table tfoot td {
+            padding: 7px 6px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+
+        .text-center {
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -207,6 +217,48 @@
                     </tr>
                 @endforeach
             </tbody>
+        </table>
+    @endif
+
+    @if (isset($tipoReporte) && $tipoReporte === 'socio')
+        <div class="section-title">Desglose de Pagos Realizados en el Periodo</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 14%;">Fecha Pago</th>
+                    <th style="width: 20%;">Socio</th>
+                    <th style="width: 28%;">Concepto / Referencia</th>
+                    <th style="width: 22%;">Cuenta / Banco Origen</th>
+                    <th style="width: 16%;" class="text-right">Monto Pagado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($data['pagos_desglose'] as $pago)
+                    <tr>
+                        <td>{{ $pago['fecha_formateada'] }}</td>
+                        <td><strong>{{ $pago['socio'] }}</strong></td>
+                        <td>{{ $pago['concepto'] }}</td>
+                        <td>{{ $pago['banco'] }}</td>
+                        <td class="text-right font-bold text-success">$ {{ number_format($pago['monto'], 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 15px; color: #888;">
+                            No se registraron pagos o anticipos a socios durante este periodo.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+            @if (!empty($data['pagos_desglose']))
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-right font-bold">TOTAL PAGADO EN EL PERIODO:</td>
+                        <td class="text-right font-bold text-success" style="font-size: 12px;">
+                            $ {{ number_format(collect($data['pagos_desglose'])->sum('monto'), 2) }}
+                        </td>
+                    </tr>
+                </tfoot>
+            @endif
         </table>
     @endif
 </body>
