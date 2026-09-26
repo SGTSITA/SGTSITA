@@ -397,7 +397,7 @@
             try {
                 const res = await fetch(
                     `{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&socio_id=${socioId}&equipo_id=${equipoId}`
-                    );
+                );
                 const json = await res.json();
 
                 // Fill totals cards
@@ -418,7 +418,7 @@
                     cardNeta.classList.add('d-none');
 
                     cardDistribucion.className = 'col-12 mb-3';
-                    cardDistribucion.querySelector('p').textContent = 'Total Asignado a Socio';
+                    cardDistribucion.querySelector('p').textContent = 'Resumen de Utilidad en este Periodo para Socios';
                 } else {
                     cardBruto.classList.remove('d-none');
                     cardGastos.classList.remove('d-none');

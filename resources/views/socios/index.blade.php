@@ -1161,7 +1161,7 @@
                 }
                 if (document.getElementById('resumenPagadoTotal')) {
                     document.getElementById('resumenPagadoTotal').textContent = formatCurrency(json
-                    .total_pagado_socios);
+                        .total_pagado_socios);
                 }
 
                 document.getElementById('seccionResumenPeriodo').classList.remove('d-none');
