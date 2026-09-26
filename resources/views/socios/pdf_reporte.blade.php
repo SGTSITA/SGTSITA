@@ -124,23 +124,17 @@
                     <td width="25%"><strong>Utilidad Bruta Viajes:</strong></td>
                     <td width="25%" class="text-right font-bold">$
                         {{ number_format($data['total_utilidad_bruta_viajes'], 2) }}</td>
-                    <td width="25%"><strong>Utilidad Neta Periodo:</strong></td>
-                    <td width="25%" class="text-right font-bold text-success">$
+                    <td width="25%"><strong>Utilidad a repartir:</strong></td>
+                    <td width="25%" class="text-right font-bold text-info">$
                         {{ number_format($data['utilidad_neta_distribuible'], 2) }}</td>
                 </tr>
                 <tr>
                     <td><strong>Gastos Indirectos Mes:</strong></td>
                     <td class="text-right font-bold text-danger">$ {{ number_format($data['total_gastos_periodo'], 2) }}
                     </td>
-                    <td><strong>Total a Distribuir Socios:</strong></td>
-                    <td class="text-right font-bold text-success">$
-                        {{ number_format($data['total_distribuido_socios'], 2) }}</td>
-                </tr>
-                <tr>
-                    <td colspan="2"></td>
-                    <td><strong>Utilidad Neta Empresa:</strong></td>
-                    <td class="text-right font-bold" style="color: #007bff;">$
-                        {{ number_format($data['utilidad_neta_empresa'], 2) }}</td>
+                    <td><strong>Total Pagado / Adelantado:</strong></td>
+                    <td class="text-right font-bold text-success">$ {{ number_format($data['total_pagado_socios'], 2) }}
+                    </td>
                 </tr>
             </table>
         </div>
@@ -165,10 +159,10 @@
                 <th>Unidad Pactada</th>
                 <th style="text-align: center;">Regla</th>
                 <th class="text-right">Viajes</th>
-                <th class="text-right">Util. Bruta</th>
-                <th class="text-right">Gastos Camión</th>
-                <th class="text-right">Util. Neta Camión</th>
+                <th class="text-right">Utilidad a Repartir</th>
                 <th class="text-right">Utilidad Socio</th>
+                <th class="text-right">Total Pagado</th>
+                <th class="text-right">Saldo Pendiente</th>
             </tr>
         </thead>
         <tbody>
@@ -178,11 +172,11 @@
                     <td>{{ $soc['unidad'] }}</td>
                     <td style="text-align: center;">{{ $soc['factor'] }}</td>
                     <td class="text-right">{{ $soc['viajes_realizados'] }}</td>
-                    <td class="text-right">$ {{ number_format($soc['utilidad_bruta'], 2) }}</td>
-                    <td class="text-right">$ {{ number_format($soc['gastos_camion'], 2) }}</td>
-                    <td class="text-right">$ {{ number_format($soc['utilidad_neta'], 2) }}</td>
+                    <td class="text-right">$ {{ number_format($soc['utilidad_a_repartir'], 2) }}</td>
                     <td class="text-right font-bold text-success">$ {{ number_format($soc['monto_distribuido'], 2) }}
                     </td>
+                    <td class="text-right">$ {{ number_format($soc['total_pagado'], 2) }}</td>
+                    <td class="text-right font-bold">$ {{ number_format($soc['saldo_pendiente'], 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
