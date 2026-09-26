@@ -109,7 +109,9 @@
                                     <select id="utilidad_equipo_id" class="form-select form-select-sm">
                                         <option value="">Todas las unidades</option>
                                         @foreach ($equipos as $eq)
-                                            <option value="{{ $eq->id }}">{{ ($eq->id_equipo ? $eq->id_equipo . ' - ' : '') . $eq->placas . ' (' . $eq->marca . ')' }}</option>
+                                            <option value="{{ $eq->id }}">
+                                                {{ ($eq->id_equipo ? $eq->id_equipo . ' - ' : '') . $eq->placas . ' (' . $eq->marca . ')' }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -134,6 +136,7 @@
                                             <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad
                                                 Bruta Viajes</p>
                                             <h4 class="font-weight-bolder mb-0" id="resumenBruto">$ 0.00</h4>
+                                            <small class="text-xs text-muted">Utilidad operativa de viajes</small>
                                         </div>
                                     </div>
                                 </div>
@@ -143,25 +146,30 @@
                                             <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Gastos
                                                 Indirectos Mes</p>
                                             <h4 class="font-weight-bolder mb-0 text-danger" id="resumenGastos">$ 0.00</h4>
+                                            <small class="text-xs text-muted">Otros gastos generales de empresa</small>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-3 col-md-6 col-12 mb-3">
                                     <div class="card bg-gradient-light shadow-sm">
                                         <div class="card-body p-3">
-                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad a
-                                                repartir</p>
-                                            <h4 class="font-weight-bolder mb-0 text-warning" id="resumenComisiones">$ 0.00
+                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad
+                                                Neta Periodo</p>
+                                            <h4 class="font-weight-bolder mb-0 text-info" id="resumenUtilidadNetaPeriodo">
+                                                $ 0.00</h4>
+                                            <small class="text-xs text-muted">Bruta - Gastos Indirectos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 col-12 mb-3">
+                                    <div class="card bg-gradient-light shadow-sm">
+                                        <div class="card-body p-3">
+                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Total a
+                                                Distribuir Socios</p>
+                                            <h4 class="font-weight-bolder mb-0 text-success" id="resumenComisiones">$ 0.00
                                             </h4>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-lg-3 col-md-6 col-12 mb-3">
-                                    <div class="card bg-gradient-light shadow-sm">
-                                        <div class="card-body p-3">
-                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Total pago
-                                            </p>
-                                            <h4 class="font-weight-bolder mb-0 text-success" id="resumenNeta">$ 0.00</h4>
+                                            <small class="text-xs font-weight-bold text-dark"
+                                                id="subtextoEmpresa">Remanente Empresa: $ 0.00</small>
                                         </div>
                                     </div>
                                 </div>
@@ -448,7 +456,8 @@
                         </div>
                         <div class="col-12" id="grupo_pago_concepto_div">
                             <label class="form-label text-xs mb-1">Concepto / Referencia (Adelanto)</label>
-                            <input type="text" class="form-control" name="concepto" id="pago_concepto" placeholder="Ej. Adelanto de utilidades">
+                            <input type="text" class="form-control" name="concepto" id="pago_concepto"
+                                placeholder="Ej. Adelanto de utilidades">
                         </div>
                         <div class="col-12">
                             <label class="form-label text-xs mb-1">Monto a Pagar *</label>
@@ -700,48 +709,83 @@
                     {
                         headerName: 'Regla de Pago',
                         field: 'factor',
-                        width: 100
+                        width: 110,
+                        sortable: true,
+                        cellStyle: {
+                            textAlign: 'center'
+                        }
                     },
                     {
                         headerName: 'Viajes',
                         field: 'viajes_realizados',
                         width: 80,
-                        sortable: true
+                        sortable: true,
+                        cellStyle: {
+                            textAlign: 'center'
+                        }
                     },
                     {
                         headerName: 'Util. Bruta',
                         field: 'utilidad_bruta',
-                        width: 110,
+                        width: 120,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right'
+                        }
                     },
                     {
                         headerName: 'Gastos Camión',
                         field: 'gastos_camion',
-                        width: 120,
+                        width: 130,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right'
+                        }
                     },
                     {
-                        headerName: 'Util. Neta',
+                        headerName: 'Util. Neta Camión',
                         field: 'utilidad_neta',
-                        width: 110,
+                        width: 130,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right'
+                        }
+                    },
+                    {
+                        headerName: 'Utilidad Socio',
+                        field: 'monto_distribuido',
+                        width: 140,
+                        sortable: true,
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            fontWeight: 'bold',
+                            color: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.08)',
+                            textAlign: 'right'
+                        }
                     },
                     {
                         headerName: 'Acumulado (Cortes)',
                         field: 'saldo_acumulado',
                         width: 140,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right'
+                        }
                     },
                     {
                         headerName: 'Total Pagado',
                         field: 'total_pagado',
                         width: 120,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellRenderer: params => formatCurrency(params.value),
+                        cellStyle: {
+                            textAlign: 'right'
+                        }
                     },
                     {
                         headerName: 'Saldo Pendiente',
@@ -1102,15 +1146,23 @@
                     }
                 });
 
-                const res = await fetch(`{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
+                const res = await fetch(
+                    `{{ route('socios.reporte.utilidad') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
                 const json = await res.json();
 
 
                 document.getElementById('resumenBruto').textContent = formatCurrency(json.total_utilidad_bruta_viajes);
                 document.getElementById('resumenGastos').textContent = formatCurrency(json.total_gastos_periodo);
+                if (document.getElementById('resumenUtilidadNetaPeriodo')) {
+                    document.getElementById('resumenUtilidadNetaPeriodo').textContent = formatCurrency(json
+                        .utilidad_neta_distribuible);
+                }
                 document.getElementById('resumenComisiones').textContent = formatCurrency(json
-                    .total_distribuido_socios);
-                document.getElementById('resumenNeta').textContent = formatCurrency(json.total_pagado_periodo);
+                .total_distribuido_socios);
+                if (document.getElementById('subtextoEmpresa')) {
+                    document.getElementById('subtextoEmpresa').textContent = 'Remanente Empresa: ' + formatCurrency(json
+                        .utilidad_neta_empresa);
+                }
 
                 document.getElementById('seccionResumenPeriodo').classList.remove('d-none');
                 document.getElementById('divAccionesCorte').classList.remove('d-none');
@@ -1122,7 +1174,8 @@
                     gridViajesApi.setGridOption('rowData', json.viajes_desglose);
                 }
 
-                const compRes = await fetch(`{{ route('socios.comparativa') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
+                const compRes = await fetch(
+                    `{{ route('socios.comparativa') }}?from=${from}&to=${to}&equipo_id=${equipoId}`);
                 const compJson = await compRes.json();
                 comparativaData = compJson;
                 corteGuardadoGlobal = compJson.has_saved;
