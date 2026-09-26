@@ -298,12 +298,16 @@ class SociosService
                         \Carbon\Carbon::parse($pago->calculoPeriodo->fecha_desde)->format('d/m/Y') . ' al ' .
                         \Carbon\Carbon::parse($pago->calculoPeriodo->fecha_hasta)->format('d/m/Y') . ')';
                 }
+                $conceptoFinal = !empty($pago->concepto)
+                    ? $pago->concepto
+                    : ($pago->calculo_periodo_id ? ('Liquidación de Utilidad' . $periodoTexto) : 'Abono / Anticipo a Cuenta');
+
                 return [
                     'id' => $pago->id,
                     'fecha_pago' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('Y-m-d') : null,
                     'fecha_formateada' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('d-m-Y') : 'S/N',
                     'socio' => $pago->socio->nombre ?? 'S/N',
-                    'concepto' => $pago->calculo_periodo_id ? ('Liquidación de Utilidad' . $periodoTexto) : 'Abono / Anticipo a Cuenta',
+                    'concepto' => $conceptoFinal,
                     'banco' => $pago->banco ? ($pago->banco->nombre_banco . ($pago->banco->cuenta_bancaria ? ' (' . $pago->banco->cuenta_bancaria . ')' : '')) : 'N/A',
                     'monto' => (float)$pago->monto,
                     'registrado_por' => $pago->user->name ?? 'Sistema'
