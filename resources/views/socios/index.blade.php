@@ -153,8 +153,8 @@
                                 <div class="col-lg-3 col-md-6 col-12 mb-3">
                                     <div class="card bg-gradient-light shadow-sm">
                                         <div class="card-body p-3">
-                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad
-                                                Neta Periodo</p>
+                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Utilidad a
+                                                repartir</p>
                                             <h4 class="font-weight-bolder mb-0 text-info" id="resumenUtilidadNetaPeriodo">
                                                 $ 0.00</h4>
                                             <small class="text-xs text-muted">Bruta - Gastos Indirectos</small>
@@ -164,12 +164,11 @@
                                 <div class="col-lg-3 col-md-6 col-12 mb-3">
                                     <div class="card bg-gradient-light shadow-sm">
                                         <div class="card-body p-3">
-                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Total a
-                                                Distribuir Socios</p>
-                                            <h4 class="font-weight-bolder mb-0 text-success" id="resumenComisiones">$ 0.00
-                                            </h4>
-                                            <small class="text-xs font-weight-bold text-dark"
-                                                id="subtextoEmpresa">Remanente Empresa: $ 0.00</small>
+                                            <p class="text-xs mb-0 text-uppercase font-weight-bold text-muted">Total Pagado
+                                                / Adelantado</p>
+                                            <h4 class="font-weight-bolder mb-0 text-success" id="resumenPagadoTotal">$
+                                                0.00</h4>
+                                            <small class="text-xs text-muted">Suma pagada a socios</small>
                                         </div>
                                     </div>
                                 </div>
@@ -728,6 +727,7 @@
                         headerName: 'Util. Bruta',
                         field: 'utilidad_bruta',
                         width: 120,
+                        hide: true,
                         sortable: true,
                         cellRenderer: params => formatCurrency(params.value),
                         cellStyle: {
@@ -738,6 +738,7 @@
                         headerName: 'Gastos Camión',
                         field: 'gastos_camion',
                         width: 130,
+                        hide: true,
                         sortable: true,
                         cellRenderer: params => formatCurrency(params.value),
                         cellStyle: {
@@ -745,13 +746,14 @@
                         }
                     },
                     {
-                        headerName: 'Util. Neta Camión',
-                        field: 'utilidad_neta',
-                        width: 130,
+                        headerName: 'Utilidad a Repartir',
+                        field: 'utilidad_a_repartir',
+                        width: 140,
                         sortable: true,
                         cellRenderer: params => formatCurrency(params.value),
                         cellStyle: {
-                            textAlign: 'right'
+                            textAlign: 'right',
+                            fontWeight: 'bold'
                         }
                     },
                     {
@@ -1157,11 +1159,9 @@
                     document.getElementById('resumenUtilidadNetaPeriodo').textContent = formatCurrency(json
                         .utilidad_neta_distribuible);
                 }
-                document.getElementById('resumenComisiones').textContent = formatCurrency(json
-                .total_distribuido_socios);
-                if (document.getElementById('subtextoEmpresa')) {
-                    document.getElementById('subtextoEmpresa').textContent = 'Remanente Empresa: ' + formatCurrency(json
-                        .utilidad_neta_empresa);
+                if (document.getElementById('resumenPagadoTotal')) {
+                    document.getElementById('resumenPagadoTotal').textContent = formatCurrency(json
+                    .total_pagado_socios);
                 }
 
                 document.getElementById('seccionResumenPeriodo').classList.remove('d-none');

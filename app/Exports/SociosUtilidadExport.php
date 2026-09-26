@@ -44,9 +44,8 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
         if ($this->tipoReporte === 'completo') {
             $rows[] = ['Utilidad Bruta Viajes:', (float)$this->data['total_utilidad_bruta_viajes']];
             $rows[] = ['Gastos Indirectos Mes:', (float)$this->data['total_gastos_periodo']];
-            $rows[] = ['Utilidad Neta Periodo:', (float)$this->data['utilidad_neta_distribuible']];
-            $rows[] = ['Total a Distribuir Socios:', (float)$this->data['total_distribuido_socios']];
-            $rows[] = ['Utilidad Neta Empresa:', (float)$this->data['utilidad_neta_empresa']];
+            $rows[] = ['Utilidad a repartir:', (float)$this->data['utilidad_neta_distribuible']];
+            $rows[] = ['Total Pagado / Adelantado:', (float)$this->data['total_pagado_socios']];
         } else {
             $rows[] = ['Total Asignado a Socio:', (float)$this->data['total_distribuido_socios']];
         }
@@ -54,17 +53,17 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
 
         // 2. Partners Split table headings
         $rows[] = ['DISTRIBUCIÓN AGRUPADA POR SOCIO'];
-        $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Util. Bruta', 'Gastos Camión', 'Util. Neta Camión', 'Utilidad Socio'];
+        $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Utilidad a Repartir', 'Utilidad Socio', 'Total Pagado', 'Saldo Pendiente'];
         foreach ($this->data['socios_desglose'] as $soc) {
             $rows[] = [
                 $soc['socio'],
                 $soc['unidad'],
                 $soc['factor'],
                 $soc['viajes_realizados'],
-                (float)$soc['utilidad_bruta'],
-                (float)$soc['gastos_camion'],
-                (float)$soc['utilidad_neta'],
-                (float)$soc['monto_distribuido']
+                (float)$soc['utilidad_a_repartir'],
+                (float)$soc['monto_distribuido'],
+                (float)$soc['total_pagado'],
+                (float)$soc['saldo_pendiente']
             ];
         }
         $rows[] = [];

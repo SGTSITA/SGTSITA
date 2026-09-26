@@ -192,7 +192,7 @@ class SociosService
             }
         }
 
-        // 2. Direct truck trip expenses and calculate partner distribution based on Truck Net Utility
+        // 2. Direct truck trip expenses and calculate partner distribution based on Distributable Net Utility
         $sociosFinal = [];
         $totalPagosSocios = 0;
 
@@ -201,18 +201,26 @@ class SociosService
             ->where('fecha_hasta', $endDate)
             ->exists();
 
+        // Calculate general indirect expenses per equipment
+        $uniqueEquiposCount = collect($sociosSplit)->pluck('equipo_id')->unique()->filter()->count();
+        $gastoGeneralPorEquipo = $uniqueEquiposCount > 0 ? ($gastosGeneralesPeriodo / $uniqueEquiposCount) : $gastosGeneralesPeriodo;
+
         foreach ($sociosSplit as $key => &$split) {
             $sId = $split['socio_id'];
             $camionId = $split['equipo_id'];
 
             // Gastos Camión = Gastos operativos acumulados de sus viajes (combustible, casetas, viáticos, diferidos)
             $split['gastos_camion'] = $split['gastos_operativos_acumulados'];
-            // Utilidad Neta Camión = Utilidad Bruta - Gastos del Camión (coincide con la suma de utilidad de viajes de ese camión)
+            // Utilidad Neta Camión (operativa de viajes)
             $split['utilidad_neta_camion'] = $split['utilidad_bruta_acumulada'] - $split['gastos_camion'];
 
-            // A cada socio se reparte del total de la utilidad neta * % de cada socio (o cuota fija por viaje)
+            // Utilidad a Repartir del Camión (después de deducir gastos indirectos del mes)
+            $utilidadRepartirCamion = max(0, $split['utilidad_neta_camion'] - $gastoGeneralPorEquipo);
+            $split['utilidad_a_repartir'] = $utilidadRepartirCamion;
+
+            // A cada socio se reparte del total de la utilidad neta a repartir * % de cada socio (o cuota fija por viaje)
             if ($split['tipo_pago'] === 'porcentaje') {
-                $split['distribucion_socio'] = max(0, round($split['utilidad_neta_camion'] * ($split['valor'] / 100), 2));
+                $split['distribucion_socio'] = max(0, round($utilidadRepartirCamion * ($split['valor'] / 100), 2));
             } else {
                 // Fixed fee per trip
                 $split['distribucion_socio'] = round($split['numero_viajes'] * $split['valor'], 2);
@@ -256,6 +264,7 @@ class SociosService
                 'utilidad_bruta' => $split['utilidad_bruta_acumulada'],
                 'gastos_camion' => $split['gastos_camion'],
                 'utilidad_neta' => $split['utilidad_neta_camion'],
+                'utilidad_a_repartir' => $utilidadRepartirCamion,
                 'monto_distribuido' => $split['distribucion_socio'],
                 'saldo_acumulado' => $saldoAcumulado,
                 'total_pagado' => $balance['total_pagado'],
@@ -269,6 +278,8 @@ class SociosService
             ->whereBetween('fecha_aplicacion', [$startDate, $endDate])
             ->sum('monto');
 
+        $totalPagadoSociosColumna = collect($sociosFinal)->sum('total_pagado');
+
         return [
             'fecha_desde' => $startDate,
             'fecha_hasta' => $endDate,
@@ -276,6 +287,7 @@ class SociosService
             'total_gastos_periodo' => round($gastosGeneralesPeriodo, 2),
             'utilidad_neta_distribuible' => round($totalUtilidadBrutaReporte - $gastosGeneralesPeriodo, 2),
             'total_distribuido_socios' => round($totalPagosSocios, 2),
+            'total_pagado_socios' => round($totalPagadoSociosColumna, 2),
             'utilidad_neta_empresa' => round(($totalUtilidadBrutaReporte - $gastosGeneralesPeriodo) - $totalPagosSocios, 2),
             'total_pagado_periodo' => (float) $totalPagadoPeriodo,
             'socios_desglose' => $sociosFinal,
