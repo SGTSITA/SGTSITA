@@ -290,7 +290,9 @@
                     <th>Unidad Pactada</th>
                     <th style="text-align: center;">Regla</th>
                     <th class="text-right">Viajes</th>
-                    <th class="text-right">Utilidad a Repartir</th>
+                    @if (empty($socioId) && empty($data['filtro_socio_id']))
+                        <th class="text-right">Utilidad a Repartir</th>
+                    @endif
                     <th class="text-right">Utilidad Socio</th>
                     <th class="text-right">Total Pagado</th>
                     <th class="text-right">Saldo Pendiente</th>
@@ -303,7 +305,9 @@
                         <td>{{ $soc['unidad'] }}</td>
                         <td style="text-align: center;">{{ $soc['factor'] }}</td>
                         <td class="text-right">{{ $soc['viajes_realizados'] }}</td>
-                        <td class="text-right">$ {{ number_format($soc['utilidad_a_repartir'], 2) }}</td>
+                        @if (empty($socioId) && empty($data['filtro_socio_id']))
+                            <td class="text-right">$ {{ number_format($soc['utilidad_a_repartir'], 2) }}</td>
+                        @endif
                         <td class="text-right font-bold text-success">$
                             {{ number_format($soc['monto_distribuido'], 2) }}</td>
                         <td class="text-right">$ {{ number_format($soc['total_pagado'], 2) }}</td>
@@ -363,19 +367,30 @@
                     <div class="unit-banner">
                         <table style="width: 100%;">
                             <tr>
-                                <td style="width: 50%;">
-                                    <span class="unit-sublabel">UNIDAD / VEHÍCULO:</span><br>
-                                    <span class="unit-name">{{ $unidad['unidad'] }}</span>
-                                </td>
-                                <td style="width: 20%; text-align: center;">
-                                    <span class="unit-sublabel">VIAJES REALIZADOS:</span><br>
-                                    <span class="unit-value">{{ $unidad['viajes_realizados'] }}</span>
-                                </td>
-                                <td style="width: 30%; text-align: right;">
-                                    <span class="unit-sublabel">UTILIDAD A REPARTIR UNIDAD:</span><br>
-                                    <span class="unit-value text-success" style="color: #4ade80;">$
-                                        {{ number_format($unidad['utilidad_a_repartir'], 2) }}</span>
-                                </td>
+                                @if (!empty($socioId) || !empty($data['filtro_socio_id']))
+                                    <td style="width: 70%;">
+                                        <span class="unit-sublabel">UNIDAD / VEHÍCULO:</span><br>
+                                        <span class="unit-name">{{ $unidad['unidad'] }}</span>
+                                    </td>
+                                    <td style="width: 30%; text-align: right;">
+                                        <span class="unit-sublabel">VIAJES REALIZADOS:</span><br>
+                                        <span class="unit-value">{{ $unidad['viajes_realizados'] }}</span>
+                                    </td>
+                                @else
+                                    <td style="width: 50%;">
+                                        <span class="unit-sublabel">UNIDAD / VEHÍCULO:</span><br>
+                                        <span class="unit-name">{{ $unidad['unidad'] }}</span>
+                                    </td>
+                                    <td style="width: 20%; text-align: center;">
+                                        <span class="unit-sublabel">VIAJES REALIZADOS:</span><br>
+                                        <span class="unit-value">{{ $unidad['viajes_realizados'] }}</span>
+                                    </td>
+                                    <td style="width: 30%; text-align: right;">
+                                        <span class="unit-sublabel">UTILIDAD A REPARTIR UNIDAD:</span><br>
+                                        <span class="unit-value text-success" style="color: #4ade80;">$
+                                            {{ number_format($unidad['utilidad_a_repartir'], 2) }}</span>
+                                    </td>
+                                @endif
                             </tr>
                         </table>
                     </div>
@@ -464,8 +479,7 @@
                                         <div
                                             style="border-bottom: 1px solid #1e293b; width: 85%; margin: 0 auto 4px auto; height: 30px;">
                                         </div>
-                                        <strong style="font-size: 9.5px; color: #1e293b;">Firma de
-                                            Conformidad</strong><br>
+                                        <strong style="font-size: 9.5px; color: #1e293b;"></strong><br>
                                         <span style="font-size: 9px; color: #475569;">{{ $soc['socio'] }}</span>
                                     </td>
                                 </tr>

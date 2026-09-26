@@ -15,12 +15,14 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
     private string $empresa;
     private string $fechaGeneracion;
     private string $tipoReporte;
+    private ?int $socioId;
 
-    public function __construct(array $data, string $empresa, string $tipoReporte = 'completo')
+    public function __construct(array $data, string $empresa, string $tipoReporte = 'completo', ?int $socioId = null)
     {
         $this->data = $data;
         $this->empresa = $empresa;
         $this->tipoReporte = $tipoReporte;
+        $this->socioId = $socioId ?? $data['filtro_socio_id'] ?? null;
         $this->fechaGeneracion = now()->format('d-m-Y H:i');
     }
 
@@ -52,18 +54,33 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
 
             // 2. Partners Split table headings
             $rows[] = ['DISTRIBUCIÓN AGRUPADA POR SOCIO'];
-            $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Utilidad a Repartir', 'Utilidad Socio', 'Total Pagado', 'Saldo Pendiente'];
-            foreach ($this->data['socios_desglose'] ?? [] as $soc) {
-                $rows[] = [
-                    $soc['socio'],
-                    $soc['unidad'],
-                    $soc['factor'],
-                    $soc['viajes_realizados'],
-                    (float)$soc['utilidad_a_repartir'],
-                    (float)$soc['monto_distribuido'],
-                    (float)$soc['total_pagado'],
-                    (float)$soc['saldo_pendiente']
-                ];
+            if (!empty($this->socioId)) {
+                $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Utilidad Socio', 'Total Pagado', 'Saldo Pendiente'];
+                foreach ($this->data['socios_desglose'] ?? [] as $soc) {
+                    $rows[] = [
+                        $soc['socio'],
+                        $soc['unidad'],
+                        $soc['factor'],
+                        $soc['viajes_realizados'],
+                        (float)$soc['monto_distribuido'],
+                        (float)$soc['total_pagado'],
+                        (float)$soc['saldo_pendiente']
+                    ];
+                }
+            } else {
+                $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Utilidad a Repartir', 'Utilidad Socio', 'Total Pagado', 'Saldo Pendiente'];
+                foreach ($this->data['socios_desglose'] ?? [] as $soc) {
+                    $rows[] = [
+                        $soc['socio'],
+                        $soc['unidad'],
+                        $soc['factor'],
+                        $soc['viajes_realizados'],
+                        (float)$soc['utilidad_a_repartir'],
+                        (float)$soc['monto_distribuido'],
+                        (float)$soc['total_pagado'],
+                        (float)$soc['saldo_pendiente']
+                    ];
+                }
             }
             $rows[] = [];
 
@@ -89,12 +106,19 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
             if (!empty($this->data['unidades_desglose'])) {
                 foreach ($this->data['unidades_desglose'] as $unidad) {
                     $rows[] = ['UNIDAD / VEHÍCULO: ' . $unidad['unidad']];
-                    $rows[] = [
-                        'Viajes Realizados:',
-                        $unidad['viajes_realizados'],
-                        'Utilidad a Repartir Unidad:',
-                        (float)$unidad['utilidad_a_repartir']
-                    ];
+                    if (!empty($this->socioId)) {
+                        $rows[] = [
+                            'Viajes Realizados:',
+                            $unidad['viajes_realizados']
+                        ];
+                    } else {
+                        $rows[] = [
+                            'Viajes Realizados:',
+                            $unidad['viajes_realizados'],
+                            'Utilidad a Repartir Unidad:',
+                            (float)$unidad['utilidad_a_repartir']
+                        ];
+                    }
                     $rows[] = [];
 
                     foreach ($unidad['socios'] as $soc) {

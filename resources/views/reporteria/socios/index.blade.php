@@ -439,6 +439,9 @@
                 // Fill grids
                 if (gridReporteUtilidadApi) {
                     gridReporteUtilidadApi.setGridOption('rowData', json.socios_desglose);
+                    if (typeof gridReporteUtilidadApi.setColumnsVisible === 'function') {
+                        gridReporteUtilidadApi.setColumnsVisible(['utilidad_a_repartir'], !socioId);
+                    }
                 }
 
                 // Show or hide voyages grid / payments grid based on report type

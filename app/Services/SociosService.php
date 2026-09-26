@@ -348,6 +348,8 @@ class SociosService
         return [
             'fecha_desde' => $startDate,
             'fecha_hasta' => $endDate,
+            'filtro_socio_id' => $socioId,
+            'filtro_equipo_id' => $equipoId,
             'total_utilidad_bruta_viajes' => round($totalUtilidadBrutaReporte, 2),
             'total_gastos_periodo' => round($gastosGeneralesPeriodo, 2),
             'utilidad_neta_distribuible' => round($totalUtilidadBrutaReporte - $gastosGeneralesPeriodo, 2),
