@@ -105,17 +105,17 @@ class UserController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|same:confirm-password',
-            'roles' => 'required|array',
+            'roles' => 'required',
             'id_empresa' => 'required|exists:empresas,id',
             'id_cliente' => 'nullable|integer|min:0',
         ]);
-
 
         $input = $request->only(['name', 'email', 'password', 'id_empresa', 'id_cliente']);
         $input['password'] = Hash::make($input['password']);
 
         $input['es_admin'] = $request->has('es_admin');
-        $roles = $request->input('roles');
+        $rolesInput = $request->input('roles');
+        $roles = is_array($rolesInput) ? $rolesInput : [$rolesInput];
 
         // Si no es cliente, se borra el id_cliente
         if (!in_array('CLIENTE', $roles)) {
@@ -191,9 +191,6 @@ class UserController extends Controller
             'roles' => 'required'
         ]);
 
-
-
-
         $input = $request->all();
         if (!empty($input['password'])) {
             $input['password'] = Hash::make($input['password']);
@@ -201,31 +198,63 @@ class UserController extends Controller
             $input = Arr::except($input, array('password'));
         }
 
-        $user = User::find($id);
+        $user = User::findOrFail($id);
         $input['id_cliente'] = $user->id_cliente;
         $user->update($input);
         DB::table('model_has_roles')->where('model_id', $id)->delete();
 
-        $user->assignRole($request->input('roles'));
-
+        $rolesInput = $request->input('roles');
+        $roles = is_array($rolesInput) ? $rolesInput : [$rolesInput];
+        $user->assignRole($roles);
 
         return redirect()->route('users.index')
                         ->with('success', 'Usuario actualizado con exito');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (Soft delete).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() == $user->id) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No puedes dar de baja tu propio usuario.'], 422);
+            }
+            Session::flash('error', 'No puedes dar de baja tu propio usuario.');
+            return redirect()->back()->with('error', 'No puedes dar de baja tu propio usuario.');
+        }
+
+        $user->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Usuario dado de baja con éxito']);
+        }
+
+        Session::flash('delete', 'Se ha dado de baja el usuario con éxito');
+        return redirect()->route('users.index')
+                        ->with('success', 'Usuario dado de baja con éxito');
+    }
+
+    /**
+     * Restore a soft deleted user.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function restore($id)
     {
-        User::find($id)->delete();
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
 
-        Session::flash('delete', 'Se ha eliminado sus datos con exito');
+        Session::flash('success', 'Usuario reactivado con éxito');
         return redirect()->route('users.index')
-                        ->with('success', 'User deleted successfully');
+                        ->with('success', 'Usuario reactivado con éxito');
     }
 
 

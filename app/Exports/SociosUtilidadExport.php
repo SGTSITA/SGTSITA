@@ -44,7 +44,8 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
         if ($this->tipoReporte === 'completo') {
             $rows[] = ['Utilidad Bruta Viajes:', (float)$this->data['total_utilidad_bruta_viajes']];
             $rows[] = ['Gastos Indirectos Mes:', (float)$this->data['total_gastos_periodo']];
-            $rows[] = ['Pago Total a Socios:', (float)$this->data['total_distribuido_socios']];
+            $rows[] = ['Utilidad Neta Periodo:', (float)$this->data['utilidad_neta_distribuible']];
+            $rows[] = ['Total a Distribuir Socios:', (float)$this->data['total_distribuido_socios']];
             $rows[] = ['Utilidad Neta Empresa:', (float)$this->data['utilidad_neta_empresa']];
         } else {
             $rows[] = ['Total Asignado a Socio:', (float)$this->data['total_distribuido_socios']];
@@ -53,13 +54,16 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
 
         // 2. Partners Split table headings
         $rows[] = ['DISTRIBUCIÓN AGRUPADA POR SOCIO'];
-        $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Monto Distribuido'];
+        $rows[] = ['Socio', 'Unidad Pactada', 'Regla de Pago', 'Viajes Realizados', 'Util. Bruta', 'Gastos Camión', 'Util. Neta Camión', 'Utilidad Socio'];
         foreach ($this->data['socios_desglose'] as $soc) {
             $rows[] = [
                 $soc['socio'],
                 $soc['unidad'],
                 $soc['factor'],
                 $soc['viajes_realizados'],
+                (float)$soc['utilidad_bruta'],
+                (float)$soc['gastos_camion'],
+                (float)$soc['utilidad_neta'],
                 (float)$soc['monto_distribuido']
             ];
         }
@@ -93,7 +97,7 @@ class SociosUtilidadExport implements FromCollection, WithHeadings, WithTitle, W
     {
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A7')->getFont()->setBold(true)->setSize(12);
-        
+
         // Find headings positions dynamically to style them
         $highestRow = $sheet->getHighestRow();
         for ($i = 1; $i <= $highestRow; $i++) {

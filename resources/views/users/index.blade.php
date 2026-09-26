@@ -150,14 +150,14 @@
     </button>
 
     <form method="POST" action="/users/${id}"
-          onsubmit="return confirm('¿Eliminar este usuario?')"
+          onsubmit="return confirmarBajaUsuario(event, this, '${name.replace(/'/g, "\\'")}')"
           class="m-0 p-0">
         <input type="hidden" name="_token" value="${document.querySelector('meta[name=csrf-token]').content}">
         <input type="hidden" name="_method" value="DELETE">
         <button type="submit"
             class="btn btn-sm btn-outline-danger p-1"
             data-bs-toggle="tooltip"
-            title="Eliminar usuario">
+            title="Dar de baja usuario">
             <i class="bi bi-trash fs-5"></i>
         </button>
     </form>
@@ -202,6 +202,26 @@
                     .catch((err) => console.error('Error al cargar usuarios:', err));
             }
         });
+
+        function confirmarBajaUsuario(event, form, userName) {
+            event.preventDefault();
+            Swal.fire({
+                title: '¿Dar de baja usuario?',
+                text: `¿Estás seguro de que deseas dar de baja a "${userName}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, dar de baja',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+            return false;
+        }
 
         function resetPassword(id, name, email) {
             Swal.fire({
