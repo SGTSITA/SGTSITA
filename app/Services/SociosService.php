@@ -304,6 +304,7 @@ class SociosService
 
                 return [
                     'id' => $pago->id,
+                    'socio_id' => $pago->socio_id,
                     'fecha_pago' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('Y-m-d') : null,
                     'fecha_formateada' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('d-m-Y') : 'S/N',
                     'socio' => $pago->socio->nombre ?? 'S/N',
@@ -315,6 +316,31 @@ class SociosService
             })
             ->values()
             ->toArray();
+
+        // 4. Group by Unit (Camión) for executive unit-by-unit report breakdown
+        $unidadesDesglose = [];
+        foreach ($sociosFinal as $soc) {
+            $uKey = $soc['unidad'] ?: 'Sin Unidad Asignada';
+            if (!isset($unidadesDesglose[$uKey])) {
+                $unidadesDesglose[$uKey] = [
+                    'unidad' => $soc['unidad'] ?: 'Sin Unidad Asignada',
+                    'equipo_id' => $soc['equipo_id'] ?? null,
+                    'viajes_realizados' => $soc['viajes_realizados'],
+                    'utilidad_a_repartir' => $soc['utilidad_a_repartir'],
+                    'socios' => []
+                ];
+            }
+
+            // Filter payments for this specific partner
+            $socPagos = array_values(array_filter($pagosDesglose, function ($p) use ($soc) {
+                return $p['socio_id'] == $soc['socio_id'];
+            }));
+
+            $soc['pagos'] = $socPagos;
+            $soc['total_pagos_periodo'] = round(collect($socPagos)->sum('monto'), 2);
+            $unidadesDesglose[$uKey]['socios'][] = $soc;
+        }
+        $unidadesDesglose = array_values($unidadesDesglose);
 
         $totalPagadoPeriodo = collect($pagosDesglose)->sum('monto');
         $totalPagadoSociosColumna = collect($sociosFinal)->sum('total_pagado');
@@ -329,7 +355,10 @@ class SociosService
             'total_pagado_socios' => round($totalPagadoSociosColumna, 2),
             'utilidad_neta_empresa' => round(($totalUtilidadBrutaReporte - $gastosGeneralesPeriodo) - $totalPagosSocios, 2),
             'total_pagado_periodo' => (float) $totalPagadoPeriodo,
+            'total_socios_configurados' => collect($sociosFinal)->pluck('socio_id')->unique()->count(),
+            'total_unidades_configuradas' => count($unidadesDesglose),
             'socios_desglose' => $sociosFinal,
+            'unidades_desglose' => $unidadesDesglose,
             'viajes_desglose' => $viajesDesglose,
             'pagos_desglose' => $pagosDesglose
         ];

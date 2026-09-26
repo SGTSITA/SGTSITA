@@ -239,7 +239,7 @@ class SociosController extends Controller
         if ($fileType === 'pdf') {
             $fechaGeneracion = now()->format('d-m-Y H:i');
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('socios.pdf_reporte', compact('data', 'empresa', 'fechaGeneracion', 'tipoReporte'));
-            return $pdf->setPaper('a4', 'portrait')->download('reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.pdf');
+            return $pdf->setPaper('a4', 'portrait')->setOption('isPhpEnabled', true)->download('reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.pdf');
         }
 
         return abort(400, 'Tipo de archivo no válido');
@@ -271,8 +271,8 @@ class SociosController extends Controller
                     $periodo = \App\Models\SocioCalculoPeriodo::find($pData['id']);
                     $periodoLabel = $periodo ? (' (Periodo #' . $periodo->id . ' del ' . \Carbon\Carbon::parse($periodo->fecha_desde)->format('d-m-Y') . ' al ' . \Carbon\Carbon::parse($periodo->fecha_hasta)->format('d-m-Y') . ')') : ' (Periodo #' . $pData['id'] . ')';
 
-                    $pagoConcepto = !empty($validated['concepto']) 
-                        ? $validated['concepto'] 
+                    $pagoConcepto = !empty($validated['concepto'])
+                        ? $validated['concepto']
                         : ('Liquidación de Utilidad' . $periodoLabel);
 
                     $pago = \App\Models\SocioPago::create([
@@ -301,8 +301,8 @@ class SociosController extends Controller
                     $pagos[] = $pago;
                 }
             } else {
-                $pagoConcepto = !empty($validated['concepto']) 
-                    ? $validated['concepto'] 
+                $pagoConcepto = !empty($validated['concepto'])
+                    ? $validated['concepto']
                     : ('Abono a Cuenta: ' . $socio->nombre);
 
                 $pago = \App\Models\SocioPago::create([
@@ -589,7 +589,7 @@ class SociosController extends Controller
 
                 if ($abonoRestante > 0 && $saldoPendiente > 0) {
                     $descontar = min($abonoRestante, $saldoPendiente);
-                    
+
                     if ($pc->id == $corte->id && $descontar > 0) {
                         return response()->json([
                             'success' => false,
