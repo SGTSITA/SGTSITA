@@ -40,6 +40,11 @@ class SocioPago extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function calculoPeriodo()
+    {
+        return $this->belongsTo(SocioCalculoPeriodo::class, 'calculo_periodo_id');
+    }
+
     protected static function boot()
     {
         parent::boot();
