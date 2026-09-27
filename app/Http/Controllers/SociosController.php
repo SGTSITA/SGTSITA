@@ -231,15 +231,15 @@ class SociosController extends Controller
 
         if ($fileType === 'xlsx') {
             return \Maatwebsite\Excel\Facades\Excel::download(
-                new \App\Exports\SociosUtilidadExport($data, $empresa, $tipoReporte),
+                new \App\Exports\SociosUtilidadExport($data, $empresa, $tipoReporte, $socioId),
                 'reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.xlsx'
             );
         }
 
         if ($fileType === 'pdf') {
             $fechaGeneracion = now()->format('d-m-Y H:i');
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('socios.pdf_reporte', compact('data', 'empresa', 'fechaGeneracion', 'tipoReporte'));
-            return $pdf->setPaper('a4', 'portrait')->download('reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.pdf');
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('socios.pdf_reporte', compact('data', 'empresa', 'fechaGeneracion', 'tipoReporte', 'socioId'));
+            return $pdf->setPaper('a4', 'portrait')->setOption('isPhpEnabled', true)->download('reporte_utilidad_socios_' . $startDate . '_' . $endDate . '.pdf');
         }
 
         return abort(400, 'Tipo de archivo no válido');
@@ -271,12 +271,17 @@ class SociosController extends Controller
                     $periodo = \App\Models\SocioCalculoPeriodo::find($pData['id']);
                     $periodoLabel = $periodo ? (' (Periodo #' . $periodo->id . ' del ' . \Carbon\Carbon::parse($periodo->fecha_desde)->format('d-m-Y') . ' al ' . \Carbon\Carbon::parse($periodo->fecha_hasta)->format('d-m-Y') . ')') : ' (Periodo #' . $pData['id'] . ')';
 
+                    $pagoConcepto = !empty($validated['concepto'])
+                        ? $validated['concepto']
+                        : ('Liquidación de Utilidad' . $periodoLabel);
+
                     $pago = \App\Models\SocioPago::create([
                         'id_empresa' => $idEmpresa,
                         'socio_id' => $validated['socio_id'],
                         'monto' => $pData['monto'],
                         'banco_id' => $validated['banco_id'],
                         'fecha_aplicacion' => $validated['fecha_aplicacion'],
+                        'concepto' => $pagoConcepto,
                         'calculo_periodo_id' => $pData['id'],
                         'user_id' => $userId
                     ]);
@@ -296,17 +301,22 @@ class SociosController extends Controller
                     $pagos[] = $pago;
                 }
             } else {
+                $pagoConcepto = !empty($validated['concepto'])
+                    ? $validated['concepto']
+                    : ('Abono a Cuenta: ' . $socio->nombre);
+
                 $pago = \App\Models\SocioPago::create([
                     'id_empresa' => $idEmpresa,
                     'socio_id' => $validated['socio_id'],
                     'monto' => $validated['monto'],
                     'banco_id' => $validated['banco_id'],
                     'fecha_aplicacion' => $validated['fecha_aplicacion'],
+                    'concepto' => $pagoConcepto,
                     'calculo_periodo_id' => null,
                     'user_id' => $userId
                 ]);
 
-                $conceptoBanco = !empty($validated['concepto']) ? $validated['concepto'] : ('Pago a Socio: ' . $socio->nombre);
+                $conceptoBanco = $pagoConcepto;
 
                 app(\App\Services\BancosService::class)->registrarMovimiento([
                     'cuenta_bancaria_id' => $validated['banco_id'],
@@ -443,7 +453,7 @@ class SociosController extends Controller
                 'id' => 'pago_' . $pago->id,
                 'fecha' => $pago->fecha_aplicacion ? $pago->fecha_aplicacion->format('Y-m-d') : $pago->created_at->format('Y-m-d'),
                 'socio_nombre' => $pago->socio->nombre ?? 'S/N',
-                'concepto' => 'Pago de utilidades' . ($pago->calculo_periodo_id ? ' (Periodo #' . $pago->calculo_periodo_id . ')' : ' (Abono General)'),
+                'concepto' => !empty($pago->concepto) ? $pago->concepto : ('Pago de utilidades' . ($pago->calculo_periodo_id ? ' (Periodo #' . $pago->calculo_periodo_id . ')' : ' (Abono General)')),
                 'banco' => $pago->banco ? $pago->banco->nombre_banco . ' (' . $pago->banco->cuenta_bancaria . ')' : 'N/A',
                 'cargo' => 0.0,
                 'abono' => (float)$pago->monto,
@@ -579,7 +589,7 @@ class SociosController extends Controller
 
                 if ($abonoRestante > 0 && $saldoPendiente > 0) {
                     $descontar = min($abonoRestante, $saldoPendiente);
-                    
+
                     if ($pc->id == $corte->id && $descontar > 0) {
                         return response()->json([
                             'success' => false,

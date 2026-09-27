@@ -159,6 +159,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         ->middleware('auth')
         ->name('users.reset-password');
 
+    Route::post('/users/{id}/restore', [UserController::class, 'restore'])
+        ->middleware('auth')
+        ->name('users.restore');
+
 
     // Ruta para mostrar el formulario de búsqueda
     Route::get('/reporteria', [ReporteriaController::class, 'index'])->name('reporteria.index');

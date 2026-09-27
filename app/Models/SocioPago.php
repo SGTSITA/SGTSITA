@@ -17,6 +17,8 @@ class SocioPago extends Model
         'monto',
         'banco_id',
         'fecha_aplicacion',
+        'concepto',
+        'calculo_periodo_id',
         'user_id'
     ];
 
@@ -38,6 +40,11 @@ class SocioPago extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function calculoPeriodo()
+    {
+        return $this->belongsTo(SocioCalculoPeriodo::class, 'calculo_periodo_id');
     }
 
     protected static function boot()
