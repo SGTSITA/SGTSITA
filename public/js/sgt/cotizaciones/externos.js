@@ -126,6 +126,7 @@ const inputDestino = document.getElementById("destino");
 const inputDireccion = document.getElementById("direccion_entrega");
 const btnGuardar = document.getElementById("btnGuardarViaje");
 const errorDestino = document.getElementById("errorDestino");
+const btnsolicitarservicio = document.getElementById("solicitarservicio");
 
 function normalizarTexto(texto) {
     return (texto || "")
@@ -159,8 +160,11 @@ function validarDestinoDireccion() {
     ];
 
     const destino = normalizarTexto(inputDestino.value);
+    let direccion = "";
 
-    const direccion = normalizarTexto(inputDireccion.value);
+    if (inputDireccion) {
+        direccion = normalizarTexto(inputDireccion.value);
+    }
 
     // destino obligatorio
     if (!destino) {
@@ -170,7 +174,7 @@ function validarDestinoDireccion() {
     }
 
     // direccion obligatoria
-    if (!direccion) {
+    if (!direccion && btnGuardar) {
         btnGuardar.disabled = true;
 
         return false;
@@ -271,6 +275,11 @@ document
             e.preventDefault();
         }
     });
-inputDestino.addEventListener("input", validarConDelay);
 
-inputDireccion.addEventListener("input", validarConDelay);
+if (inputDestino) {
+    inputDestino.addEventListener("input", validarConDelay);
+}
+
+if (inputDireccion) {
+    inputDireccion.addEventListener("input", validarConDelay);
+}

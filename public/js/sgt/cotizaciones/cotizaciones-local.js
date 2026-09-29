@@ -565,8 +565,23 @@ function guardarCotizacionLocal() {
         processData: false,
         contentType: false,
         success: function (res) {
-            if (!res.success) {
-                Swal.fire("Error", res.message, "error");
+            if (res.TMensaje === "warning" || res.status === "warning") {
+                Swal.fire({
+                    icon: "warning",
+                    title: res.Titulo || "Contenedor ya existe",
+                    text: res.Mensaje || res.message,
+                });
+                return;
+            }
+
+            if (!res.success && res.status !== "success") {
+                Swal.fire(
+                    "Error",
+                    res.message ||
+                        res.Mensaje ||
+                        "Error al guardar la solicitud local",
+                    "error",
+                );
                 return;
             }
 
@@ -613,6 +628,26 @@ function updateCotizacion(id) {
         processData: false,
         contentType: false,
         success: function (res) {
+            if (res.TMensaje === "warning" || res.status === "warning") {
+                Swal.fire({
+                    icon: "warning",
+                    title: res.Titulo || "Contenedor ya existe",
+                    text: res.Mensaje || res.message,
+                });
+                return;
+            }
+
+            if (res.status === "error" || res.success === false) {
+                Swal.fire(
+                    "Error",
+                    res.message ||
+                        res.Mensaje ||
+                        "Error al guardar la solicitud local",
+                    "error",
+                );
+                return;
+            }
+
             // Guardar ID de la cotización
             const id = res.id;
             window.cotLocalId = id;
