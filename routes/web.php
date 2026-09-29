@@ -522,6 +522,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
 
             Route::get('/cat-bancos/cuentas/movimientosperiodo/{idcuenta}', [App\Http\Controllers\CatBancoController::class, 'getmovimientosperiodo']);
+            Route::get('/cat-bancos/movimientos-unidad', [App\Http\Controllers\CatBancoController::class, 'getMovimientosPorUnidad'])->name('bancos.movimientos.unidad');
 
             //finaliza bancos v2.0
 

@@ -293,8 +293,26 @@ class GastosService
         return DB::transaction(function () use ($data) {
             $gasto = $this->resolverGastoExistente($data);
 
+            $idEquipo = $data['id_equipo'] ?? null;
+            if (!$idEquipo && !empty($data['vinculos'])) {
+                foreach ($data['vinculos'] as $v) {
+                    if (($v['tipo_vinculo'] ?? null) === 'unidad') {
+                        $idEquipo = $v['vinculable_id'] ?? null;
+                        break;
+                    }
+                    if (($v['tipo_vinculo'] ?? null) === 'asignacion') {
+                        $asig = Asignaciones::find($v['vinculable_id'] ?? null);
+                        if ($asig?->id_camion) {
+                            $idEquipo = $asig->id_camion;
+                            break;
+                        }
+                    }
+                }
+            }
+
             $payload = [
                 'id_empresa' => $data['id_empresa'],
+                'id_equipo' => $idEquipo,
                 'categoria_gasto_id' => $data['categoria_gasto_id'] ?? null,
                 'gasto_concepto_id' => $data['gasto_concepto_id'] ?? null,
                 'folio' => $data['folio'] ?? null,
@@ -538,11 +556,27 @@ class GastosService
             }
 
             // Dynamically construct detailed json for bank movements details column if not provided
+            $gasto->loadMissing(['vinculos', 'equipo']);
+            $equipoId = $gasto->id_equipo;
+            $equipoNombre = null;
+            if ($gasto->equipo) {
+                $equipoNombre = $gasto->equipo->id_equipo ?: $gasto->equipo->placas;
+            } elseif ($gasto->id_equipo) {
+                $eq = Equipo::find($gasto->id_equipo);
+                $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+            } else {
+                $vUnidad = $gasto->vinculos->firstWhere('tipo_vinculo', 'unidad');
+                if ($vUnidad) {
+                    $equipoId = $vUnidad->vinculable_id;
+                    $eq = Equipo::find($equipoId);
+                    $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+                }
+            }
+
             $detallesMovimiento = null;
             if (isset($data['detalles_banco'])) {
                 $detallesMovimiento = $data['detalles_banco'];
             } else {
-                $gasto->loadMissing('vinculos');
                 $vinculosInfo = [];
                 foreach ($gasto->vinculos as $v) {
                     $vinculosInfo[] = [
@@ -556,16 +590,20 @@ class GastosService
                         'concepto' => $gasto->concepto,
                         'monto' => $monto,
                         'tipo_gasto' => $gasto->tipo_gasto,
+                        'id_equipo' => $equipoId,
+                        'unidad' => $equipoNombre,
                         'vinculos' => $vinculosInfo
                     ]
                 ];
             }
 
+            $conceptoFinal = $data['concepto_banco'] ?? BancosService::generarConcepto('gasto', $gasto->concepto, null, null, $equipoNombre);
+
             $movimiento = $this->bancosService->registrarMovimiento([
                 'cuenta_bancaria_id' => $cuentaId,
                 'tipo' => 'cargo',
                 'monto' => $monto,
-                'concepto' => $data['concepto_banco'] ?? 'Pago gasto: ' . $gasto->concepto,
+                'concepto' => $conceptoFinal,
                 'fecha_movimiento' => $fechaPago,
                 'referencia' => $data['referencia_banco'] ?? 'GASTO',
                 'detalles' => $detallesMovimiento,
@@ -638,7 +676,7 @@ class GastosService
                     // Solo hacer un abono por el monto del gasto cancelado
                     $this->bancosService->registrarMovimiento([
                         'cuenta_bancaria_id' => $pago->cuenta_bancaria_id,
-                        'tipo'               => 'abono', 
+                        'tipo'               => 'abono',
                         'monto'              => $pago->monto,
                         'concepto'           => 'Devolución Parcial - ' . ($pago->gasto?->concepto ?? 'Pago cancelado'),
                         'fecha_movimiento'   => $fechaCancelacion,
@@ -673,7 +711,7 @@ class GastosService
             }
 
             $pago->update(['estatus' => 'cancelado']);
-            
+
             $gasto = $pago->gasto;
             if ($gasto) {
                 $this->sincronizarEstatusPago($gasto);
