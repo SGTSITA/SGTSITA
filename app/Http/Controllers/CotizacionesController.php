@@ -3944,6 +3944,21 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             $bitacora->save();
 
 
+            $normalizarFecha = function ($valor) {
+    if ($valor === null) {
+        return null;
+    }
+
+    $valor = trim((string) $valor);
+
+    return $valor === '' || strtolower($valor) === 'null'
+        ? null
+        : $valor;
+};
+
+
+$naviera = $request->naviera ?? null;
+
             $doc = DocumCotizacion::create([
                 'id_cotizacion'          => $cotizacion->id,
                 'id_empresa'             => $idempresa,
@@ -3965,10 +3980,11 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
                 'boleta_patio'           => $request->boleta_patio,
                 'fecha_boleta_patio'     => $request->fecha_boleta_patio,
                 'cima'                   => $request->cima ?? 0,
-                'cita_at'                => $request->cita_at ?? null,
-                'eta'                    => !empty($request->eta) && $request->eta !== 'null' ? $request->eta  : null,
-                'naviera_id'             => $request->naviera_id ?? null,
-                'pedimento_recibido_at'  => $request->pedimento_recibido_at ?? null,
+                'cita_at'               => $normalizarFecha($request->cita_at),
+                'eta'                   => $normalizarFecha($request->eta),
+                'pedimento_recibido_at' => $normalizarFecha($request->pedimento_recibido_at),
+                'naviera_id'             => ($naviera === null || $naviera === '' || $naviera === 'null')    ? null    : (int) $naviera ,
+
             ]);
 
 
@@ -4005,16 +4021,30 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             $cot = Cotizaciones::findOrFail($id);
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
-            $contenedorOriginal = $doc->num_contenedor;
-            $contenedorupdate = str_replace(' ', '', $request->num_contenedor);
-            if ($contenedorupdate !== $contenedorOriginal) {
+            $contenedorOriginal = strtoupper(trim(str_replace(' ', '', $doc->num_contenedor ?? '')));
+            $contenedorupdate = strtoupper(trim(str_replace(' ', '', $request->num_contenedor ?? '')));
 
-                $contenedorExistente = DocumCotizacion::where('num_contenedor', $contenedorupdate)
-                    ->where('id_cotizacion', '!=', $doc->id_cotizacion)
+            if (!empty($contenedorupdate) && $contenedorupdate !== $contenedorOriginal) {
+
+
+                $contenedorExistente = DocumCotizacion::where('id', '!=', $doc->id)
+                    ->where(function ($query) use ($contenedorupdate) {
+                        $query->whereRaw("UPPER(REPLACE(TRIM(num_contenedor), ' ', '')) = ?", [$contenedorupdate])
+                              ->orWhere('num_contenedor', $contenedorupdate);
+                    })
                     ->exists();
 
+                   //  dd( $contenedorupdate, $contenedorOriginal, $contenedorExistente);
+
                 if ($contenedorExistente) {
-                    return response()->json(["Titulo" => "Contenedor creado previamente", "Mensaje" => "El contenedor ya existe en el sistema y no puede duplicarse", "TMensaje" => "warning"]);
+                    DB::rollBack();
+                    return response()->json([
+                        'status'   => 'warning',
+                        'TMensaje' => 'warning',
+                        'Titulo'   => 'Contenedor creado previamente',
+                        'Mensaje'  => "El contenedor $contenedorupdate ya existe en el sistema y no puede duplicarse",
+                        'message'  => "El contenedor $contenedorupdate ya existe en el sistema y no puede duplicarse"
+                    ]);
                 }
             }
 
@@ -4133,7 +4163,22 @@ $this->procesarDocumento(
 
 
 
-            if ($request->num_contenedor != $contenedorOriginal) {
+
+            $normalizarFecha = function ($valor) {
+    if ($valor === null) {
+        return null;
+    }
+
+    $valor = trim((string) $valor);
+
+    return $valor === '' || strtolower($valor) === 'null'
+        ? null
+        : $valor;
+};
+
+
+
+            if (!empty($contenedorupdate) && $contenedorupdate !== $contenedorOriginal) {
                 $doc->num_contenedor = $contenedorupdate;
             }
 
@@ -4143,13 +4188,12 @@ $this->procesarDocumento(
 
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
-            $doc->cita_at = $request->cita_at ?? null;
-            $doc->eta = $request->eta ?? null;
+            $doc->cita_at = $normalizarFecha($request->cita_at);
+            $doc->eta = $normalizarFecha($request->eta);
             $naviera = $request->naviera_id;
-            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')
-    ? null
-    : (int) $naviera;
-            $doc->pedimento_recibido_at = $request->pedimento_recibido_at ?? null;
+
+            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')    ? null    : (int) $naviera;
+            $doc->pedimento_recibido_at = $normalizarFecha($request->pedimento_recibido_at);
 
 
 
