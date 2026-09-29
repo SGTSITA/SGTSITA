@@ -28,12 +28,14 @@ class GastosController extends Controller
 
    public function index()
     {
-        return view(
-            'gastos.index',
-            $this->gastosService->getCatalogosIndex(
-                auth()->user()->id_empresa
-            )
-        );
+        $idEmpresa = auth()->user()->id_empresa;
+        $empresa = \App\Models\Empresas::withoutGlobalScopes()->find($idEmpresa);
+
+        $catalogos = $this->gastosService->getCatalogosIndex($idEmpresa);
+        $catalogos['empresaActual'] = $empresa;
+        $catalogos['requiereUnidadGasto'] = (bool) ($empresa?->requiere_unidad_gasto ?? false);
+
+        return view('gastos.index', $catalogos);
     }
 
    public function data(Request $request)
@@ -85,7 +87,7 @@ class GastosController extends Controller
                     'vinculable_id' => $cotizacion->id,
                     'observaciones' => 'Vinculo a cotización unificado.',
                 ];
-                
+
                 $contenedor = DocumCotizacion::where('id_cotizacion', $cotizacion->id)->first();
                 if ($contenedor) {
                     $vinculos[] = [
@@ -94,7 +96,7 @@ class GastosController extends Controller
                         'vinculable_id' => $contenedor->id,
                         'observaciones' => $contenedor->num_contenedor,
                     ];
-                    
+
                     $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
                     if ($asignacion) {
                         $vinculos[] = [
@@ -103,7 +105,7 @@ class GastosController extends Controller
                             'vinculable_id' => $asignacion->id,
                             'observaciones' => 'Vinculo a viaje/asignación unificado.',
                         ];
-                        
+
                         if ($request->tipo_gasto === 'operador' || $request->tipo_gasto === 'viaje') {
                             if ($asignacion->id_operador) {
                                 $vinculos[] = [
@@ -116,7 +118,7 @@ class GastosController extends Controller
                         }
                     }
                 }
-                
+
                 $imputaciones[] = [
                     'fecha_imputacion' => $request->fecha_gasto,
                     'tipo_imputacion' =>  $tipoImputacion,
@@ -153,9 +155,10 @@ class GastosController extends Controller
                 }
             }
         }
-        // Compatibilidad anterior con equipo_id único
-        elseif ($request->tipo_gasto === 'unidad' && $request->filled('equipo_id')) {
-            $equipo = Equipo::find($request->equipo_id);
+        // Compatibilidad con id_equipo / equipo_id único o general con unidad
+        elseif (($request->tipo_gasto === 'unidad' || $request->filled('id_equipo') || $request->filled('equipo_id')) && ($request->filled('id_equipo') || $request->filled('equipo_id'))) {
+            $equipoId = $request->id_equipo ?: $request->equipo_id;
+            $equipo = Equipo::find($equipoId);
             if ($equipo) {
                 $vinculos[] = [
                     'tipo_vinculo' => 'unidad',
@@ -343,9 +346,12 @@ class GastosController extends Controller
                 }
             }
 
+            $selectedEquipoId = $request->id_equipo ?: ($request->equipo_id ?: (is_array($request->unidades) && count($request->unidades) === 1 ? $request->unidades[0] : null));
+
             // Preparar datos para registrar
             $storeData = array_merge($validated, [
                 'id_empresa' => auth()->user()->id_empresa,
+                'id_equipo' => $selectedEquipoId,
                 'origen_modulo' => 'manual',
                 'estatus' => 'pendiente_pago',
                 'vinculos' => $vinculos,
@@ -376,7 +382,7 @@ class GastosController extends Controller
                                 'metodo_pago' => 'Transferencia',
                                 'referencia' => $ref,
                                 'referencia_banco' => $ref,
-                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, 'Unidad: ' . ($equipo->id_equipo ?: $equipo->placas)),
+                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null, ($equipo->id_equipo ?: $equipo->placas)),
                             ]);
                         }
                     }
@@ -387,9 +393,10 @@ class GastosController extends Controller
                     $montoProporcional = $count > 0 ? ($montoTotal / $count) : $montoTotal;
 
                     foreach ($viajesIds as $id) {
-                        $asignacion = Asignaciones::with('Contenedor')->find($id);
+                        $asignacion = Asignaciones::with(['Contenedor', 'Camion'])->find($id);
                         if ($asignacion) {
                             $numContenedor = $asignacion->Contenedor?->num_contenedor ?: 'S/N';
+                            $equipoNombre = $asignacion->Camion ? ($asignacion->Camion->id_equipo ?: $asignacion->Camion->placas) : null;
                             $ref = 'VIAJE: ' . $numContenedor;
                             $this->gastosService->pagar($gasto, [
                                 'cuenta_bancaria_id' => $request->id_banco1,
@@ -398,12 +405,18 @@ class GastosController extends Controller
                                 'metodo_pago' => 'Transferencia',
                                 'referencia' => $ref,
                                 'referencia_banco' => $ref,
-                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, $numContenedor, null),
+                                'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, $numContenedor, null, $equipoNombre),
                             ]);
                         }
                     }
                 }
                 else {
+                    $equipoNombre = null;
+                    if ($gasto->id_equipo) {
+                        $eq = $gasto->equipo ?: Equipo::find($gasto->id_equipo);
+                        $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+                    }
+
                     $this->gastosService->pagar($gasto, [
                         'cuenta_bancaria_id' => $request->id_banco1,
                         'fecha_pago' => $request->fecha_gasto,
@@ -411,7 +424,7 @@ class GastosController extends Controller
                         'metodo_pago' => 'Transferencia',
                         'referencia' => 'Pago automático al registrar',
                         'referencia_banco' => 'GASTO',
-                        'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null),
+                        'concepto_banco' => BancosService::generarConcepto('gasto', $gasto->concepto, null, null, $equipoNombre),
                     ]);
                 }
             }
@@ -447,8 +460,23 @@ class GastosController extends Controller
             'comprobante' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $gasto->loadMissing(['equipo', 'vinculos']);
+        $equipoNombre = null;
+        if ($gasto->equipo) {
+            $equipoNombre = $gasto->equipo->id_equipo ?: $gasto->equipo->placas;
+        } elseif ($gasto->id_equipo) {
+            $eq = Equipo::find($gasto->id_equipo);
+            $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+        } else {
+            $vUnidad = $gasto->vinculos->firstWhere('tipo_vinculo', 'unidad');
+            if ($vUnidad) {
+                $eq = Equipo::find($vUnidad->vinculable_id);
+                $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+            }
+        }
+
         $categoryName = $gasto->categoria?->categoria ?: 'Gasto';
-        $data['concepto_banco'] = BancosService::generarConcepto('gasto', $gasto->concepto, null, null);
+        $data['concepto_banco'] = BancosService::generarConcepto('gasto', $gasto->concepto, null, null, $equipoNombre);
         $data['referencia_banco'] = $data['referencia'] ?? 'PAGO GASTO';
 
         $pago = $this->gastosService->pagar($gasto, $data);
@@ -511,12 +539,13 @@ class GastosController extends Controller
             // Registrar movimiento bancario UNICO
             $conceptos = [];
             $detalles = [];
-            
+            $unidadesMap = [];
+
             foreach ($gastos as $gasto) {
                 if ($gasto->estatus !== 'pagado') {
                     $conceptos[] = $gasto->concepto;
-                    
-                    $gasto->loadMissing('vinculos');
+
+                    $gasto->loadMissing(['vinculos', 'equipo']);
                     $vinculosInfo = [];
                     foreach ($gasto->vinculos as $v) {
                         $vinculosInfo[] = [
@@ -524,27 +553,53 @@ class GastosController extends Controller
                             'referencia' => $v->observaciones ?: $v->vinculable_id
                         ];
                     }
-                    
+
+                    $equipoId = $gasto->id_equipo;
+                    $equipoNombre = null;
+                    if ($gasto->equipo) {
+                        $equipoNombre = $gasto->equipo->id_equipo ?: $gasto->equipo->placas;
+                    } elseif ($gasto->id_equipo) {
+                        $eq = Equipo::find($gasto->id_equipo);
+                        $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+                    } else {
+                        $vUnidad = $gasto->vinculos->firstWhere('tipo_vinculo', 'unidad');
+                        if ($vUnidad) {
+                            $equipoId = $vUnidad->vinculable_id;
+                            $eq = Equipo::find($equipoId);
+                            $equipoNombre = $eq ? ($eq->id_equipo ?: $eq->placas) : null;
+                        }
+                    }
+                    if ($equipoId) {
+                        $unidadesMap[$equipoId] = $equipoNombre;
+                    }
+
                     $detalles[] = [
                         'gasto_id' => $gasto->id,
                         'concepto' => $gasto->concepto,
                         'monto' => $gasto->saldo_pendiente,
                         'tipo_gasto' => $gasto->tipo_gasto,
+                        'id_equipo' => $equipoId,
+                        'unidad' => $equipoNombre,
                         'vinculos' => $vinculosInfo
                     ];
                 }
             }
-            
+
             $conceptosStr = implode(', ', $conceptos);
             if (strlen($conceptosStr) > 200) {
                 $conceptosStr = substr($conceptosStr, 0, 197) . '...';
+            }
+
+            $conceptoMovimiento = '[PAGO MULTIPLE] Pago de gastos';
+            if (count($unidadesMap) === 1) {
+                $conceptoMovimiento .= ' - Unidad: ' . reset($unidadesMap);
             }
 
             $movimiento = $this->bancosService->registrarMovimiento([
                 'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
                 'tipo' => 'cargo',
                 'monto' => $totalMonto,
-                'concepto' => '[PAGO MULTIPLE] Pago de gastos',
+                'concepto' => $conceptoMovimiento,
                 'fecha_movimiento' => $data['fecha_pago'],
                 'referencia' => $data['referencia'] ?? 'PAGO MULTIPLE',
                 'detalles' => $detalles,
@@ -637,7 +692,7 @@ class GastosController extends Controller
                     'vinculable_id' => $cotizacion->id,
                     'observaciones' => 'Vinculo a cotización unificado.',
                 ];
-                
+
                 $contenedor = DocumCotizacion::where('id_cotizacion', $cotizacion->id)->first();
                 if ($contenedor) {
                     $vinculos[] = [
@@ -646,7 +701,7 @@ class GastosController extends Controller
                         'vinculable_id' => $contenedor->id,
                         'observaciones' => $contenedor->num_contenedor,
                     ];
-                    
+
                     $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
                     if ($asignacion) {
                         $vinculos[] = [
@@ -829,12 +884,12 @@ class GastosController extends Controller
 
                 if ($movimiento) {
                     $nuevoMontoMovimiento = (float)$movimiento->monto + $montoDiferencia;
-                    
+
                     $updateData = [
                         'monto' => $nuevoMontoMovimiento,
                         'fecha_movimiento' => $request->fecha_gasto,
                     ];
-                    
+
                     if (strpos($movimiento->concepto ?? '', '[PAGO MULTIPLE]') === false) {
                         $updateData['concepto'] = 'Pago gasto (Editado): ' . $request->concepto;
                     }
@@ -909,7 +964,7 @@ class GastosController extends Controller
             ->where('is_active', 1)
             ->orderBy('nombre')
             ->get();
-            
+
         return response()->json($conceptos);
     }
 
@@ -936,7 +991,7 @@ class GastosController extends Controller
             // 2. Si tiene origen legacy, sincronizar la eliminación
             if ($gasto->origen_legacy && $gasto->origen_legacy_id) {
                 $legacyId = $gasto->origen_legacy_id;
-                
+
                 if ($gasto->origen_legacy === 'gastos_operadores') {
                     \DB::table('gastos_operadores')
                         ->where('id', $legacyId)

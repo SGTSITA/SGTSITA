@@ -1031,6 +1031,9 @@ class LiquidacionesController extends Controller
                 LiquidacionContenedor::insert($cont);
             });
 
+            $contenedoresAbonos = [];
+            $unidadesLiquidacionMap = [];
+
             foreach ($contenedores as $c) {
                 $asignacion = Asignaciones::where('id', '=', $c['IdAsignacion'])->first();
                 $saldoContenedor = $asignacion->restante_pago_operador;
@@ -1087,60 +1090,44 @@ class LiquidacionesController extends Controller
 
                 $cotizacion = DocumCotizacion::where('id', '=', $asignacion->id_contenedor)->first();
 
-
+                $asignacion->loadMissing('Camion');
+                $equipoId = $asignacion->id_camion;
+                $equipoNombre = $asignacion->Camion ? ($asignacion->Camion->id_equipo ?: $asignacion->Camion->placas) : null;
+                if ($equipoId) {
+                    $unidadesLiquidacionMap[$equipoId] = $equipoNombre;
+                }
 
                 $contenedoresAbonos[] = [
                     'num_contenedor' => $cotizacion->num_contenedor,
-                    'abono' => $c['MontoPago']
+                    'abono' => $c['MontoPago'],
+                    'id_equipo' => $equipoId,
+                    'unidad' => $equipoNombre,
                 ];
-                $contenedoresAbonosJson = json_encode($contenedoresAbonos);
 
             }
 
-          /*   $banco = new BancoDineroOpe();
-            $banco->id_operador = $request->_IdOperador;
-
-            $banco->monto1 = $totalPagar;
-            $banco->metodo_pago1 = 'Transferencia';
-            $banco->descripcion_gasto = 'Pago operador';
-            $banco->id_banco1 = $request->bancoId;
-            $banco->contenedores = $contenedoresAbonosJson;
-
-            $banco->tipo = 'Salida';
-            $banco->fecha_pago = \Carbon\Carbon::createFromFormat(
-                'd/m/Y',
-                $fechaAplicacionDinero
-            )->format('Y-m-d');
-            $banco->save(); */
-
-           // Bancos::where('id', '=', $request->bancoId)->update(["saldo" => DB::raw("saldo - ". $request->totalMontoPago)]);
-
-
             //bancos nuevo registrar movi
-
             if ($request->filled('bancoId') &&  $contenedores->sum('MontoPago') > 0) {
                 $FechaAplicacionPago = $request->get('FechaAplicacionPago');
 
                 $operadorN = Operador::find($request->_IdOperador);
+                $unidadConcepto = count($unidadesLiquidacionMap) === 1 ? reset($unidadesLiquidacionMap) : null;
 
                 $data = [
                         'cuenta_bancaria_id' => $request->get('bancoId'),
                         'tipo' => 'cargo',
                         'monto' => floatval($totalPagar),
-                        'concepto' => \App\Services\BancosService::generarConcepto('viaje', 'Pago Operador / Liquidación', null, $operadorN?->nombre ?? null),
+                        'concepto' => \App\Services\BancosService::generarConcepto('viaje', 'Pago Operador / Liquidación', null, $operadorN?->nombre ?? null, $unidadConcepto),
                         'fecha_movimiento' => \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $FechaAplicacionPago
                         )->format('Y-m-d'),
                         'origen' => null,
                         'referencia' => 'Liquidacion',
-                        'detalles' =>  $contenedoresAbonosJson,
+                        'detalles' =>  $contenedoresAbonos,
                          'referenciaable_id' => $liquidacion->id,
                           'referenciaable_type' => \App\Models\Liquidaciones::class, //para polimorfismo
                     ];
-
-
-
 
                 $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
                 //   dd('no pasar', $movimeintoCrear);

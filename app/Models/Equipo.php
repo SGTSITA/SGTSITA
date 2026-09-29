@@ -48,11 +48,15 @@ class Equipo extends Model
         parent::boot();
 
         static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
     public function getEstadoGpsAttribute()
