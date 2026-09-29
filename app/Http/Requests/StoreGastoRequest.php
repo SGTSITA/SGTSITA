@@ -96,11 +96,24 @@ class StoreGastoRequest extends FormRequest
                 if (!$tieneUnidad) {
                     $validator->errors()->add('id_equipo', 'La unidad/equipo es obligatoria para registrar gastos en esta empresa.');
                 } elseif (!empty($idEquipo)) {
-                    $pertenece = \App\Models\Equipo::where('id', $idEquipo)
+                    $equipoValido = \App\Models\Equipo::where('id', $idEquipo)
                         ->where('id_empresa', $idEmpresa)
+                        ->where('tipo', 'Tractos / Camiones')
                         ->exists();
-                    if (!$pertenece) {
-                        $validator->errors()->add('id_equipo', 'La unidad seleccionada no pertenece a la empresa actual.');
+                    if (!$equipoValido) {
+                        $validator->errors()->add('id_equipo', 'La unidad seleccionada no pertenece a la empresa actual o no es del tipo Tractos / Camiones.');
+                    }
+                }
+
+                if (!empty($unidades) && is_array($unidades)) {
+                    $invalidos = \App\Models\Equipo::whereIn('id', $unidades)
+                        ->where(function ($q) use ($idEmpresa) {
+                            $q->where('id_empresa', '!=', $idEmpresa)
+                              ->orWhere('tipo', '!=', 'Tractos / Camiones');
+                        })
+                        ->exists();
+                    if ($invalidos) {
+                        $validator->errors()->add('unidades', 'Una o más unidades seleccionadas no pertenecen a la empresa actual o no son del tipo Tractos / Camiones.');
                     }
                 }
             }

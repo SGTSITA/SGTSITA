@@ -40,6 +40,7 @@ class GastosService
             ),
 
             'equipos' => Equipo::where('id_empresa', $idEmpresa)
+                ->where('tipo', 'Tractos / Camiones')
                 ->orderBy('acceso')
                 ->get(),
 

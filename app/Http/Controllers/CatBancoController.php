@@ -53,6 +53,7 @@ class CatBancoController extends Controller
                    ->get();
 
         $equipos = Equipo::where('id_empresa', Auth::user()->id_empresa)
+            ->where('tipo', 'Tractos / Camiones')
             ->orderBy('id_equipo')
             ->get();
 
