@@ -96,44 +96,51 @@ class GoogleMapsService
             return $data;
         }
 
-        // 1. Extraer nombre de lugar de /place/nombre/ o /search/nombre/
+        // 1. Coordenadas literales en el path: /search/lat,lng o /place/lat,lng
+        if (preg_match('/\/maps\/(?:search|place)\/(-?\d+\.\d+)[,+%20\s]+(-?\d+\.\d+)/i', $url, $m)) {
+            $data['lat'] = (float)$m[1];
+            $data['lng'] = (float)$m[2];
+            return $data;
+        }
+
+        // 2. Extraer nombre de lugar de /place/nombre/ o /search/nombre/ (siempre que no sean coordenadas)
         if (preg_match('/\/maps\/(?:place|search)\/([^\/@?]+)/i', $url, $m)) {
             $rawPlace = urldecode(str_replace('+', ' ', $m[1]));
-            if (!preg_match('/^-?\d+\.\d+,-?\d+\.\d+$/', trim($rawPlace))) {
+            if (!preg_match('/^\s*-?\d+\.\d+\s*[,+\s]+\s*-?\d+\.\d+\s*$/', trim($rawPlace))) {
                 $data['place_name'] = trim($rawPlace);
             }
         }
 
-        // 2. Coordenadas de marcador pin (!3d<lat>!4d<lng> en protobuf de Google) - PRIORIDAD MÁXIMA
+        // 3. Coordenadas de marcador pin (!3d<lat>!4d<lng> en protobuf de Google) - PRIORIDAD MÁXIMA
         if (preg_match('/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/', $url, $m)) {
             $data['lat'] = (float)$m[1];
             $data['lng'] = (float)$m[2];
             return $data;
         }
 
-        // 3. Parámetro q con coordenadas: ?q=lat,lng
-        if (preg_match('/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/', $url, $m)) {
+        // 4. Parámetro q con coordenadas: ?q=lat,lng
+        if (preg_match('/[?&]q=(-?\d+\.\d+)[,+%20\s]+(-?\d+\.\d+)/', $url, $m)) {
             $data['lat'] = (float)$m[1];
             $data['lng'] = (float)$m[2];
             return $data;
         }
 
-        // 4. Parámetro ll con coordenadas: ?ll=lat,lng
-        if (preg_match('/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/', $url, $m)) {
+        // 5. Parámetro ll con coordenadas: ?ll=lat,lng
+        if (preg_match('/[?&]ll=(-?\d+\.\d+)[,+%20\s]+(-?\d+\.\d+)/', $url, $m)) {
             $data['lat'] = (float)$m[1];
             $data['lng'] = (float)$m[2];
             return $data;
         }
 
-        // 5. Coordenadas de cámara/vista: @lat,lng
+        // 6. Coordenadas de cámara/vista: @lat,lng
         if (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $url, $m)) {
             $data['lat'] = (float)$m[1];
             $data['lng'] = (float)$m[2];
             return $data;
         }
 
-        // 6. Path con coordenadas: /lat,lng
-        if (preg_match('/\/(-?\d+\.\d+),(-?\d+\.\d+)/', $url, $m)) {
+        // 7. Path genérico con coordenadas: /lat,lng
+        if (preg_match('/\/(-?\d+\.\d+)[,+%20\s]+(-?\d+\.\d+)/', $url, $m)) {
             $data['lat'] = (float)$m[1];
             $data['lng'] = (float)$m[2];
             return $data;
@@ -217,9 +224,6 @@ class GoogleMapsService
                     // 2. Coordenadas !3d en el body
                     if (!$bestLat || !$bestLng) {
                         if (preg_match('/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/', $body, $bm)) {
-                            $bestLat = (float)$bm[1];
-                            $bestLng = (float)$bm[2];
-                        } elseif (preg_match('/APP_INITIALIZATION_STATE=\[\[\[[^\]]*,(-?\d+\.\d+),(-?\d+\.\d+)\]/', $body, $bm)) {
                             $bestLat = (float)$bm[1];
                             $bestLng = (float)$bm[2];
                         }
