@@ -1325,30 +1325,9 @@ if (modal) {
         }
         // Click en el mapa
         map.addListener("click", function (e) {
-            const lat = e.latLng.lat().toFixed(6);
-            const lng = e.latLng.lng().toFixed(6);
-
-            if (marker) marker.setMap(null);
-            marker = new google.maps.Marker({
-                position: { lat: parseFloat(lat), lng: parseFloat(lng) },
-                map: map,
-            });
-            crearurlmapalatitudlongitud(lat, lng);
-            document.getElementById("latitud").value = lat;
-            document.getElementById("longitud").value = lng;
-
-            fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    const direccion = data.display_name;
-                    actualizarDireccionInput(direccion);
-                    document.getElementById("direccion_mapa").value = direccion;
-                });
-            let urlCrearMapa = crearurlmapalatitudlongitud(lat, lng);
-            document.getElementById("linkMapa").href = urlCrearMapa;
-            document.getElementById("linkMapa").textContent = urlCrearMapa;
+            const lat = e.latLng.lat();
+            const lng = e.latLng.lng();
+            aplicarUbicacionEnMapa(lat, lng);
         });
 
         const lat = parseFloat(document.getElementById("latitud").value);
@@ -1357,76 +1336,146 @@ if (modal) {
 
         if ((isNaN(lat) || isNaN(lng)) && direccion) {
             // Geocoding con dirección
-            fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}`,
-            )
-                .then((res) => res.json())
-                .then((results) => {
-                    if (results.length > 0) {
-                        const latitud = parseFloat(results[0].lat);
-                        const longitud = parseFloat(results[0].lon);
-
-                        map.setCenter({ lat: latitud, lng: longitud });
-                        map.setZoom(16);
-
-                        if (marker) marker.setMap(null);
-                        marker = new google.maps.Marker({
-                            position: { lat: latitud, lng: longitud },
-                            map: map,
-                        });
-
-                        document.getElementById("latitud").value =
-                            latitud.toFixed(6);
-                        document.getElementById("longitud").value =
-                            longitud.toFixed(6);
-                        document.getElementById("direccion_mapa").value =
-                            direccion;
-                    } else {
-                        alert(
-                            "No se pudo localizar la dirección. Verifica el formato o selecciona manualmente.",
-                        );
-                    }
-                })
-                .catch((err) => {
-                    console.error("Error al buscar dirección:", err);
-                    alert("Error al contactar el servicio de mapas.");
-                });
+            buscarDireccionEnMapa(direccion);
         }
     });
 }
+
+function aplicarUbicacionEnMapa(lat, lng, direccionOpt) {
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) return;
+
+    if (map) {
+        map.setCenter({ lat: latNum, lng: lngNum });
+        map.setZoom(16);
+    }
+
+    if (marker) marker.setMap(null);
+    if (
+        map &&
+        typeof google !== "undefined" &&
+        google.maps &&
+        google.maps.Marker
+    ) {
+        marker = new google.maps.Marker({
+            position: { lat: latNum, lng: lngNum },
+            map: map,
+        });
+    }
+
+    const latStr = latNum.toFixed(6);
+    const lngStr = lngNum.toFixed(6);
+
+    const inputLat = document.getElementById("latitud");
+    if (inputLat) inputLat.value = latStr;
+
+    const inputLng = document.getElementById("longitud");
+    if (inputLng) inputLng.value = lngStr;
+
+    const urlCrearMapa = crearurlmapalatitudlongitud(latStr, lngStr);
+    const linkMapa = document.getElementById("linkMapa");
+    if (linkMapa) {
+        linkMapa.href = urlCrearMapa;
+        const textoMapa = document.getElementById("textoMapa");
+        if (textoMapa) {
+            textoMapa.textContent = urlCrearMapa;
+        } else {
+            linkMapa.textContent = urlCrearMapa;
+        }
+    }
+
+    if (
+        direccionOpt &&
+        typeof direccionOpt === "string" &&
+        direccionOpt.trim() !== ""
+    ) {
+        actualizarDireccionInput(direccionOpt.trim());
+        const dirMapa = document.getElementById("direccion_mapa");
+        if (dirMapa) dirMapa.value = direccionOpt.trim();
+    } else {
+        geocodificardireccion(latNum, lngNum);
+    }
+}
+
 if (document.getElementById("searchInput")) {
     document
         .getElementById("searchInput")
         .addEventListener("keypress", function (e) {
             if (e.key === "Enter") {
                 e.preventDefault();
-                let query = this.value;
-                if (esShortUrlGoogleMaps(query)) {
+                let query = (this.value || "").trim();
+                if (!query) return;
+
+                if (esUrlGoogleMaps(query) || /^https?:\/\//i.test(query)) {
                     resolverUrlMapa(query);
+                } else if (esTextoCoordenadas(query)) {
+                    const match = query.match(
+                        /^\s*(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/,
+                    );
+                    if (match) {
+                        aplicarUbicacionEnMapa(
+                            parseFloat(match[1]),
+                            parseFloat(match[2]),
+                        );
+                    }
                 } else {
-                    query = formatearDireccion(query);
-                    fetch(
-                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
-                    )
-                        .then((res) => res.json())
-                        .then((results) => {
-                            if (results.length > 0) {
-                                const lat = parseFloat(results[0].lat);
-                                const lng = parseFloat(results[0].lon);
-                                map.setCenter({ lat, lng });
-                                map.setZoom(16);
-                                geocodificardireccion(lat, lng);
-                            }
-                        });
+                    buscarDireccionEnMapa(query);
                 }
             }
         });
 }
 
+function buscarDireccionEnMapa(query) {
+    if (typeof google !== "undefined" && google.maps && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: query }, (results, status) => {
+            if (
+                status === "OK" &&
+                results &&
+                results[0] &&
+                results[0].geometry
+            ) {
+                const loc = results[0].geometry.location;
+                aplicarUbicacionEnMapa(
+                    loc.lat(),
+                    loc.lng(),
+                    results[0].formatted_address,
+                );
+                return;
+            }
+            fallbackNominatimSearch(query);
+        });
+    } else {
+        fallbackNominatimSearch(query);
+    }
+}
+
+function fallbackNominatimSearch(query) {
+    let formatted = formatearDireccion(query);
+    fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formatted)}`,
+    )
+        .then((res) => res.json())
+        .then((results) => {
+            if (results && results.length > 0) {
+                const lat = parseFloat(results[0].lat);
+                const lng = parseFloat(results[0].lon);
+                aplicarUbicacionEnMapa(lat, lng, results[0].display_name);
+            } else {
+                alert("No se pudo localizar la dirección especificada.");
+            }
+        })
+        .catch((err) => {
+            console.error("Error al buscar dirección:", err);
+            alert("Error al contactar el servicio de mapas.");
+        });
+}
+
 function resolverUrlMapa(url) {
-    const _token = document
-        .querySelector('meta[name="csrf-token"]')
-        .getAttribute("content");
+    const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const _token = tokenMeta ? tokenMeta.getAttribute("content") : "";
     fetch("/coordenadas/resolver-link-google", {
         method: "POST",
         headers: {
@@ -1434,27 +1483,20 @@ function resolverUrlMapa(url) {
             "X-CSRF-TOKEN": _token,
             Accept: "application/json",
         },
-        body: JSON.stringify({ shortUrl: url.trim() }),
+        body: JSON.stringify({ shortUrl: url.trim(), url: url.trim() }),
     })
         .then((res) => res.json())
         .then((data) => {
             if (data.lat && data.lng) {
-                map.setCenter({ lat: data.lat, lng: data.lng });
-                map.setZoom(16);
-
-                if (marker) marker.setMap(null);
-                marker = new google.maps.Marker({
-                    position: { lat: data.lat, lng: data.lng },
-                    map: map,
-                });
-
-                geocodificardireccion(data.lat, data.lng);
-                //  document.getElementById('latitud').value = data.lat.toFixed(6);
-                //document.getElementById('longitud').value = data.lng.toFixed(6);
-                //  document.getElementById('direccion_entrega').value = data.formatted_address || 'Ubicación desde Google Maps';
-                // document.getElementById('direccion_mapa').value = data.formatted_address || 'Ubicación desde Google Maps';
+                const lat = parseFloat(data.lat);
+                const lng = parseFloat(data.lng);
+                const direccion = data.direccion || data.place_name || "";
+                aplicarUbicacionEnMapa(lat, lng, direccion);
             } else {
-                alert("No se pudo obtener la ubicación desde el enlace.");
+                alert(
+                    data.error ||
+                        "No se pudo obtener la ubicación desde el enlace.",
+                );
             }
         })
         .catch((err) => {
@@ -1464,30 +1506,69 @@ function resolverUrlMapa(url) {
 }
 
 function geocodificardireccion(lat, long) {
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode(
-        { location: { lat: parseInt(lat), lng: parseInt(long) } },
-        (results, status) => {
-            if (status === "OK") {
-                if (results[0]) {
+    const latNum = parseFloat(lat);
+    const lngNum = parseFloat(long);
+
+    if (isNaN(latNum) || isNaN(lngNum)) return;
+
+    if (typeof google !== "undefined" && google.maps && google.maps.Geocoder) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode(
+            { location: { lat: latNum, lng: lngNum } },
+            (results, status) => {
+                if (status === "OK" && results && results[0]) {
                     let direccion = results[0].formatted_address;
-                    document.getElementById("latitud").value = lat.toFixed(6);
-                    document.getElementById("longitud").value = long.toFixed(6);
+                    const inputLat = document.getElementById("latitud");
+                    if (inputLat) inputLat.value = latNum.toFixed(6);
+
+                    const inputLng = document.getElementById("longitud");
+                    if (inputLng) inputLng.value = lngNum.toFixed(6);
 
                     actualizarDireccionInput(direccion);
+                    const dirMapa = document.getElementById("direccion_mapa");
+                    if (dirMapa) dirMapa.value = direccion;
                 } else {
-                    console.log("No se encontró dirección");
+                    fallbackReverseNominatim(latNum, lngNum);
                 }
-            } else {
-                console.error("Error en Geocoder:", status);
+            },
+        );
+    } else {
+        fallbackReverseNominatim(latNum, lngNum);
+    }
+}
+
+function fallbackReverseNominatim(lat, lng) {
+    fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+    )
+        .then((res) => res.json())
+        .then((data) => {
+            if (data && data.display_name) {
+                actualizarDireccionInput(data.display_name);
+                const dirMapa = document.getElementById("direccion_mapa");
+                if (dirMapa) dirMapa.value = data.display_name;
             }
-        },
+        })
+        .catch((err) => {
+            console.warn("Error en reverse Nominatim:", err);
+        });
+}
+
+function esUrlGoogleMaps(url) {
+    if (!url || typeof url !== "string") return false;
+    const trimmed = url.trim();
+    return /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)\/.+/i.test(
+        trimmed,
     );
 }
 
 function esShortUrlGoogleMaps(url) {
-    const regex = /^https?:\/\/maps\.app\.goo\.gl\/.+$/i;
-    return regex.test(url);
+    return esUrlGoogleMaps(url);
+}
+
+function esTextoCoordenadas(texto) {
+    if (!texto || typeof texto !== "string") return false;
+    return /^\s*(-?\d{1,3}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/.test(texto.trim());
 }
 
 function formatearDireccion(raw) {
@@ -2144,7 +2225,12 @@ $("#cotizacionCreate").on("submit", function (e) {
 
         if (trigger != "none") {
             let primaryField = document.getElementById(trigger);
-            if (primaryField && primaryField.value.length > 0 && field && field.value.length == 0) {
+            if (
+                primaryField &&
+                primaryField.value.length > 0 &&
+                field &&
+                field.value.length == 0
+            ) {
                 Swal.fire(
                     "El campo " + item.label + " es obligatorio",
                     "Parece que no ha proporcionado información en el campo " +
@@ -2183,7 +2269,11 @@ $("#cotizacionCreate").on("submit", function (e) {
 
         if (trigger != "none") {
             let primaryField = document.getElementById(trigger);
-            if (primaryField && primaryField.value.length > 0 && field.value.length == 0) {
+            if (
+                primaryField &&
+                primaryField.value.length > 0 &&
+                field.value.length == 0
+            ) {
                 Swal.fire(
                     "El campo " + item.label + " es obligatorio",
                     "Parece que no ha proporcionado información en el campo " +
@@ -2225,7 +2315,11 @@ $("#cotizacionCreate").on("submit", function (e) {
 
         if (trigger != "none") {
             let primaryField = document.getElementById(trigger);
-            if (primaryField && primaryField.value.length > 0 && field.value.length == 0) {
+            if (
+                primaryField &&
+                primaryField.value.length > 0 &&
+                field.value.length == 0
+            ) {
                 Swal.fire(
                     "El campo " + item.label + " es obligatorio",
                     "Parece que no ha proporcionado información en el campo " +

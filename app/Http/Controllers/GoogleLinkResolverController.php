@@ -3,29 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use  App\Services\GoogleMapsService;
+use App\Services\GoogleMapsService;
 
 class GoogleLinkResolverController extends Controller
 {
+    public function resolver(Request $request, GoogleMapsService $service)
+    {
+        $rawUrl = $request->input('shortUrl') ?? $request->input('url');
 
+        if (empty($rawUrl)) {
+            return response()->json(['error' => 'La URL es requerida'], 422);
+        }
 
+        $url = trim($rawUrl);
 
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return response()->json(['error' => 'El enlace proporcionado no es una URL válida'], 422);
+        }
 
-public function resolver(Request $request, GoogleMapsService $service) {
-  $request->validate([
-            'shortUrl' => 'required|url',
-        ]);
+        $coords = $service->resolver($url);
 
- $coords = $service->resolver($request->shortUrl);
+        if (!$coords || empty($coords['lat']) || empty($coords['lng'])) {
+            return response()->json(['error' => 'No se pudieron obtener coordenadas desde el enlace proporcionado'], 422);
+        }
 
-    if (!$coords) {
-        return response()->json(['error' => 'No se pudieron obtener coordenadas'], 422);
+        return response()->json($coords);
     }
-
-    return response()->json($coords);
-}
-
-
-
 }
