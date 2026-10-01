@@ -2744,25 +2744,39 @@ public function indexRendimiento()
         $num_estado_cuenta = $request->input('num_estado_cuenta');
         $num_contenedor = $request->input('num_contenedor');
 
-        $query = \DB::table('estado_cuenta as ec')
+        // Obtener los IDs de estados de cuenta que tienen por lo menos 1 contenedor con complemento de pago
+        $estadosConComplemento = \DB::table('estado_cuenta as ec')
             ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
             ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
             ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
-            ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+            ->where('c.id_empresa', auth()->user()->id_empresa)
             ->where(function($q) {
                 $q->whereNotNull('dc.comprobante_pago_pdf')
                   ->orWhereNotNull('dc.comprobante_pago_xml');
             })
-            ->where('emp.id', auth()->user()->id_empresa);
+            ->pluck('ec.id')
+            ->unique()
+            ->toArray();
 
-        // If num_contenedor is provided, find all statement numbers containing that container.
+        if (empty($estadosConComplemento)) {
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
+        }
+
+        $targetEstadosIds = $estadosConComplemento;
+
+        // Si se busca por número de contenedor, encontrar los estados de cuenta (que tengan complementos) que contengan ese contenedor
         if (!empty($num_contenedor)) {
             $matchingEstados = \DB::table('estado_cuenta as ec')
                 ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
                 ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
                 ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->where('c.id_empresa', auth()->user()->id_empresa)
                 ->where('dc.num_contenedor', 'like', '%' . $num_contenedor . '%')
-                ->pluck('ec.numero')
+                ->whereIn('ec.id', $estadosConComplemento)
+                ->pluck('ec.id')
                 ->unique()
                 ->toArray();
 
@@ -2772,8 +2786,18 @@ public function indexRendimiento()
                     'data' => []
                 ]);
             }
-            $query->whereIn('ec.numero', $matchingEstados);
+
+            $targetEstadosIds = $matchingEstados;
         }
+
+        $query = \DB::table('estado_cuenta as ec')
+            ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+            ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+            ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+            ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+            ->leftJoin('subclientes as sub', 'c.id_subcliente', '=', 'sub.id')
+            ->where('emp.id', auth()->user()->id_empresa)
+            ->whereIn('ec.id', $targetEstadosIds);
 
         if (!empty($num_estado_cuenta)) {
             $query->where('ec.numero', 'like', '%' . $num_estado_cuenta . '%');
@@ -2782,15 +2806,28 @@ public function indexRendimiento()
         $data = $query->select([
             'ec.numero as num_estado_cuenta',
             'emp.nombre as nombre_empresa',
+            'dc.id as docum_cotizacion_id',
             'dc.id_cotizacion',
             'dc.num_contenedor',
             'dc.comprobante_pago_pdf',
-            'dc.comprobante_pago_xml'
-        ])->get();
+            'dc.comprobante_pago_xml',
+            'sub.nombre as subcliente_nombre'
+        ])
+        ->orderBy('ec.numero', 'desc')
+        ->orderBy('dc.num_contenedor', 'asc')
+        ->get();
 
         $grouped = [];
+        $seenContainers = [];
+
         foreach ($data as $item) {
             $groupKey = $item->num_estado_cuenta . ' - ' . $item->nombre_empresa;
+            $containerKey = $groupKey . '_' . $item->docum_cotizacion_id;
+
+            if (isset($seenContainers[$containerKey])) {
+                continue;
+            }
+            $seenContainers[$containerKey] = true;
 
             $files = [];
             if (!empty($item->comprobante_pago_pdf)) {
@@ -2814,6 +2851,7 @@ public function indexRendimiento()
 
             $grouped[$groupKey][] = [
                 'num_contenedor' => $item->num_contenedor,
+                'subcliente' => $item->subcliente_nombre ?? 'Sin subcliente',
                 'files' => $files
             ];
         }
