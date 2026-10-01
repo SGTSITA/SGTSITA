@@ -2,6 +2,115 @@ let fechaInicioViajes;
 let fechaFinViajes;
 
 let motivoBloqueo = "Selecciona al menos un registro";
+let docsData = [];
+let allViajesData = [];
+let currentTabStatus = "planeadas";
+let currentXhr = null;
+let searchDebounceTimer = null;
+
+function getTabStatusCategory(estatusStr) {
+    if (!estatusStr) return null;
+    const s = estatusStr.trim().toLowerCase();
+    if (s === "planeado" || s === "planeadas") {
+        return "planeadas";
+    }
+    if (s === "por asignar" || s === "por_asignar") {
+        return "por_asignar";
+    }
+    if (s === "viaje solicitado" || s === "pendiente" || s === "no asignada") {
+        return "pendientes";
+    }
+    if (s === "aprobada" || s === "aprobado" || s === "aprobadas") {
+        return "aprobadas";
+    }
+    if (s === "finalizado" || s === "finalizada" || s === "finalizadas") {
+        return "finalizadas";
+    }
+    if (s === "cancelada" || s === "cancelado" || s === "canceladas") {
+        return "canceladas";
+    }
+    return null;
+}
+
+function updateTabCounts(data) {
+    let counts = {
+        planeadas: 0,
+        pendientes: 0,
+        por_asignar: 0,
+        aprobadas: 0,
+        finalizadas: 0,
+        canceladas: 0,
+    };
+    data.forEach((item) => {
+        let cat = getTabStatusCategory(item.Estatus);
+        if (cat && counts[cat] !== undefined) counts[cat]++;
+    });
+    $("#count-planeadas").text(counts.planeadas);
+    $("#count-pendientes").text(counts.pendientes);
+    $("#count-por-asignar").text(counts.por_asignar);
+    $("#count-aprobadas").text(counts.aprobadas);
+    $("#count-finalizadas").text(counts.finalizadas);
+    $("#count-canceladas").text(counts.canceladas);
+}
+
+function applyCurrentFilters() {
+    const term =
+        $("#inputSearchGeneral").length && $("#inputSearchGeneral").val()
+            ? $("#inputSearchGeneral").val().trim().toLowerCase()
+            : "";
+
+    const hasStatusTabs = $("#statusTabsViajes").length > 0;
+
+    let filtered = allViajesData.filter((item) => {
+        let matchesTab = true;
+        if (hasStatusTabs) {
+            const category = getTabStatusCategory(item.Estatus);
+            matchesTab = category === currentTabStatus;
+        }
+
+        let matchesSearch = true;
+        if (term !== "") {
+            matchesSearch =
+                (item.NumContenedor &&
+                    item.NumContenedor.toLowerCase().includes(term)) ||
+                (item.cliente && item.cliente.toLowerCase().includes(term)) ||
+                (item.Origen && item.Origen.toLowerCase().includes(term)) ||
+                (item.Destino && item.Destino.toLowerCase().includes(term)) ||
+                (item.transportista &&
+                    item.transportista.toLowerCase().includes(term)) ||
+                (item.Estatus && item.Estatus.toLowerCase().includes(term));
+        }
+
+        return matchesTab && matchesSearch;
+    });
+
+    if (typeof apiGrid !== "undefined" && apiGrid) {
+        apiGrid.setGridOption("rowData", filtered);
+    }
+    updateRastreoButtonState();
+}
+
+function updateRastreoButtonState() {
+    const isPlaneadas = currentTabStatus === "planeadas";
+    const $btn = $("#btnRastreo");
+    const $menuItem = $("#menuItemRastreo");
+
+    if (isPlaneadas) {
+        if ($btn.length) {
+            $btn.prop("disabled", false).removeClass("disabled").show();
+        }
+        if ($menuItem.length) {
+            $menuItem.show();
+        }
+    } else {
+        if ($btn.length) {
+            $btn.prop("disabled", true).addClass("disabled").hide();
+        }
+        if ($menuItem.length) {
+            $menuItem.hide();
+        }
+    }
+}
 
 function bloquearBoton(btn) {
     btn.classList.add("disabled");
@@ -28,6 +137,15 @@ function abrirMapaEnNuevaPestana(numContenedor, tipoS, origenRastreo) {
 const btnRastreo = document.getElementById("btnRastreo");
 if (btnRastreo) {
     btnRastreo.onclick = () => {
+        if (currentTabStatus !== "planeadas") {
+            Swal.fire({
+                icon: "warning",
+                title: "Opción restringida",
+                text: "El rastreo solo está disponible en la pestaña de Planeadas.",
+            });
+            return;
+        }
+
         const seleccionados = apiGrid.getSelectedRows();
 
         if (seleccionados.length === 0) {
@@ -58,8 +176,8 @@ if (btnRastreo) {
 }
 
 $(document).ready(function () {
-    let start = moment().subtract(1, "month");
-    let end = moment();
+    let start = moment().subtract(3, "months");
+    let end = moment().add(20, "days");
 
     function setFechas(start, end) {
         fechaInicioViajes = start.format("YYYY-MM-DD");
@@ -77,6 +195,7 @@ $(document).ready(function () {
             startDate: start,
             endDate: end,
             autoApply: true,
+            opens: "right",
             locale: {
                 format: "DD/MM/YYYY",
                 applyLabel: "Aplicar",
@@ -117,6 +236,59 @@ $(document).ready(function () {
         },
         setFechas,
     );
+
+    // Event listeners para pestañas de estatus
+    $(".status-tab-btn").on("click", function () {
+        $(".status-tab-btn").removeClass("active");
+        $(this).addClass("active");
+        currentTabStatus = $(this).attr("data-status");
+        applyCurrentFilters();
+    });
+
+    // Event listener para buscador general con debounce
+    $("#inputSearchGeneral").on("input", function () {
+        const term = $(this).val().trim().toLowerCase();
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            if (term !== "") {
+                const matches = allViajesData.filter((item) => {
+                    return (
+                        (item.NumContenedor &&
+                            item.NumContenedor.toLowerCase().includes(term)) ||
+                        (item.cliente &&
+                            item.cliente.toLowerCase().includes(term)) ||
+                        (item.Origen &&
+                            item.Origen.toLowerCase().includes(term)) ||
+                        (item.Destino &&
+                            item.Destino.toLowerCase().includes(term)) ||
+                        (item.transportista &&
+                            item.transportista.toLowerCase().includes(term)) ||
+                        (item.Estatus &&
+                            item.Estatus.toLowerCase().includes(term))
+                    );
+                });
+
+                if (matches.length > 0) {
+                    const categoriesFound = new Set(
+                        matches
+                            .map((m) => getTabStatusCategory(m.Estatus))
+                            .filter(Boolean),
+                    );
+                    if (categoriesFound.size === 1) {
+                        const targetTab = Array.from(categoriesFound)[0];
+                        if (targetTab !== currentTabStatus) {
+                            currentTabStatus = targetTab;
+                            $(".status-tab-btn").removeClass("active");
+                            $(
+                                `.status-tab-btn[data-status="${targetTab}"]`,
+                            ).addClass("active");
+                        }
+                    }
+                }
+            }
+            applyCurrentFilters();
+        }, 350);
+    });
 
     // Ejecuta al cargar
     setFechas(start, end);
@@ -254,6 +426,7 @@ const gridOptions = {
         const rows = event.api.getSelectedRows();
         const btn = document.getElementById("btnRegresarLocal");
 
+        if (!btn) return;
         if (rows.length === 0) {
             motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
@@ -310,14 +483,6 @@ const gridOptions = {
             headerClass: "header-center",
             cellRenderer: MissionResultRenderer,
         },
-        {
-            field: "FormatoCartaPorte",
-            wrapHeaderText: true,
-            autoHeaderHeight: true,
-            width: 100,
-            headerClass: "header-center",
-            cellRenderer: MissionResultRenderer,
-        },
         { field: "PreAlta", width: 100, cellRenderer: MissionResultRenderer },
         {
             field: "foto_patio",
@@ -359,10 +524,56 @@ const gridOptions = {
         },
         {
             field: "Estatus",
-            width: 100,
+            width: 140,
             filter: true,
             floatingFilter: true,
-            cellClassRules: ragCellClassRules,
+            cellRenderer: (params) => {
+                if (!params.value) return "";
+                const val = params.value.trim();
+                let customStyle =
+                    "background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;";
+
+                if (val === "Planeado" || val === "Planeadas") {
+                    customStyle =
+                        "background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74;";
+                } else if (
+                    val === "Viaje solicitado" ||
+                    val === "Pendiente" ||
+                    val === "NO ASIGNADA"
+                ) {
+                    customStyle =
+                        "background-color: #fefce8; color: #a16207; border: 1px solid #fde047;";
+                } else if (val === "Por Asignar") {
+                    customStyle =
+                        "background-color: #f5f3ff; color: #6d28d9; border: 1px solid #c4b5fd;";
+                } else if (
+                    val === "Aprobada" ||
+                    val === "Aprobado" ||
+                    val === "Aprobadas"
+                ) {
+                    customStyle =
+                        "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd;";
+                } else if (
+                    val === "Finalizado" ||
+                    val === "Finalizada" ||
+                    val === "Finalizadas"
+                ) {
+                    customStyle =
+                        "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
+                } else if (
+                    val === "Cancelada" ||
+                    val === "Cancelado" ||
+                    val === "Canceladas"
+                ) {
+                    customStyle =
+                        "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
+                } else if (val === "Documentos Faltantes") {
+                    customStyle =
+                        "background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5;";
+                }
+
+                return `<span class="badge fs-7 px-3 py-2 fw-bold" style="${customStyle}">${val}</span>`;
+            },
         },
         { field: "Origen", width: 100, filter: true, floatingFilter: true },
         { field: "Destino", width: 100 },
@@ -376,65 +587,131 @@ const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
 
-function getContenedoresPendientes(estatus = "Documentos Faltantes") {
+function getContenedoresPendientes(estatus = "all") {
+    if (currentXhr) {
+        currentXhr.abort();
+        currentXhr = null;
+    }
+
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    $.ajax({
+
+    currentXhr = $.ajax({
         url: "/viajes/documents/pending",
         type: "post",
         data: { _token, estatus, fechaInicioViajes, fechaFinViajes },
-        beforeSend: () => {},
+        beforeSend: (jqXHR) => {
+            currentXhr = jqXHR;
+        },
         success: (response) => {
-            if (response.length > 0) {
+            currentXhr = null;
+            allViajesData = response || [];
+            if (allViajesData.length > 0) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
-            apiGrid.setGridOption("rowData", response);
+            updateTabCounts(allViajesData);
+            applyCurrentFilters();
         },
-        error: () => {},
+        error: (jqXHR, textStatus) => {
+            if (textStatus === "abort") {
+                return;
+            }
+            currentXhr = null;
+        },
     });
 }
 
-function goToUploadDocuments() {
-    let contenedor = apiGrid.getSelectedRows();
-    if (contenedor.length != 1) {
-        toastr.options = {
-            closeButton: true,
-            debug: false,
-            newestOnTop: false,
-            progressBar: true,
-            positionClass: "toastr-top-center",
-            preventDuplicates: false,
-            onclick: null,
-            showDuration: "1500",
-            hideDuration: "1000",
-            timeOut: "5000",
-            extendedTimeOut: "1000",
-            showEasing: "swing",
-            hideEasing: "linear",
-            showMethod: "fadeIn",
-            hideMethod: "fadeOut",
-        };
+function goToUploadDocuments(numContenedorFromBtn = null) {
+    let numContenedor = numContenedorFromBtn;
 
-        toastr.error(
-            `Debe seleccionar unicamente un contenedor para esta opción`,
-        );
-        return false;
+    if (!numContenedor) {
+        let contenedor = apiGrid.getSelectedRows();
+        if (contenedor.length != 1) {
+            toastr.options = {
+                closeButton: true,
+                debug: false,
+                newestOnTop: false,
+                progressBar: true,
+                positionClass: "toastr-top-center",
+                preventDuplicates: false,
+                onclick: null,
+                showDuration: "1500",
+                hideDuration: "1000",
+                timeOut: "5000",
+                extendedTimeOut: "1000",
+                showEasing: "swing",
+                hideEasing: "linear",
+                showMethod: "fadeIn",
+                hideMethod: "fadeOut",
+            };
+
+            toastr.error(
+                `Debe seleccionar unicamente un contenedor para esta opción`,
+            );
+            return false;
+        }
+        contenedor.forEach((c) => (numContenedor = c.NumContenedor));
     }
-    let numContenedor = null;
-    contenedor.forEach((c) => (numContenedor = c.NumContenedor));
 
+    if (!numContenedor) return;
+
+    let selectContenedores = document.querySelector("#selectContenedores");
     let titleFileUploader = document.querySelector("#titleFileUploader");
-    titleFileUploader.textContent = numContenedor.toUpperCase();
-    localStorage.setItem("numContenedor", numContenedor);
+
+    if (selectContenedores) {
+        while (selectContenedores.options.length > 0) {
+            selectContenedores.remove(0);
+        }
+
+        let contenedores = numContenedor
+            .replace(/\s+/g, "*")
+            .split("*")
+            .filter(Boolean);
+
+        contenedores.forEach((c) => {
+            let option = document.createElement("option");
+            option.value = c;
+            option.text = c;
+            selectContenedores.appendChild(option);
+        });
+
+        titleFileUploader.textContent = contenedores[0].toUpperCase();
+        localStorage.setItem("numContenedor", contenedores[0]);
+
+        // Fetch documents info for the first container
+        fetch(`/viajes/file-manager/get-file-list/${contenedores[0]}`)
+            .then((response) => response.json())
+            .then((json) => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    } else {
+        titleFileUploader.textContent = numContenedor.toUpperCase();
+        localStorage.setItem("numContenedor", numContenedor);
+    }
+
     const modalElement = document.getElementById("kt_modal_fileuploader");
-    const bootstrapModal = new bootstrap.Modal(modalElement);
+    const bootstrapModal =
+        bootstrap.Modal.getInstance(modalElement) ||
+        new bootstrap.Modal(modalElement);
+    if (typeof adjuntarDocumentos === "function") {
+        adjuntarDocumentos();
+    }
     bootstrapModal.show();
 }
 
@@ -882,7 +1159,97 @@ function RegresarForaneoLocal() {
         }
     });
 }
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", () => goToUploadDocuments());
+}
 
-document
-    .querySelector("#btnDocs")
-    .addEventListener("click", goToUploadDocuments);
+let selectContenedores = document.querySelector("#selectContenedores");
+if (selectContenedores) {
+    selectContenedores.addEventListener("change", (e) => {
+        let container = e.target.value;
+        localStorage.setItem("numContenedor", container);
+        fetch(`/viajes/file-manager/get-file-list/${container}`)
+            .then((response) => response.json())
+            .then((json) => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    });
+}
+
+function obtenerFolioPorTipo(tipo) {
+    if (!docsData || docsData.length === 0) return "";
+
+    let file = docsData.find((f) => f.fileCode === tipo);
+
+    if (!file) return "";
+
+    return file.num_doc || "";
+}
+
+function actualizarFolio(radioSeleccionado) {
+    let container = document.getElementById("containerFolio");
+    let label = document.getElementById("labelFolio");
+    let input = document.getElementById("inputFolio");
+
+    if (!container || !label || !input) return;
+
+    input.value = "";
+
+    if (radioSeleccionado.value === "CartaPorte") {
+        container.classList.add("d-none");
+        return;
+    }
+
+    container.classList.remove("d-none");
+    input.type = "text";
+    let tipoSearchDoc = "";
+    switch (radioSeleccionado.value) {
+        case "BoletaLiberacion":
+            label.innerText = "Folio Boleta de Liberación";
+            input.placeholder = "Ej: BL-12345";
+            tipoSearchDoc = "Boleta-de-liberacion";
+            break;
+
+        case "DODA":
+            label.innerText = "Folio DODA";
+            input.placeholder = "Ej: DODA-98765";
+            tipoSearchDoc = "Doda";
+            break;
+
+        case "Prealta":
+            label.innerText = "Fecha Pre Alta";
+            input.placeholder = "";
+            input.type = "date";
+            tipoSearchDoc = "Pre-Alta";
+            break;
+    }
+
+    let folioExistente = obtenerFolioPorTipo(tipoSearchDoc);
+    if (radioSeleccionado.value === "Prealta") {
+        if (folioExistente) {
+            let fecha = new Date(folioExistente);
+            input.value = fecha.toISOString().split("T")[0];
+        } else {
+            input.value = "";
+        }
+    } else {
+        input.value = folioExistente || "";
+    }
+}
+
+let radios = document.querySelectorAll(".CheckTypeFile");
+
+if (radios.length > 0) {
+    radios.forEach((radio) => {
+        radio.addEventListener("change", function () {
+            actualizarFolio(this);
+        });
+    });
+}

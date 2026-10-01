@@ -49,6 +49,11 @@ class Cotizaciones extends Model
         'bloque_hora_i',
         'bloque_hora_f',
         'latitud',
+        'img_boleta',
+        'carta_porte',
+        'carta_porte_xml' ,
+        'id_proveedor',
+'retencion_automatica',
         'longitud',
         'direccion_mapa',
         'fecha_seleccion_ubicacion',
@@ -94,6 +99,9 @@ class Cotizaciones extends Model
         'fecha_eir',
         'editing_by',
         'editing_at',
+        'litros_diesel',
+        'litros_urea',
+        'km_recorridos',
     ];
 
     public function Cliente()
@@ -113,27 +121,32 @@ class Cotizaciones extends Model
 
     public function Bancos1()
     {
-        return $this->hasOne(Bancos::class, 'id_banco1');
+        return $this->belongsTo(Bancos::class, 'id_banco1');
     }
 
     public function Bancos2()
     {
-        return $this->hasOne(Bancos::class, 'id_banco2');
+        return $this->belongsTo(Bancos::class, 'id_banco2');
     }
 
     public function BancoProv()
     {
-        return $this->hasOne(CuentasBancarias::class, 'id_cuenta_prov');
+        return $this->belongsTo(CuentasBancarias::class, 'id_cuenta_prov');
     }
 
     public function BancoProv2()
     {
-        return $this->hasOne(CuentasBancarias::class, 'id_cuenta_prov2');
+        return $this->belongsTo(CuentasBancarias::class, 'id_cuenta_prov2');
     }
 
     public function Empresa()
     {
-        return $this->hasOne(Empresas::class, 'id_empresa');
+        return $this->belongsTo(Empresas::class, 'id_empresa');
+    }
+
+    public function Proveedor()
+    {
+        return $this->belongsTo(Proveedor::class, 'id_proveedor');
     }
 
     public function estatusManiobra() //para local y estatus
@@ -203,6 +216,27 @@ class Cotizaciones extends Model
 
     //final con nuevo modelo
 
+    public function viajes()
+    {
+        return $this->belongsToMany(
+            Viajes::class,
+            'viajes_cotizacion',
+            'cotizacion_id',
+            'viaje_id'
+        )->using(ViajesCotizacion::class);
+    }
+
+public function costosViajes()
+{
+    return $this->hasManyThrough(
+        ViajesCostos::class,
+        ViajesCotizacion::class,
+        'cotizacion_id', // FK en viajes_cotizacion hacia cotizaciones
+        'viaje_id',      // FK en viaje_costos hacia viajes_cotizacion
+        'id',            // PK en cotizaciones
+        'viaje_id'       // campo en viajes_cotizacion que conecta con viaje_costos.viaje_id
+    );
+}
 
     protected static function boot()
     {

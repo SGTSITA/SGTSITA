@@ -18,6 +18,7 @@ use App\Models\Subclientes;
 use App\Models\EstatusManiobra;
 use App\Models\BitacoraCotizacionesEstatus;
 use App\Models\GridColumnasUserEstado;
+use App\Models\Naviera;
 use Illuminate\Support\Facades\Mail;
 use App\Traits\CommonTrait;
 use Carbon\Carbon;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\CotizacionesService;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExternosController extends Controller
@@ -132,6 +134,7 @@ class ExternosController extends Controller
         // where('id_empresa',$cotizacion->id_proveedor)->
         // where('id_empresa',$cotizacion->id_proveedor)->first();
 
+       // dd(  $cotizacion);
         return view(
             'cotizaciones.externos.solicitud_simple',
             ["action" => "editar",
@@ -255,172 +258,18 @@ class ExternosController extends Controller
     }
 
 
-    public function getContenedoresPendientes(Request $request)
+    public function getContenedoresPendientes(Request $request, CotizacionesService $cotizacionesService)
     {
-        $proveedorEmpresa = DB::table('empresas')
-            ->select(
-                'id',
-                'nombre',
-                DB::raw("'Empresa' as tipo"),
-                'id as relacion_id'
-            )->where('estatus', 1)
-            ->unionAll(
-                DB::table('proveedores')
-                    ->select(
-                        'id',
-                        'nombre',
-                        DB::raw("'Proveedor' as tipo"),
-                        'id as relacion_id'
-                    )
-            );
+        $estatus = $request->estatus ?? null;
 
-        $docCotizacion = DB::table('cotizaciones')
-    ->join('docum_cotizacion as d', 'd.id_cotizacion', '=', 'cotizaciones.id')
-    ->select(
-        'cotizaciones.*',
-        'd.num_contenedor',
-        'd.doc_eir',
-        'd.doc_ccp',
-        'd.boleta_liberacion',
-        'd.doda',
-        'd.foto_patio',
-        'd.boleta_patio',
-        DB::raw("
-            CASE
-                WHEN cotizaciones.id_proveedor IS NULL
-                THEN cotizaciones.id_empresa
-                ELSE cotizaciones.id_proveedor
-            END as proveedor_empresa_id
-        "),
-        DB::raw("
-            CASE
-                WHEN cotizaciones.id_proveedor IS NULL
-                THEN 'Empresa'
-                ELSE 'Proveedor'
-            END as proveedor_empresa_tipo
-        ")
-    );
+        $result = $cotizacionesService->getContenedoresCliente(
+            Auth::user()->id_cliente,
+            $request->fechaInicioViajes,
+            $request->fechaFinViajes,
+            $estatus
+        );
 
-
-
-        $condicion = ($request->estatus == 'Documentos Faltantes') ? '=' : '!=';
-        // $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-        // ->leftjoin('proveedores as prov', 'cotizaciones.id_proveedor', '=', 'prov.id')
-        // ->leftjoin('empresa as empres', 'cotizaciones.id_empresa', '=', 'empres.id')
-        //                                         ->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
-        //                                         ->where('estatus', $condicion, 'Documentos Faltantes')
-        //                                         ->whereIn('tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-        //                                         ->where('jerarquia', "!=", 'Secundario')
-        //                                         ->orderBy('created_at', 'desc')
-        //                                         ->selectRaw('cotizaciones.*, d.num_contenedor,d.doc_eir,doc_ccp ,d.boleta_liberacion,d.doda,d.foto_patio,case when prov.razon_social is null then empres.nombre else prov.razon_social end as transportista ')
-        //                                         ->get();
-
-        $contenedoresPendientes = DB::table('cotizaciones')
-        ->join('clients', 'cotizaciones.id_cliente', '=', 'clients.id')
-
-        ->joinSub($docCotizacion, 'cotidoc', function ($join) {
-            $join->on('cotidoc.id', '=', 'cotizaciones.id');
-        })
-
-        ->leftJoinSub($proveedorEmpresa, 'proveedor_empresa', function ($join) {
-            $join->on('proveedor_empresa.relacion_id', '=', 'cotidoc.proveedor_empresa_id')
-                 ->on('proveedor_empresa.tipo', '=', 'cotidoc.proveedor_empresa_tipo');
-        })
-
-
-
-        ->select(
-            'cotizaciones.*',
-            'clients.nombre as cliente',
-            'cotidoc.num_contenedor',
-            'cotidoc.doc_eir',
-            'cotidoc.doc_ccp',
-            'cotidoc.boleta_liberacion',
-            'cotidoc.doda',
-            'cotidoc.foto_patio',
-            'cotidoc.boleta_patio',
-            'proveedor_empresa.nombre as transportista',
-            'proveedor_empresa.tipo as tipo_transportista',
-            'cotizaciones.estatus'
-        )
-->where('cotizaciones.id_cliente', '=', Auth::User()->id_cliente)
-                                              ->where('cotizaciones.estatus', $condicion, 'Documentos Faltantes')
-                                                ->whereIn('cotizaciones.tipo_viaje_seleccion', ['foraneo', 'local_to_foraneo'])
-                                                ->where('cotizaciones.jerarquia', "!=", 'Secundario')
-                                                ->when($request->filled('fechaInicioViajes') && $request->filled('fechaFinViajes'), function ($q) use ($request) {
-                                                    $q->whereBetween('cotizaciones.fecha_entrega', [
-                                                        $request->fechaInicioViajes,
-                                                        $request->fechaFinViajes
-                                                    ]);
-                                                })
-
-        ->orderBy('cotizaciones.created_at', 'desc')
-        ->get();
-
-        // dd($contenedoresPendientes);
-        $resultContenedores =
-        $contenedoresPendientes->map(function ($c) {
-
-            $numContenedor = $c->num_contenedor;
-            $docCCP = ($c->doc_ccp == null) ? false : true;
-            $doda = ($c->doda == null) ? false : true;
-            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
-
-            $boletaVacio = ($c->img_boleta == null) ? false : true;
-            $docEir = $c->doc_eir;
-            $fotoPatio = ($c->foto_patio == null) ? false : true;
-            $boletaPatio = ($c->boleta_patio == null) ? false : true;
-            $cartaPortepdf = ($c->carta_porte == null) ? false : true;
-            $carta_porte_xml = ($c->carta_porte_xml == null) ? false : true;
-
-
-            $tipo = "Sencillo";
-
-            if (!is_null($c->referencia_full)) {
-                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
-                    ->where('jerarquia', 'Secundario')
-                    ->with('DocCotizacion.Asignaciones')
-                    ->first();
-
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
-                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
-                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir) ? true : false;
-                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
-                    $cartaPortepdf = ($cartaPortepdf && $secundaria->carta_porte) ? true : false;
-                    $carta_porte_xml = ($carta_porte_xml && $secundaria->carta_porte_xml) ? true : false;
-                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta) ? true : false;
-                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio) ? true : false;
-                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
-                }
-
-                $tipo = "Full";
-            }
-
-            return [
-                "NumContenedor" => $numContenedor,
-                "Estatus" => ($c->estatus == "NO ASIGNADA") ? "Viaje solicitado" : ($c->estatus == "Aprobada" && $c->estatus_planeacion == 1 ? "Planeado" : $c->estatus),
-                "Origen" => $c->origen,
-                "Destino" => $c->destino,
-                "Peso" => $c->peso_contenedor,
-                "BoletaLiberacion" => $boletaLiberacion,
-                "DODA" => $doda,
-                "foto_patio" => $fotoPatio,
-                "FormatoCartaPorte" => $docCCP,
-                "PreAlta" => $boletaVacio,
-                "BoletaPatio" => $boletaPatio,
-                "docEir" => $docEir,
-                "cartaPortepdf" => $cartaPortepdf,
-                "carta_porte_xml" => $carta_porte_xml,
-                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
-                "tipo" => $tipo,
-                "id" => $c->id,
-                "transportista" => $c->transportista,
-                 "convertido_local" => $c->tipo_viaje_seleccion === 'local' ? true : false,
-            ];
-        });
-
-        return $resultContenedores;
+        return response()->json($result);
     }
 
     public function getContenedoresAsignables(Request $request)
@@ -530,7 +379,10 @@ class ExternosController extends Controller
             return response()->json(["Titulo" => "Previamente Cancelado","Mensaje" => "El contenedor $request->numContenedor fue cancelado previamente","TMensaje" => "info"]);
         }
 
-        Cotizaciones::where('id', $cotizacion->id)->update(['estatus' => 'Cancelada']);
+        $cotizacion = Cotizaciones::findOrFail($cotizacion->id);
+
+        $cotizacion->estatus = 'Cancelada';
+        $cotizacion->save();
 
         $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
         $cotizacionCancelar = Cotizaciones::where('id', $cotizacion->id)->first();
@@ -657,7 +509,7 @@ class ExternosController extends Controller
         }
     }
 
-    public function fileProperties($id, $file, $title, $contenedor)
+    public function fileProperties($id, $file, $title, $contenedor, $folioDoc = null)
     {
         $path = public_path('cotizaciones/cotizacion'.$id.'/'.$file);
 
@@ -677,7 +529,8 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "mimeType" => $mimeType,
                 "identifier" => $id,
-                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+                "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title)),
+                 "num_doc" => $folioDoc ?? ''
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
@@ -687,6 +540,9 @@ class ExternosController extends Controller
 
     public function getFilesProperties($numContenedor)
     {
+        $esCliente = auth()->check() && auth()->user()->id_cliente != 0 && request()->query('portal') === 'cliente';
+
+        //dd($esCliente);
 
         $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
         $contenedores = explode('*', $numContenedor);
@@ -712,14 +568,14 @@ class ExternosController extends Controller
             $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
 
             if (!is_null($documentos->doda)) {
-                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont);
+                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont,$documentos->num_doda);
                 if (sizeof($doda) > 0) {
                     array_push($documentList, $doda);
                 }
             }
 
             if (!is_null($documentos->boleta_liberacion)) {
-                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont);
+                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont,$documentos->num_boleta_liberacion);
                 if (sizeof($boleta_liberacion) > 0) {
                     array_push($documentList, $boleta_liberacion);
                 }
@@ -753,11 +609,35 @@ class ExternosController extends Controller
                     array_push($documentList, $doc_boleta_patio);
                 }
             }
+            if (!is_null($documentos->evidencia_descarga)) {
+                $EvidenciaDescarga = self::fileProperties($folderId, $documentos->evidencia_descarga, 'EvidenciaDescarga', $cont);
+                if (sizeof($EvidenciaDescarga) > 0) {
+                    array_push($documentList, $EvidenciaDescarga);
+                }
+            }
+
+            if (!$esCliente) {
+                if (!is_null($documentos->comprobante_pago_pdf)) {
+                    $compPagoPDF = self::fileProperties($folderId, $documentos->comprobante_pago_pdf, 'Comprobante-Pago-PDF', $cont, $documentos->comprobante_pago_pdf_at);
+                    if (sizeof($compPagoPDF) > 0) {
+                        array_push($documentList, $compPagoPDF);
+                    }
+                }
+
+                if (!is_null($documentos->comprobante_pago_xml)) {
+                    $compPagoXML = self::fileProperties($folderId, $documentos->comprobante_pago_xml, 'Comprobante-Pago-XML', $cont, $documentos->comprobante_pago_xml_at);
+                    if (sizeof($compPagoXML) > 0) {
+                        array_push($documentList, $compPagoXML);
+                    }
+                }
+            }
+
+
 
             $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
 
             if (!is_null($cotizacion->img_boleta)) {
-                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont);
+                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont,$documentos->fecha_boleta_vacio);
                 if (sizeof($preAlta) > 0) {
                     array_push($documentList, $preAlta);
                 }
@@ -779,8 +659,12 @@ class ExternosController extends Controller
         }
 
         return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $doccotiPrincipal,'num_autorizaciones' => $num_autorizaciones];
+    }
 
-
+    public function getOperatorFiles($numContenedor, \App\Services\CotizacionesService $cotizacionesService)
+    {
+        $filesList = $cotizacionesService->getOperatorFilesByContenedor($numContenedor);
+        return response()->json(['files' => $filesList]);
     }
 
     public function filePropertiescoordenadas($id, $file, $title)
@@ -796,6 +680,7 @@ class ExternosController extends Controller
                 "fileType" => pathinfo($path, PATHINFO_EXTENSION),
                 "identifier" => $id,
                 "fileCode" => iconv('UTF-8', 'ASCII//TRANSLIT', str_replace(' ', '-', $title))
+
                 ];
             //iconv('UTF-8', 'ASCII//TRANSLIT', $cadena);
         } else {
@@ -848,6 +733,9 @@ class ExternosController extends Controller
 
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
 
+
+        $navieras = Naviera::all();
+
         return view('cotizaciones.externos.solicitud_simple_local', [
                     "action" => "crear",
                     "formasPago" => $formasPago,
@@ -859,6 +747,7 @@ class ExternosController extends Controller
                         "opcionesColores" => $opcionesColores,
                         'Puertos' => $Puertos,
                         'opcionesPuertos' => $opcionesPuertos,
+                        'navieras' => $navieras
                 ]);
     }
     public function editFormlocal(Request $request)
@@ -868,6 +757,7 @@ class ExternosController extends Controller
         $usoCfdi = SatUsoCfdi::get();
         $clienteEmpresa = ClientEmpresa::where('id_client', auth()->user()->id_cliente)->get()->pluck('id_empresa');
         $empresas = Empresas::whereIn('id', $clienteEmpresa)->get();
+        $navieras = Naviera::all();
 
         $opciones = config('CatAuxiliares.opciones');
         $opcionesColores = config('CatAuxiliares.opcionesColores');
@@ -900,7 +790,9 @@ class ExternosController extends Controller
                                                             "opciones" => $opciones,
                                                             "opcionesColores" => $opcionesColores,
                                                             'Puertos' => $Puertos,
-                                                            'opcionesPuertos' => $opcionesPuertos
+                                                            'opcionesPuertos' => $opcionesPuertos,
+                                                            'navieras' => $navieras
+
 
                                                         ]
         );
@@ -935,7 +827,12 @@ class ExternosController extends Controller
     ->where('grid_key', 'grid_viajes_solicitados_local')
     ->first();
 
-        $stateGridColumns = $stateColumnsGrid?->state_json ?? [];
+
+    $stateGridColumns = [];
+
+    if (!blank($stateColumnsGrid?->state_json)) {
+        $stateGridColumns = json_decode($stateColumnsGrid->state_json, true) ?? [];
+    }
         return view('cotizaciones.externos.viajes_solicitados-local', compact('estatusManiobras', 'stateGridColumns'));
     }
 
@@ -1026,6 +923,7 @@ class ExternosController extends Controller
            ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
            ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+           ->leftjoin('navieras', 'navieras.id', '=', 'd.naviera_id')
            ->where('cotizaciones.id_cliente', Auth::user()->id_cliente)
            ->where('cotizaciones.estatus_maniobra_id', $condicion, $request->estatus)
            ->when($ocultarforaneo, function ($query) {
@@ -1048,6 +946,11 @@ class ExternosController extends Controller
                       'd.boleta_patio',
                       'd.terminal',
                       'd.num_autorizacion',
+
+                      'navieras.naviera',
+                      'd.cita_at',
+                      'd.eta',
+                      'd.pedimento_recibido_at',
 
                       // estatus
                       'estat.nombre as estatus_maniobra',
@@ -1117,6 +1020,10 @@ class ExternosController extends Controller
                 "BoletaPatio" => $boleta_patio,
 
                 "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+               "naviera" => $c->naviera,
+                "cita_at" => $c->cita_at,
+                "eta" => $c->eta,
+                "pedimento_recibido_at" => $c->pedimento_recibido_at,
                 "tipo" => $tipo,
                 "Observaciones" => (
                     is_null($c->observaciones) ||
@@ -1652,4 +1559,160 @@ class ExternosController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function getComplementosPago(Request $request)
+    {
+        $clientId = auth()->user()->id_cliente;
+        if (!$clientId) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $data = \DB::table('estado_cuenta as ec')
+            ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+            ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+            ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+            ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+            ->where('c.id_cliente', $clientId)
+            ->where(function($query) {
+                $query->whereNotNull('dc.comprobante_pago_pdf')
+                      ->orWhereNotNull('dc.comprobante_pago_xml');
+            })
+            ->select([
+                'ec.numero as num_estado_cuenta',
+                'emp.nombre as nombre_empresa',
+                'dc.id_cotizacion',
+                'dc.num_contenedor',
+                'dc.comprobante_pago_pdf',
+                'dc.comprobante_pago_xml'
+            ])
+            ->get();
+
+
+
+        $grouped = [];
+        foreach ($data as $item) {
+            $groupKey = $item->num_estado_cuenta . ' - ' . $item->nombre_empresa;
+
+            $files = [];
+            if (!empty($item->comprobante_pago_pdf)) {
+                $files[] = [
+                    'name' => 'PDF',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_pdf}"),
+                    'filename' => $item->comprobante_pago_pdf
+                ];
+            }
+            if (!empty($item->comprobante_pago_xml)) {
+                $files[] = [
+                    'name' => 'XML',
+                    'url' => asset("cotizaciones/cotizacion{$item->id_cotizacion}/{$item->comprobante_pago_xml}"),
+                    'filename' => $item->comprobante_pago_xml
+                ];
+            }
+
+            if (!isset($grouped[$groupKey])) {
+                $grouped[$groupKey] = [];
+            }
+
+            $grouped[$groupKey][] = [
+                'num_contenedor' => $item->num_contenedor,
+                'files' => $files
+            ];
+        }
+
+        $formatted = [];
+        foreach ($grouped as $key => $containers) {
+            $formatted[] = [
+                'grupo' => $key,
+                'contenedores' => $containers
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $formatted
+        ]);
+    }
+
+    public function complementosPagoView()
+    {
+        return view('cotizaciones.externos.complementos_pago');
+    }
+
+    public function descargarZipComplementos(Request $request)
+    {
+        $clientId = auth()->user()->id_cliente;
+        if (!$clientId) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 401);
+        }
+
+        $request->validate([
+            'num_estado_cuenta' => 'required',
+            'nombre_empresa' => 'required'
+        ]);
+
+        try {
+            $data = \DB::table('estado_cuenta as ec')
+                ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
+                ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
+                ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
+                ->where('c.id_cliente', $clientId)
+                ->where('ec.numero', $request->num_estado_cuenta)
+                ->where('emp.nombre', $request->nombre_empresa)
+                ->where(function($query) {
+                    $query->whereNotNull('dc.comprobante_pago_pdf')
+                          ->orWhereNotNull('dc.comprobante_pago_xml');
+                })
+                ->select([
+                    'dc.id_cotizacion',
+                    'dc.num_contenedor',
+                    'dc.comprobante_pago_pdf',
+                    'dc.comprobante_pago_xml'
+                ])
+                ->get();
+
+            if ($data->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No hay archivos para descargar.'], 404);
+            }
+
+            $cleanNum = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->num_estado_cuenta);
+            $cleanEmp = preg_replace('/[^A-Za-z0-9_\-]/', '_', $request->nombre_empresa);
+            $zipName = "Estado_de_Cuenta_" . $cleanNum . "_" . $cleanEmp . ".zip";
+            $zipPath = public_path($zipName);
+            $zip = new \ZipArchive();
+
+            if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+                foreach ($data as $item) {
+                    $folderId = $item->id_cotizacion;
+                    $pdf = $item->comprobante_pago_pdf;
+                    $xml = $item->comprobante_pago_xml;
+
+                    if (!empty($pdf)) {
+                        $pdfPath = public_path("/cotizaciones/cotizacion{$folderId}/{$pdf}");
+                        if (\File::exists($pdfPath)) {
+                            $zip->addFile($pdfPath, $item->num_contenedor . '-complemento.pdf');
+                        }
+                    }
+
+                    if (!empty($xml)) {
+                        $xmlPath = public_path("/cotizaciones/cotizacion{$folderId}/{$xml}");
+                        if (\File::exists($xmlPath)) {
+                            $zip->addFile($xmlPath, $item->num_contenedor . '-complemento.xml');
+                        }
+                    }
+                }
+                $zip->close();
+            }
+
+            return response()->json([
+                'success' => true,
+                'zipUrl' => asset($zipName)
+            ]);
+
+        } catch (\Throwable $t) {
+            return response()->json([
+                'success' => false,
+                'message' => $t->getMessage()
+            ]);
+        }
+    }
 }

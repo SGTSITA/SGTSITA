@@ -75,6 +75,11 @@
             background-color: #a883ff !important;
         }
     </style>
+
+    <div id="docsPendingAlert" class="alert alert-warning d-none mt-5">
+        Tiene cambios pendientes en documentos.
+        Debe guardar para aplicar los cambios.
+    </div>
     <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
             <div class="modal-content">
@@ -90,9 +95,6 @@
             </div>
         </div>
     </div>
-
-    <!--Indica si se ha modificado alguna información en el formulario-->
-    <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
 
     <div class="card mb-5 mb-xl-10">
         <!--begin::Card header-->
@@ -174,6 +176,7 @@
             id="cotizacionCreate" enctype="multipart/form-data" role="form">
 
             @csrf
+            <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
             <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
 
             <div id="kt_billing_payment_tab_content" class="card-body tab-content">

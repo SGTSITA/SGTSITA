@@ -29,7 +29,8 @@ class Proveedor extends Model
 
     public function CuentasBancarias()
     {
-        return $this->hasMany(CuentasBancarias::class, 'id_proveedores');
+        return $this->hasMany(CuentasBancarias::class, 'id_proveedores')
+                    ->orderByRaw('cuenta_1 DESC, cuenta_2 DESC, id ASC');
     }
 
     public function empresa()
@@ -68,9 +69,9 @@ class Proveedor extends Model
             }
         });
 
-        static::updating(function ($empresa) {
+        /* static::updating(function ($empresa) {
             $empresa->id_empresa = Auth::user()->id_empresa;
-        });
+        }); */
     }
 
 

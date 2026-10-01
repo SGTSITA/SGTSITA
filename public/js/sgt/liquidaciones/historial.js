@@ -117,16 +117,112 @@ const formatFecha = (params) => {
     return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
 };
 
+let originalHistorialData = [];
+let expandedRows = new Set();
+
+function buildGridDataWithDetails() {
+    const flatData = [];
+    originalHistorialData.forEach((item) => {
+        flatData.push(item);
+        if (expandedRows.has(item.IdPago)) {
+            flatData.push({
+                isDetailRow: true,
+                IdPago: item.IdPago,
+                detailData: item.ContenedoresDetalle || [],
+            });
+        }
+    });
+    return flatData;
+}
+
+function updateGridData() {
+    const data = buildGridDataWithDetails();
+    apiGrid.setGridOption("rowData", data);
+}
+
 const gridOptions = {
     pagination: true,
     paginationPageSize: 10,
     paginationPageSizeSelector: [10, 20, 50, 100],
+    defaultColDef: {
+        resizable: true,
+        sortable: true,
+        filter: true,
+    },
     rowSelection: {
         mode: "multiRow",
         headerCheckbox: false,
     },
+    isFullWidthRow: (params) => {
+        return params.rowNode.data.isDetailRow === true;
+    },
+    fullWidthCellRenderer: (params) => {
+        const detailData = params.data.detailData || [];
+        if (detailData.length === 0) {
+            return `<div class="p-3 text-muted">No hay detalles de contenedores disponibles.</div>`;
+        }
+        let html = `
+        <div style="padding: 12px 20px; background-color: #f8f9fa; border-left: 4px solid #0d6efd; margin: 4px 0; border-radius: 6px; box-shadow: inset 0 0 5px rgba(0,0,0,0.05);">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fa fa-boxes text-primary me-2"></i>
+                <strong class="text-dark" style="font-size: 13px;">Desglose por Contenedor (${detailData.length})</strong>
+            </div>
+            <table class="table table-sm table-bordered bg-white mb-0" style="font-size: 12px;">
+                <thead class="bg-light">
+                    <tr>
+                        <th>No. Contenedor</th>
+                        <th class="text-right">Sueldo Operador</th>
+                        <th class="text-right">Dinero Viaje</th>
+                        <th class="text-right">Gastos Justificados</th>
+                        <th class="text-right">Total Pagado</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        detailData.forEach((c) => {
+            html += `
+                <tr>
+                    <td><strong class="text-primary">${c.num_contenedor}</strong></td>
+                    <td class="text-right">${currencyFormatter(c.sueldo_operador)}</td>
+                    <td class="text-right">${currencyFormatter(c.dinero_viaje)}</td>
+                    <td class="text-right">${currencyFormatter(c.dinero_justificado)}</td>
+                    <td class="text-right font-weight-bold text-success">${currencyFormatter(c.total_pagado)}</td>
+                </tr>`;
+        });
+
+        html += `
+                </tbody>
+            </table>
+        </div>`;
+        return html;
+    },
+    getRowHeight: (params) => {
+        if (params.node.data.isDetailRow) {
+            const count = params.node.data.detailData ? params.node.data.detailData.length : 1;
+            return 85 + (count * 36);
+        }
+        return 42;
+    },
     rowData: [],
     columnDefs: [
+        {
+            headerName: "",
+            field: "expand",
+            width: 50,
+            sortable: false,
+            filter: false,
+            cellRenderer: (params) => {
+                if (params.data.isDetailRow) return "";
+                const isExpanded = expandedRows.has(params.data.IdPago);
+                const count = params.data.ContenedoresDetalle ? params.data.ContenedoresDetalle.length : 0;
+                if (count === 0) return "";
+                return `
+                    <button type="button" class="btn btn-sm btn-link text-primary p-0 btn-toggle-detail" data-id="${params.data.IdPago}" style="font-size: 14px; text-decoration: none;">
+                        <i class="fa ${isExpanded ? "fa-minus-square text-danger" : "fa-plus-square text-primary"}"></i>
+                    </button>
+                `;
+            },
+        },
         { field: "IdPago", hide: true },
         { field: "IdOperador", hide: true },
         { field: "IdBanco", hide: true },
@@ -135,33 +231,34 @@ const gridOptions = {
         { field: "ViajesRealizados" },
         {
             field: "SueldoOperador",
-            width: 150,
+            width: 140,
             valueFormatter: (params) => currencyFormatter(params.value),
             cellStyle: { textAlign: "right" },
         },
         {
             field: "DineroViaje",
-            width: 150,
+            width: 140,
             valueFormatter: (params) => currencyFormatter(params.value),
             cellStyle: { textAlign: "right" },
         },
         {
             field: "DineroJustificado",
-            width: 150,
+            width: 140,
             valueFormatter: (params) => currencyFormatter(params.value),
             cellStyle: { textAlign: "right" },
         },
         {
             field: "TotalPagado",
-            width: 150,
+            width: 140,
             valueFormatter: (params) => currencyFormatter(params.value),
             cellStyle: { textAlign: "right" },
         },
         {
             headerName: "Acciones",
             field: "acciones",
-            width: 120,
+            width: 100,
             cellRenderer: (params) => {
+                if (params.data.isDetailRow) return "";
                 return `
             <button class="btn btn-danger btn-sm btnEliminarLiquidacion"
                 data-id="${params.data.IdPago}">
@@ -176,6 +273,18 @@ const gridOptions = {
 };
 
 document.addEventListener("click", function (e) {
+    const toggleBtn = e.target.closest(".btn-toggle-detail");
+    if (toggleBtn) {
+        const id = parseInt(toggleBtn.dataset.id);
+        if (expandedRows.has(id)) {
+            expandedRows.delete(id);
+        } else {
+            expandedRows.add(id);
+        }
+        updateGridData();
+        return;
+    }
+
     if (e.target.closest(".btnEliminarLiquidacion")) {
         const btn = e.target.closest(".btnEliminarLiquidacion");
         const id = btn.dataset.id;
@@ -222,23 +331,47 @@ function eliminarLiquidacion(id) {
 
 const myGridElement = document.querySelector("#gridHistorial");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
-// const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
+
+let numContenedorSearchTimeout;
+$(document).on("keyup input", "#num_contenedor_search", function () {
+    clearTimeout(numContenedorSearchTimeout);
+    numContenedorSearchTimeout = setTimeout(() => {
+        let picker = $("#daterange").data("daterangepicker");
+        if (picker) {
+            getHistorial(
+                picker.startDate.format("YYYY-MM-DD"),
+                picker.endDate.format("YYYY-MM-DD")
+            );
+        } else {
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            const formatDate = (date) => date.toISOString().split("T")[0];
+            getHistorial(formatDate(sevenDaysAgo), formatDate(today));
+        }
+    }, 400);
+});
 
 function getHistorial(startDate, endDate) {
     let _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
+    let num_contenedor = $("#num_contenedor_search").val() || "";
 
     $.ajax({
         url: "/liquidaciones/historial/data",
         type: "post",
-        data: { _token, startDate, endDate },
+        data: { _token, startDate, endDate, num_contenedor },
         beforeSend: () => {},
         success: (response) => {
-            apiGrid.setGridOption("rowData", response.data);
+            originalHistorialData = response.data || [];
+            updateGridData();
         },
         error: () => {},
     });
@@ -248,7 +381,7 @@ function getComprobantePago() {
     let _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    let liquidados = apiGrid.getSelectedRows();
+    let liquidados = apiGrid.getSelectedRows().filter((r) => !r.isDetailRow);
     if (liquidados.length <= 0) {
         Swal.fire(
             "Seleccione un pago",
@@ -269,7 +402,7 @@ function getComprobantePago() {
             fileType: "pdf",
         },
         xhrFields: {
-            responseType: "blob", // Asegura que el tipo de respuesta sea un Blob
+            responseType: "blob",
         },
         success: function (response) {
             if (response instanceof Blob) {
@@ -280,20 +413,15 @@ function getComprobantePago() {
                 a.style.display = "none";
                 a.href = url;
                 a.target = "_blank";
-                // a.download = 'Cuentas_por_pagar_{{ date('d-m-Y') }}.' + fileType;
                 document.body.appendChild(a);
 
-                // Inicia la descarga
                 a.click();
 
-                // Limpiar después de la descarga
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
             } else {
-                console.error("La respuesta no es un Blob válido:", response);
+                console.error("La respuesta no me un Blob válido:", response);
             }
-
-            // alert('El archivo se ha descargado correctamente.');
         },
         error: function (xhr, status, error) {
             console.error(error);

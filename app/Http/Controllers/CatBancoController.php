@@ -164,7 +164,7 @@ class CatBancoController extends Controller
             'numero_cuenta'  => 'required|string|max:50',
             'clabe'          => 'nullable|string|max:18',
             'beneficiario'   => 'required|string|max:255',
-            'saldo_inicial'  => 'required|numeric|min:0',
+            'saldo_inicial'  => 'required|numeric',
         ]);
 
         DB::beginTransaction();
@@ -172,16 +172,18 @@ class CatBancoController extends Controller
         try {
 
 
-            if ($request->has('principal')) {
+            $banco1Val = (int) ($request->banco_1 ?? ($request->has('principal') ? 1 : 0));
+
+            if ($banco1Val === 1) {
                 Bancos::where('id_empresa', auth()->user()->id_empresa)
                     ->update(['banco_1' => 0]);
             }
 
-            $cat_bancos = CatBanco::find($request->banco_id)->first();
+            $cat_bancos = CatBanco::find($request->banco_id);
 
             $cuenta = Bancos::create([
                 'nombre_beneficiario' => $request->beneficiario,
-                'nombre_banco'        =>  $cat_bancos->nombre,
+                'nombre_banco'        =>  $cat_bancos ? $cat_bancos->nombre : '',
                 'moneda' => $request->moneda,
                 'cuenta_bancaria'     => $request->numero_cuenta,
                 'clabe'               => $request->clabe,
@@ -190,7 +192,7 @@ class CatBancoController extends Controller
                 'tipo'                => $request->tipo_cuenta,
                 'id_empresa'          => auth()->user()->id_empresa,
                 'estado'              => 1,
-                'banco_1'             => $request->has('principal') ? 1 : 0,
+                'banco_1'             => $banco1Val,
                 'cat_banco_id'        => $request->banco_id,
             ]);
 
@@ -225,25 +227,27 @@ class CatBancoController extends Controller
                'numero_cuenta'  => 'required|string|max:50',
                'clabe'          => 'nullable|string|max:18',
                'beneficiario'   => 'required|string|max:255',
-               'saldo_inicial'  => 'required|numeric|min:0',
+               'saldo_inicial'  => 'required|numeric',
            ]);
 
         DB::beginTransaction();
 
         try {
 
+            $banco1Val = (int) ($request->banco_1 ?? ($request->has('principal') ? 1 : 0));
 
-            if ($request->has('principal')) {
+            if ($banco1Val === 1) {
                 Bancos::where('id_empresa', auth()->user()->id_empresa)
+                    ->where('id', '!=', $id)
                     ->update(['banco_1' => 0]);
             }
 
-            $cat_bancos = CatBanco::find($request->banco_id)->first();
+            $cat_bancos = CatBanco::find($request->banco_id);
             $cuenta = Bancos::find($id);
 
-            $cuenta = $cuenta->update([
+            $cuenta->update([
                 'nombre_beneficiario' => $request->beneficiario,
-                'nombre_banco'        =>  $cat_bancos->nombre,
+                'nombre_banco'        =>  $cat_bancos ? $cat_bancos->nombre : $cuenta->nombre_banco,
                 'moneda' => $request->moneda,
                 'cuenta_bancaria'     => $request->numero_cuenta,
                 'clabe'               => $request->clabe,
@@ -252,7 +256,7 @@ class CatBancoController extends Controller
                 'tipo'                => $request->tipo_cuenta,
 
                 'estado'              => 1,
-                'banco_1'             => $request->has('principal') ? 1 : 0,
+                'banco_1'             => $banco1Val,
                 'cat_banco_id'        => $request->banco_id,
             ]);
 
@@ -343,7 +347,7 @@ class CatBancoController extends Controller
         $request->validate([
         'tipo'       => ['required', 'in:abono,cargo'],
         'concepto'   => ['required', 'string'],
-        'monto'      => ['required', 'numeric', 'gt:0'],
+        'monto'      => ['required', 'numeric', 'not_in:0'],
         'fecha_movimiento'      => ['required', 'date'],
         'referencia' => ['nullable', 'string'],
         'origen' => 'required|in:manual,banco,ajuste,importacion',

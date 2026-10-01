@@ -17,6 +17,7 @@ class GpsCredentialsService
         string $Equipo,
         int $id_equipoUnic
     ): array {
+        $cuentaA = 0;
         $config = [];
         $desencript = true;
         if ($tipo_viaje_contrato == 'Propio' && $tipo_camion_rev != 'camion_proveedor') {
@@ -41,7 +42,7 @@ class GpsCredentialsService
                       $q->where('RFC', $proveedorRFC);
                   })->where('id_gps_company', $gpsCompanyId)
                   ->first();
-            //  dd($tipoConfig, $Equipo);
+           //   dd($tipoConfig, $Equipo);
             if ($tipoConfig == 0 && $Equipo) {
                 //   dd('entra');
                 $equipo =  Equipo::find($id_equipoUnic);

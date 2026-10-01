@@ -10,8 +10,16 @@
             <div class="col">
                 <div class="card">
                     <!-- Card header -->
-                    <div class="card-header">
-                        <h3 class="mb-3">Configuracion Sistema</h3>
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0">Configuracion Sistema</h3>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('descargar.db') }}" class="btn btn-sm btn-primary" onclick="event.preventDefault(); confirmarDescargaDb(this.href);">
+                                <i class="fas fa-database me-1"></i> Descargar Base de Datos
+                            </a>
+                            <a href="{{ route('backups.historiales') }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-file-archive me-1"></i> Respaldos de Historiales (ZIP)
+                            </a>
+                        </div>
                     </div>
 
                     <div class="card-body mb-5">
@@ -84,14 +92,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-xs-12 col-sm-12 col-md-3">
-                                    <div class="form-group">
-                                        <!-- En tu vista Blade, por ejemplo: resources/views/welcome.blade.php -->
-                                        <a href="{{ route('descargar.db') }}" class="btn btn-xs btn-primary">
-                                            Descargar Base de Datos
-                                        </a>
-                                    </div>
-                                </div>
+
 
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <h3 class="mt-3">Color Iconos</h3>
@@ -215,3 +216,32 @@
         </div>
     </div>
 @endsection
+
+@push('custom-javascript')
+<script>
+function confirmarDescargaDb(url) {
+    Swal.fire({
+        title: 'Generar Respaldo de Base de Datos',
+        text: '¿Deseas iniciar la generación del respaldo completo de la base de datos? Esto guardará un archivo ZIP en el servidor.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, generar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Generando respaldo...',
+                text: 'Por favor, espera un momento mientras se crea el archivo.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            window.location.href = url;
+        }
+    });
+}
+</script>
+@endpush

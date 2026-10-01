@@ -222,6 +222,10 @@
 
 @endsection
 
+@section('select2')
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
+@endsection
+
 @push('custom-javascript')
     <!-- AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
