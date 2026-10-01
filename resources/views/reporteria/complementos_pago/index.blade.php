@@ -251,28 +251,36 @@
                                         <thead>
                                             <tr class="fw-bold text-white bg-dark">
                                                 <th>Contenedor</th>
+                                                <th>Subcliente</th>
                                                 <th>Archivos Disponibles</th>
                                             </tr>
                                         </thead>
                                         <tbody>`;
 
                 group.contenedores.forEach(container => {
+                    let filesHtml = '';
+                    if (container.files && container.files.length > 0) {
+                        container.files.forEach(file => {
+                            const btnColor = file.name === 'PDF' ? 'btn-danger' : 'btn-primary';
+                            const icon = file.name === 'PDF' ? 'fa-file-pdf' : 'fa-file-code';
+                            filesHtml += `
+                                <a href="${file.url}" download="${file.filename}" target="_blank" class="btn btn-sm ${btnColor} me-1 my-1 text-white">
+                                    <i class="fa ${icon} me-1"></i> Descargar ${file.name}
+                                </a>`;
+                        });
+                    } else {
+                        filesHtml = `<span class="badge bg-light text-secondary border px-2 py-1">
+                                        <i class="fa fa-ban me-1 text-danger"></i> No cargado
+                                     </span>`;
+                    }
+
+                    const subclienteText = container.subcliente ? container.subcliente : 'Sin subcliente';
+
                     html += `
                         <tr>
                             <td class="fw-bold text-dark">${container.num_contenedor}</td>
-                            <td>`;
-
-                    container.files.forEach(file => {
-                        const btnColor = file.name === 'PDF' ? 'btn-danger' : 'btn-primary';
-                        const icon = file.name === 'PDF' ? 'fa-file-pdf' : 'fa-file-code';
-                        html += `
-                            <a href="${file.url}" download="${file.filename}" target="_blank" class="btn btn-sm ${btnColor} me-1 my-1 text-white">
-                                <i class="fa ${icon} me-1"></i> Descargar ${file.name}
-                            </a>`;
-                    });
-
-                    html += `
-                            </td>
+                            <td><span class="text-secondary fw-semibold">${subclienteText}</span></td>
+                            <td>${filesHtml}</td>
                         </tr>`;
                 });
 
