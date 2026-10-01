@@ -288,7 +288,7 @@ class BancosService
                 'concepto'           => 'Devolución - ' . $movimiento->concepto,
                 'fecha_movimiento'   => $fechaCancelacion ?? now(),
                 'origen'             => 'sistema',
-                'referencia'         => 'cancelación'. $movimiento->referencia ? ' - ' . $movimiento->referencia : null,
+                'referencia'         => 'cancelación' . ($movimiento->referencia ? ' - ' . $movimiento->referencia : ''),
                 'referenciaable_type'=> $movimiento->referenciaable_type ?? null,
                 'referenciaable_id'  => $movimiento->referenciaable_id ?? null,
                 'detalles'           => $movimiento->detalles,
