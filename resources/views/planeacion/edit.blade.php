@@ -301,15 +301,16 @@
                                     <div id="otrosGastosContainerEdit" class="mt-2">
                                         @foreach ($gastosAsignados as $gasto)
                                             @php
-                                                $pago = $gasto->pagos->first();
+                                                $pago = $gasto->pagos->where('estatus', '!=', 'cancelado')->first();
                                                 $motivo = null;
-                                                if (strpos($gasto->concepto, 'GCM01') === 0) {
+                                                $conceptoLower = strtolower($gasto->concepto ?? '');
+                                                if (strpos($gasto->concepto, 'GCM01') === 0 || str_contains($conceptoLower, 'comisi')) {
                                                     $motivo = 'GCM01';
-                                                } elseif (strpos($gasto->concepto, 'GDI02') === 0) {
+                                                } elseif (strpos($gasto->concepto, 'GDI02') === 0 || str_contains($conceptoLower, 'diesel') || str_contains($conceptoLower, 'diésel')) {
                                                     $motivo = 'GDI02';
-                                                } elseif (strpos($gasto->concepto, 'GBV01') === 0) {
+                                                } elseif (strpos($gasto->concepto, 'GBV01') === 0 || str_contains($conceptoLower, 'burrero')) {
                                                     $motivo = 'GBV01';
-                                                } elseif (strpos($gasto->concepto, 'GU001') === 0) {
+                                                } elseif (strpos($gasto->concepto, 'GU001') === 0 || str_contains($conceptoLower, 'urea')) {
                                                     $motivo = 'GU001';
                                                 } else {
                                                     $motivo = 'OTR01';
@@ -516,7 +517,8 @@
                       } */
 
                     const gastoHTML = `
-                <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
+                <div class="row gasto-item align-items-center mb-3 border-bottom pb-3" data-gasto-id="">
+                    <input type="hidden" class="gasto-id-input" name="gasto_id[]" value="">
                     <div class="col-md-3">
                         <label class="form-label mb-1">Motivo del gasto</label>
                         <select class="form-control gasto-select" name="gasto_nombre[]" required>
