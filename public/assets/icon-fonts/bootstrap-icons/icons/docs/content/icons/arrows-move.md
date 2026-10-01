@@ -1,9 +1,9 @@
 ---
 title: Arrows move
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
-  - cursor
-  - move
+    - arrow
+    - cursor
+    - move
 ---

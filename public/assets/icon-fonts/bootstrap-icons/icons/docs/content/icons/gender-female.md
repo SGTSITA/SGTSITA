@@ -1,8 +1,8 @@
 ---
 title: Gender female
 categories:
-  - People
+    - People
 tags:
-  - gender
-  - identity
+    - gender
+    - identity
 ---

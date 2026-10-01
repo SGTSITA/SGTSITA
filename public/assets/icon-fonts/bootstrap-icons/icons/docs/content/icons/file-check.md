@@ -1,10 +1,10 @@
 ---
 title: File check
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - check
-  - verified
+    - doc
+    - document
+    - check
+    - verified
 ---

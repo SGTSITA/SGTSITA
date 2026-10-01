@@ -1,7 +1,7 @@
 ---
 title: Arrows collapse
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---

@@ -11,22 +11,27 @@
             <div class="col-sm-12">
                 <div class="card">
                     <div class="card-header">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h5 id="card_title">
-                                    <i class="fa fa-history"></i>
-                                    Historial Liquidaciones
-                                    <p class="text-sm mb-0">
-                                       
-                                        <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
-                                        <input type="text" id="daterange" readonly 
-                                        class="form-control form-control-sm min-w-100" 
-                                        style="border: none; box-shadow: none;"
-                                        />
-                                    </p>
-                                </h5>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 15px;">
+                                <div>
+                                    <h5 id="card_title" class="mb-2">
+                                        <i class="fa fa-history"></i> Historial Liquidaciones
+                                    </h5>
+                                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                        <div>
+                                            <div class="font-weight-bolder text-sm"><span class="small">No. Contenedor</span></div>
+                                            <input type="text" id="num_contenedor_search" class="form-control form-control-sm" placeholder="Buscar contenedor..." style="min-width: 180px;">
+                                        </div>
+                                        <div>
+                                            <div class="font-weight-bolder text-sm"><span class="small">Periodo</span></div>
+                                            <input type="text" id="daterange" readonly 
+                                            class="form-control form-control-sm min-w-100" 
+                                            style="border: none; box-shadow: none;"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div class="float-right">
-                                   
                                     <button type="button" class="btn btn-sm bg-gradient-danger" id="comprobantePdf" onclick="getComprobantePago()">
                                         <i class="fa fa-fw fa-file-pdf"></i>  Ver Comprobante
                                     </button>
@@ -69,7 +74,17 @@ $(document).ready(function() {
             monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
             firstDay: 1
         },
-        maxDate: moment()
+        // maxDate: moment()
+        ranges: {
+            'Hoy': [moment(), moment()],
+            'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+            'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+            'Este mes': [moment().startOf('month'), moment().endOf('month')],
+            'Mes anterior': [
+                moment().subtract(1, 'month').startOf('month'),
+                moment().subtract(1, 'month').endOf('month')
+            ]
+        }
     }, 
         function(start, end, label) {
         // Callback para el botón "Aplicar"

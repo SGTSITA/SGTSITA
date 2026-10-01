@@ -1,9 +1,9 @@
 ---
 title: Window fullscreen
 categories:
-  - Apps
+    - Apps
 tags:
-  - application
-  - desktop
-  - app
+    - application
+    - desktop
+    - app
 ---

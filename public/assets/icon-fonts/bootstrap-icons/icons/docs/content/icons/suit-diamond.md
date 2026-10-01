@@ -1,11 +1,11 @@
 ---
 title: Suit diamond
 categories:
-  - Entertainment
+    - Entertainment
 tags:
-  - card
-  - cards
-  - suit
-  - deck
-  - gambling
+    - card
+    - cards
+    - suit
+    - deck
+    - gambling
 ---

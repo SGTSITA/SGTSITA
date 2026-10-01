@@ -1,9 +1,9 @@
 ---
 title: Joystick
 categories:
-  - Entertainment
+    - Entertainment
 tags:
-  - gaming
-  - game
-  - "video games"
+    - gaming
+    - game
+    - 'video games'
 ---

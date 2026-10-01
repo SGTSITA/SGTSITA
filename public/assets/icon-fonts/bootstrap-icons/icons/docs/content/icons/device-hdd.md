@@ -1,8 +1,8 @@
 ---
 title: Device HDD
 categories:
-  - Devices
+    - Devices
 tags:
-  - drive
-  - "hard drive"
+    - drive
+    - 'hard drive'
 ---

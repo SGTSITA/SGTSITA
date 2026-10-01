@@ -1,8 +1,8 @@
 ---
 title: Device SSD fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - "solid state"
-  - drive
+    - 'solid state'
+    - drive
 ---

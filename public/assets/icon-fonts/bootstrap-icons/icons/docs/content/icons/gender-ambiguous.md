@@ -1,8 +1,8 @@
 ---
 title: Gender ambiguous
 categories:
-  - People
+    - People
 tags:
-  - gender
-  - identity
+    - gender
+    - identity
 ---

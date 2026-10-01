@@ -1,12 +1,12 @@
 ---
 title: Clipboard2 data fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - copy
-  - paste
-  - data
-  - analytics
-  - graph
-  - chart
+    - copy
+    - paste
+    - data
+    - analytics
+    - graph
+    - chart
 ---

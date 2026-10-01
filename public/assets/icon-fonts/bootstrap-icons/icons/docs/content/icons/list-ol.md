@@ -1,13 +1,13 @@
 ---
 title: List OL
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
-  - ordered-list
-  - numbered-list
-  - numbered
+    - text
+    - type
+    - justify
+    - alignment
+    - ordered-list
+    - numbered-list
+    - numbered
 ---

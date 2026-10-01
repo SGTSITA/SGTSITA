@@ -1,9 +1,9 @@
 ---
 title: Bicycle
 categories:
-  - Real world
+    - Real world
 tags:
-  - bike
-  - riding
-  - bicycling
+    - bike
+    - riding
+    - bicycling
 ---

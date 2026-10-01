@@ -1,8 +1,8 @@
 ---
 title: Square
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - rectangle
+    - shape
+    - rectangle
 ---

@@ -1,7 +1,7 @@
 ---
 title: Badge ad
 categories:
-  - Badges
+    - Badges
 tags:
-  - advertisement
+    - advertisement
 ---

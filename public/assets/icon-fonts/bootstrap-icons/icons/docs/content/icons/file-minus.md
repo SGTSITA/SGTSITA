@@ -1,10 +1,10 @@
 ---
 title: File minus
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - delete
-  - remove
+    - doc
+    - document
+    - delete
+    - remove
 ---

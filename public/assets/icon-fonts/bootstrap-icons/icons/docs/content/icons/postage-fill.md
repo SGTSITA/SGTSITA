@@ -1,9 +1,9 @@
 ---
 title: Postage fill
 categories:
-  - Real World
+    - Real World
 tags:
-  - mail
-  - stamp
-  - shipping
+    - mail
+    - stamp
+    - shipping
 ---

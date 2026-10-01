@@ -4,118 +4,123 @@
 
 
 @section('content')
-<style>
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 200px; /* Ancho mayor para incluir el texto */
-  height: 30px;
-}
+    <style>
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            /* Ancho mayor para incluir el texto */
+            height: 30px;
+        }
 
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-}
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
 
-.slider span {
-  position: absolute;
-  transition: 0.4s;
-  font-size: 14px;
-}
+        .slider span {
+            position: absolute;
+            transition: 0.4s;
+            font-size: 14px;
+        }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  border-radius: 50%;
-  background-color: white;
-  transition: 0.4s;
-  left: 4px;
-}
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            border-radius: 50%;
+            background-color: white;
+            transition: 0.4s;
+            left: 4px;
+        }
 
-input:checked + .slider {
-  background-color: #4CAF50;
-}
+        input:checked+.slider {
+            background-color: #4CAF50;
+        }
 
-input:checked + .slider:before {
-  transform: translateX(170px); 
-}
+        input:checked+.slider:before {
+            transform: translateX(170px);
+        }
 
-input:checked + .slider #ubicacion-texto {
-  transform: translateX(80px); 
-}
+        input:checked+.slider #ubicacion-texto {
+            transform: translateX(80px);
+        }
 
-input:not(:checked) + .slider #ubicacion-texto {
-  transform: translateX(-80px); 
-}
-.btn-close {
-    filter: invert(1); 
-}
-</style>
-    
-<div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
-    <div class="row justify-content-center">
-        <div class="col-sm-12">
-       
-            <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
-            <div class="mb-4 d-flex align-items-center justify-content-between">
+        input:not(:checked)+.slider #ubicacion-texto {
+            transform: translateX(-80px);
+        }
 
-  <!-- Buscador + botón (ambos dentro de un flex para agrupar) -->
-  <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 600px;">
-<!-- Botón detener -->
-    <div style="min-width: 50px;">
-      <button id="btnDetener" class="btn btn-danger mt-4" style="display: none;">
-        <i class="bi bi-pause-circle"></i> 
-      </button>
-    </div>
-    <!-- Buscador -->
-    <div style="flex: 1;">
-      <label for="buscadorGeneral" class="form-label mb-1">Buscar</label>
-      <div class="position-relative">
-        <input type="text" id="buscadorGeneral" placeholder="Buscar convoy, contenedor o equipo..." class="form-control" style="width: 100%; min-width: 350px;">
-        <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
-        <div id="resultadosBusqueda" class="dropdown-menu show mt-1" style="max-height: 200px; overflow-y: auto; width: 100%; min-width: 350px;"></div>
-      </div>
-    </div>
+        .btn-close {
+            filter: invert(1);
+        }
+    </style>
 
-    
+    <div class="container-fluid py-4 px-3 bg-gray-100 min-h-screen">
+        <div class="row justify-content-center">
+            <div class="col-sm-12">
 
-  </div>
+                <div class="card shadow-lg border-0 bg-white rounded-4 p-4">
+                    <div class="mb-4 d-flex align-items-center justify-content-between">
 
-  <!-- Título Seguimiento -->
-  <h3 class="text-xl font-semibold text-center mb-0 ms-3" id="tituloSeguimiento" style="min-width: 150px; white-space: nowrap;">
-    Seguimiento
-  </h3>
+                        <!-- Buscador + botón (ambos dentro de un flex para agrupar) -->
+                        <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 600px;">
+                            <!-- Botón detener -->
+                            <div style="min-width: 50px;">
+                                <button id="btnDetener" class="btn btn-danger mt-4" style="display: none;">
+                                    <i class="bi bi-pause-circle"></i>
+                                </button>
+                            </div>
+                            <!-- Buscador -->
+                            <div style="flex: 1;">
+                                <label for="buscadorGeneral" class="form-label mb-1">Buscar</label>
+                                <div class="position-relative">
+                                    <input type="text" id="buscadorGeneral"
+                                        placeholder="Buscar convoy, contenedor o equipo..." class="form-control"
+                                        style="width: 100%; min-width: 350px;">
+                                    <div id="chipsBusqueda" class="d-flex flex-wrap gap-2 mt-2"></div>
+                                    <div id="resultadosBusqueda" class="dropdown-menu show mt-1"
+                                        style="max-height: 200px; overflow-y: auto; width: 100%; min-width: 350px;"></div>
+                                </div>
+                            </div>
 
-</div>
-            <div id="map" 
-                    style="height: 800px; width: 100%;" 
-                    class="rounded-4 border-4 border-blue-500 shadow-md">
+
+
+                        </div>
+
+                        <!-- Título Seguimiento -->
+                        <h3 class="text-xl font-semibold text-center mb-0 ms-3" id="tituloSeguimiento"
+                            style="min-width: 150px; white-space: nowrap;">
+                            Seguimiento
+                        </h3>
+
+                    </div>
+                    <div id="map" style="height: 800px; width: 100%;"
+                        class="rounded-4 border-4 border-blue-500 shadow-md">
+                    </div>
                 </div>
+            </div>
         </div>
-    </div>
-</div>
 
-{{-- <div class="modal fade" id="filtroModal" tabindex="-1" aria-hidden="true">
+        {{-- <div class="modal fade" id="filtroModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form id="filtroForm">
@@ -184,7 +189,7 @@ input:not(:checked) + .slider #ubicacion-texto {
         <option value="Global" selected>Global</option>
         <option value="skyGps">skyGps</option>
       </select>
-    </div> 
+    </div>
 
     <!-- Botones -->
     <div class="modal-footer">
@@ -197,44 +202,45 @@ input:not(:checked) + .slider #ubicacion-texto {
   </div>
 </div> --}}
 
-<div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content shadow-lg rounded-4">
-      <div class="modal-header bg-primary text-white rounded-top-4">
-        <h5 class="modal-title" id="modalInfoViajeLabel">
-          <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body" id="contenidoModalViaje">
-        <!-- Aquí se insertará el contenido dinámico -->
-      </div>
-      <div class="modal-footer bg-light rounded-bottom-4">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="bi bi-x-circle"></i> Cerrar
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+        <div class="modal fade" id="modalInfoViaje" tabindex="-1" aria-labelledby="modalInfoViajeLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content shadow-lg rounded-4">
+                    <div class="modal-header bg-primary text-white rounded-top-4">
+                        <h5 class="modal-title" id="modalInfoViajeLabel">
+                            <i class="bi bi-truck-front-fill me-2"></i> Información del Viaje
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body" id="contenidoModalViaje">
+                        <!-- Aquí se insertará el contenido dinámico -->
+                    </div>
+                    <div class="modal-footer bg-light rounded-bottom-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    
-@endsection
 
-@push('custom-javascript')
-    <!-- AG Grid -->
-    <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
-    {{-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    @endsection
+
+    @push('custom-javascript')
+        <!-- AG Grid -->
+        <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
+        {{-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> --}}
 
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAtAO2AZBgzC7QaBxnMnPoa-DAq8vaEvUc" async defer onload="googleMapsReady()"></script>
+        <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+            onload="googleMapsReady()"></script>
 
-<!-- JS de Select2 -->
+        <!-- JS de Select2 -->
 
 
-    <!-- Nuestro JavaScript unificado -->
-    <script
-        src="{{ asset('js/sgt/coordenadas/coordenadasRastreoGPS.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreoGPS.js')) }}">
-    </script>
-
-@endpush
+        <!-- Nuestro JavaScript unificado -->
+        <script
+            src="{{ asset('js/sgt/coordenadas/coordenadasRastreoGPS.js') }}?v={{ filemtime(public_path('js/sgt/coordenadas/coordenadasRastreoGPS.js')) }}">
+        </script>
+    @endpush

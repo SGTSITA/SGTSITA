@@ -1,8 +1,8 @@
 ---
 title: Zoom in
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - magnify
-  - scale
+    - magnify
+    - scale
 ---

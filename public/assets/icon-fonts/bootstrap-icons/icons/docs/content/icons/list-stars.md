@@ -1,9 +1,9 @@
 ---
 title: List stars
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - starred
+    - text
+    - type
+    - starred
 ---

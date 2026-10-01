@@ -1,12 +1,12 @@
 ---
 title: Person check
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - verified
-  - account
+    - human
+    - individual
+    - avatar
+    - user
+    - verified
+    - account
 ---

@@ -1,7 +1,7 @@
 ---
 title: Cursor fill
 categories:
-  - Geo
+    - Geo
 tags:
-  - pointer
+    - pointer
 ---

@@ -1,7 +1,7 @@
 ---
 title: Border bottom
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - borders
+    - borders
 ---

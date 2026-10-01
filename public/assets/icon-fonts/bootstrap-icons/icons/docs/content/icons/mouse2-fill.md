@@ -1,8 +1,8 @@
 ---
 title: Mouse2 fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - mice
-  - input
+    - mice
+    - input
 ---

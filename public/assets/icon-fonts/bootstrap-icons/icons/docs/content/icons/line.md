@@ -1,7 +1,7 @@
 ---
 title: Line
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

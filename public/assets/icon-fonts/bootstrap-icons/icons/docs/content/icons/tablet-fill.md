@@ -1,7 +1,7 @@
 ---
 title: Tablet fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
+    - mobile
 ---

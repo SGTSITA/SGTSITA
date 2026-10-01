@@ -1,8 +1,8 @@
 ---
 title: Rainbow
 categories:
-  - Weather
+    - Weather
 tags:
-  - colors
-  - arches
+    - colors
+    - arches
 ---

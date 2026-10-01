@@ -1,9 +1,9 @@
 ---
 title: Speedometer2
 categories:
-  - Real world
+    - Real world
 tags:
-  - speed
-  - tachometer
-  - dashboard
+    - speed
+    - tachometer
+    - dashboard
 ---

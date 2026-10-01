@@ -1,8 +1,8 @@
 ---
 title: Sim fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
-  - carrier
+    - mobile
+    - carrier
 ---

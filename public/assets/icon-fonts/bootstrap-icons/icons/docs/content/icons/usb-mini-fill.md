@@ -1,8 +1,8 @@
 ---
 title: USB mini fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - port
-  - plug
+    - port
+    - plug
 ---
