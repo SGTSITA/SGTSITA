@@ -3,6 +3,7 @@
 @section('template_title')
     Crear Bitácora - App Móvil SGT Logistics
 @endsection
+@section('disable_simple_alert', 'true')
 
 @section('content')
 <div class="row">
@@ -18,7 +19,35 @@
             </div>
 
             <div class="card-body">
-                <form action="{{ route('app-movil-admin.store') }}" method="POST">
+                @if ($errors->any())
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const errorList = @json($errors->all());
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de validación',
+                                html: '<ul class="text-start mb-0 ps-3">' + errorList.map(e => `<li>${e}</li>`).join('') + '</ul>',
+                                confirmButtonColor: '#5e72e4',
+                                confirmButtonText: 'Entendido'
+                            });
+                        });
+                    </script>
+                @endif
+                @if (session('error'))
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: "{{ session('error') }}",
+                                confirmButtonColor: '#5e72e4',
+                                confirmButtonText: 'Entendido'
+                            });
+                        });
+                    </script>
+                @endif
+
+                <form id="formCrearBitacora" action="{{ route('app-movil-admin.store') }}" method="POST">
                     @csrf
 
                     <div class="form-group">
@@ -45,11 +74,39 @@
 </div>
 @endsection
 
-@section('js')
+@section('datatable')
+<script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
 <script>
     $(document).ready(function() {
-        $('.select2').select2({
-            width: '100%'
+        if ($.fn.select2) {
+            $('.select2').select2({
+                width: '100%'
+            });
+        }
+
+        $('#formCrearBitacora').on('submit', function(e) {
+            const asig = $('#id_asignacion').val();
+            if (!asig) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Campo Requerido',
+                    text: 'Por favor seleccione una asignación de viaje.',
+                    confirmButtonColor: '#5e72e4'
+                });
+                return false;
+            }
+
+            Swal.fire({
+                title: 'Vinculando bitácora...',
+                html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Generando registro de bitácora y preparando viaje móvil. Por favor espere...</p></div>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
         });
     });
 </script>

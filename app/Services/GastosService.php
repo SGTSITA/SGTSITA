@@ -13,6 +13,8 @@ use App\Models\GastosOperadores;
 use App\Models\CategoriasGastos;
 use App\Models\Equipo;
 use App\Models\Operador;
+use App\Models\CatBancoCuentasMovimientos;
+use App\Models\Bancos;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -403,7 +405,7 @@ class GastosService
         return $gasto;
     }
 
-    public function registrarDesdeGastoOperador(GastosOperadores $legacy): Gasto
+    public function registrarDesdeGastoOperador(GastosOperadores $legacy, ?Gasto $gastoExistente = null): Gasto
     {
         $legacy->loadMissing('Cotizacion.DocCotizacion', 'Asignaciones', 'Operador');
 
@@ -442,6 +444,7 @@ class GastosService
         }
 
         $gasto = $this->registrar([
+            'id' => $gastoExistente?->id,
             'id_empresa' => $idEmpresa,
             'categoria_gasto_id' => $categoriaId,
             'gasto_concepto_id' => $conceptoId,
@@ -741,8 +744,125 @@ class GastosService
         });
     }
 
+    public function sincronizarGastoConBancos(Gasto $gasto, float $nuevoMonto, ?string $fechaGasto = null, ?string $nuevoConcepto = null): Gasto
+    {
+        return DB::transaction(function () use ($gasto, $nuevoMonto, $fechaGasto, $nuevoConcepto) {
+            $nuevoMonto = $this->normalizarMonto($nuevoMonto);
+            $fechaPago = $fechaGasto ? $this->normalizarFecha($fechaGasto) : ($gasto->fecha_gasto ? Carbon::parse($gasto->fecha_gasto)->format('Y-m-d') : now()->format('Y-m-d'));
+
+            // 1. Actualizar el gasto y sus imputaciones
+            $gasto->monto_total = $nuevoMonto;
+            if ($nuevoConcepto) {
+                $gasto->concepto = $nuevoConcepto;
+            }
+            if ($fechaGasto) {
+                $gasto->fecha_gasto = $fechaPago;
+            }
+            $gasto->save();
+
+            foreach ($gasto->imputaciones as $imp) {
+                $imp->monto_imputado = $nuevoMonto;
+                if ($fechaGasto) {
+                    $imp->fecha_imputacion = $fechaPago;
+                }
+                $imp->save();
+            }
+
+            // 2. Verificar si tiene pagos aplicados
+            $pagosActivos = $gasto->pagos()->where('estatus', 'aplicado')->get();
+
+            if ($pagosActivos->count() === 1) {
+                $pago = $pagosActivos->first();
+                $montoAnteriorPago = (float) $pago->monto;
+                $diferencia = $nuevoMonto - $montoAnteriorPago;
+
+                // Si el monto aumenta, validar saldo en banco
+                if ($diferencia > 0) {
+                    $validacion = $this->bancosService->validarsaldoparacargo(
+                        $gasto->id_empresa,
+                        $pago->cuenta_bancaria_id,
+                        $fechaPago,
+                        $diferencia
+                    );
+
+                    if (!$validacion['saldodisponible']) {
+                        throw new \Exception($validacion['message']);
+                    }
+                }
+
+                // Actualizar GastoPago
+                $pago->monto = $nuevoMonto;
+                $pago->fecha_pago = $fechaPago;
+                $pago->save();
+
+                // Buscar y actualizar el movimiento bancario
+                $movimiento = null;
+                if ($pago->movimiento_bancario_id) {
+                    $movimiento = CatBancoCuentasMovimientos::find($pago->movimiento_bancario_id);
+                }
+
+                if (!$movimiento) {
+                    $movimiento = CatBancoCuentasMovimientos::where('referenciaable_type', Gasto::class)
+                        ->where('referenciaable_id', $gasto->id)
+                        ->where('cancelado', false)
+                        ->first();
+                }
+
+                if ($movimiento) {
+                    // Actualizar detalles JSON si existen
+                    $detalles = $movimiento->detalles;
+                    if (is_array($detalles)) {
+                        foreach ($detalles as &$item) {
+                            if (isset($item['gasto_id']) && (int)$item['gasto_id'] === (int)$gasto->id) {
+                                $item['monto'] = $nuevoMonto;
+                                if ($nuevoConcepto) {
+                                    $item['concepto'] = $nuevoConcepto;
+                                }
+                            } elseif (count($detalles) === 1) {
+                                $item['monto'] = $nuevoMonto;
+                                if ($nuevoConcepto) {
+                                    $item['concepto'] = $nuevoConcepto;
+                                }
+                            }
+                        }
+                        unset($item);
+                    }
+
+                    $movUpdate = [
+                        'monto' => $nuevoMonto,
+                        'fecha_movimiento' => $fechaPago,
+                        'detalles' => $detalles,
+                    ];
+
+                    if ($nuevoConcepto && strpos($movimiento->concepto ?? '', '[PAGO MULTIPLE]') === false) {
+                        $movUpdate['concepto'] = 'Pago gasto (Editado): ' . $nuevoConcepto;
+                    }
+
+                    $movimiento->update($movUpdate);
+
+                    // Sincronizar saldo de la cuenta bancaria
+                    $banco = Bancos::find($movimiento->cuenta_bancaria_id);
+                    if ($banco) {
+                        $abonos = CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'abono')->where('cancelado', false)->sum('monto');
+                        $cargos = CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'cargo')->where('cancelado', false)->sum('monto');
+                        $banco->saldo = (float)($banco->inicial_saldo ?? 0) + $abonos - $cargos;
+                        $banco->save();
+                    }
+                }
+            }
+
+            $this->sincronizarEstatusPago($gasto);
+
+            return $gasto->fresh(['partidas', 'vinculos', 'imputaciones', 'programaciones', 'pagos']);
+        });
+    }
+
     private function resolverGastoExistente(array $data): ?Gasto
     {
+        if (!empty($data['id'])) {
+            return Gasto::find($data['id']);
+        }
+
         if (!empty($data['origen_legacy']) && !empty($data['origen_legacy_id'])) {
             $query = Gasto::withTrashed()
                 ->where('origen_legacy', $data['origen_legacy'])
@@ -755,7 +875,7 @@ class GastosService
             return $query->first();
         }
 
-        return !empty($data['id']) ? Gasto::find($data['id']) : null;
+        return null;
     }
 
     private function reemplazarRelacion(Gasto $gasto, string $relacion, array $items): void

@@ -939,6 +939,42 @@ class ApiValidationService
             return ['success' => false, 'message' => 'Asignación no encontrada.', 'data' => [], 'status' => 404];
         }
 
+        // Validación de cordura para costo de combustible (prevenir omisión de punto decimal)
+        if (isset($data['costo']) && !empty($data['costo'])) {
+            $costoNum = floatval($data['costo']);
+            $litrosNum = isset($data['litros']) ? floatval($data['litros']) : 0;
+
+            if ($costoNum > 100000) {
+                return [
+                    'success' => false,
+                    'message' => 'El costo de diésel ($' . number_format($costoNum, 2) . ') excede el límite permitido. Verifique si omitió el punto decimal.',
+                    'data'    => [],
+                    'status'  => 422
+                ];
+            }
+
+            if ($litrosNum > 0 && ($costoNum / $litrosNum) > 60) {
+                return [
+                    'success' => false,
+                    'message' => 'El precio por litro de diésel ($' . number_format($costoNum / $litrosNum, 2) . '/L) excede el rango válido. Verifique el importe.',
+                    'data'    => [],
+                    'status'  => 422
+                ];
+            }
+        }
+
+        if (isset($data['costo_urea']) && !empty($data['costo_urea'])) {
+            $costoUreaNum = floatval($data['costo_urea']);
+            if ($costoUreaNum > 50000) {
+                return [
+                    'success' => false,
+                    'message' => 'El costo de urea ($' . number_format($costoUreaNum, 2) . ') excede el límite permitido. Verifique si omitió el punto decimal.',
+                    'data'    => [],
+                    'status'  => 422
+                ];
+            }
+        }
+
         if (isset($data['latitud']) && isset($data['longitud'])) {
             coordenadashistorial::create([
                 'latitud' => $data['latitud'],

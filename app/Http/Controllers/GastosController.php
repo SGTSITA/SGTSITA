@@ -837,16 +837,17 @@ class GastosController extends Controller
 
             // If there is an existing payment
             if ($pagoExistente) {
-                $nuevoMontoPago = (float)$pagoExistente->monto + $montoDiferencia;
-                $dateChanged = $request->fecha_gasto !== $gasto->fecha_gasto;
+                $esPagoUnico = ($gasto->pagos()->where('estatus', 'aplicado')->count() === 1);
+                $nuevoMontoPago = $esPagoUnico ? $montoTotal : ((float)$pagoExistente->monto + $montoDiferencia);
+                $diferenciaReal = $nuevoMontoPago - (float)$pagoExistente->monto;
 
                 // Validate balance if amount increased
-                if ($montoDiferencia > 0) {
+                if ($diferenciaReal > 0) {
                     $validacion = $this->bancosService->validarsaldoparacargo(
                         auth()->user()->id_empresa,
                         $pagoExistente->cuenta_bancaria_id,
                         $request->fecha_gasto,
-                        $montoDiferencia
+                        $diferenciaReal
                     );
 
                     if (!$validacion['saldodisponible']) {
@@ -884,11 +885,26 @@ class GastosController extends Controller
                 }
 
                 if ($movimiento) {
-                    $nuevoMontoMovimiento = (float)$movimiento->monto + $montoDiferencia;
+                    $nuevoMontoMovimiento = $esPagoUnico ? $montoTotal : ((float)$movimiento->monto + $montoDiferencia);
+
+                    $detalles = $movimiento->detalles;
+                    if (is_array($detalles)) {
+                        foreach ($detalles as &$item) {
+                            if (isset($item['gasto_id']) && (int)$item['gasto_id'] === (int)$gasto->id) {
+                                $item['monto'] = $nuevoMontoMovimiento;
+                                $item['concepto'] = $request->concepto;
+                            } elseif (count($detalles) === 1) {
+                                $item['monto'] = $nuevoMontoMovimiento;
+                                $item['concepto'] = $request->concepto;
+                            }
+                        }
+                        unset($item);
+                    }
 
                     $updateData = [
                         'monto' => $nuevoMontoMovimiento,
                         'fecha_movimiento' => $request->fecha_gasto,
+                        'detalles' => $detalles,
                     ];
 
                     if (strpos($movimiento->concepto ?? '', '[PAGO MULTIPLE]') === false) {
@@ -896,6 +912,15 @@ class GastosController extends Controller
                     }
 
                     $movimiento->update($updateData);
+
+                    // Recalcular saldo de la cuenta bancaria
+                    $banco = \App\Models\Bancos::find($movimiento->cuenta_bancaria_id);
+                    if ($banco) {
+                        $abonos = \App\Models\CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'abono')->where('cancelado', false)->sum('monto');
+                        $cargos = \App\Models\CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'cargo')->where('cancelado', false)->sum('monto');
+                        $banco->saldo = (float)($banco->inicial_saldo ?? 0) + $abonos - $cargos;
+                        $banco->save();
+                    }
                 }
             }
 

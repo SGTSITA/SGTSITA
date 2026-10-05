@@ -20,6 +20,7 @@ use App\Traits\WialonGpsTrait;
 use Illuminate\Support\Facades\Log;
 
 use App\Traits\SISGPSTrait as SISGPSTrait;
+use App\Traits\NaanixGPSTrait as NaanixGPSTrait;
 
 class UbicacionService
 {
@@ -1252,70 +1253,154 @@ private function consultarSisGpsGrupo(array $items, array $credenciales): array
 {
     $resultados = [];
     $inicio = microtime(true);
+    $idCliente = !empty($credenciales['appkey'])
+        ? $credenciales['appkey']
+        : ($credenciales['account'] ?? ($credenciales['client_id'] ?? config('services.GPS_SIS_URL.client_id', 937184269)));
 
-    foreach ($items as $item) {
+    // Intentar primero con el nuevo servicio REST/JSON de Naanix
+    try {
+        $posicionesResp = NaanixGPSTrait::sisGetPosicionesActuales($idCliente, 0);
+        $unidadesResp = NaanixGPSTrait::sisObtenerUnidades($idCliente);
 
-        try {
+        $posicionesPorIdUnidad = [];
+        if ($posicionesResp->success && !empty($posicionesResp->data['Posiciones'])) {
+            foreach ($posicionesResp->data['Posiciones'] as $pos) {
+                $idU = (int) ($pos['IdUnidad'] ?? 0);
+                if ($idU > 0) {
+                    $posicionesPorIdUnidad[$idU] = $pos;
+                }
+            }
+        }
 
-            $data = SISGPSTrait::sisGetLastPosition(
-                $credenciales['account'] ?? null,
-                $credenciales['appkey'] ?? null,
-                $item['imei']
-            );
+        $mapImeiAIdUnidad = [];
+        if ($unidadesResp->success && !empty($unidadesResp->data['map_por_imei'])) {
+            foreach ($unidadesResp->data['map_por_imei'] as $imeiKey => $uInfo) {
+                $mapImeiAIdUnidad[trim((string) $imeiKey)] = (int) ($uInfo['IdUnidad'] ?? 0);
+            }
+        }
 
-            $raw = $data->data['raw']->return ?? null;
+        foreach ($items as $item) {
+            $imeiItem = trim((string) ($item['imei'] ?? ''));
+            $targetIdUnidad = $mapImeiAIdUnidad[$imeiItem] ?? (is_numeric($imeiItem) ? (int) $imeiItem : null);
 
-            $ubicacionApi = $raw
-                ? json_decode($raw, true)
-                : [];
+            $pos = ($targetIdUnidad && isset($posicionesPorIdUnidad[$targetIdUnidad]))
+                ? $posicionesPorIdUnidad[$targetIdUnidad]
+                : null;
 
-            $ubicacion = [
-                'lat' => $ubicacionApi['Latitude'] ?? 0,
-                'lng' => $ubicacionApi['Longitude'] ?? 0,
-                'velocidad' => $ubicacionApi['Speed'] ?? null,
-                'imei' => $ubicacionApi['ID'] ?? $item['imei'],
-                'deviceName' => $ubicacionApi['UnitType'] ?? null,
-                'mcType' => $ubicacionApi['DataCommType'] ?? null,
-                'datac' => $ubicacionApi,
-                'esDatoEmp' => $item['esDatoEmp'],
-                'tipoEquipo' => $item['TipoEquipo'],
-            ];
+            if ($pos) {
+                $ubicacion = [
+                    'lat'        => (float) ($pos['Latitud'] ?? 0),
+                    'lng'        => (float) ($pos['Longitud'] ?? 0),
+                    'velocidad'  => (float) ($pos['Velocidad'] ?? 0),
+                    'imei'       => $imeiItem,
+                    'deviceName' => $pos['Empresa'] ?? 'SIS GPS',
+                    'mcType'     => $pos['Evento'] ?? null,
+                    'datac'      => $pos,
+                    'esDatoEmp'  => $item['esDatoEmp'],
+                    'tipoEquipo' => $item['TipoEquipo'],
+                ];
 
-            $status = (
-                floatval($ubicacion['lat']) != 0 &&
-                floatval($ubicacion['lng']) != 0
-            );
+                $status = (floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0);
 
-            $responseGps = [
-                'ubicacion' => $ubicacion,
-                'tipogps' => 'SIS GPS',
-                'status' => $status,
-                'messageAp' => $status
-                    ? 'Sin error'
-                    : 'Sin ubicación para mostrar',
-                'tiemporespuesta' => round(
-                    (microtime(true) - $inicio) * 1000,
-                    2
-                ),
-            ];
+                $responseGps = [
+                    'ubicacion'       => $ubicacion,
+                    'tipogps'         => 'SIS GPS',
+                    'status'          => $status,
+                    'messageAp'       => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                    'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+                ];
 
-            $resultados[] = $this->formatearResultadoGps(
-                $item,
-                $responseGps
-            );
+                $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+            } else {
+                // Consulta individual por si es un ID de unidad directo en vez de IMEI
+                $singleResp = NaanixGPSTrait::sisGetLastPosition($idCliente, null, $imeiItem);
+                if ($singleResp->success && isset($singleResp->data['posicion'])) {
+                    $p = $singleResp->data['posicion'];
+                    $ubicacion = [
+                        'lat'        => (float) ($p['Latitud'] ?? 0),
+                        'lng'        => (float) ($p['Longitud'] ?? 0),
+                        'velocidad'  => (float) ($p['Velocidad'] ?? 0),
+                        'imei'       => $imeiItem,
+                        'deviceName' => $p['Empresa'] ?? 'SIS GPS',
+                        'mcType'     => $p['Evento'] ?? null,
+                        'datac'      => $p,
+                        'esDatoEmp'  => $item['esDatoEmp'],
+                        'tipoEquipo' => $item['TipoEquipo'],
+                    ];
+                    $status = (floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0);
+                    $responseGps = [
+                        'ubicacion'       => $ubicacion,
+                        'tipogps'         => 'SIS GPS',
+                        'status'          => $status,
+                        'messageAp'       => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                        'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+                    ];
+                    $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+                } else {
+                    $ubicacion = [
+                        'lat'        => 0,
+                        'lng'        => 0,
+                        'velocidad'  => null,
+                        'imei'       => $item['imei'],
+                        'deviceName' => null,
+                        'mcType'     => null,
+                        'datac'      => [],
+                        'esDatoEmp'  => $item['esDatoEmp'],
+                        'tipoEquipo' => $item['TipoEquipo'],
+                    ];
+                    $responseGps = [
+                        'ubicacion'       => $ubicacion,
+                        'tipogps'         => 'SIS GPS',
+                        'status'          => false,
+                        'messageAp'       => 'Sin ubicación para mostrar',
+                        'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+                    ];
+                    $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+                }
+            }
+        }
+    } catch (\Throwable $e) {
+        Log::error('Error en consultarSisGpsGrupo (Naanix), intentando fallback SOAP', ['error' => $e->getMessage()]);
 
-        } catch (\Throwable $e) {
+        // Fallback a SOAP heredado en caso de excepción general
+        foreach ($items as $item) {
+            try {
+                $data = SISGPSTrait::sisGetLastPosition(
+                    $credenciales['account'] ?? null,
+                    $credenciales['appkey'] ?? null,
+                    $item['imei']
+                );
 
-            foreach ($items as $item) {
+                $raw = $data->data['raw']->return ?? null;
+                $ubicacionApi = $raw ? json_decode($raw, true) : [];
 
+                $ubicacion = [
+                    'lat'        => $ubicacionApi['Latitude'] ?? 0,
+                    'lng'        => $ubicacionApi['Longitude'] ?? 0,
+                    'velocidad'  => $ubicacionApi['Speed'] ?? null,
+                    'imei'       => $ubicacionApi['ID'] ?? $item['imei'],
+                    'deviceName' => $ubicacionApi['UnitType'] ?? null,
+                    'mcType'     => $ubicacionApi['DataCommType'] ?? null,
+                    'datac'      => $ubicacionApi,
+                    'esDatoEmp'  => $item['esDatoEmp'],
+                    'tipoEquipo' => $item['TipoEquipo'],
+                ];
+
+                $status = (floatval($ubicacion['lat']) != 0 && floatval($ubicacion['lng']) != 0);
+
+                $responseGps = [
+                    'ubicacion'       => $ubicacion,
+                    'tipogps'         => 'SIS GPS',
+                    'status'          => $status,
+                    'messageAp'       => $status ? 'Sin error' : 'Sin ubicación para mostrar',
+                    'tiemporespuesta' => round((microtime(true) - $inicio) * 1000, 2),
+                ];
+
+                $resultados[] = $this->formatearResultadoGps($item, $responseGps);
+            } catch (\Throwable $soapEx) {
                 $resultados[] = $this->formatearResultadoGps(
                     $item,
-                    $this->gpsErrorResponse(
-                        $item,
-                        'SIS GPS',
-                        $e,
-                        $inicio
-                    )
+                    $this->gpsErrorResponse($item, 'SIS GPS', $soapEx, $inicio)
                 );
             }
         }
@@ -1682,27 +1767,46 @@ if ($ubicacionApi) {
 
             case 'https://www.rastreogps.com/':
 
-                $data = SISGPSTrait::sisGetLastPosition(
-                    $credenciales['account'],
-                    $credenciales['appkey'],
+                $idCliente = !empty($credenciales['appkey'])
+                    ? $credenciales['appkey']
+                    : ($credenciales['account'] ?? ($credenciales['client_id'] ?? config('services.GPS_SIS_URL.client_id', 937184269)));
+
+                // 1. Intentar con Naanix REST
+                $data = NaanixGPSTrait::sisGetLastPosition(
+                    $idCliente,
+                    $credenciales['appkey'] ?? null,
                     $imei
                 );
 
-                $raw = $data->data['raw']->return ?? null;
+                // 2. Si no tuvo éxito, fallback a SOAP heredado
+                if (!$data->success) {
+                    $data = SISGPSTrait::sisGetLastPosition(
+                        $credenciales['account'] ?? '',
+                        $credenciales['appkey'] ?? '',
+                        $imei
+                    );
+                }
 
-                $ubicacionApi = $raw
-                    ? json_decode($raw, true)
-                    : [];
+                $raw = $data->data['raw'] ?? null;
+                $ubicacionApi = [];
+
+                if (is_object($raw) && isset($raw->return)) {
+                    $ubicacionApi = json_decode($raw->return, true) ?: [];
+                } elseif (is_object($raw)) {
+                    $ubicacionApi = (array) $raw;
+                } elseif (is_array($raw)) {
+                    $ubicacionApi = $raw;
+                }
 
                 $ubicacion = [
-                    'lat' => $ubicacionApi['Latitude'] ?? 0,
-                    'lng' => $ubicacionApi['Longitude'] ?? 0,
-                    'velocidad' => $ubicacionApi['Speed'] ?? null,
-                    'imei' => $ubicacionApi['ID'] ?? null,
-                    'deviceName' => $ubicacionApi['UnitType'] ?? null,
-                    'mcType' => $ubicacionApi['DataCommType'] ?? null,
-                    'datac' => $ $ubicacionApi,
-                    'esDatoEmp' => $esDatoEmp,
+                    'lat'        => (float) ($ubicacionApi['Latitude'] ?? ($ubicacionApi['Latitud'] ?? 0)),
+                    'lng'        => (float) ($ubicacionApi['Longitude'] ?? ($ubicacionApi['Longitud'] ?? 0)),
+                    'velocidad'  => (float) ($ubicacionApi['Speed'] ?? ($ubicacionApi['Velocidad'] ?? 0)),
+                    'imei'       => $ubicacionApi['ID'] ?? ($ubicacionApi['DispositivoAsignado'] ?? $imei),
+                    'deviceName' => $ubicacionApi['UnitType'] ?? ($ubicacionApi['Empresa'] ?? 'SIS GPS'),
+                    'mcType'     => $ubicacionApi['DataCommType'] ?? ($ubicacionApi['Evento'] ?? null),
+                    'datac'      => $ubicacionApi,
+                    'esDatoEmp'  => $esDatoEmp,
                     'tipoEquipo' => $TipoEquipo
                 ];
 
