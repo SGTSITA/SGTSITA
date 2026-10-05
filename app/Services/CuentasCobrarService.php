@@ -170,6 +170,16 @@ class CuentasCobrarService
             });
         }
 
+        if (!empty($filtros['id_equipo'])) {
+            $query->whereExists(function ($q) use ($filtros) {
+                $q->select(DB::raw(1))
+                  ->from('docum_cotizacion as dc')
+                  ->join('asignaciones as a', 'a.id_contenedor', '=', 'dc.id')
+                  ->whereColumn('dc.id_cotizacion', 't.id')
+                  ->where('a.id_camion', $filtros['id_equipo']);
+            });
+        }
+
         if (!empty($filtros['numero_edo_cuenta'])) {
             $query->where('ec.id', $filtros['numero_edo_cuenta']);
         }

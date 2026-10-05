@@ -38,6 +38,7 @@ use App\Traits\CommonTrait;
 use Illuminate\Support\Facades\File;
 use App\Services\CuentasCobrarService;
 use App\Services\ReporteriaService;
+use App\Services\EquipoService;
 
 
 use App\Exports\ConsumoUnidadesExport;
@@ -50,13 +51,16 @@ class ReporteriaController extends Controller
 {
     protected $cuentasPorCobrarService;
     protected $reporteriaService;
+    protected $equipoService;
 
     public function __construct(
         CuentasCobrarService $cuentasPorCobrarService,
-        ReporteriaService $reporteriaService
+        ReporteriaService $reporteriaService,
+        EquipoService $equipoService
     ) {
         $this->cuentasPorCobrarService = $cuentasPorCobrarService;
         $this->reporteriaService = $reporteriaService;
+        $this->equipoService = $equipoService;
     }
 
     public function index()
@@ -74,11 +78,11 @@ class ReporteriaController extends Controller
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
         $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
-
+        $equipos = $this->equipoService->getTractocamiones();
 
         $documentos = config('CatAuxiliares.columnsbycode');
 
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas', 'documentos'));
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'estadosCuentas', 'equipos', 'documentos'));
     }
 
     public function advance(Request $request)
@@ -172,16 +176,19 @@ class ReporteriaController extends Controller
            $cotizaciones = $cotizaciones->get(); */
 
         $filtros = [
-    'id_cliente' => $request->id_client,
-    'id_subcliente' => $request->id_subcliente,
-    'id_proveedor' => $request->id_proveedor,
-    'numero_edo_cuenta' => $request->numero_edo_cuenta,
-];
+            'id_cliente' => $request->id_client,
+            'id_subcliente' => $request->id_subcliente,
+            'id_proveedor' => $request->id_proveedor,
+            'numero_edo_cuenta' => $request->numero_edo_cuenta,
+            'id_equipo' => $request->id_equipo,
+        ];
+
+        $equipos = $this->equipoService->getTractocamiones();
 
         $cotizaciones = $this->cuentasPorCobrarService->getCuentasPorCobrar($filtros);
 
         // Devolver la vista con los filtros y las cotizaciones
-        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas', 'documentos'));
+        return view('reporteria.cxc.index', compact('clientes', 'subclientes', 'proveedores', 'cotizaciones', 'estadosCuentas', 'equipos', 'documentos'));
     }
 
 
@@ -702,12 +709,13 @@ class ReporteriaController extends Controller
                                 ->orderBy('nombre')->get();
 
         $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $equipos = $this->equipoService->getTractocamiones();
 
         $clientesIds = $clientes->pluck('id');
 
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
 
-        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'subclientes', 'estadosCuentas'));
+        return view('reporteria.cxp.index', compact('proveedores', 'clientes', 'subclientes', 'estadosCuentas', 'equipos'));
     }
     public function advance_cxp(Request $request)
     {
@@ -721,13 +729,15 @@ class ReporteriaController extends Controller
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
         $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        $equipos = $this->equipoService->getTractocamiones();
 
         $clientesIds = $clientes->pluck('id');
 
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
 
-        // Obtener el ID del proveedor y del cliente desde la solicitud
+        // Obtener el ID del proveedor, equipo y del cliente desde la solicitud
         $id_proveedor = $request->input('id_proveedor');
+        $id_equipo = $request->input('id_equipo');
         $numeroEdoCuenta = $request->numero_edo_cuenta ?? null;
 
         // Mostrar advertencia si no se seleccionó proveedor
@@ -816,6 +826,10 @@ class ReporteriaController extends Controller
             $cotizacionesQuery->where('asignaciones.id_proveedor', $id_proveedor);
         }
 
+        if (!empty($id_equipo)) {
+            $cotizacionesQuery->where('asignaciones.id_camion', $id_equipo);
+        }
+
         if (!empty($numeroEdoCuenta)) {
             $cotizacionesQuery->where('estado_cuenta.id', $numeroEdoCuenta);
         }
@@ -878,6 +892,7 @@ class ReporteriaController extends Controller
             'id_proveedor',
             'subclientes',
             'estadosCuentas',
+            'equipos',
             'advertenciasCuentas',
             'advertenciasPorProveedor'
         ));
@@ -985,19 +1000,22 @@ class ReporteriaController extends Controller
               ];
           })->toArray(); */
 
-        return view('reporteria.asignaciones.index');
+        $equipos = $this->equipoService->getTractocamiones();
+        return view('reporteria.asignaciones.index', compact('equipos'));
     }
 
     public function getViajesFiltrados(Request $request)
     {
         $fechaInicio = $request->query('fecha_inicio');
         $fechaFin = $request->query('fecha_fin');
+        $idEquipo = $request->query('id_equipo');
 
-        $asignaciones = Asignaciones::with([
+        $query = Asignaciones::with([
             'Contenedor.Cotizacion.Cliente',
             'Contenedor.Cotizacion.Subcliente',
             'Proveedor',
-            'Operador'
+            'Operador',
+            'Camion'
         ])
         ->whereHas('Contenedor.Cotizacion', function ($query) {
             $query->where('id_empresa', auth()->user()->id_empresa);
@@ -1005,8 +1023,13 @@ class ReporteriaController extends Controller
         ->whereBetween('fecha_inicio', [
             Carbon::parse($fechaInicio)->startOfDay(),
             Carbon::parse($fechaFin)->endOfDay()
-        ])
-        ->get();
+        ]);
+
+        if (!empty($idEquipo)) {
+            $query->where('id_camion', $idEquipo);
+        }
+
+        $asignaciones = $query->get();
 
         //  dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
 
@@ -1029,11 +1052,12 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => optional($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
                 'proveedor' => $a->Proveedor->nombre ?? '-',
-                 'operador' => $a->Operador->nombre ?? '-',
+                'operador' => $a->Operador->nombre ?? '-',
             ];
         });
 
@@ -1104,7 +1128,11 @@ class ReporteriaController extends Controller
             $asignaciones = $asignaciones->where('cotizaciones.estatus', $request->estatus);
         }
 
-        $asignaciones = $asignaciones->get();
+        if ($request->filled('id_camion')) {
+            $asignaciones = $asignaciones->where('asignaciones.id_camion', $request->id_camion);
+        }
+
+        $equipos = $this->equipoService->getTractocamiones();
 
         $asignaciones = $asignaciones->get();
 
@@ -1127,6 +1155,7 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),
                 'estatus' => $a->Contenedor->Cotizacion->estatus ?? '',
@@ -1140,6 +1169,7 @@ class ReporteriaController extends Controller
             'subclientes',
             'proveedores',
             'estatus',
+            'equipos',
             'viajesData'
         ));
 
@@ -1154,14 +1184,18 @@ class ReporteriaController extends Controller
         $fileType = $request->input('fileType');
         $exportAll = $request->input('exportAll') === 'true';
         $cotizacionIds = $request->input('cotizacion_ids', []);
+        $idCamion = $request->input('id_camion');
 
         //  Detectar si se exporta todo o solo selección
         if ($exportAll) {
-            $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
-                ->where('id_empresa', auth()->user()->id_empresa)
-                ->get();
+            $queryExport = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente', 'Camion'])
+                ->where('id_empresa', auth()->user()->id_empresa);
+            if (!empty($idCamion)) {
+                $queryExport->where('id_camion', $idCamion);
+            }
+            $cotizaciones = $queryExport->get();
         } elseif (!empty($cotizacionIds)) {
-            $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente'])
+            $cotizaciones = Asignaciones::with(['Contenedor.Cotizacion.Cliente', 'Contenedor.Cotizacion.Subcliente', 'Camion'])
                 ->whereIn('id', $cotizacionIds)
                 ->get();
         } else {
@@ -1218,7 +1252,8 @@ class ReporteriaController extends Controller
     public function index_utilidad()
     {
         $proveedores = \App\Models\Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('nombre', 'asc')->get();
-        return view('reporteria.utilidad.index', compact('proveedores'));
+        $equipos = $this->equipoService->getTractocamiones();
+        return view('reporteria.utilidad.index', compact('proveedores', 'equipos'));
     }
 
     public function advance_utilidad(Request $request)
@@ -1266,7 +1301,8 @@ class ReporteriaController extends Controller
     public function getContenedorUtilidad(Request $r)
     {
         $idProveedor = $r->input('id_proveedor');
-        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor);
+        $idEquipo = $r->input('id_equipo');
+        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor, $idEquipo);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
 
         $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($r->startDate, $r->endDate, auth()->user()->id_empresa);
@@ -1284,11 +1320,12 @@ class ReporteriaController extends Controller
         $fechaFin = $request->input('fechaFin');
         $fileType = $request->input('fileType');
         $idProveedor = $request->input('id_proveedor');
+        $idEquipo = $request->input('id_equipo');
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa, $idProveedor);
+        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa, $idProveedor, $idEquipo);
         $cotizaciones = collect($info);
 
         if ($request->has('rowData') && !empty($request->rowData)) {
@@ -1363,6 +1400,8 @@ class ReporteriaController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $equipos = $this->equipoService->getTractocamiones();
+
         // Construir consulta base
         $cotizacionesQuery = Cotizaciones::query()
 
@@ -1397,6 +1436,10 @@ class ReporteriaController extends Controller
                 $request->fecha_inicio,
                 $request->fecha_fin
             ]);
+        }
+
+        if ($request->filled('id_equipo')) {
+            $cotizacionesQuery->where('asignaciones.id_camion', $request->id_equipo);
         }
 
         $cotizaciones = $cotizacionesQuery->get();
@@ -1468,7 +1511,7 @@ class ReporteriaController extends Controller
         });
 
 
-        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores'));
+        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'proveedores', 'equipos'));
     }
 
     public function index_validacion_documentos(Request $request)
@@ -1702,6 +1745,7 @@ class ReporteriaController extends Controller
 ->where('is_active', 1 )
         ->orderBy('created_at', 'desc')->get();
         $subclientes = Subclientes::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+        $equipos = $this->equipoService->getTractocamiones();
 
         $id_client = $request->id_client;
         $id_subcliente = $request->id_subcliente;
@@ -1730,10 +1774,15 @@ class ReporteriaController extends Controller
             }
         }
 
+        if ($request->filled('id_equipo')) {
+            $cotizaciones = $cotizaciones->join('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+                ->where('asignaciones.id_camion', $request->id_equipo);
+        }
+
         // Obtener los resultados
         $cotizaciones = $cotizaciones->get();
 
-        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes'));
+        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'equipos'));
     }
 
 
@@ -1866,7 +1915,7 @@ class ReporteriaController extends Controller
         $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
         $subclientes = Subclientes::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
-        $equipos = Equipo::where('id_empresa', '=', $idEmpresa)->where('tipo', '=', 'Tractos / Camiones')->orderBy('id_equipo', 'asc')->get();
+        $equipos = $this->equipoService->getTractocamiones($idEmpresa);
 
         $cotizaciones = collect();
         $registrosBanco = collect();
@@ -1879,7 +1928,7 @@ class ReporteriaController extends Controller
         $idEmpresa = auth()->user()->id_empresa;
         $clientes = Client::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
         $subclientes = Subclientes::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
-        $equipos = Equipo::where('id_empresa', '=', $idEmpresa)->where('tipo', '=', 'Tractos / Camiones')->orderBy('id_equipo', 'asc')->get();
+        $equipos = $this->equipoService->getTractocamiones($idEmpresa);
 
         $filters = $request->only(['id_client', 'id_subcliente', 'id_unidad', 'fecha_inicio', 'fecha_fin']);
 
@@ -1905,7 +1954,7 @@ class ReporteriaController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
         $proveedores = Proveedor::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
-        $equipos = Equipo::where('id_empresa', '=', $idEmpresa)->where('tipo', '=', 'Tractos / Camiones')->orderBy('id_equipo', 'asc')->get();
+        $equipos = $this->equipoService->getTractocamiones($idEmpresa);
 
         $cotizaciones = collect();
         $proveedor_cxp = null;
@@ -1917,7 +1966,7 @@ class ReporteriaController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
         $proveedores = Proveedor::where('id_empresa', '=', $idEmpresa)->orderBy('nombre', 'asc')->get();
-        $equipos = Equipo::where('id_empresa', '=', $idEmpresa)->where('tipo', '=', 'Tractos / Camiones')->orderBy('id_equipo', 'asc')->get();
+        $equipos = $this->equipoService->getTractocamiones($idEmpresa);
 
         $id_proveedor = $request->id_proveedor;
         $filters = $request->only(['id_proveedor', 'id_unidad', 'fecha_inicio', 'fecha_fin']);
@@ -1948,54 +1997,9 @@ class ReporteriaController extends Controller
     public function index_gxp(Request $request)
     {
         $status = $request->input('status', 'por_pagar');
+        $equipos = $this->equipoService->getTractocamiones();
 
-        $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
-            ->whereNull('gastos.deleted_at')
-            ->where('gastos.id_empresa', auth()->user()->id_empresa)
-            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
-            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.estatus as gasto_estatus');
-
-        if ($status === 'por_pagar') {
-            $query->where('gastos.estatus', '!=', 'cancelado')
-                  ->where('gastos.estatus', '!=', 'pagado');
-        } elseif ($status === 'pagados') {
-            $query->where('gastos.estatus', 'pagado');
-        } elseif ($status === 'todos') {
-            $query->where('gastos.estatus', '!=', 'cancelado');
-        }
-        $gastos = $query->get();
-
-        $gastos->load([
-            'imputable', // Operador or Asignacion
-            'gasto.vinculos' => function ($q) {
-                $q->where('tipo_vinculo', 'asignacion');
-            },
-            'gasto.vinculos.vinculable.Proveedor',
-            'gasto.vinculos.vinculable.Operador',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
-        ]);
-
-        $data = $gastos->map(function ($g) {
-            $vinculoAsignacion = $g->gasto?->vinculos?->first();
-            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
-
-            return [
-                'id' => $g->id,
-                'operador' => $g->tipo_imputacion === 'operador' ? ($g->imputable?->nombre ?? '-') : ($asignacion?->Operador?->nombre ?? '-'),
-                'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
-                'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',
-                'num_contenedor' => optional($asignacion?->Contenedor)->num_contenedor ?? '-',
-                'monto' => $g->monto_imputado ?? 0,
-                'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
-                'fecha_inicio' => $asignacion?->fecha_inicio,
-                'fecha_fin' => $asignacion?->fecha_fin,
-                'fecha_movimiento' => $g->created_at,
-                'fecha_aplicacion' => $g->fecha_imputacion,
-            ];
-        });
-
-        return view('reporteria.gxp.index', ['gastos' => $data]);
+        return view('reporteria.gxp.index', compact('equipos'));
     }
 
 
@@ -2004,12 +2008,13 @@ class ReporteriaController extends Controller
     {
         $idEmpresa = auth()->user()->id_empresa;
         $status = $request->input('status', 'por_pagar');
+        $idEquipo = $request->input('id_equipo');
 
         $query = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
             ->whereNull('gastos.deleted_at')
             ->where('gastos.id_empresa', $idEmpresa)
-            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje'])
-            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto');
+            ->whereIn('gasto_imputaciones.tipo_imputacion', ['operador', 'viaje', 'equipo', 'cotizacion'])
+            ->select('gasto_imputaciones.*', 'gastos.concepto as motivo_gasto', 'gastos.id_equipo as gasto_id_equipo');
 
         if ($status === 'por_pagar') {
             $query->where('gastos.estatus', '!=', 'cancelado')
@@ -2019,21 +2024,61 @@ class ReporteriaController extends Controller
         } elseif ($status === 'todos') {
             $query->where('gastos.estatus', '!=', 'cancelado');
         }
+
+        if (!empty($idEquipo)) {
+            $query->where(function ($q) use ($idEquipo) {
+                $q->where('gastos.id_equipo', $idEquipo)
+                  ->orWhere(function ($sub) use ($idEquipo) {
+                      $sub->where('gasto_imputaciones.imputable_type', \App\Models\Equipo::class)
+                          ->where('gasto_imputaciones.imputable_id', $idEquipo);
+                  })
+                  ->orWhereHas('gasto.vinculos', function ($sub) use ($idEquipo) {
+                      $sub->where(function ($v1) use ($idEquipo) {
+                          $v1->where('tipo_vinculo', 'unidad')->where('vinculable_id', $idEquipo);
+                      })->orWhere(function ($v2) use ($idEquipo) {
+                          $v2->where('tipo_vinculo', 'asignacion')
+                             ->whereHasMorph('vinculable', [\App\Models\Asignaciones::class], function ($a) use ($idEquipo) {
+                                 $a->where('id_camion', $idEquipo);
+                             });
+                      });
+                  });
+            });
+        }
+
         $gastos = $query->get();
 
         $gastos->load([
-            'imputable', // Operador or Asignacion
+            'imputable',
+            'gasto.equipo',
             'gasto.vinculos' => function ($q) {
-                $q->where('tipo_vinculo', 'asignacion');
+                $q->whereIn('tipo_vinculo', ['asignacion', 'unidad']);
             },
+            'gasto.vinculos.vinculable',
             'gasto.vinculos.vinculable.Operador',
+            'gasto.vinculos.vinculable.Camion',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
         ]);
 
         $data = $gastos->map(function ($g) {
-            $vinculoAsignacion = $g->gasto?->vinculos?->first();
-            $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
+            $vinculoAsignacion = $g->gasto?->vinculos?->firstWhere('tipo_vinculo', 'asignacion');
+            $asignacion = ($vinculoAsignacion && $vinculoAsignacion->vinculable instanceof \App\Models\Asignaciones) ? $vinculoAsignacion->vinculable : null;
+            if (!$asignacion && $g->imputable instanceof \App\Models\Asignaciones) {
+                $asignacion = $g->imputable;
+            }
+
+            $vinculoUnidad = $g->gasto?->vinculos?->firstWhere('tipo_vinculo', 'unidad');
+            $equipoDirecto = $g->gasto?->equipo;
+            $equipoNombre = $equipoDirecto ? ($equipoDirecto->id_equipo ?: $equipoDirecto->placas) : null;
+            if (!$equipoNombre && $vinculoUnidad && $vinculoUnidad->vinculable instanceof \App\Models\Equipo) {
+                $equipoNombre = $vinculoUnidad->vinculable->id_equipo ?: $vinculoUnidad->vinculable->placas;
+            }
+            if (!$equipoNombre && $asignacion && $asignacion->Camion) {
+                $equipoNombre = $asignacion->Camion->id_equipo ?: $asignacion->Camion->placas;
+            }
+            if (!$equipoNombre && $g->imputable instanceof \App\Models\Equipo) {
+                $equipoNombre = $g->imputable->id_equipo ?: $g->imputable->placas;
+            }
 
             $proveedorNombre = '-';
             if ($asignacion && $asignacion->id_proveedor) {
@@ -2043,6 +2088,7 @@ class ReporteriaController extends Controller
 
             return [
                 'id' => $g->id,
+                'equipo' => $equipoNombre ?? '-',
                 'operador' => $g->tipo_imputacion === 'operador' ? ($g->imputable?->nombre ?? '-') : ($asignacion?->Operador?->nombre ?? '-'),
                 'cliente' => optional($asignacion?->Contenedor?->Cotizacion?->Cliente)->nombre ?? '-',
                 'subcliente' => optional($asignacion?->Contenedor?->Cotizacion?->Subcliente)->nombre ?? '-',

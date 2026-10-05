@@ -22,11 +22,24 @@
                         <h5 class="mb-0 fw-bold">Reporte de viajes</h5>
                     </div>
 
-                    <!-- Rango de fechas -->
-                    <div class="d-flex align-items-center gap-2 px-4 pt-3">
-                        <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none" />
+                    <!-- Rango de fechas y Filtro de Unidad -->
+                    <div class="d-flex align-items-center gap-3 px-4 pt-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Periodo:</label>
+                            <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                                style="width: auto; min-width: 200px; box-shadow: none" />
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
+                            <select id="selEquipoViajes" class="form-select form-select-sm" style="width: auto; min-width: 220px;">
+                                <option value="">-- Todas las unidades --</option>
+                                @if (isset($equipos))
+                                    @foreach ($equipos as $eq)
+                                        <option value="{{ $eq->id }}">{{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
                     </div>
 
                     <div class="card-body">

@@ -319,4 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('fecha_fin', endDate);
         window.location.href = url.toString();
     }
+
+    $('#selEquipoDocumentos').on('change', function () {
+        const url = new URL(window.location.href);
+        const equipoId = $(this).val();
+        if (equipoId) {
+            url.searchParams.set('id_equipo', equipoId);
+        } else {
+            url.searchParams.delete('id_equipo');
+        }
+        window.location.href = url.toString();
+    });
 });

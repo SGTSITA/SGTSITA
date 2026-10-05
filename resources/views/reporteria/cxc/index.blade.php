@@ -34,8 +34,8 @@
                     </div>
                     <div class="card-body d-flex flex-column">
                         <form id="filtroReporte" method="GET" action="{{ route('reporteria.advance') }}">
-                            <div class="row align-items-end">
-                                <div class="col-md-3">
+                            <div class="row align-items-end g-2">
+                                <div class="col-md-2">
                                     <label for="id_client">Cliente</label>
                                     <select name="id_client" id="id_client" class="form-control">
                                         <option value="">Seleccionar Cliente</option>
@@ -48,7 +48,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="id_subcliente">Subcliente</label>
                                     <select name="id_subcliente" id="id_subcliente" class="form-control">
                                         <option value="">Seleccionar Subcliente</option>
@@ -61,7 +61,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="id_proveedor">Proveedor</label>
                                     <select name="id_proveedor" id="id_proveedor" class="form-control">
                                         <option value="">Seleccionar Proveedor</option>
@@ -73,8 +73,22 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 ">
-                                    <label for="numero_edo_cuenta">Num. Estado de Cuenta</label>
+                                <div class="col-md-2">
+                                    <label for="id_equipo">Unidad / Equipo</label>
+                                    <select name="id_equipo" id="id_equipo" class="form-control">
+                                        <option value="">Todas las unidades</option>
+                                        @if(isset($equipos))
+                                            @foreach ($equipos as $eq)
+                                                <option value="{{ $eq->id }}"
+                                                    {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
+                                                    {{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="numero_edo_cuenta">Num. Edo. Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
                                         <option value="">Seleccionar numero</option>
                                         @foreach ($estadosCuentas as $edoCuenta)
@@ -85,12 +99,17 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-1 d-flex align-items-end">
+                                <div class="col-md-2 d-flex align-items-end gap-1">
                                     <button type="submit"
                                         class="btn btn-primary btn-sm d-flex align-items-center justify-content-center"
-                                        style="height: 38px; width: 38px; border-radius: 8px;">
+                                        style="height: 38px; width: 38px; border-radius: 8px;" title="Buscar">
                                         <i class="fas fa-search"></i>
                                     </button>
+                                    <a href="{{ route('index.reporteria') }}"
+                                        class="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
+                                        style="height: 38px; width: 38px; border-radius: 8px;" title="Limpiar filtros">
+                                        <i class="fas fa-undo"></i>
+                                    </a>
                                 </div>
                             </div>
                         </form>

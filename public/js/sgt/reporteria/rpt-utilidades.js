@@ -240,8 +240,8 @@ function ejecutarExportacion(fileType) {
     const rowData = JSON.stringify(apiGrid.getSelectedRows());
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
-    let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
 
     $.ajax({
         url: "/reporteria/utilidad/export",
@@ -254,6 +254,7 @@ function ejecutarExportacion(fileType) {
             fechaFin: fechaFin,
             fileType: fileType,
             id_proveedor: idProveedor,
+            id_equipo: idEquipo,
         },
         xhrFields: {
             responseType: "blob",
@@ -309,10 +310,11 @@ function getUtilidadesViajes(startDate, endDate) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
     $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
-        data: { _token, startDate, endDate, id_proveedor: idProveedor },
+        data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },
         beforeSend: () => {
             mostrarLoading("Consultando viajes...");
         },
@@ -335,7 +337,7 @@ function getUtilidadesViajes(startDate, endDate) {
     });
 }
 
-$("#selProveedorUtilidad").on("change", function () {
+$("#selProveedorUtilidad, #selEquipoUtilidad").on("change", function () {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     if (fechaInicio && fechaFin) {
@@ -353,6 +355,7 @@ function cargarPdfVistaPreliminar() {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
 
     let iframeContainer = document.getElementById("iframePreviewContainer");
     iframeContainer.innerHTML = ''; // Clear previous
@@ -398,7 +401,8 @@ function cargarPdfVistaPreliminar() {
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
             fileType: 'pdf',
-            id_proveedor: idProveedor
+            id_proveedor: idProveedor,
+            id_equipo: idEquipo
         };
 
         for (const [key, value] of Object.entries(inputs)) {

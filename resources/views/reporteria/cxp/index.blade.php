@@ -31,7 +31,7 @@
                             <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
                                 <div class="row">
                                     <!-- Campo para proveedor -->
-                                    <div class="col-3">
+                                    <div class="col-md-3">
                                         <label for="id_proveedor">Buscar proveedor:</label>
                                         <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
                                             <option selected value="">Seleccionar proveedor</option>
@@ -45,7 +45,7 @@
                                     </div>
 
                                     <!-- Campo para cliente -->
-                                    <div class="col-3">
+                                    <div class="col-md-2">
                                         <label for="id_cliente">Buscar cliente:</label>
                                         <select class="form-control cliente" name="id_cliente" id="id_cliente">
                                             <option selected value="">Seleccionar cliente</option>
@@ -59,7 +59,7 @@
                                     </div>
 
                                     <!-- Campo para subcliente -->
-                                    <div class="col-3">
+                                    <div class="col-md-2">
                                         <label for="id_subcliente">Buscar subcliente:</label>
                                         <select class="form-control cliente" name="id_subcliente" id="id_subcliente">
                                             <option selected value="">Seleccionar subcliente</option>
@@ -72,8 +72,24 @@
                                         </select>
                                     </div>
 
+                                    <!-- Campo para unidad / equipo -->
                                     <div class="col-md-2">
-                                        <label for="numero_edo_cuenta">Numero de Estado de Cuenta</label>
+                                        <label for="id_equipo">Unidad / Equipo:</label>
+                                        <select class="form-control" name="id_equipo" id="id_equipo">
+                                            <option value="">Todas las unidades</option>
+                                            @if(isset($equipos))
+                                                @foreach ($equipos as $eq)
+                                                    <option value="{{ $eq->id }}"
+                                                        {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
+                                                        {{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label for="numero_edo_cuenta">Num. Estado Cuenta</label>
                                         <select name="numero_edo_cuenta" id="numero_edo_cuenta"
                                             class="form-control numero_edo_cuenta">
                                             <option value="">Seleccionar numero</option>
@@ -86,10 +102,14 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-3">
-                                        <br>
-                                        <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit"
-                                            style="background-color: #F82018; color: #ffffff;">Buscar</button>
+                                    <div class="col-md-1 d-flex align-items-end gap-1">
+                                        <button class="btn btn-sm mb-0" type="submit"
+                                            style="background-color: #F82018; color: #ffffff;" title="Buscar">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <a href="{{ route('index_cxp.reporteria') }}" class="btn btn-sm btn-secondary mb-0" title="Limpiar">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
