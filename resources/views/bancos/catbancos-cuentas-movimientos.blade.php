@@ -355,10 +355,12 @@
                 let textoAbono = '$ 0.00';
 
                 if (mov.tipo === 'cargo') {
-                    styleCargo = (esNegativo ? 'color: #ea580c; font-weight: bold;' : 'color: #dc2626; font-weight: bold;') + ' cursor: pointer;';
+                    styleCargo = (esNegativo ? 'color: #ea580c; font-weight: bold;' :
+                        'color: #dc2626; font-weight: bold;') + ' cursor: pointer;';
                     textoCargo = esNegativo ? formatearmoneda(montoNum) : '- ' + formatearmoneda(montoNum);
                 } else if (mov.tipo === 'abono') {
-                    styleAbono = (esNegativo ? 'color: #ea580c; font-weight: bold;' : 'color: #16a34a; font-weight: bold;') + ' cursor: pointer;';
+                    styleAbono = (esNegativo ? 'color: #ea580c; font-weight: bold;' :
+                        'color: #16a34a; font-weight: bold;') + ' cursor: pointer;';
                     textoAbono = esNegativo ? formatearmoneda(montoNum) : '+ ' + formatearmoneda(montoNum);
                 }
 
@@ -492,22 +494,42 @@
                         contenedor = obj.concepto;
                         monto = Number(obj.monto || 0);
                         totalMonto += monto;
+                        let infoItems = [];
+                        if (obj.unidad) {
+                            infoItems.push(
+                                `<strong>UNIDAD:</strong> <span class="badge bg-light text-primary border">${obj.unidad}</span>`
+                                );
+                        }
                         if (obj.vinculos && obj.vinculos.length > 0) {
-                            extraInfo = '<div style="font-size: 10px; color: #666; margin-left: 10px;">' + 
-                                obj.vinculos.map(v => `<strong>${v.tipo.toUpperCase()}:</strong> ${v.referencia}`).join(' | ') + 
+                            obj.vinculos.forEach(v => {
+                                if (v.tipo !== 'unidad' || !obj.unidad) {
+                                    infoItems.push(
+                                        `<strong>${v.tipo.toUpperCase()}:</strong> ${v.referencia}`);
+                                }
+                            });
+                        }
+                        if (infoItems.length > 0) {
+                            extraInfo =
+                                '<div style="font-size: 11px; color: #555; margin-left: 5px; margin-top: 2px;">' +
+                                infoItems.join(' | ') +
                                 '</div>';
                         }
                     } else {
-                        // Legacy parser loop
+                        // Legacy parser loop / liquidación
                         Object.entries(obj).forEach(([key, value]) => {
                             if (key.toLowerCase().includes('contenedor')) {
                                 contenedor = value;
                             }
-                            if (!isNaN(value) && value !== '' && value !== null && key.toLowerCase() !== 'id') {
+                            if (!isNaN(value) && value !== '' && value !== null && key.toLowerCase() !==
+                                'id' && key.toLowerCase() !== 'id_equipo') {
                                 monto = Number(value);
                                 totalMonto += monto;
                             }
                         });
+                        if (obj.unidad) {
+                            extraInfo =
+                                `<div style="font-size: 11px; color: #555; margin-left: 5px; margin-top: 2px;"><strong>UNIDAD:</strong> <span class="badge bg-light text-primary border">${obj.unidad}</span></div>`;
+                        }
                     }
 
                     html += `

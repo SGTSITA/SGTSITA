@@ -522,6 +522,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
 
             Route::get('/cat-bancos/cuentas/movimientosperiodo/{idcuenta}', [App\Http\Controllers\CatBancoController::class, 'getmovimientosperiodo']);
+            Route::get('/cat-bancos/movimientos-unidad', [App\Http\Controllers\CatBancoController::class, 'getMovimientosPorUnidad'])->name('bancos.movimientos.unidad');
 
             //finaliza bancos v2.0
 
@@ -707,6 +708,15 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
                     Route::post('/pagos/{pago}/cancelar', [App\Http\Controllers\GastosController::class, 'cancelarPago'])
                         ->name('cancelar-pago');
+
+                    Route::get('/cuentas-bancarias', [App\Http\Controllers\GastosController::class, 'getCuentasBancarias'])
+                        ->name('cuentas_bancarias');
+
+                    Route::post('/cuentas-bancarias/movimiento', [App\Http\Controllers\GastosController::class, 'storeMovimientoBancario'])
+                        ->name('bancos_movimiento');
+
+                    Route::post('/cuentas-bancarias/transferencia', [App\Http\Controllers\GastosController::class, 'storeTransferenciaBancaria'])
+                        ->name('bancos_transferencia');
         });
 
         Route::get('gastos/generales', [App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');

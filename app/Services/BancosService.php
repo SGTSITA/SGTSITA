@@ -288,7 +288,7 @@ class BancosService
                 'concepto'           => 'Devolución - ' . $movimiento->concepto,
                 'fecha_movimiento'   => $fechaCancelacion ?? now(),
                 'origen'             => 'sistema',
-                'referencia'         => 'cancelación'. $movimiento->referencia ? ' - ' . $movimiento->referencia : null,
+                'referencia'         => 'cancelación' . ($movimiento->referencia ? ' - ' . $movimiento->referencia : ''),
                 'referenciaable_type'=> $movimiento->referenciaable_type ?? null,
                 'referenciaable_id'  => $movimiento->referenciaable_id ?? null,
                 'detalles'           => $movimiento->detalles,
@@ -400,14 +400,15 @@ class BancosService
         $banco->save();
     }
 
-    public static function generarConcepto(string $tipo, string $concepto, ?string $contenedor = null, ?string $operador = null): string
+    public static function generarConcepto(string $tipo, string $concepto, ?string $contenedor = null, ?string $operador = null, ?string $unidad = null): string
     {
         $tipoStr = strtoupper(trim($tipo));
         $conceptoStr = trim($concepto);
-        
+
         $refContenedor = !empty($contenedor) ? " - Cont: " . trim($contenedor) : "";
         $refOperador = !empty($operador) ? " - Ope: " . trim($operador) : "";
-        
-        return sprintf("[%s] %s%s%s", $tipoStr, $conceptoStr, $refContenedor, $refOperador);
+        $refUnidad = !empty($unidad) ? " - " . (str_starts_with(trim($unidad), 'Unidad:') ? trim($unidad) : "Unidad: " . trim($unidad)) : "";
+
+        return sprintf("[%s] %s%s%s%s", $tipoStr, $conceptoStr, $refContenedor, $refOperador, $refUnidad);
     }
 }
