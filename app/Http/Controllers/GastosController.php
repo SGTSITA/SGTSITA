@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bancos;
+use App\Models\CatBancoCuentasMovimientos;
 
 use App\Models\Gasto;
 use App\Models\GastoPago;
@@ -1055,6 +1056,167 @@ class GastosController extends Controller
                 'Titulo' => 'Error al eliminar',
                 'Mensaje' => 'Ocurrió un error al intentar eliminar el gasto: ' . $t->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Retorna las cuentas bancarias activas con saldo disponible para la empresa.
+     */
+    public function getCuentasBancarias(Request $request)
+    {
+        $fecha = $request->input('fecha', now()->format('Y-m-d'));
+        $validarSaldo = $request->boolean('validar_saldo', false);
+        $empresaId = auth()->user()->id_empresa;
+
+        $cuentas = $this->bancosService->getCuentasOption(
+            $empresaId,
+            $fecha,
+            $fecha,
+            $validarSaldo
+        );
+
+        return response()->json([
+            'TMensaje' => 'success',
+            'cuentas' => $cuentas,
+        ]);
+    }
+
+    /**
+     * Registra un movimiento bancario (abono o cargo) in-situ desde el módulo de gastos.
+     */
+    public function storeMovimientoBancario(Request $request)
+    {
+        $validated = $request->validate([
+            'cuenta_bancaria_id' => 'required|exists:bancos,id',
+            'tipo'               => 'required|in:abono,cargo',
+            'concepto'           => 'required|string|max:255',
+            'monto'              => 'required|numeric|not_in:0|min:0.01',
+            'fecha_movimiento'   => 'required|date',
+            'referencia'         => 'nullable|string|max:100',
+            'origen'             => 'required|string|max:50',
+        ]);
+
+        $cuenta = Bancos::where('id_empresa', auth()->user()->id_empresa)
+            ->findOrFail($validated['cuenta_bancaria_id']);
+
+        try {
+            \DB::beginTransaction();
+
+            $movimiento = $cuenta->movimientos()->create([
+                'tipo'             => $validated['tipo'],
+                'concepto'         => $validated['concepto'],
+                'monto'            => $validated['monto'],
+                'fecha_movimiento' => $validated['fecha_movimiento'],
+                'referencia'       => $validated['referencia'] ?? null,
+                'origen'           => $validated['origen'] ?? 'manual',
+                'user_id'          => auth()->id(),
+            ]);
+
+            \DB::commit();
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Movimiento registrado',
+                'Mensaje' => 'El movimiento bancario fue registrado correctamente.',
+                'movimiento' => $movimiento,
+                'cuenta_id' => $cuenta->id,
+            ]);
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al registrar',
+                'Mensaje' => 'Ocurrió un error al registrar el movimiento bancario: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Registra una transferencia entre dos cuentas bancarias de la empresa in-situ.
+     */
+    public function storeTransferenciaBancaria(Request $request)
+    {
+        $validated = $request->validate([
+            'cuenta_origen'    => 'required|different:cuenta_destino|exists:bancos,id',
+            'cuenta_destino'   => 'required|exists:bancos,id',
+            'concepto'         => 'required|string|max:255',
+            'monto'            => 'required|numeric|min:0.01',
+            'fecha_aplicacion' => 'required|date',
+        ]);
+
+        $empresaId = auth()->user()->id_empresa;
+
+        // Verificar pertenencia a la empresa
+        $cuentaOrigen = Bancos::where('id_empresa', $empresaId)->find($validated['cuenta_origen']);
+        $cuentaDestino = Bancos::where('id_empresa', $empresaId)->find($validated['cuenta_destino']);
+
+        if (!$cuentaOrigen || !$cuentaDestino) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Cuentas no válidas',
+                'Mensaje' => 'Una o ambas cuentas bancarias no pertenecen a su empresa.',
+            ], 422);
+        }
+
+        // Validar saldo suficiente en la cuenta de origen
+        $validarSaldo = $this->bancosService->validarsaldoparacargo(
+            $empresaId,
+            $validated['cuenta_origen'],
+            $validated['fecha_aplicacion'],
+            $validated['monto']
+        );
+
+        if (!$validarSaldo['saldodisponible']) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Saldo insuficiente',
+                'Mensaje' => $validarSaldo['message'],
+            ], 422);
+        }
+
+        try {
+            \DB::beginTransaction();
+
+            // Cargo a cuenta origen
+            CatBancoCuentasMovimientos::create([
+                'cuenta_bancaria_id' => $validated['cuenta_origen'],
+                'tipo'               => 'cargo',
+                'monto'              => $validated['monto'],
+                'concepto'           => $validated['concepto'],
+                'fecha_movimiento'   => $validated['fecha_aplicacion'],
+                'origen'             => 'transferencia',
+                'referencia'         => 'TR',
+                'user_id'            => auth()->id(),
+            ]);
+
+            // Abono a cuenta destino
+            CatBancoCuentasMovimientos::create([
+                'cuenta_bancaria_id' => $validated['cuenta_destino'],
+                'tipo'               => 'abono',
+                'monto'              => $validated['monto'],
+                'concepto'           => $validated['concepto'],
+                'fecha_movimiento'   => $validated['fecha_aplicacion'],
+                'origen'             => 'transferencia',
+                'referencia'         => 'TR',
+                'user_id'            => auth()->id(),
+            ]);
+
+            \DB::commit();
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Transferencia realizada',
+                'Mensaje' => 'La transferencia entre cuentas se aplicó correctamente.',
+                'cuenta_origen_id' => $cuentaOrigen->id,
+                'cuenta_destino_id' => $cuentaDestino->id,
+            ]);
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al transferir',
+                'Mensaje' => 'Ocurrió un error al procesar la transferencia: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

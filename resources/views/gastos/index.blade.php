@@ -452,6 +452,18 @@
                 </div>
 
                 <div class="modal-body">
+                    <div id="alertDraftRestaurado" class="alert alert-primary alert-dismissible fade show d-none py-2 px-3 mb-3 fs-7" role="alert">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 w-100">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa fa-history text-primary fs-5"></i>
+                                <span><strong>Borrador recuperado:</strong> Se restauraron los datos que tenías en progreso.</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-xs py-0 px-2 fs-8" id="btnDescartarDraft">
+                                Descartar borrador
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="row g-3">
 
                         <input type="hidden" name="id" id="gastoIdNew" value="">
@@ -804,11 +816,29 @@
 
                         <div class="col-12" id="divCuentaRetiroNew">
 
-                            <label class="form-label">
-                                Cuenta de retiro (Banco) *
-                            </label>
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <label class="form-label mb-0 fw-bold">
+                                    Cuenta de retiro (Banco) *
+                                </label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
+                                        id="btnOpenMovimientoInGasto" style="background-color: #5c67f2; border-color: #5c67f2; font-weight: 500;"
+                                        title="Registrar un abono o depósito en una cuenta bancaria">
+                                        <i class="fa fa-plus-circle"></i> Movimiento
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
+                                        id="btnOpenTransferenciaInGasto" style="background-color: #10b981; border-color: #10b981; font-weight: 500;"
+                                        title="Transferir fondos entre cuentas bancarias">
+                                        <i class="fa fa-exchange-alt"></i> Transferir
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center px-2 py-1"
+                                        id="btnRefreshBancosInGasto" title="Recargar cuentas y saldos en vivo">
+                                        <i class="fa fa-sync-alt" id="iconRefreshBancos"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-                            <select class="form-select" id="id_banco1New" name="id_banco1" required>
+                            <select class="form-select select-cuentas-bancarias" id="id_banco1New" name="id_banco1" required>
 
                                 <option value="">
                                     -- Seleccionar Cuenta --
@@ -865,6 +895,10 @@
             </div>
         </div>
     </div>
+
+    {{-- Sub-modales para operaciones bancarias in-situ desde el registro de gasto --}}
+    @include('gastos.modals.modal_movimiento_in_gasto')
+    @include('gastos.modals.modal_transferencia_in_gasto')
 @endsection
 
 @section('js_custom')
@@ -890,14 +924,19 @@
     <script>
         window.mesinicio = null;
         window.mesfin = null;
+
+        window.idEmpresa = @json(auth()->user()->id_empresa ?? 0);
         window.requiereUnidadGasto = @json($requiereUnidadGasto ?? false);
         const gastosRoutes = {
             data: @json(route('gastos.data')),
             store: @json(route('gastos.store')),
-
+            cuentasBancarias: @json(route('gastos.cuentas_bancarias')),
+            bancosMovimiento: @json(route('gastos.bancos_movimiento')),
+            bancosTransferencia: @json(route('gastos.bancos_transferencia')),
             historial: '/gastos',
             cancelarPago: '/gastos/pagos',
         };
+        const GASTO_DRAFT_KEY = `sgt_gasto_draft_${window.idEmpresa || 'default'}`;
 
 
 
@@ -1533,6 +1572,12 @@
                 onChange: calcDaysNew
             });
 
+            // Listeners para autosave de borrador (Draft)
+            if (modalForm) {
+                modalForm.addEventListener('input', debouncedSaveDraft);
+                modalForm.addEventListener('change', debouncedSaveDraft);
+            }
+
 
 
 
@@ -1755,6 +1800,7 @@
                 const json = await response.json();
 
                 if (json.TMensaje === 'success') {
+                    clearGastoDraft();
                     Swal.fire({
                         title: json.Titulo || 'Éxito',
                         text: json.Mensaje || 'El gasto se guardó correctamente.',
@@ -1810,6 +1856,7 @@
         function abrirModalEditar(gasto) {
             // Reset modal first
             modalForm.reset();
+            clearGastoDraft();
             if (choicesUnidades) choicesUnidades.removeActiveItems();
             if (choicesViajes) choicesViajes.removeActiveItems();
 
@@ -1838,7 +1885,6 @@
             const vinculos = gasto.vinculos || [];
             if (formasAplicarVal === 'Equipo' && choicesUnidades) {
                 const mappedUnidades = vinculos.filter(v => v.tipo === 'unidad').map(v => {
-                    // Try to match value from option list
                     const select = document.getElementById('selectUnidadesNew');
                     const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Unidad: ',
                         '')));
@@ -1866,7 +1912,6 @@
             // Condition/tipo de pago
             const metodoPagoVal = gasto.metodo_imputacion === 'diferido' ? '1' : '0';
             document.getElementById('tipoPagoNew').value = metodoPagoVal;
-            // trigger change event to toggle defer colapsable if necessary
             document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
 
             // Populate Bank Account if it is Contado and has payments
@@ -1882,9 +1927,351 @@
             modal.show();
         }
 
-        // Clean ID when creating a new Gasto
-        document.querySelector('[data-bs-target="#modalGastoNew"]').addEventListener('click', () => {
-            document.getElementById('gastoIdNew').value = '';
+        // ==========================================
+        // MOTOR DE BORRADOR (DRAFT AUTOSAVE) - SDD 002
+        // ==========================================
+        let saveDraftTimeout = null;
+
+        function getFormDataAsDraft() {
+            if (!modalForm) return null;
+            const gastoId = document.getElementById('gastoIdNew')?.value;
+            if (gastoId) return null; // No guardar borrador si se está editando un gasto existente
+
+            const checkedForma = document.querySelector('input[name="formasAplicar"]:checked')?.value || 'Periodo';
+            const unidades = choicesUnidades ? choicesUnidades.getValue(true) : [];
+            const viajes = choicesViajes ? choicesViajes.getValue(true) : [];
+
+            return {
+                formasAplicar: checkedForma,
+                tipo_gasto: document.getElementById('tipo_gasto')?.value || 'periodo',
+                metodo_imputacion: document.getElementById('metodo_imputacion')?.value || 'directo',
+                unidades: Array.isArray(unidades) ? unidades : (unidades ? [unidades] : []),
+                viajes: Array.isArray(viajes) ? viajes : (viajes ? [viajes] : []),
+                impacto: document.getElementById('impacto')?.value || '',
+                categoria_gasto_id: document.getElementById('categoria_gasto_idNew')?.value || '',
+                gasto_concepto_id: document.getElementById('gasto_concepto_idNew')?.value || '',
+                concepto: document.getElementById('conceptoNew')?.value || '',
+                monto_total: document.getElementById('monto_totalNew')?.value || '',
+                fecha_gasto: document.getElementById('fecha_gastoNew')?.value || '',
+                tipoPago: document.getElementById('tipoPagoNew')?.value || '0',
+                txtDiferirFechaInicia: document.getElementById('txtDiferirFechaIniciaNew')?.value || '',
+                txtDiferirFechaTermina: document.getElementById('txtDiferirFechaTerminaNew')?.value || '',
+                id_banco1: document.getElementById('id_banco1New')?.value || '',
+                updated_at: Date.now()
+            };
+        }
+
+        function saveGastoDraft() {
+            try {
+                const draft = getFormDataAsDraft();
+                if (!draft) return;
+                const hasData = draft.concepto || draft.monto_total || draft.categoria_gasto_id || 
+                                (draft.unidades && draft.unidades.length) || (draft.viajes && draft.viajes.length) ||
+                                (draft.formasAplicar !== 'Periodo') || draft.id_banco1;
+                if (hasData) {
+                    sessionStorage.setItem(GASTO_DRAFT_KEY, JSON.stringify(draft));
+                }
+            } catch (e) {
+                console.warn('Error al guardar borrador en sessionStorage:', e);
+            }
+        }
+
+        function debouncedSaveDraft() {
+            clearTimeout(saveDraftTimeout);
+            saveDraftTimeout = setTimeout(saveGastoDraft, 300);
+        }
+
+        function clearGastoDraft() {
+            try {
+                sessionStorage.removeItem(GASTO_DRAFT_KEY);
+            } catch (e) {}
+            const alertDraft = document.getElementById('alertDraftRestaurado');
+            if (alertDraft) alertDraft.classList.add('d-none');
+        }
+
+        function restoreGastoDraft() {
+            try {
+                const raw = sessionStorage.getItem(GASTO_DRAFT_KEY);
+                if (!raw) return false;
+                const draft = JSON.parse(raw);
+                if (!draft) return false;
+
+                // 1. Radios formasAplicar
+                const formaVal = draft.formasAplicar || 'Periodo';
+                const radio = document.querySelector(`input[name="formasAplicar"][value="${formaVal}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    handleSelectionNew(radio);
+                }
+
+                // 2. Choices.js unidades / viajes
+                if (formaVal === 'Equipo' && choicesUnidades && Array.isArray(draft.unidades) && draft.unidades.length) {
+                    choicesUnidades.setChoiceByValue(draft.unidades.map(String));
+                } else if (formaVal === 'Viaje' && choicesViajes && Array.isArray(draft.viajes) && draft.viajes.length) {
+                    choicesViajes.setChoiceByValue(draft.viajes.map(String));
+                }
+
+                // 3. Impacto
+                if (draft.impacto) {
+                    document.getElementById('impacto').value = draft.impacto;
+                }
+
+                // 4. Categoría y concepto
+                if (draft.categoria_gasto_id) {
+                    document.getElementById('categoria_gasto_idNew').value = draft.categoria_gasto_id;
+                    cargarConceptosPorCategoria(draft.categoria_gasto_id, draft.gasto_concepto_id);
+                }
+
+                // 5. Concepto, monto, fecha
+                if (draft.concepto) document.getElementById('conceptoNew').value = draft.concepto;
+                if (draft.monto_total) document.getElementById('monto_totalNew').value = draft.monto_total;
+                if (draft.fecha_gasto) document.getElementById('fecha_gastoNew').value = draft.fecha_gasto;
+
+                // 6. Condición de pago
+                if (draft.tipoPago !== undefined) {
+                    document.getElementById('tipoPagoNew').value = draft.tipoPago;
+                    document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
+                }
+
+                // 7. Diferido
+                if (draft.tipoPago === '1') {
+                    if (draft.txtDiferirFechaInicia) document.getElementById('txtDiferirFechaIniciaNew').value = draft.txtDiferirFechaInicia;
+                    if (draft.txtDiferirFechaTermina) document.getElementById('txtDiferirFechaTerminaNew').value = draft.txtDiferirFechaTermina;
+                    calcDaysNew();
+                }
+
+                // 8. Cuenta bancaria
+                if (draft.id_banco1) {
+                    document.getElementById('id_banco1New').value = draft.id_banco1;
+                }
+
+                // Mostrar alerta de borrador restaurado
+                const alertDraft = document.getElementById('alertDraftRestaurado');
+                if (alertDraft) alertDraft.classList.remove('d-none');
+
+                return true;
+            } catch (e) {
+                console.error('Error al restaurar borrador de gasto:', e);
+                return false;
+            }
+        }
+
+        // ==========================================
+        // OPERACIONES BANCARIAS IN-SITU - SDD 002
+        // ==========================================
+        async function actualizarSelectBancos(cuentaSeleccionadaId = null) {
+            const icon = document.getElementById('iconRefreshBancos');
+            if (icon) icon.classList.add('fa-spin');
+
+            try {
+                const fechaGasto = document.getElementById('fecha_gastoNew')?.value || '';
+                const response = await fetch(`${gastosRoutes.cuentasBancarias}?fecha=${encodeURIComponent(fechaGasto)}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await response.json();
+                if (data.TMensaje === 'success' && Array.isArray(data.cuentas)) {
+                    const selectGasto = document.getElementById('id_banco1New');
+                    const valorActual = cuentaSeleccionadaId || selectGasto.value;
+
+                    let htmlOptions = '<option value="">-- Seleccionar Cuenta --</option>';
+                    data.cuentas.forEach(c => {
+                        htmlOptions += `<option value="${c.id}">${c.display}</option>`;
+                    });
+
+                    selectGasto.innerHTML = htmlOptions;
+                    if (valorActual) {
+                        selectGasto.value = valorActual;
+                    }
+
+                    // Actualizar también selects de modales
+                    document.querySelectorAll('.select-cuentas-bancarias').forEach(sel => {
+                        if (sel.id !== 'id_banco1New') {
+                            const selVal = sel.value;
+                            let opts = `<option value="">-- Seleccionar Cuenta --</option>`;
+                            data.cuentas.forEach(c => {
+                                opts += `<option value="${c.id}">${c.display}</option>`;
+                            });
+                            sel.innerHTML = opts;
+                            if (selVal) sel.value = selVal;
+                        }
+                    });
+
+                    saveGastoDraft();
+                }
+            } catch (err) {
+                console.error('Error al actualizar cuentas bancarias:', err);
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+            }
+        }
+
+        // Botón abrir sub-modal de Movimiento
+        document.getElementById('btnOpenMovimientoInGasto')?.addEventListener('click', () => {
+            saveGastoDraft();
+            const modalGastoEl = document.getElementById('modalGastoNew');
+            const bsGasto = bootstrap.Modal.getInstance(modalGastoEl);
+            if (bsGasto) bsGasto.hide();
+
+            const selectedCuentaId = document.getElementById('id_banco1New')?.value;
+            if (selectedCuentaId) {
+                const movCuenta = document.getElementById('movCuentaBancariaId');
+                if (movCuenta) movCuenta.value = selectedCuentaId;
+            }
+
+            const modalMovEl = document.getElementById('modalMovimientoInGasto');
+            const bsMov = new bootstrap.Modal(modalMovEl);
+            bsMov.show();
+        });
+
+        // Botón abrir sub-modal de Transferencia
+        document.getElementById('btnOpenTransferenciaInGasto')?.addEventListener('click', () => {
+            saveGastoDraft();
+            const modalGastoEl = document.getElementById('modalGastoNew');
+            const bsGasto = bootstrap.Modal.getInstance(modalGastoEl);
+            if (bsGasto) bsGasto.hide();
+
+            const selectedCuentaId = document.getElementById('id_banco1New')?.value;
+            if (selectedCuentaId) {
+                const transDestino = document.getElementById('transCuentaDestino');
+                if (transDestino) transDestino.value = selectedCuentaId;
+            }
+
+            const modalTransEl = document.getElementById('modalTransferenciaInGasto');
+            const bsTrans = new bootstrap.Modal(modalTransEl);
+            bsTrans.show();
+        });
+
+        // Botón refresco manual de bancos
+        document.getElementById('btnRefreshBancosInGasto')?.addEventListener('click', () => {
+            actualizarSelectBancos();
+        });
+
+        // Al cerrar cualquiera de los dos sub-modales, reabrir modalGastoNew
+        ['modalMovimientoInGasto', 'modalTransferenciaInGasto'].forEach(modalId => {
+            const modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                modalEl.addEventListener('hidden.bs.modal', () => {
+                    const modalGastoEl = document.getElementById('modalGastoNew');
+                    const bsGasto = bootstrap.Modal.getInstance(modalGastoEl) || new bootstrap.Modal(modalGastoEl);
+                    bsGasto.show();
+                });
+            }
+        });
+
+        // Envío de Formulario de Movimiento
+        document.getElementById('formMovimientoInGasto')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const btnSubmit = document.getElementById('btnSubmitMovimientoInGasto');
+            btnSubmit.disabled = true;
+
+            Swal.fire({
+                title: 'Guardando movimiento...',
+                text: 'Por favor espere mientras se aplica el ajuste bancario.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(gastosRoutes.bancosMovimiento, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': formData.get('_token')
+                    },
+                    body: formData
+                });
+                const json = await response.json();
+
+                if (json.TMensaje === 'success') {
+                    form.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('modalMovimientoInGasto'))?.hide();
+
+                    await actualizarSelectBancos(json.cuenta_id);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: json.Titulo || 'Movimiento registrado',
+                        text: json.Mensaje || 'El saldo fue actualizado. Ya puedes continuar con el gasto.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire(json.Titulo || 'Error', json.Mensaje || 'No se pudo registrar el movimiento.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Ocurrió un error de red al registrar el movimiento.', 'error');
+            } finally {
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // Envío de Formulario de Transferencia
+        document.getElementById('formTransferenciaInGasto')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = this;
+            const btnSubmit = document.getElementById('btnSubmitTransferenciaInGasto');
+            btnSubmit.disabled = true;
+
+            const cOrigen = document.getElementById('transCuentaOrigen')?.value;
+            const cDestino = document.getElementById('transCuentaDestino')?.value;
+            if (cOrigen && cDestino && cOrigen === cDestino) {
+                Swal.fire('Cuentas iguales', 'La cuenta de origen y la de destino deben ser diferentes.', 'warning');
+                btnSubmit.disabled = false;
+                return;
+            }
+
+            Swal.fire({
+                title: 'Aplicando transferencia...',
+                text: 'Por favor espere mientras se transfiere el saldo.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(gastosRoutes.bancosTransferencia, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': formData.get('_token')
+                    },
+                    body: formData
+                });
+                const json = await response.json();
+
+                if (json.TMensaje === 'success') {
+                    form.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('modalTransferenciaInGasto'))?.hide();
+
+                    await actualizarSelectBancos(json.cuenta_destino_id);
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: json.Titulo || 'Transferencia exitosa',
+                        text: json.Mensaje || 'La transferencia se aplicó correctamente.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire(json.Titulo || 'Error', json.Mensaje || 'No se pudo aplicar la transferencia.', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Ocurrió un error de red al procesar la transferencia.', 'error');
+            } finally {
+                btnSubmit.disabled = false;
+            }
+        });
+
+        // Descartar borrador manualmente
+        document.getElementById('btnDescartarDraft')?.addEventListener('click', () => {
+            clearGastoDraft();
             modalForm.reset();
             const pUnidad = document.getElementById('selectPeriodoUnidadNew');
             if (pUnidad) {
@@ -1900,10 +2287,36 @@
             }
             if (choicesUnidades) choicesUnidades.removeActiveItems();
             if (choicesViajes) choicesViajes.removeActiveItems();
+            document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
+            document.querySelector('input[name="formasAplicar"][value="Periodo"]')?.parentElement.classList.add('selected');
+            document.querySelectorAll('.aplicacion-gastos-new').forEach(div => div.classList.add('d-none'));
+            document.getElementById('tipo_gasto').value = 'periodo';
+            document.getElementById('metodo_imputacion').value = 'directo';
             document.getElementById('tipoPagoNew').value = '0';
             document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
-            document.getElementById('gasto_concepto_idNew').innerHTML =
-                '<option value="">-- Seleccionar Concepto --</option>';
+            document.getElementById('gasto_concepto_idNew').innerHTML = '<option value="">-- Seleccionar Concepto --</option>';
+        });
+
+        // Al hacer clic en botón principal "Registrar gasto"
+        document.querySelector('[data-bs-target="#modalGastoNew"]')?.addEventListener('click', () => {
+            document.getElementById('gastoIdNew').value = '';
+            const restored = restoreGastoDraft();
+            if (!restored) {
+                modalForm.reset();
+                if (choicesUnidades) choicesUnidades.removeActiveItems();
+                if (choicesViajes) choicesViajes.removeActiveItems();
+                document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
+                document.querySelector('input[name="formasAplicar"][value="Periodo"]')?.parentElement.classList.add('selected');
+                document.querySelectorAll('.aplicacion-gastos-new').forEach(div => div.classList.add('d-none'));
+                document.getElementById('tipo_gasto').value = 'periodo';
+                document.getElementById('metodo_imputacion').value = 'directo';
+                document.getElementById('tipoPagoNew').value = '0';
+                document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
+                document.getElementById('gasto_concepto_idNew').innerHTML =
+                    '<option value="">-- Seleccionar Concepto --</option>';
+                const alertDraft = document.getElementById('alertDraftRestaurado');
+                if (alertDraft) alertDraft.classList.add('d-none');
+            }
         });
 
         // Carga dinámica de conceptos por categoría
