@@ -21,15 +21,30 @@
                     <div class="card-header d-flex justify-content-between align-items-center bg-white">
                         <h5 class="mb-0 fw-bold">Reporte de documentos</h5>
                     </div>
-                    <div class="d-flex align-items-center gap-2" style="margin-left: 20px">
-                        <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input
-                            type="text"
-                            id="daterange"
-                            readonly
-                            class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none"
-                        />
+                    <div class="d-flex align-items-center gap-3 flex-wrap" style="margin-left: 20px; margin-top: 10px;">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Periodo:</label>
+                            <input
+                                type="text"
+                                id="daterange"
+                                readonly
+                                class="form-control form-control-sm"
+                                style="width: auto; min-width: 200px; box-shadow: none"
+                            />
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
+                            <select id="selEquipoDocumentos" class="form-select form-select-sm" style="width: auto; min-width: 200px; box-shadow: none">
+                                <option value="">-- Todas las Unidades --</option>
+                                @if(isset($equipos))
+                                    @foreach ($equipos as $eq)
+                                        <option value="{{ $eq->id }}" {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
+                                            {{ $eq->id_equipo }} - {{ $eq->marca ?? 'Tracto' }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
                     </div>
 
                     <div class="card-body">

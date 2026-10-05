@@ -16,6 +16,7 @@ use App\Traits\BeyondGPSTrait;
 use App\Traits\WialonGpsTrait;
 use App\Traits\GlobalGpsTrait;
 use App\Traits\SISGPSTrait;
+use App\Traits\NaanixGPSTrait;
 use App\Traits\SkyAngelGpsTrait as SkyAngel;
 use App\Models\Equipo;
 use App\Models\Proveedor;
@@ -222,14 +223,29 @@ class GpsCompanyController extends Controller
                 $token = true;
                 break;
 
-            case 7: //SIS GPS refactor ok
-                $response = SISGPSTrait::sisValidarCredenciales(
-                    $credenciales['account'] ?? '',
-                    $credenciales['key'] ?? ''
-                );
- $resp = $response;
+            case 7: // SIS GPS / Naanix refactor
+                $accountVal = !empty($credenciales['appkey'])
+                    ? $credenciales['appkey']
+                    : ($credenciales['account'] ?? ($credenciales['client_id'] ?? config('services.GPS_SIS_URL.client_id', 937184269)));
+                $response = NaanixGPSTrait::sisValidarCredenciales($accountVal);
+
+                if (!$response->success) {
+                    // Fallback a SOAP legacy si estuviera configurado
+                    try {
+                        $response = SISGPSTrait::sisValidarCredenciales(
+                            $credenciales['account'] ?? '',
+                            $credenciales['key'] ?? ($credenciales['appkey'] ?? '')
+                        );
+                    } catch (\Throwable $eSoap) {
+                        // Mantener el error de Naanix si falla SOAP
+                    }
+                }
+
+                $resp = $response;
                 if ($response->success) {
-                    $token = $response->data['token'] ?? null;
+                    $token = is_array($response->data)
+                        ? ($response->data['token'] ?? true)
+                        : (is_object($response->data) ? ($response->data->token ?? true) : true);
                 } else {
                     throw new \Exception($response->message);
                 }
@@ -545,22 +561,25 @@ class GpsCompanyController extends Controller
                     break;
 
 
-                case 7: //sis gps refactor ok
-                    $data = SISGPSTrait::sisValidarCredenciales(
-                        $credenciales['account'],
-                        $credenciales['appkey']
+                case 7: // SIS GPS / Naanix refactor
+                    $accountVal = !empty($credenciales['appkey'])
+                        ? $credenciales['appkey']
+                        : ($credenciales['account'] ?? ($credenciales['client_id'] ?? config('services.GPS_SIS_URL.client_id', 937184269)));
+                    $data = NaanixGPSTrait::sisValidarCredenciales($accountVal);
 
-                    );
-                    $resp = $data;
-                    $raw =  $data->data['raw']->return ?? null;
-
-                    $token = true;
-                    if (!$raw) {
-                        $token = false;
+                    if (!$data->success) {
+                        try {
+                            $data = SISGPSTrait::sisValidarCredenciales(
+                                $credenciales['account'] ?? '',
+                                $credenciales['appkey'] ?? ''
+                            );
+                        } catch (\Throwable $eSoap) {
+                            // Mantener respuesta de Naanix
+                        }
                     }
 
-
-
+                    $resp = $data;
+                    $token = $data->success;
                     break;
 
                 case 8: //SkyAngel GPS refactor ok

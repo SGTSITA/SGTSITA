@@ -11,6 +11,7 @@ use App\Traits\LegoGpsTrait as LegoGps;
 use App\Traits\CommonGpsTrait;
 use App\Traits\GpsTrackerMXTrait;
 use App\Traits\SISGPSTrait as SISGPSTrait;
+use App\Traits\NaanixGPSTrait as NaanixGPSTrait;
 use App\Models\Empresas;
 use App\Models\GpsCompanyProveedor;
 use Illuminate\Support\Facades\Auth;
@@ -104,16 +105,19 @@ public function obtenerUbicacionByImei(Request $request, UbicacionService $ubica
         return response()->json($data);
     }
 
-    //pruebas de sis gps
+    // pruebas de sis gps / Naanix
     public function loginSisGps(Request $request)
     {
-        $user = $request->input('user');
+        $user = $request->input('user', config('services.GPS_SIS_URL.client_id', 937184269));
         $pass = $request->input('pass');
 
-        $user = 'SEON';
-        $pass = '6f2a46c04fjsjs2f5e274b684dhbt3';
+        // Intentar primero con el nuevo servicio Naanix
+        $isValid = NaanixGPSTrait::sisValidarCredenciales($user, $pass);
 
-        $isValid = SISGPStrait::sisValidarCredenciales($user, $pass);
+        if (!$isValid->success && !empty($pass)) {
+            // Fallback opcional a SOAP heredado
+            $isValid = SISGPSTrait::sisValidarCredenciales($user, $pass);
+        }
 
         return response()->json([
             'success' => $isValid
@@ -122,13 +126,16 @@ public function obtenerUbicacionByImei(Request $request, UbicacionService $ubica
 
     public function getlocationSIS(Request $request, $deviceid)
     {
-        $user = $request->input('user');
+        $user = $request->input('user', config('services.GPS_SIS_URL.client_id', 937184269));
         $pass = $request->input('pass');
 
-        $user = 'SEON';
-        $pass = '6f2a46c04fjsjs2f5e274b684dhbt3';
+        // Intentar primero con Naanix REST
+        $location = NaanixGPSTrait::sisGetLastPosition($user, $pass, $deviceid);
 
-        $location = SISGPStrait::sisGetLastPosition($user, $pass, $deviceid);
+        if (!$location->success && !empty($pass)) {
+            // Fallback a SOAP heredado
+            $location = SISGPSTrait::sisGetLastPosition($user, $pass, $deviceid);
+        }
 
         return response()->json([
             'location' => $location

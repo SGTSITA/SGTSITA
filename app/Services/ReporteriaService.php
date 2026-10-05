@@ -19,7 +19,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteriaService
 {
-    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa, ?int $idProveedor = null): array
+    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa, ?int $idProveedor = null, ?int $idEquipo = null): array
     {
         $fechaI = Carbon::parse($startDate)->startOfDay();
         $fechaF = Carbon::parse($endDate)->endOfDay();
@@ -31,6 +31,9 @@ class ReporteriaService
             ->where('gastos.id_empresa', $idEmpresa)
             ->whereNull('gastos.deleted_at')
             ->whereBetween('gasto_imputaciones.fecha_imputacion', [$fechaI->format('Y-m-d'), $fechaF->format('Y-m-d')])
+            ->when(!empty($idEquipo), function ($q) use ($idEquipo) {
+                $q->where('gasto_imputaciones.imputable_id', $idEquipo);
+            })
             ->select(
 
                 'gasto_imputaciones.imputable_id as id_camion',
@@ -54,6 +57,10 @@ class ReporteriaService
 
         if ($idProveedor) {
             $viajesQuery->where('a.id_proveedor', $idProveedor);
+        }
+
+        if (!empty($idEquipo)) {
+            $viajesQuery->where('a.id_camion', $idEquipo);
         }
 
         $viajes = $viajesQuery->select(

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             floatingFilter: true,
             width: 100,
         },
+        { headerName: 'Unidad', field: 'equipo', filter: 'agTextColumnFilter', floatingFilter: true, width: 120 },
         { headerName: 'Operador', field: 'operador', filter: 'agTextColumnFilter', floatingFilter: true },
 
         { headerName: 'Cliente', field: 'cliente', filter: 'agTextColumnFilter', floatingFilter: true },
@@ -220,9 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const start = daterange.startDate.format('YYYY-MM-DD');
         const end = daterange.endDate.format('YYYY-MM-DD');
         const status = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'por_pagar';
+        const equipoId = document.getElementById('selEquipoGxp') ? document.getElementById('selEquipoGxp').value : '';
 
         try {
-            const url = `/reporteria/gastos-pagar/data?status=${status}&from=${start}&to=${end}`;
+            let url = `/reporteria/gastos-pagar/data?status=${status}&from=${start}&to=${end}`;
+            if (equipoId) {
+                url += `&id_equipo=${encodeURIComponent(equipoId)}`;
+            }
             const response = await fetch(url);
             if (!response.ok) throw new Error('Error al obtener los datos.');
             const data = await response.json();
@@ -248,6 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = document.getElementById('statusFilter');
     if (statusFilter) {
         statusFilter.addEventListener('change', applyFilters);
+    }
+
+    const selEquipoGxp = document.getElementById('selEquipoGxp');
+    if (selEquipoGxp) {
+        selEquipoGxp.addEventListener('change', applyFilters);
     }
     
     // Poblar inicialmente

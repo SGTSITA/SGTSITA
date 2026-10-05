@@ -13,6 +13,8 @@ use App\Models\GastosOperadores;
 use App\Models\CategoriasGastos;
 use App\Models\Equipo;
 use App\Models\Operador;
+use App\Models\CatBancoCuentasMovimientos;
+use App\Models\Bancos;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -20,8 +22,10 @@ use Illuminate\Support\Facades\DB;
 
 class GastosService
 {
-    public function __construct(private BancosService $bancosService)
-    {
+    public function __construct(
+        private BancosService $bancosService,
+        private EquipoService $equipoService
+    ) {
     }
 
 
@@ -39,10 +43,7 @@ class GastosService
                 true
             ),
 
-            'equipos' => Equipo::where('id_empresa', $idEmpresa)
-                ->where('tipo', 'Tractos / Camiones')
-                ->orderBy('acceso')
-                ->get(),
+            'equipos' => $this->equipoService->getTractocamiones($idEmpresa),
 
             'operadores' => Operador::where('id_empresa', $idEmpresa)
                 ->orderBy('nombre')
@@ -68,6 +69,9 @@ class GastosService
 
         $query = Gasto::with([
             'categoria',
+            'equipo',
+            'imputaciones',
+            'programaciones',
             'pagos.cuentaBancaria',
             'vinculos.vinculable'
         ])
@@ -145,6 +149,22 @@ class GastosService
             });
         }
 
+        if (!empty($filters['id_equipo'])) {
+            $idEquipo = (int) $filters['id_equipo'];
+            $query->where(function ($q) use ($idEquipo) {
+                $q->where('id_equipo', $idEquipo)
+                  ->orWhereHas('vinculos', function ($sub) use ($idEquipo) {
+                      $sub->where('tipo_vinculo', 'unidad')
+                          ->where('vinculable_type', Equipo::class)
+                          ->where('vinculable_id', $idEquipo);
+                  })
+                  ->orWhereHas('imputaciones', function ($sub) use ($idEquipo) {
+                      $sub->where('imputable_type', Equipo::class)
+                          ->where('imputable_id', $idEquipo);
+                  });
+            });
+        }
+
         return $query
             ->orderBy('fecha_gasto')
             ->orderBy('id')
@@ -156,9 +176,43 @@ class GastosService
         $pagosActivos = $gasto->pagos
             ->where('estatus', '!=', 'cancelado');
 
+        $unidadesIds = $gasto->vinculos
+            ->where('tipo_vinculo', 'unidad')
+            ->pluck('vinculable_id')
+            ->values()
+            ->toArray();
+
+        if (empty($unidadesIds) && $gasto->id_equipo) {
+            $unidadesIds = [$gasto->id_equipo];
+        }
+
+        $viajesIds = $gasto->vinculos
+            ->whereIn('tipo_vinculo', ['asignacion', 'contenedor'])
+            ->pluck('vinculable_id')
+            ->values()
+            ->toArray();
+
+        $primeraProg = $gasto->programaciones ? $gasto->programaciones->sortBy('fecha_programada')->first() : null;
+        $ultimaProg = $gasto->programaciones ? $gasto->programaciones->sortByDesc('fecha_vencimiento')->first() : null;
+        $impacto = $gasto->imputaciones ? ($gasto->imputaciones->first()?->tipo_imputacion ?? 'periodo') : 'periodo';
+
         return [
 
             'id' => $gasto->id,
+            'id_equipo' => $gasto->id_equipo,
+            'equipo' => $gasto->equipo ? [
+                'id' => $gasto->equipo->id,
+                'id_equipo' => $gasto->equipo->id_equipo,
+                'placas' => $gasto->equipo->placas,
+                'marca' => $gasto->equipo->marca,
+            ] : null,
+            'unidades_ids' => $unidadesIds,
+            'viajes_ids' => $viajesIds,
+            'impacto' => $impacto,
+            'txtDiferirFechaInicia' => optional($primeraProg?->fecha_programada)->format('Y-m-d'),
+            'txtDiferirFechaTermina' => optional($ultimaProg?->fecha_vencimiento)->format('Y-m-d'),
+            'numPeriodos' => $gasto->programaciones ? $gasto->programaciones->count() : 0,
+
             'folio' => $gasto->folio,
             'concepto' => $gasto->concepto,
             'categoria' => $gasto->categoria?->categoria,
@@ -279,6 +333,8 @@ class GastosService
 
             return [
                 'tipo' => $vinculo->tipo_vinculo,
+                'vinculable_id' => $vinculo->vinculable_id,
+                'vinculable_type' => $vinculo->vinculable_type,
                 'detalle' => $nombre,
                 'observaciones' => $vinculo->observaciones,
             ];
@@ -403,7 +459,7 @@ class GastosService
         return $gasto;
     }
 
-    public function registrarDesdeGastoOperador(GastosOperadores $legacy): Gasto
+    public function registrarDesdeGastoOperador(GastosOperadores $legacy, ?Gasto $gastoExistente = null): Gasto
     {
         $legacy->loadMissing('Cotizacion.DocCotizacion', 'Asignaciones', 'Operador');
 
@@ -442,6 +498,7 @@ class GastosService
         }
 
         $gasto = $this->registrar([
+            'id' => $gastoExistente?->id,
             'id_empresa' => $idEmpresa,
             'categoria_gasto_id' => $categoriaId,
             'gasto_concepto_id' => $conceptoId,
@@ -741,8 +798,125 @@ class GastosService
         });
     }
 
+    public function sincronizarGastoConBancos(Gasto $gasto, float $nuevoMonto, ?string $fechaGasto = null, ?string $nuevoConcepto = null): Gasto
+    {
+        return DB::transaction(function () use ($gasto, $nuevoMonto, $fechaGasto, $nuevoConcepto) {
+            $nuevoMonto = $this->normalizarMonto($nuevoMonto);
+            $fechaPago = $fechaGasto ? $this->normalizarFecha($fechaGasto) : ($gasto->fecha_gasto ? Carbon::parse($gasto->fecha_gasto)->format('Y-m-d') : now()->format('Y-m-d'));
+
+            // 1. Actualizar el gasto y sus imputaciones
+            $gasto->monto_total = $nuevoMonto;
+            if ($nuevoConcepto) {
+                $gasto->concepto = $nuevoConcepto;
+            }
+            if ($fechaGasto) {
+                $gasto->fecha_gasto = $fechaPago;
+            }
+            $gasto->save();
+
+            foreach ($gasto->imputaciones as $imp) {
+                $imp->monto_imputado = $nuevoMonto;
+                if ($fechaGasto) {
+                    $imp->fecha_imputacion = $fechaPago;
+                }
+                $imp->save();
+            }
+
+            // 2. Verificar si tiene pagos aplicados
+            $pagosActivos = $gasto->pagos()->where('estatus', 'aplicado')->get();
+
+            if ($pagosActivos->count() === 1) {
+                $pago = $pagosActivos->first();
+                $montoAnteriorPago = (float) $pago->monto;
+                $diferencia = $nuevoMonto - $montoAnteriorPago;
+
+                // Si el monto aumenta, validar saldo en banco
+                if ($diferencia > 0) {
+                    $validacion = $this->bancosService->validarsaldoparacargo(
+                        $gasto->id_empresa,
+                        $pago->cuenta_bancaria_id,
+                        $fechaPago,
+                        $diferencia
+                    );
+
+                    if (!$validacion['saldodisponible']) {
+                        throw new \Exception($validacion['message']);
+                    }
+                }
+
+                // Actualizar GastoPago
+                $pago->monto = $nuevoMonto;
+                $pago->fecha_pago = $fechaPago;
+                $pago->save();
+
+                // Buscar y actualizar el movimiento bancario
+                $movimiento = null;
+                if ($pago->movimiento_bancario_id) {
+                    $movimiento = CatBancoCuentasMovimientos::find($pago->movimiento_bancario_id);
+                }
+
+                if (!$movimiento) {
+                    $movimiento = CatBancoCuentasMovimientos::where('referenciaable_type', Gasto::class)
+                        ->where('referenciaable_id', $gasto->id)
+                        ->where('cancelado', false)
+                        ->first();
+                }
+
+                if ($movimiento) {
+                    // Actualizar detalles JSON si existen
+                    $detalles = $movimiento->detalles;
+                    if (is_array($detalles)) {
+                        foreach ($detalles as &$item) {
+                            if (isset($item['gasto_id']) && (int)$item['gasto_id'] === (int)$gasto->id) {
+                                $item['monto'] = $nuevoMonto;
+                                if ($nuevoConcepto) {
+                                    $item['concepto'] = $nuevoConcepto;
+                                }
+                            } elseif (count($detalles) === 1) {
+                                $item['monto'] = $nuevoMonto;
+                                if ($nuevoConcepto) {
+                                    $item['concepto'] = $nuevoConcepto;
+                                }
+                            }
+                        }
+                        unset($item);
+                    }
+
+                    $movUpdate = [
+                        'monto' => $nuevoMonto,
+                        'fecha_movimiento' => $fechaPago,
+                        'detalles' => $detalles,
+                    ];
+
+                    if ($nuevoConcepto && strpos($movimiento->concepto ?? '', '[PAGO MULTIPLE]') === false) {
+                        $movUpdate['concepto'] = 'Pago gasto (Editado): ' . $nuevoConcepto;
+                    }
+
+                    $movimiento->update($movUpdate);
+
+                    // Sincronizar saldo de la cuenta bancaria
+                    $banco = Bancos::find($movimiento->cuenta_bancaria_id);
+                    if ($banco) {
+                        $abonos = CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'abono')->where('cancelado', false)->sum('monto');
+                        $cargos = CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)->where('tipo', 'cargo')->where('cancelado', false)->sum('monto');
+                        $banco->saldo = (float)($banco->inicial_saldo ?? 0) + $abonos - $cargos;
+                        $banco->save();
+                    }
+                }
+            }
+
+            $this->sincronizarEstatusPago($gasto);
+
+            return $gasto->fresh(['partidas', 'vinculos', 'imputaciones', 'programaciones', 'pagos']);
+        });
+    }
+
     private function resolverGastoExistente(array $data): ?Gasto
     {
+        if (!empty($data['id'])) {
+            return Gasto::find($data['id']);
+        }
+
         if (!empty($data['origen_legacy']) && !empty($data['origen_legacy_id'])) {
             $query = Gasto::withTrashed()
                 ->where('origen_legacy', $data['origen_legacy'])
@@ -755,7 +929,7 @@ class GastosService
             return $query->first();
         }
 
-        return !empty($data['id']) ? Gasto::find($data['id']) : null;
+        return null;
     }
 
     private function reemplazarRelacion(Gasto $gasto, string $relacion, array $items): void

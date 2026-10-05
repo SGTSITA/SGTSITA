@@ -3,6 +3,7 @@
 @section('template_title')
     Editar Bitácora - App Móvil SGT Logistics
 @endsection
+@section('disable_simple_alert', 'true')
 
 @section('content')
 <div class="row">
@@ -25,13 +26,31 @@
 
             <div class="card-body">
                 @if ($errors->any())
-                    <div class="alert alert-danger text-white">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const errorList = @json($errors->all());
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de validación',
+                                html: '<ul class="text-start mb-0 ps-3">' + errorList.map(e => `<li>${e}</li>`).join('') + '</ul>',
+                                confirmButtonColor: '#5e72e4',
+                                confirmButtonText: 'Entendido'
+                            });
+                        });
+                    </script>
+                @endif
+                @if (session('error'))
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: "{{ session('error') }}",
+                                confirmButtonColor: '#5e72e4',
+                                confirmButtonText: 'Entendido'
+                            });
+                        });
+                    </script>
                 @endif
 
                 <!-- Navigation Tabs styled like standard bootstrap tabs -->
@@ -53,7 +72,7 @@
                     </li>
                 </ul>
 
-                <form action="{{ route('app-movil-admin.update', $bitacora->id) }}" method="POST" enctype="multipart/form-data" id="bitacoraForm">
+                <form action="{{ route('app-movil-admin.update', $bitacora->id) }}" method="POST" enctype="multipart/form-data" id="bitacoraForm" novalidate>
                     @csrf
                     @method('PUT')
 
@@ -79,11 +98,11 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="litros" class="form-control-label">Litros de Diésel</label>
-                                        <input class="form-control" type="number" step="0.01" name="litros" id="litros" value="{{ old('litros', $bitacora->litros) }}">
+                                        <input class="form-control" type="number" step="0.01" min="0" max="5000" name="litros" id="litros" value="{{ old('litros', $bitacora->litros) }}">
                                     </div>
                                     <div class="form-group">
                                         <label for="costo" class="form-control-label">Costo Diésel Total ($)</label>
-                                        <input class="form-control" type="number" step="0.01" name="costo" id="costo" value="{{ old('costo', $bitacora->costo) }}">
+                                        <input class="form-control" type="number" step="0.01" min="0" max="100000" name="costo" id="costo" value="{{ old('costo', $bitacora->costo) }}">
                                     </div>
                                     <div class="form-group">
                                         <label for="comprobante_diesel_file" class="form-control-label">Comprobante de Diésel (Foto del Ticket)</label>
@@ -118,11 +137,11 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="litros_urea" class="form-control-label">Litros de Urea</label>
-                                        <input class="form-control" type="number" step="0.01" name="litros_urea" id="litros_urea" value="{{ old('litros_urea', $bitacora->litros_urea) }}">
+                                        <input class="form-control" type="number" step="0.01" min="0" max="1000" name="litros_urea" id="litros_urea" value="{{ old('litros_urea', $bitacora->litros_urea) }}">
                                     </div>
                                     <div class="form-group">
                                         <label for="costo_urea" class="form-control-label">Costo Urea Total ($)</label>
-                                        <input class="form-control" type="number" step="0.01" name="costo_urea" id="costo_urea" value="{{ old('costo_urea', $bitacora->costo_urea) }}">
+                                        <input class="form-control" type="number" step="0.01" min="0" max="50000" name="costo_urea" id="costo_urea" value="{{ old('costo_urea', $bitacora->costo_urea) }}">
                                     </div>
                                     <div class="form-group">
                                         <label for="comprobante_urea_file" class="form-control-label">Comprobante de Urea (Foto del Ticket)</label>
@@ -515,5 +534,161 @@
         const modal = bootstrap.Modal.getInstance(modalEl);
         modal.hide();
     }
+
+    // Interceptar submit del formulario para validaciones con SweetAlert y ShowLoading
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('bitacoraForm');
+        if (!form) return;
+
+        form.addEventListener('submit', function(e) {
+            const costoInput = document.getElementById('costo');
+            const litrosInput = document.getElementById('litros');
+            const costoUreaInput = document.getElementById('costo_urea');
+            const litrosUreaInput = document.getElementById('litros_urea');
+            const forzarDieselCheck = document.getElementById('forzar_pago_diesel');
+            const forzarUreaCheck = document.getElementById('forzar_pago_urea');
+
+            const costoVal = costoInput && costoInput.value.trim() !== '' ? parseFloat(costoInput.value) : null;
+            const litrosVal = litrosInput && litrosInput.value.trim() !== '' ? parseFloat(litrosInput.value) : null;
+            const costoUreaVal = costoUreaInput && costoUreaInput.value.trim() !== '' ? parseFloat(costoUreaInput.value) : null;
+            const litrosUreaVal = litrosUreaInput && litrosUreaInput.value.trim() !== '' ? parseFloat(litrosUreaInput.value) : null;
+
+            // 1. Validación de Diésel
+            if (costoVal !== null) {
+                if (costoVal < 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Valor no permitido',
+                        text: 'El costo de diésel no puede ser un número negativo.',
+                        confirmButtonColor: '#5e72e4'
+                    });
+                    return false;
+                }
+
+                if (costoVal > 100000) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Costo de Diésel Excedido',
+                        text: 'El costo total de diésel no puede exceder $100,000.00 MXN. Verifique el importe ingresado.',
+                        confirmButtonColor: '#5e72e4'
+                    });
+                    const tabBtn = document.getElementById('combustible-tab');
+                    if (tabBtn) tabBtn.click();
+                    costoInput.focus();
+                    return false;
+                }
+
+                if (litrosVal !== null && litrosVal > 0) {
+                    const precioLitro = costoVal / litrosVal;
+                    if (precioLitro < 5 || precioLitro > 60) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Precio por Litro Fuera de Rango',
+                            text: `El costo por litro de diésel calculado es de $${precioLitro.toFixed(2)}/L, el cual está fuera del rango normal ($5.00 a $60.00 por litro). Verifique los litros y el costo.`,
+                            confirmButtonColor: '#5e72e4'
+                        });
+                        const tabBtn = document.getElementById('combustible-tab');
+                        if (tabBtn) tabBtn.click();
+                        costoInput.focus();
+                        return false;
+                    }
+                }
+            }
+
+            // 2. Validación de Urea
+            if (costoUreaVal !== null) {
+                if (costoUreaVal < 0) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Valor no permitido',
+                        text: 'El costo de urea no puede ser un número negativo.',
+                        confirmButtonColor: '#5e72e4'
+                    });
+                    return false;
+                }
+
+                if (costoUreaVal > 50000) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Costo de Urea Excedido',
+                        text: 'El costo total de urea no puede exceder $50,000.00 MXN. Verifique el importe ingresado.',
+                        confirmButtonColor: '#5e72e4'
+                    });
+                    const tabBtn = document.getElementById('combustible-tab');
+                    if (tabBtn) tabBtn.click();
+                    costoUreaInput.focus();
+                    return false;
+                }
+
+                if (litrosUreaVal !== null && litrosUreaVal > 0) {
+                    const precioLitroUrea = costoUreaVal / litrosUreaVal;
+                    if (precioLitroUrea < 2 || precioLitroUrea > 60) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Precio por Litro Fuera de Rango',
+                            text: `El costo por litro de urea calculado es de $${precioLitroUrea.toFixed(2)}/L, el cual está fuera del rango normal ($2.00 a $60.00 por litro). Verifique los litros y el costo.`,
+                            confirmButtonColor: '#5e72e4'
+                        });
+                        const tabBtn = document.getElementById('combustible-tab');
+                        if (tabBtn) tabBtn.click();
+                        costoUreaInput.focus();
+                        return false;
+                    }
+                }
+            }
+
+            // 3. Advertencia de gastos pagados si no marcaron forzar
+            const dieselPagado = @json($dieselPagado);
+            const costoOriginalDiesel = {{ (float)($bitacora->costo ?? 0) }};
+            if (dieselPagado && costoVal !== null && Math.abs(costoVal - costoOriginalDiesel) > 0.01 && (!forzarDieselCheck || !forzarDieselCheck.checked)) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Gasto de Diésel Pagado',
+                    text: 'El gasto de diésel ya está pagado en bancos. Para modificar el importe debe marcar la casilla "Forzar sobrescritura del costo".',
+                    confirmButtonColor: '#5e72e4'
+                });
+                const tabBtn = document.getElementById('combustible-tab');
+                if (tabBtn) tabBtn.click();
+                if (forzarDieselCheck) forzarDieselCheck.focus();
+                return false;
+            }
+
+            const ureaPagada = @json($ureaPagada);
+            const costoOriginalUrea = {{ (float)($bitacora->costo_urea ?? 0) }};
+            if (ureaPagada && costoUreaVal !== null && Math.abs(costoUreaVal - costoOriginalUrea) > 0.01 && (!forzarUreaCheck || !forzarUreaCheck.checked)) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Gasto de Urea Pagado',
+                    text: 'El gasto de urea ya está pagado en bancos. Para modificar el importe debe marcar la casilla "Forzar sobrescritura del costo".',
+                    confirmButtonColor: '#5e72e4'
+                });
+                const tabBtn = document.getElementById('combustible-tab');
+                if (tabBtn) tabBtn.click();
+                if (forzarUreaCheck) forzarUreaCheck.focus();
+                return false;
+            }
+
+            // 4. Mostrar SweetAlert con showLoading para retroalimentación de progreso
+            Swal.fire({
+                title: 'Actualizando Bitácora...',
+                html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Guardando evidencias y sincronizando importes con gastos y movimientos bancarios.<br><strong>Por favor espere un momento...</strong></p></div>',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                allowEnterKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        });
+    });
 </script>
 @endsection

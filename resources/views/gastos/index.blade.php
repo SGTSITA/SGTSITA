@@ -73,6 +73,16 @@
                 </div>
 
                 <div class="col-md-2">
+                    <label class="form-label text-sm mb-1">Unidad / Equipo</label>
+                    <select id="gastosNewEquipo" class="form-control form-control-sm">
+                        <option value="">Todas las unidades</option>
+                        @foreach ($equipos as $e)
+                            <option value="{{ $e->id }}">{{ $e->marca }} - {{ $e->id_equipo ?: $e->placas }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
                     <label class="form-label text-sm mb-1">Tipo de Gasto</label>
                     <select id="gastosNewTipo" class="form-control form-control-sm">
                         <option value="todos">Todos</option>
@@ -105,18 +115,17 @@
 
                 <div class="col-md-2">
                     <label class="form-label text-sm mb-1">Concepto / Folio</label>
-                    <input type="text" id="gastosNewSearch" class="form-control form-control-sm" placeholder="Buscar...">
-                </div>
-
-                <div class="col-md-2 d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary mb-0 flex-fill px-2"
-                        id="btnGastosNewBuscar" title="Buscar">
-                        <i class="fa fa-search"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-success mb-0 flex-fill px-2" id="btnPayMultiple"
-                        title="Pagar seleccionados">
-                        Pagar selec.
-                    </button>
+                    <div class="d-flex gap-1">
+                        <input type="text" id="gastosNewSearch" class="form-control form-control-sm" placeholder="Buscar...">
+                        <button type="button" class="btn btn-sm btn-outline-primary mb-0 px-2"
+                            id="btnGastosNewBuscar" title="Buscar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success mb-0 px-2 text-nowrap" id="btnPayMultiple"
+                            title="Pagar seleccionados">
+                            Pagar
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -1052,20 +1061,39 @@
         class VinculosRenderer {
             init(params) {
                 this.eGui = document.createElement('div');
-                const vinculos = params.value || [];
+                let vinculos = params.value || [];
+                const tieneUnidad = vinculos.some(v => v.tipo === 'unidad' || v.tipo === 'equipo');
+                if (!tieneUnidad && params.data && (params.data.equipo || params.data.id_equipo)) {
+                    const descEquipo = params.data.equipo ?
+                        (params.data.equipo.id_equipo || params.data.equipo.placas || `ID #${params.data.equipo.id}`) :
+                        `ID #${params.data.id_equipo}`;
+                    vinculos = [{ tipo: 'unidad', detalle: descEquipo }, ...vinculos];
+                }
+
                 if (vinculos.length === 0) {
                     this.eGui.innerHTML = '<span class="text-muted text-xs">-</span>';
                     return;
                 }
                 this.eGui.innerHTML = vinculos.map(v => {
-                    const esContenedor = v.tipo === 'contenedor' || v.tipo === 'asignacion' || v.detalle
-                        .toLowerCase().includes('contenedor');
+                    const esContenedor = v.tipo === 'contenedor' || v.tipo === 'asignacion' || (v.detalle && v.detalle
+                        .toLowerCase().includes('contenedor'));
+                    const esUnidad = v.tipo === 'unidad' || v.tipo === 'equipo';
                     if (esContenedor) {
                         return `
                             <div style="line-height: 1.3; margin-bottom: 2px;">
                                 <span style="font-size: 11.5px; font-weight: bold; background-color: rgba(94, 114, 228, 0.12); color: #5e72e4; border: 1px solid rgba(94, 114, 228, 0.35); border-radius: 4px; padding: 2px 6px; display: inline-block;">
                                     <i class="fa fa-box" style="font-size: 9px; margin-right: 3px;"></i>
                                     <strong>${v.tipo.toUpperCase()}:</strong> ${v.detalle}
+                                </span>
+                            </div>
+                        `;
+                    }
+                    if (esUnidad) {
+                        return `
+                            <div style="line-height: 1.3; margin-bottom: 2px;">
+                                <span style="font-size: 11.5px; font-weight: bold; background-color: rgba(45, 206, 137, 0.12); color: #2dce89; border: 1px solid rgba(45, 206, 137, 0.35); border-radius: 4px; padding: 2px 6px; display: inline-block;">
+                                    <i class="fa fa-truck" style="font-size: 9px; margin-right: 3px;"></i>
+                                    <strong>UNIDAD:</strong> ${v.detalle}
                                 </span>
                             </div>
                         `;
@@ -1399,9 +1427,10 @@
             const tipo_gasto = document.getElementById('gastosNewTipo').value;
             const categoria_id = document.getElementById('gastosNewCategoria').value;
             const subcategoria_id = document.getElementById('gastosNewSubcategoria').value;
+            const id_equipo = document.getElementById('gastosNewEquipo')?.value || '';
 
             const url =
-                `${gastosRoutes.data}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&search=${encodeURIComponent(search)}&tipo_gasto=${encodeURIComponent(tipo_gasto)}&categoria_id=${encodeURIComponent(categoria_id)}&subcategoria_id=${encodeURIComponent(subcategoria_id)}`;
+                `${gastosRoutes.data}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&search=${encodeURIComponent(search)}&tipo_gasto=${encodeURIComponent(tipo_gasto)}&categoria_id=${encodeURIComponent(categoria_id)}&subcategoria_id=${encodeURIComponent(subcategoria_id)}&id_equipo=${encodeURIComponent(id_equipo)}`;
 
             try {
                 const response = await fetch(url, {
@@ -1428,6 +1457,7 @@
         });
 
         document.getElementById('gastosNewTipo').addEventListener('change', cargarGastosNew);
+        document.getElementById('gastosNewEquipo')?.addEventListener('change', cargarGastosNew);
 
         document.getElementById('gastosNewCategoria').addEventListener('change', function() {
             const catId = this.value;
@@ -1616,22 +1646,23 @@
             if (choicesViajes) choicesViajes.removeActiveItems();
 
             const tipoGastoInput = document.getElementById('tipo_gasto');
+            const selectPUnidad = document.getElementById('selectPeriodoUnidadNew');
 
             if (input.value === 'Equipo') {
                 document.getElementById('aplicacion-equipoNew').classList.remove('d-none');
                 tipoGastoInput.value = 'unidad';
                 document.getElementById('impacto').value = 'viaje';
-                const pUnidad = document.getElementById('selectPeriodoUnidadNew');
-                if (pUnidad) {
-                    pUnidad.value = '';
+                if (selectPUnidad) {
+                    selectPUnidad.value = '';
+                    selectPUnidad.required = false;
                 }
             } else if (input.value === 'Viaje') {
                 document.getElementById('aplicacion-viajeNew').classList.remove('d-none');
                 tipoGastoInput.value = 'viaje';
                 document.getElementById('impacto').value = 'viaje';
-                const pUnidad = document.getElementById('selectPeriodoUnidadNew');
-                if (pUnidad) {
-                    pUnidad.value = '';
+                if (selectPUnidad) {
+                    selectPUnidad.value = '';
+                    selectPUnidad.required = false;
                 }
             } else {
                 tipoGastoInput.value = 'periodo';
@@ -1639,6 +1670,7 @@
                 if (window.requiereUnidadGasto) {
                     const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
                     if (pDiv) pDiv.classList.remove('d-none');
+                    if (selectPUnidad) selectPUnidad.required = true;
                 }
             }
         }
@@ -1883,29 +1915,50 @@
 
             // Populate selected units or trips
             const vinculos = gasto.vinculos || [];
-            if (formasAplicarVal === 'Equipo' && choicesUnidades) {
-                const mappedUnidades = vinculos.filter(v => v.tipo === 'unidad').map(v => {
+            if (formasAplicarVal === 'Periodo') {
+                const unidadPeriodoVal = gasto.id_equipo || (gasto.unidades_ids && gasto.unidades_ids.length > 0 ? gasto.unidades_ids[0] : '');
+                const selectP = document.getElementById('selectPeriodoUnidadNew');
+                if (selectP && unidadPeriodoVal) {
+                    selectP.value = String(unidadPeriodoVal);
+                }
+                const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
+                if (pDiv && (window.requiereUnidadGasto || unidadPeriodoVal)) {
+                    pDiv.classList.remove('d-none');
+                }
+            } else if (formasAplicarVal === 'Equipo' && choicesUnidades) {
+                let mappedUnidades = [];
+                if (Array.isArray(gasto.unidades_ids) && gasto.unidades_ids.length > 0) {
+                    mappedUnidades = gasto.unidades_ids.map(String);
+                } else if (gasto.id_equipo) {
+                    mappedUnidades = [String(gasto.id_equipo)];
+                } else if (vinculos.length > 0) {
                     const select = document.getElementById('selectUnidadesNew');
-                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Unidad: ',
-                        '')));
-                    return opt ? opt.value : null;
-                }).filter(val => val !== null);
-
+                    mappedUnidades = vinculos.filter(v => v.tipo === 'unidad').map(v => {
+                        const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace('Unidad: ', '')));
+                        return opt ? opt.value : null;
+                    }).filter(val => val !== null);
+                }
                 choicesUnidades.setChoiceByValue(mappedUnidades);
             } else if (formasAplicarVal === 'Viaje' && choicesViajes) {
-                const mappedViajes = vinculos.filter(v => v.tipo === 'asignacion' || v.tipo === 'contenedor').map(v => {
+                let mappedViajes = [];
+                if (Array.isArray(gasto.viajes_ids) && gasto.viajes_ids.length > 0) {
+                    mappedViajes = gasto.viajes_ids.map(String);
+                } else if (vinculos.length > 0) {
                     const select = document.getElementById('selectViajesNew');
-                    const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace(
-                        'Contenedor: ', '').replace('Viaje (Contenedor): ', '')));
-                    return opt ? opt.value : null;
-                }).filter(val => val !== null);
-
+                    mappedViajes = vinculos.filter(v => v.tipo === 'asignacion' || v.tipo === 'contenedor').map(v => {
+                        const opt = Array.from(select.options).find(o => o.text.includes(v.detalle.replace(
+                            'Contenedor: ', '').replace('Viaje (Contenedor): ', '')));
+                        return opt ? opt.value : null;
+                    }).filter(val => val !== null);
+                }
                 choicesViajes.setChoiceByValue(mappedViajes);
             }
 
             // Set impact select
             const imputaciones = gasto.imputaciones || [];
-            if (imputaciones.length > 0) {
+            if (gasto.impacto) {
+                document.getElementById('impacto').value = gasto.impacto;
+            } else if (imputaciones.length > 0) {
                 document.getElementById('impacto').value = imputaciones[0].tipo_imputacion || 'periodo';
             }
 
@@ -1913,6 +1966,16 @@
             const metodoPagoVal = gasto.metodo_imputacion === 'diferido' ? '1' : '0';
             document.getElementById('tipoPagoNew').value = metodoPagoVal;
             document.getElementById('tipoPagoNew').dispatchEvent(new Event('change'));
+
+            if (metodoPagoVal === '1') {
+                if (gasto.txtDiferirFechaInicia) {
+                    document.getElementById('txtDiferirFechaIniciaNew').value = gasto.txtDiferirFechaInicia;
+                }
+                if (gasto.txtDiferirFechaTermina) {
+                    document.getElementById('txtDiferirFechaTerminaNew').value = gasto.txtDiferirFechaTermina;
+                }
+                calcDaysNew();
+            }
 
             // Populate Bank Account if it is Contado and has payments
             const pagos = gasto.pagos || [];
@@ -1943,6 +2006,7 @@
 
             return {
                 formasAplicar: checkedForma,
+                id_equipo: document.getElementById('selectPeriodoUnidadNew')?.value || '',
                 tipo_gasto: document.getElementById('tipo_gasto')?.value || 'periodo',
                 metodo_imputacion: document.getElementById('metodo_imputacion')?.value || 'directo',
                 unidades: Array.isArray(unidades) ? unidades : (unidades ? [unidades] : []),
@@ -1967,7 +2031,7 @@
                 if (!draft) return;
                 const hasData = draft.concepto || draft.monto_total || draft.categoria_gasto_id || 
                                 (draft.unidades && draft.unidades.length) || (draft.viajes && draft.viajes.length) ||
-                                (draft.formasAplicar !== 'Periodo') || draft.id_banco1;
+                                (draft.formasAplicar !== 'Periodo') || draft.id_banco1 || draft.id_equipo;
                 if (hasData) {
                     sessionStorage.setItem(GASTO_DRAFT_KEY, JSON.stringify(draft));
                 }
@@ -2002,6 +2066,11 @@
                 if (radio) {
                     radio.checked = true;
                     handleSelectionNew(radio);
+                }
+
+                // 1.1 Si es Periodo y tiene id_equipo
+                if (draft.id_equipo && document.getElementById('selectPeriodoUnidadNew')) {
+                    document.getElementById('selectPeriodoUnidadNew').value = draft.id_equipo;
                 }
 
                 // 2. Choices.js unidades / viajes
@@ -2277,19 +2346,13 @@
             if (pUnidad) {
                 pUnidad.value = '';
             }
-            const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
-            if (pDiv) {
-                if (window.requiereUnidadGasto) {
-                    pDiv.classList.remove('d-none');
-                } else {
-                    pDiv.classList.add('d-none');
-                }
-            }
             if (choicesUnidades) choicesUnidades.removeActiveItems();
             if (choicesViajes) choicesViajes.removeActiveItems();
-            document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
-            document.querySelector('input[name="formasAplicar"][value="Periodo"]')?.parentElement.classList.add('selected');
-            document.querySelectorAll('.aplicacion-gastos-new').forEach(div => div.classList.add('d-none'));
+            const radioPeriodo = document.querySelector('input[name="formasAplicar"][value="Periodo"]');
+            if (radioPeriodo) {
+                radioPeriodo.checked = true;
+                handleSelectionNew(radioPeriodo);
+            }
             document.getElementById('tipo_gasto').value = 'periodo';
             document.getElementById('metodo_imputacion').value = 'directo';
             document.getElementById('tipoPagoNew').value = '0';
@@ -2305,9 +2368,11 @@
                 modalForm.reset();
                 if (choicesUnidades) choicesUnidades.removeActiveItems();
                 if (choicesViajes) choicesViajes.removeActiveItems();
-                document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));
-                document.querySelector('input[name="formasAplicar"][value="Periodo"]')?.parentElement.classList.add('selected');
-                document.querySelectorAll('.aplicacion-gastos-new').forEach(div => div.classList.add('d-none'));
+                const radioPeriodo = document.querySelector('input[name="formasAplicar"][value="Periodo"]');
+                if (radioPeriodo) {
+                    radioPeriodo.checked = true;
+                    handleSelectionNew(radioPeriodo);
+                }
                 document.getElementById('tipo_gasto').value = 'periodo';
                 document.getElementById('metodo_imputacion').value = 'directo';
                 document.getElementById('tipoPagoNew').value = '0';
@@ -2316,6 +2381,23 @@
                     '<option value="">-- Seleccionar Concepto --</option>';
                 const alertDraft = document.getElementById('alertDraftRestaurado');
                 if (alertDraft) alertDraft.classList.add('d-none');
+            }
+        });
+
+        // Asegurar que al abrirse el modal en modo creación siempre se lance la selección correcta
+        document.getElementById('modalGastoNew')?.addEventListener('show.bs.modal', function() {
+            const gastoId = document.getElementById('gastoIdNew')?.value;
+            if (!gastoId) {
+                const radioChecked = document.querySelector('input[name="formasAplicar"]:checked') ||
+                                     document.querySelector('input[name="formasAplicar"][value="Periodo"]');
+                if (radioChecked) {
+                    radioChecked.checked = true;
+                    handleSelectionNew(radioChecked);
+                }
+                if (window.requiereUnidadGasto && (!radioChecked || radioChecked.value === 'Periodo')) {
+                    const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
+                    if (pDiv) pDiv.classList.remove('d-none');
+                }
             }
         });
 
@@ -2790,7 +2872,12 @@
             cargarGastosNew();
             actualizarTextoPeriodo();
 
-
+            // Sincronizar estado inicial del modal de gasto
+            const initialRadio = document.querySelector('input[name="formasAplicar"]:checked') ||
+                                 document.querySelector('input[name="formasAplicar"][value="Periodo"]');
+            if (initialRadio) {
+                handleSelectionNew(initialRadio);
+            }
         });
     </script>
 

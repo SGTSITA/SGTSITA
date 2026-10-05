@@ -3,6 +3,7 @@
 @section('template_title')
     App Móvil SGT Logistics — Administración y Configuración
 @endsection
+@section('disable_simple_alert', 'true')
 
 @section('content')
 <div class="row">
@@ -62,16 +63,42 @@
             
             <div class="card-body">
                 @if (session('success'))
-                    <div class="alert alert-success alert-dismissible fade show text-white" role="alert">
-                        <i class="fa fa-check-circle me-2"></i> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Éxito!',
+                                text: "{{ session('success') }}",
+                                timer: 3500,
+                                confirmButtonColor: '#5e72e4'
+                            });
+                        });
+                    </script>
                 @endif
                 @if (session('edit'))
-                    <div class="alert alert-info alert-dismissible fade show text-white" role="alert">
-                        <i class="fa fa-info-circle me-2"></i> {{ session('edit') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Actualizado con éxito!',
+                                text: "{{ session('edit') }}",
+                                timer: 3500,
+                                confirmButtonColor: '#5e72e4'
+                            });
+                        });
+                    </script>
+                @endif
+                @if (session('error'))
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: "{{ session('error') }}",
+                                confirmButtonColor: '#5e72e4'
+                            });
+                        });
+                    </script>
                 @endif
 
                 <div class="tab-content" id="appMovilTabsContent">
@@ -158,7 +185,7 @@
                                                 <a href="{{ route('app-movil-admin.edit', $bitacora->id) }}" class="btn btn-xs btn-info text-white me-1">
                                                     <i class="fa fa-edit"></i> Editar / Ver
                                                 </a>
-                                                <form action="{{ route('app-movil-admin.destroy', $bitacora->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este registro de Bitácora?')">
+                                                <form action="{{ route('app-movil-admin.destroy', $bitacora->id) }}" method="POST" class="d-inline" onsubmit="return confirmarEliminacion(this, '¿Está seguro de eliminar este registro de Bitácora de viaje? Esta acción no se puede deshacer.')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-xs btn-danger text-white">
@@ -185,7 +212,7 @@
                     <!-- TAB 2: CONFIGURACIÓN DE LA APP MÓVIL       -->
                     <!-- ========================================== -->
                     <div class="tab-pane fade {{ $activeTab === 'config' ? 'show active' : '' }}" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
-                        <form action="{{ route('app-movil-admin.configs.update') }}" method="POST" enctype="multipart/form-data">
+                        <form id="formConfigsApp" action="{{ route('app-movil-admin.configs.update') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             
                             <!-- SECCIÓN 1: DOCUMENTOS DEL OPERADOR -->
@@ -399,7 +426,7 @@
                                                 <button type="button" class="btn btn-xs btn-info text-white me-1" onclick="editConfigModal({{ json_encode($gConfig) }})">
                                                     <i class="fa fa-edit"></i> Editar
                                                 </button>
-                                                <form action="{{ route('app-movil-admin.configs.destroy', $gConfig->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este parámetro global?')">
+                                                <form action="{{ route('app-movil-admin.configs.destroy', $gConfig->id) }}" method="POST" class="d-inline" onsubmit="return confirmarEliminacion(this, '¿Está seguro de eliminar este parámetro global?')">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-xs btn-danger text-white">
@@ -702,7 +729,7 @@
 <div class="modal fade" id="modalGlobalConfig" tabindex="-1" aria-labelledby="modalGlobalConfigLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
-            <form action="{{ route('app-movil-admin.configs.custom.store') }}" method="POST">
+            <form id="formCustomConfig" action="{{ route('app-movil-admin.configs.custom.store') }}" method="POST">
                 @csrf
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title text-white" id="modalGlobalConfigLabel">
@@ -841,11 +868,96 @@
         modal.show();
     }
 
-    function confirmarLimpiezaLogs(fecha) {
-        if (confirm(`¿Está seguro de eliminar todos los registros de logs del día ${fecha}? Esta acción no se puede deshacer.`)) {
-            document.getElementById('limpiar_log_fecha').value = fecha;
-            document.getElementById('formLimpiarLogs').submit();
-        }
+    function confirmarEliminacion(form, mensaje = '¿Está seguro de eliminar este registro?') {
+        Swal.fire({
+            title: '¿Confirmar eliminación?',
+            text: mensaje,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ea0606',
+            cancelButtonColor: '#8392ab',
+            confirmButtonText: '<i class="fa fa-trash"></i> Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Eliminando...',
+                    html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Procesando eliminación en el sistema...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                form.submit();
+            }
+        });
+        return false;
     }
+
+    function confirmarLimpiezaLogs(fecha) {
+        Swal.fire({
+            title: '¿Limpiar registros de logs?',
+            text: `¿Está seguro de eliminar todos los registros de logs del día ${fecha}? Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ea0606',
+            cancelButtonColor: '#8392ab',
+            confirmButtonText: '<i class="fa fa-trash-alt"></i> Sí, limpiar logs',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Limpiando logs...',
+                    html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Eliminando registros de logs de la aplicación móvil...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                document.getElementById('limpiar_log_fecha').value = fecha;
+                document.getElementById('formLimpiarLogs').submit();
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const formConfigsApp = document.getElementById('formConfigsApp');
+        if (formConfigsApp) {
+            formConfigsApp.addEventListener('submit', function() {
+                Swal.fire({
+                    title: 'Guardando configuraciones...',
+                    html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Actualizando parámetros de la aplicación móvil. Por favor espere...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
+        }
+
+        const formCustomConfig = document.getElementById('formCustomConfig');
+        if (formCustomConfig) {
+            formCustomConfig.addEventListener('submit', function() {
+                Swal.fire({
+                    title: 'Guardando parámetro...',
+                    html: '<div class="py-2 text-center"><p class="text-sm text-secondary mb-0">Guardando nuevo parámetro en base de datos. Por favor espere...</p></div>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
+        }
+    });
 </script>
 @endsection

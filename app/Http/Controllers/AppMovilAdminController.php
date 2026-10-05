@@ -328,12 +328,45 @@ class AppMovilAdminController extends Controller
             'viaje_finalizado'    => 'nullable|date',
             'latitud_fin'         => 'nullable|numeric',
             'longitud_fin'        => 'nullable|numeric',
-            'litros'              => 'nullable|numeric',
-            'costo'               => 'nullable|numeric',
-            'litros_urea'         => 'nullable|numeric',
-            'costo_urea'          => 'nullable|numeric',
-            'odometro'            => 'nullable|numeric',
+            'litros'              => 'nullable|numeric|min:0|max:5000',
+            'costo'               => 'nullable|numeric|min:0|max:100000',
+            'litros_urea'         => 'nullable|numeric|min:0|max:1000',
+            'costo_urea'          => 'nullable|numeric|min:0|max:50000',
+            'odometro'            => 'nullable|numeric|min:0',
+        ], [
+            'costo.max'           => 'El costo total de diésel no puede exceder $100,000.00 MXN.',
+            'costo.min'           => 'El costo de diésel no puede ser negativo.',
+            'costo_urea.max'      => 'El costo total de urea no puede exceder $50,000.00 MXN.',
+            'costo_urea.min'      => 'El costo de urea no puede ser negativo.',
+            'litros.max'          => 'Los litros de diésel no pueden exceder 5,000 L.',
+            'litros.min'          => 'Los litros de diésel no pueden ser negativos.',
+            'litros_urea.max'     => 'Los litros de urea no pueden exceder 1,000 L.',
+            'litros_urea.min'     => 'Los litros de urea no pueden ser negativos.',
         ]);
+
+        $litrosDieselCheck = $request->filled('litros') ? floatval($request->litros) : floatval($bitacora->litros);
+        $costoDieselCheck = $request->filled('costo') ? floatval($request->costo) : floatval($bitacora->costo);
+
+        if ($litrosDieselCheck > 0 && $costoDieselCheck > 0) {
+            $precioPorLitroDiesel = $costoDieselCheck / $litrosDieselCheck;
+            if ($precioPorLitroDiesel > 60 || $precioPorLitroDiesel < 5) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['costo' => "El costo por litro de diésel (\$" . number_format($precioPorLitroDiesel, 2) . "/L) está fuera del rango permitido (\$5.00 a \$60.00 por litro). Verifique los litros y el costo ingresado."]);
+            }
+        }
+
+        $litrosUreaCheck = $request->filled('litros_urea') ? floatval($request->litros_urea) : floatval($bitacora->litros_urea);
+        $costoUreaCheck = $request->filled('costo_urea') ? floatval($request->costo_urea) : floatval($bitacora->costo_urea);
+
+        if ($litrosUreaCheck > 0 && $costoUreaCheck > 0) {
+            $precioPorLitroUrea = $costoUreaCheck / $litrosUreaCheck;
+            if ($precioPorLitroUrea > 60 || $precioPorLitroUrea < 2) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['costo_urea' => "El costo por litro de urea (\$" . number_format($precioPorLitroUrea, 2) . "/L) está fuera del rango permitido (\$2.00 a \$60.00 por litro). Verifique los litros y el costo ingresado."]);
+            }
+        }
 
         $idAsignacion = $bitacora->id_asignacion;
 
@@ -471,108 +504,162 @@ class AppMovilAdminController extends Controller
             }));
         }
 
-        // Si cambia costo o foto de diésel
+        // Si cambia costo o foto de diésel, o si el gasto pagado está desincronizado
         $costoDieselVal = $request->filled('costo') ? floatval($request->costo) : floatval($bitacora->costo);
-        if (($request->filled('costo') && floatval($request->costo) != floatval($bitacora->costo)) || $request->hasFile('comprobante_diesel_file')) {
-            if ($dieselPagadoExistente && !$request->filled('forzar_pago_diesel')) {
-                return redirect()->back()->withErrors(['costo' => 'El gasto de Diesel ya está pagado. Debe confirmar la advertencia para realizar cambios sobre una entidad pagada.']);
-            }
+        $costoDieselModificado = ($request->filled('costo') && floatval($request->costo) != floatval($bitacora->costo));
+        $comprobanteDieselModificado = $request->hasFile('comprobante_diesel_file');
 
-            $doc = DocumCotizacion::find($asignacion->id_contenedor);
-            $idCotizacion = $doc ? $doc->id_cotizacion : null;
+        $gastoDieselExistente = Gasto::where(function($q) use ($idAsignacion) {
+            $q->where(function($q2) use ($idAsignacion) {
+                $q2->where('origen_legacy_id', $idAsignacion)
+                   ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                   ->where('concepto', 'like', '%Diesel%');
+            })->orWhereHas('vinculos', function($q2) use ($idAsignacion) {
+                $q2->where('tipo_vinculo', 'asignacion')
+                   ->where('vinculable_id', $idAsignacion);
+            })->where('concepto', 'like', '%Diesel%');
+        })->first();
 
-            if ($costoDieselVal > 0 || $request->hasFile('comprobante_diesel_file')) {
-                $gastoOperador = GastosOperadores::updateOrCreate(
-                    ['id_asignacion' => $idAsignacion, 'tipo' => 'Diesel'],
-                    [
-                        'id_operador'   => $asignacion->id_operador,
-                        'id_cotizacion' => $idCotizacion,
-                        'cantidad'      => $costoDieselVal,
-                        'comprobante'   => $fileName,
-                        'estatus'       => 'pendiente',
-                        'fecha_pago'    => Carbon::now()
-                    ]
-                );
+        $pagoDieselDesincronizado = $gastoDieselExistente
+            && $gastoDieselExistente->pagos()->where('estatus', 'aplicado')->where('monto', '!=', $costoDieselVal)->exists();
 
-                try {
-                    $this->gastosService->registrarDesdeGastoOperador($gastoOperador);
-                } catch (\Exception $e) {
-                    \Log::error("Error actualizando gasto de diesel en admin panel: " . $e->getMessage());
-                }
+        if ($costoDieselModificado || $comprobanteDieselModificado || ($costoDieselVal > 0 && $pagoDieselDesincronizado)) {
+            if ($dieselPagadoExistente && !$request->filled('forzar_pago_diesel') && !$pagoDieselDesincronizado) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['costo' => 'El gasto de Diesel ya está pagado. Debe confirmar la casilla "Forzar sobrescritura del costo" para realizar cambios sobre una entidad pagada.']);
             }
         }
 
-        // Si cambia costo o foto de urea
+        // Si cambia costo o foto de urea, o si el gasto pagado está desincronizado
         $costoUreaVal = $request->filled('costo_urea') ? floatval($request->costo_urea) : floatval($bitacora->costo_urea);
-        if (($request->filled('costo_urea') && floatval($request->costo_urea) != floatval($bitacora->costo_urea)) || $request->hasFile('comprobante_urea_file')) {
-            if ($ureaPagadaExistente && !$request->filled('forzar_pago_urea')) {
-                return redirect()->back()->withErrors(['costo_urea' => 'El gasto de Urea ya está pagado. Debe confirmar la advertencia para realizar cambios sobre una entidad pagada.']);
+        $costoUreaModificado = ($request->filled('costo_urea') && floatval($request->costo_urea) != floatval($bitacora->costo_urea));
+        $comprobanteUreaModificado = $request->hasFile('comprobante_urea_file');
+
+        $gastoUreaExistente = Gasto::where(function($q) use ($idAsignacion) {
+            $q->where(function($q2) use ($idAsignacion) {
+                $q2->where('origen_legacy_id', $idAsignacion)
+                   ->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                   ->where('concepto', 'like', '%Urea%');
+            })->orWhereHas('vinculos', function($q2) use ($idAsignacion) {
+                $q2->where('tipo_vinculo', 'asignacion')
+                   ->where('vinculable_id', $idAsignacion);
+            })->where('concepto', 'like', '%Urea%');
+        })->first();
+
+        $pagoUreaDesincronizado = $gastoUreaExistente
+            && $gastoUreaExistente->pagos()->where('estatus', 'aplicado')->where('monto', '!=', $costoUreaVal)->exists();
+
+        if ($costoUreaModificado || $comprobanteUreaModificado || ($costoUreaVal > 0 && $pagoUreaDesincronizado)) {
+            if ($ureaPagadaExistente && !$request->filled('forzar_pago_urea') && !$pagoUreaDesincronizado) {
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['costo_urea' => 'El gasto de Urea ya está pagado. Debe confirmar la casilla "Forzar sobrescritura del costo" para realizar cambios sobre una entidad pagada.']);
             }
+        }
 
-            $doc = DocumCotizacion::find($asignacion->id_contenedor);
-            $idCotizacion = $doc ? $doc->id_cotizacion : null;
+        try {
+            DB::transaction(function () use (
+                $request, $bitacora, $asignacion, $idAsignacion, $fileName, $ureaFileName,
+                $fotosCarga, $fotosApertura, $fotosFin,
+                $costoDieselVal, $costoDieselModificado, $comprobanteDieselModificado, $dieselPagadoExistente, $pagoDieselDesincronizado, $gastoDieselExistente,
+                $costoUreaVal, $costoUreaModificado, $comprobanteUreaModificado, $ureaPagadaExistente, $pagoUreaDesincronizado, $gastoUreaExistente
+            ) {
+                $doc = DocumCotizacion::find($asignacion->id_contenedor);
+                $idCotizacion = $doc ? $doc->id_cotizacion : null;
 
-            if ($costoUreaVal > 0 || $request->hasFile('comprobante_urea_file')) {
-                $gastoOperadorUrea = GastosOperadores::updateOrCreate(
-                    ['id_asignacion' => $idAsignacion, 'tipo' => 'Urea'],
-                    [
-                        'id_operador'   => $asignacion->id_operador,
-                        'id_cotizacion' => $idCotizacion,
-                        'cantidad'      => $costoUreaVal,
-                        'comprobante'   => $ureaFileName,
-                        'estatus'       => 'pendiente',
-                        'fecha_pago'    => Carbon::now()
-                    ]
-                );
+                // 1. Manejo de Diésel
+                if ($costoDieselModificado || $comprobanteDieselModificado || ($costoDieselVal > 0 && $pagoDieselDesincronizado)) {
+                    if ($costoDieselVal > 0 || $request->hasFile('comprobante_diesel_file')) {
+                        $gastoOperador = GastosOperadores::updateOrCreate(
+                            ['id_asignacion' => $idAsignacion, 'tipo' => 'Diesel'],
+                            [
+                                'id_operador'   => $asignacion->id_operador,
+                                'id_cotizacion' => $idCotizacion,
+                                'cantidad'      => $costoDieselVal,
+                                'comprobante'   => $fileName,
+                                'estatus'       => 'pendiente',
+                                'fecha_pago'    => Carbon::now()
+                            ]
+                        );
 
-                try {
-                    $this->gastosService->registrarDesdeGastoOperador($gastoOperadorUrea);
-                } catch (\Exception $e) {
-                    \Log::error("Error actualizando gasto de urea en admin panel: " . $e->getMessage());
+                        $gastoObj = $this->gastosService->registrarDesdeGastoOperador($gastoOperador, $gastoDieselExistente);
+                        if ($dieselPagadoExistente && $gastoObj) {
+                            $this->gastosService->sincronizarGastoConBancos($gastoObj, $costoDieselVal);
+                        }
+                    }
                 }
-            }
-        }
 
-        // Actualizar litros de diesel o urea en cotizacion
-        $doc = DocumCotizacion::find($asignacion->id_contenedor);
-        $idCotizacion = $doc ? $doc->id_cotizacion : null;
-        $cotizacion = Cotizaciones::find($idCotizacion);
-        if ($cotizacion) {
-            if (isset($request->litros)) {
-                $cotizacion->litros_diesel = $request->litros;
-            }
-            if (isset($request->litros_urea)) {
-                $cotizacion->litros_urea = $request->litros_urea;
-            }
-            $cotizacion->update();
-        }
+                // 2. Manejo de Urea
+                if ($costoUreaModificado || $comprobanteUreaModificado || ($costoUreaVal > 0 && $pagoUreaDesincronizado)) {
+                    if ($costoUreaVal > 0 || $request->hasFile('comprobante_urea_file')) {
+                        $gastoOperadorUrea = GastosOperadores::updateOrCreate(
+                            ['id_asignacion' => $idAsignacion, 'tipo' => 'Urea'],
+                            [
+                                'id_operador'   => $asignacion->id_operador,
+                                'id_cotizacion' => $idCotizacion,
+                                'cantidad'      => $costoUreaVal,
+                                'comprobante'   => $ureaFileName,
+                                'estatus'       => 'pendiente',
+                                'fecha_pago'    => Carbon::now()
+                            ]
+                        );
 
-        // Actualizar Bitácora
-        $bitacora->update([
-            'latitud'             => $request->latitud,
-            'longitud'            => $request->longitud,
-            'fecha_carga_diesel'  => $request->filled('fecha_carga_diesel') ? $request->fecha_carga_diesel : null,
-            'fecha_carga_urea'    => $request->filled('fecha_carga_urea') ? $request->fecha_carga_urea : null,
-            'viaje_iniciado'      => $request->filled('viaje_iniciado') ? $request->viaje_iniciado : null,
-            'latitud_carga'       => $request->latitud_carga,
-            'longitud_carga'      => $request->longitud_carga,
-            'apertura_contenedor' => $request->filled('apertura_contenedor') ? $request->apertura_contenedor : null,
-            'latitud_apertura'    => $request->latitud_apertura,
-            'longitud_apertura'   => $request->longitud_apertura,
-            'viaje_finalizado'    => $request->filled('viaje_finalizado') ? $request->viaje_finalizado : null,
-            'latitud_fin'         => $request->latitud_fin,
-            'longitud_fin'        => $request->longitud_fin,
-            'litros'              => $request->litros,
-            'costo'               => $request->costo,
-            'litros_urea'         => $request->litros_urea,
-            'costo_urea'          => $request->costo_urea,
-            'odometro'            => $request->odometro,
-            'comprobante'         => $fileName,
-            'comprobante_urea'    => $ureaFileName,
-            'fotos_carga'         => json_encode($fotosCarga),
-            'fotos_apertura'      => json_encode($fotosApertura),
-            'fotos_fin'           => json_encode($fotosFin),
-        ]);
+                        $gastoUreaObj = $this->gastosService->registrarDesdeGastoOperador($gastoOperadorUrea, $gastoUreaExistente);
+                        if ($ureaPagadaExistente && $gastoUreaObj) {
+                            $this->gastosService->sincronizarGastoConBancos($gastoUreaObj, $costoUreaVal);
+                        }
+                    }
+                }
+
+                // 3. Actualizar litros de diesel o urea en cotizacion
+                $cotizacion = Cotizaciones::find($idCotizacion);
+                if ($cotizacion) {
+                    if ($request->filled('litros')) {
+                        $cotizacion->litros_diesel = $request->litros;
+                    }
+                    if ($request->filled('litros_urea')) {
+                        $cotizacion->litros_urea = $request->litros_urea;
+                    }
+                    $cotizacion->save();
+                }
+
+                // 4. Actualizar Bitácora
+                $bitacora->update([
+                    'latitud'             => $request->latitud,
+                    'longitud'            => $request->longitud,
+                    'fecha_carga_diesel'  => $request->filled('fecha_carga_diesel') ? $request->fecha_carga_diesel : null,
+                    'fecha_carga_urea'    => $request->filled('fecha_carga_urea') ? $request->fecha_carga_urea : null,
+                    'viaje_iniciado'      => $request->filled('viaje_iniciado') ? $request->viaje_iniciado : null,
+                    'latitud_carga'       => $request->latitud_carga,
+                    'longitud_carga'      => $request->longitud_carga,
+                    'apertura_contenedor' => $request->filled('apertura_contenedor') ? $request->apertura_contenedor : null,
+                    'latitud_apertura'    => $request->latitud_apertura,
+                    'longitud_apertura'   => $request->longitud_apertura,
+                    'viaje_finalizado'    => $request->filled('viaje_finalizado') ? $request->viaje_finalizado : null,
+                    'latitud_fin'         => $request->latitud_fin,
+                    'longitud_fin'        => $request->longitud_fin,
+                    'litros'              => $request->litros,
+                    'costo'               => $request->costo,
+                    'litros_urea'         => $request->litros_urea,
+                    'costo_urea'          => $request->costo_urea,
+                    'odometro'            => $request->odometro,
+                    'comprobante'         => $fileName,
+                    'comprobante_urea'    => $ureaFileName,
+                    'fotos_carga'         => json_encode($fotosCarga),
+                    'fotos_apertura'      => json_encode($fotosApertura),
+                    'fotos_fin'           => json_encode($fotosFin),
+                ]);
+            });
+        } catch (\Exception $e) {
+            \Log::error("Error actualizando bitacora y sincronizando gastos en admin panel: " . $e->getMessage(), [
+                'id_bitacora' => $bitacora->id,
+                'exception' => $e
+            ]);
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['costo' => 'Error al guardar o sincronizar con bancos: ' . $e->getMessage()]);
+        }
 
         Session::flash('edit', 'La bitácora de viaje se ha actualizado con éxito.');
         return redirect()->route('app-movil-admin.index');
