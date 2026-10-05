@@ -524,6 +524,31 @@
                             </div>
                         </div>
 
+                        {{-- UNIDAD PARA GASTO DE PERIODO / GENERAL (CUANDO APLICA) --}}
+                        <div class="col-12 {{ $requiereUnidadGasto ?? false ? '' : 'd-none' }} aplicacion-gastos-new"
+                            id="aplicacion-periodoUnidadNew">
+                            <label class="form-label fw-bold text-info">
+                                Unidad / Equipo correspondiente @if ($requiereUnidadGasto ?? false)
+                                    <span class="text-danger">*</span>
+                                @endif
+                            </label>
+                            <select class="form-select" name="id_equipo" id="selectPeriodoUnidadNew">
+                                <option value="">-- Seleccionar Unidad / Equipo --</option>
+                                @foreach ($equipos as $e)
+                                    <option value="{{ $e->id }}">
+                                        {{ $e->marca }} - {{ $e->id_equipo ?: $e->placas }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">
+                                @if ($requiereUnidadGasto ?? false)
+                                    Esta empresa requiere asociar cada gasto a una unidad o equipo.
+                                @else
+                                    Opcional para asociar este gasto general a una unidad.
+                                @endif
+                            </small>
+                        </div>
+
                         {{-- UNIDADES --}}
                         <div class="col-12 d-none aplicacion-gastos-new" id="aplicacion-equipoNew">
 
@@ -899,7 +924,9 @@
     <script>
         window.mesinicio = null;
         window.mesfin = null;
+
         window.idEmpresa = @json(auth()->user()->id_empresa ?? 0);
+        window.requiereUnidadGasto = @json($requiereUnidadGasto ?? false);
         const gastosRoutes = {
             data: @json(route('gastos.data')),
             store: @json(route('gastos.store')),
@@ -1248,7 +1275,8 @@
                         if (val === 'viaje') {
                             return 'Viaje';
                         }
-                        if (val === 'cotizacion' || val === 'cotización' || val === 'extras' || val === 'gasto_extra') {
+                        if (val === 'cotizacion' || val === 'cotización' || val === 'extras' || val ===
+                            'gasto_extra') {
                             return 'Cotización';
                         }
                         return params.value.charAt(0).toUpperCase() + params.value.slice(1);
@@ -1480,7 +1508,7 @@
                         .then(() => {
                             form.reset();
                             bootstrap.Modal.getInstance(document.getElementById('modalPagarMultiple'))
-                            .hide();
+                                .hide();
                             cargarGastosNew();
                         });
                 } else {
@@ -1593,13 +1621,25 @@
                 document.getElementById('aplicacion-equipoNew').classList.remove('d-none');
                 tipoGastoInput.value = 'unidad';
                 document.getElementById('impacto').value = 'viaje';
+                const pUnidad = document.getElementById('selectPeriodoUnidadNew');
+                if (pUnidad) {
+                    pUnidad.value = '';
+                }
             } else if (input.value === 'Viaje') {
                 document.getElementById('aplicacion-viajeNew').classList.remove('d-none');
                 tipoGastoInput.value = 'viaje';
                 document.getElementById('impacto').value = 'viaje';
+                const pUnidad = document.getElementById('selectPeriodoUnidadNew');
+                if (pUnidad) {
+                    pUnidad.value = '';
+                }
             } else {
                 tipoGastoInput.value = 'periodo';
                 document.getElementById('impacto').value = 'periodo';
+                if (window.requiereUnidadGasto) {
+                    const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
+                    if (pDiv) pDiv.classList.remove('d-none');
+                }
             }
         }
 
@@ -1678,7 +1718,16 @@
             event.preventDefault();
 
             const formasAplicar = document.querySelector('input[name="formasAplicar"]:checked').value;
-            if (formasAplicar === 'Equipo') {
+            if (formasAplicar === 'Periodo') {
+                if (window.requiereUnidadGasto) {
+                    const selectPeriodoUnidad = document.getElementById('selectPeriodoUnidadNew');
+                    if (!selectPeriodoUnidad || !selectPeriodoUnidad.value) {
+                        Swal.fire('Unidad Requerida',
+                            'Debe seleccionar la Unidad / Equipo correspondiente a este gasto.', 'warning');
+                        return;
+                    }
+                }
+            } else if (formasAplicar === 'Equipo') {
                 const selectUnidades = document.getElementById('selectUnidadesNew');
                 if (selectUnidades.selectedOptions.length === 0) {
                     Swal.fire('Selección Requerida',
@@ -1778,6 +1827,15 @@
                         document.querySelectorAll('.aplicacion-gastos-new').forEach(div => {
                             div.classList.add('d-none');
                         });
+
+                        const pUnidad = document.getElementById('selectPeriodoUnidadNew');
+                        if (pUnidad) {
+                            pUnidad.value = '';
+                        }
+                        const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
+                        if (pDiv && window.requiereUnidadGasto) {
+                            pDiv.classList.remove('d-none');
+                        }
 
                         document.getElementById('tipo_gasto').value = 'periodo';
                         document.getElementById('metodo_imputacion').value = 'directo';
@@ -2215,6 +2273,18 @@
         document.getElementById('btnDescartarDraft')?.addEventListener('click', () => {
             clearGastoDraft();
             modalForm.reset();
+            const pUnidad = document.getElementById('selectPeriodoUnidadNew');
+            if (pUnidad) {
+                pUnidad.value = '';
+            }
+            const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
+            if (pDiv) {
+                if (window.requiereUnidadGasto) {
+                    pDiv.classList.remove('d-none');
+                } else {
+                    pDiv.classList.add('d-none');
+                }
+            }
             if (choicesUnidades) choicesUnidades.removeActiveItems();
             if (choicesViajes) choicesViajes.removeActiveItems();
             document.querySelectorAll('.custom-option').forEach(opt => opt.classList.remove('selected'));

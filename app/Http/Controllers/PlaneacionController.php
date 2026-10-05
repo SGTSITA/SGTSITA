@@ -1458,7 +1458,37 @@ class PlaneacionController extends Controller
                 ->where('motivo', 'Dinero para viaje')
                 ->first();
 
-            $gastosAsignados = \App\Models\Gasto::with(['pagos'])
+            // Sincronizar gastos de operador (ej. app móvil) que pudieran no tener registro en gastos unificados
+            $gastosOperadoresLegacy = \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')
+                ->where('id_asignacion', $asignacion->id)
+                ->where('estatus', '!=', 'eliminado')
+                ->get();
+
+            foreach ($gastosOperadoresLegacy as $go) {
+                $existeGasto = \App\Models\Gasto::where(function ($q) use ($go, $asignacion) {
+                    $q->where('origen_legacy', 'gastos_operadores')
+                      ->where('origen_legacy_id', $go->id);
+                })->orWhere(function ($q) use ($go, $asignacion) {
+                    $tipoClean = strtolower(trim($go->tipo));
+                    $prefijo = match (true) {
+                        str_contains($tipoClean, 'diesel') || str_contains($tipoClean, 'diésel') => 'asignacion_planeacionGDI02',
+                        str_contains($tipoClean, 'urea') => 'asignacion_planeacionGU001',
+                        default => 'asignacion_planeacion' . $go->tipo,
+                    };
+                    $q->where('origen_legacy_id', $asignacion->id)
+                      ->where('origen_legacy', 'like', $prefijo . '%');
+                })->exists();
+
+                if (!$existeGasto) {
+                    try {
+                        app(\App\Services\GastosService::class)->registrarDesdeGastoOperador($go);
+                    } catch (\Throwable $t) {
+                        Log::warning('No se pudo auto-sincronizar gasto operador en editar planeacion: ' . $t->getMessage());
+                    }
+                }
+            }
+
+            $gastosAsignados = \App\Models\Gasto::with(['pagos.cuentaBancaria'])
                 ->where(function ($query) use ($asignacion) {
                     $query->where(function ($q) use ($asignacion) {
                         $q->where('origen_legacy_id', $asignacion->id)
@@ -1468,6 +1498,7 @@ class PlaneacionController extends Controller
                           ->where('vinculable_id', $asignacion->id);
                     });
                 })
+                ->where('estatus', '!=', 'cancelado')
                 ->get();
         }
 
@@ -1882,6 +1913,16 @@ class PlaneacionController extends Controller
                     $gastoExistente->categoria_gasto_id = $categoriaId;
                     $gastoExistente->gasto_concepto_id = $conceptoId;
                     $gastoExistente->monto_total = $monto;
+                    if ($asignacion->id_camion) {
+                        $gastoExistente->id_equipo = $asignacion->id_camion;
+                        if (!$gastoExistente->vinculos()->where('tipo_vinculo', 'unidad')->exists()) {
+                            $gastoExistente->vinculos()->create([
+                                'tipo_vinculo' => 'unidad',
+                                'vinculable_type' => \App\Models\Equipo::class,
+                                'vinculable_id' => $asignacion->id_camion,
+                            ]);
+                        }
+                    }
                     $gastoExistente->save();
 
                     // Sincronizar monto en imputaciones
@@ -1893,6 +1934,9 @@ class PlaneacionController extends Controller
                     // Verificar pago activo existente
                     $pagoActivo = $gastoExistente->pagos()->where('estatus', '!=', 'cancelado')->first();
                     $estabaPagado = ($pagoActivo !== null);
+                    // Verificar pagos activos existentes (evitar pagos duplicados)
+                    $pagosActivos = $gastoExistente->pagos()->where('estatus', '!=', 'cancelado')->get();
+                    $estabaPagado = $pagosActivos->isNotEmpty();
 
                     if ($estabaPagado) {
                         $montoPagoIgual = abs(floatval($pagoActivo->monto) - $monto) < 0.01;
@@ -1900,6 +1944,12 @@ class PlaneacionController extends Controller
                         $fechaPagoActual = $pagoActivo->movimientoBancario?->fecha_movimiento
                             ? Carbon::parse($pagoActivo->movimientoBancario->fecha_movimiento)->format('Y-m-d')
                             : ($pagoActivo->fecha_pago ? Carbon::parse($pagoActivo->fecha_pago)->format('Y-m-d') : null);
+                        $pagoPrincipal = $pagosActivos->first();
+                        $montoPagoIgual = abs(floatval($pagoPrincipal->monto) - $monto) < 0.01 && $pagosActivos->count() === 1;
+                        $bancoPagoIgual = ($pagoPrincipal->cuenta_bancaria_id == $idBanco);
+                        $fechaPagoActual = $pagoPrincipal->movimientoBancario?->fecha_movimiento
+                            ? Carbon::parse($pagoPrincipal->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                            : ($pagoPrincipal->fecha_pago ? Carbon::parse($pagoPrincipal->fecha_pago)->format('Y-m-d') : null);
                         $fechaPagoEsperada = $fechaAplicacion ?? now()->format('Y-m-d');
                         $fechaPagoIgual = ($fechaPagoActual === $fechaPagoEsperada);
 
@@ -1907,12 +1957,26 @@ class PlaneacionController extends Controller
                             // Usuario desmarcó pago inmediato o quitó el banco: cancelar pago con la fecha original del movimiento
                             $fechaCancelacion = $fechaPagoActual ?: now()->format('Y-m-d');
                             app(\App\Services\GastosService::class)->cancelarPago($pagoActivo, $fechaCancelacion);
+                            // Usuario desmarcó pago inmediato o quitó el banco: cancelar TODOS los pagos activos anteriores
+                            foreach ($pagosActivos as $p) {
+                                $fechaCancelacion = $p->movimientoBancario?->fecha_movimiento
+                                    ? Carbon::parse($p->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                                    : ($p->fecha_pago ? Carbon::parse($p->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                                app(\App\Services\GastosService::class)->cancelarPago($p, $fechaCancelacion);
+                            }
                             $gastoExistente->estatus = 'pendiente_pago';
                             $gastoExistente->save();
                         } elseif (!$montoPagoIgual || !$bancoPagoIgual || !$fechaPagoIgual) {
                             // Cambiaron detalles de pago (monto, banco o fecha): cancelar el anterior con su fecha original y aplicar el nuevo
                             $fechaCancelacion = $fechaPagoActual ?: now()->format('Y-m-d');
                             app(\App\Services\GastosService::class)->cancelarPago($pagoActivo, $fechaCancelacion);
+                            // Cambiaron detalles de pago o existían pagos acumulados: cancelar anteriores y registrar nuevo pago único
+                            foreach ($pagosActivos as $p) {
+                                $fechaCancelacion = $p->movimientoBancario?->fecha_movimiento
+                                    ? Carbon::parse($p->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                                    : ($p->fecha_pago ? Carbon::parse($p->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                                app(\App\Services\GastosService::class)->cancelarPago($p, $fechaCancelacion);
+                            }
 
                             app(\App\Services\GastosService::class)->pagar($gastoExistente, [
                                 'cuenta_bancaria_id' => $idBanco,
@@ -1923,6 +1987,7 @@ class PlaneacionController extends Controller
                             ]);
                         }
                         // SI NADA CAMBIÓ: YA ESTÁ PAGADO -> NO TOCAR BANCOS (NO DUPLICAR)
+                        // SI NADA CAMBIÓ Y TIENE UN SOLO PAGO: YA ESTÁ PAGADO -> NO DUPLICAR
                     } else {
                         // No estaba pagado: si ahora tiene pago inmediato y banco, pagar
                         if ($esPagoInmediato && $idBanco) {
@@ -1935,10 +2000,64 @@ class PlaneacionController extends Controller
                             ]);
                         }
                     }
+
+                    // Sincronizar en gastos_operadores si existe relación
+                    $goTipo = match ($motivo) {
+                        'GDI02' => 'Diesel',
+                        'GU001' => 'Urea',
+                        default => $tipoGasto,
+                    };
+                    $goExistente = \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')
+                        ->where('id_asignacion', $asignacion->id)
+                        ->where(function ($q) use ($goTipo, $tipoGasto) {
+                            $q->where('tipo', $goTipo)->orWhere('tipo', $tipoGasto);
+                        })->first();
+
+                    if ($goExistente) {
+                        $goExistente->update([
+                            'cantidad' => $monto,
+                            'id_banco' => ($esPagoInmediato && $idBanco) ? $idBanco : null,
+                            'fecha_pago' => ($esPagoInmediato && $idBanco) ? ($fechaAplicacion ?? now()->format('Y-m-d')) : null,
+                            'pago_inmediato' => ($esPagoInmediato && $idBanco) ? 1 : 0,
+                            'estatus' => ($esPagoInmediato && $idBanco) ? 'Pagado' : 'Pago Pendiente',
+                        ]);
+                    }
                 } else {
                     // Gasto NUEVO (ej. Urea que no existía)
+                    // Gasto NUEVO
+                    $vinculosData = [
+                        [
+                            'tipo_vinculo' => 'cotizacion',
+                            'vinculable_type' => Cotizaciones::class,
+                            'vinculable_id' => $contenedor->id_cotizacion,
+                        ],
+                        [
+                            'tipo_vinculo' => 'contenedor',
+                            'vinculable_type' => DocumCotizacion::class,
+                            'vinculable_id' => $contenedor->id,
+                        ],
+                        [
+                            'tipo_vinculo' => 'asignacion',
+                            'vinculable_type' => Asignaciones::class,
+                            'vinculable_id' => $asignacion->id,
+                        ],
+                        [
+                            'tipo_vinculo' => 'operador',
+                            'vinculable_type' => \App\Models\Operador::class,
+                            'vinculable_id' => $asignacion->id_operador,
+                        ]
+                    ];
+                    if ($asignacion->id_camion) {
+                        $vinculosData[] = [
+                            'tipo_vinculo' => 'unidad',
+                            'vinculable_type' => \App\Models\Equipo::class,
+                            'vinculable_id' => $asignacion->id_camion,
+                        ];
+                    }
+
                     $nuevoGasto = app(\App\Services\GastosService::class)->registrar([
                         'id_empresa' => $idEmpresa,
+                        'id_equipo' => $asignacion->id_camion,
                         'categoria_gasto_id' => $categoriaId,
                         'gasto_concepto_id' => $conceptoId,
                         'concepto' => $tipoGasto,
@@ -1971,6 +2090,7 @@ class PlaneacionController extends Controller
                                 'vinculable_id' => $asignacion->id_operador,
                             ]
                         ],
+                        'vinculos' => $vinculosData,
                         'imputaciones' => [
                             [
                                 'fecha_imputacion' => Carbon::now(),
@@ -1994,18 +2114,94 @@ class PlaneacionController extends Controller
                             'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
                         ]);
                     }
+
+                    // Sincronizar en gastos_operadores (viáticos de operadores)
+                    $goTipo = match ($motivo) {
+                        'GDI02' => 'Diesel',
+                        'GU001' => 'Urea',
+                        default => $tipoGasto,
+                    };
+                    \App\Models\GastosOperadores::updateOrCreate(
+                        [
+                            'id_asignacion' => $asignacion->id,
+                            'tipo' => $goTipo,
+                        ],
+                        [
+                            'id_operador' => $asignacion->id_operador,
+                            'id_cotizacion' => $contenedor->id_cotizacion,
+                            'cantidad' => $monto,
+                            'id_banco' => ($esPagoInmediato && $idBanco) ? $idBanco : null,
+                            'fecha_pago' => ($esPagoInmediato && $idBanco) ? ($fechaAplicacion ?? now()->format('Y-m-d')) : null,
+                            'pago_inmediato' => ($esPagoInmediato && $idBanco) ? 1 : 0,
+                            'estatus' => ($esPagoInmediato && $idBanco) ? 'Pagado' : 'Pago Pendiente',
+                        ]
+                    );
                 }
             }
 
             // 3. Gastos eliminados (estaban en BD pero ya no están en la vista)
             foreach ($gastosExistentes as $gastoBorrado) {
                 if (!in_array($gastoBorrado->id, $gastosProcesadosIds)) {
+                    // a) Cancelar todos los pagos activos en bancos
                     foreach ($gastoBorrado->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
                         $fechaCancelacion = $pago->movimientoBancario?->fecha_movimiento
                             ? Carbon::parse($pago->movimientoBancario->fecha_movimiento)->format('Y-m-d')
                             : ($pago->fecha_pago ? Carbon::parse($pago->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
                         app(\App\Services\GastosService::class)->cancelarPago($pago, $fechaCancelacion);
                     }
+
+                    // b) Sincronizar y eliminar de gastos_operadores (viáticos de operadores)
+                    $goId = ($gastoBorrado->origen_legacy === 'gastos_operadores') ? $gastoBorrado->origen_legacy_id : null;
+                    if ($goId) {
+                        $goLegacy = \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')->find($goId);
+                        if ($goLegacy) {
+                            $goLegacy->update(['estatus' => 'eliminado']);
+                        }
+                    }
+
+                    $tipoGastoBorrado = $gastoBorrado->concepto;
+                    $goAsignados = \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')
+                        ->where('id_asignacion', $asignacion->id)
+                        ->where(function ($q) use ($tipoGastoBorrado) {
+                            $conceptoB = strtolower($tipoGastoBorrado);
+                            if (str_contains($conceptoB, 'diesel') || str_contains($conceptoB, 'diésel') || str_contains($tipoGastoBorrado, 'GDI02')) {
+                                $q->where('tipo', 'like', '%Diesel%')->orWhere('tipo', 'like', '%diésel%')->orWhere('tipo', 'like', '%GDI02%');
+                            } elseif (str_contains($conceptoB, 'urea') || str_contains($tipoGastoBorrado, 'GU001')) {
+                                $q->where('tipo', 'like', '%Urea%')->orWhere('tipo', 'like', '%GU001%');
+                            } elseif (str_contains($conceptoB, 'burrero') || str_contains($tipoGastoBorrado, 'GBV01')) {
+                                $q->where('tipo', 'like', '%Burrero%')->orWhere('tipo', 'like', '%GBV01%');
+                            } elseif (str_contains($conceptoB, 'comisi') || str_contains($tipoGastoBorrado, 'GCM01')) {
+                                $q->where('tipo', 'like', '%Comisi%')->orWhere('tipo', 'like', '%GCM01%');
+                            } else {
+                                $q->where('tipo', $tipoGastoBorrado);
+                            }
+                        })
+                        ->get();
+
+                    foreach ($goAsignados as $itemGo) {
+                        $itemGo->update(['estatus' => 'eliminado']);
+                    }
+
+                    // c) Sincronizar con bitacora de app móvil y cotización si era Diésel o Urea
+                    $cotizacionModel = $contenedor->id_cotizacion ? Cotizaciones::find($contenedor->id_cotizacion) : null;
+                    $conceptoB = strtolower($tipoGastoBorrado);
+                    if (str_contains($conceptoB, 'diesel') || str_contains($conceptoB, 'diésel') || str_contains($tipoGastoBorrado, 'GDI02')) {
+                        \App\Models\BitacoraViajeOperador::where('id_asignacion', $asignacion->id)
+                            ->update(['costo' => 0, 'litros' => 0]);
+                        if ($cotizacionModel) {
+                            $cotizacionModel->litros_diesel = 0;
+                            $cotizacionModel->save();
+                        }
+                    } elseif (str_contains($conceptoB, 'urea') || str_contains($tipoGastoBorrado, 'GU001')) {
+                        \App\Models\BitacoraViajeOperador::where('id_asignacion', $asignacion->id)
+                            ->update(['costo_urea' => 0, 'litros_urea' => 0]);
+                        if ($cotizacionModel) {
+                            $cotizacionModel->litros_urea = 0;
+                            $cotizacionModel->save();
+                        }
+                    }
+
+                    // d) Cancelar y eliminar en módulo de gastos
                     $gastoBorrado->vinculos()->delete();
                     $gastoBorrado->imputaciones()->delete();
                     $gastoBorrado->update(['estatus' => 'cancelado']);

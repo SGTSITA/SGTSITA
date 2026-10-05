@@ -57,8 +57,67 @@ class StoreGastoRequest extends FormRequest
             'programaciones.*.fecha_vencimiento' => ['nullable'],
             'programaciones.*.monto_programado' => ['nullable', 'numeric'],
 
+            'id_equipo' => ['nullable', 'integer', 'exists:equipos,id'],
+            'equipo_id' => ['nullable', 'integer', 'exists:equipos,id'],
+            'unidades' => ['nullable', 'array'],
+            'unidades.*' => ['integer', 'exists:equipos,id'],
             'partidas' => ['nullable', 'array'],
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $idEmpresa = auth()->user()?->id_empresa;
+            if (!$idEmpresa) {
+                return;
+            }
+
+            $empresa = \App\Models\Empresas::withoutGlobalScopes()->find($idEmpresa);
+            if ($empresa && $empresa->requiere_unidad_gasto) {
+                $idEquipo = $this->id_equipo ?? $this->equipo_id ?? null;
+                $unidades = $this->unidades;
+
+                $tieneUnidad = !empty($idEquipo) || (!empty($unidades) && is_array($unidades) && count($unidades) > 0);
+
+                if (!$tieneUnidad && $this->filled('viajes')) {
+                    $viajes = is_array($this->viajes) ? $this->viajes : [$this->viajes];
+                    $tieneCamion = \App\Models\Asignaciones::whereIn('id', $viajes)->whereNotNull('id_camion')->exists();
+                    if ($tieneCamion) {
+                        $tieneUnidad = true;
+                    }
+                } elseif (!$tieneUnidad && $this->filled('asignacion_id')) {
+                    $tieneCamion = \App\Models\Asignaciones::where('id', $this->asignacion_id)->whereNotNull('id_camion')->exists();
+                    if ($tieneCamion) {
+                        $tieneUnidad = true;
+                    }
+                }
+
+                if (!$tieneUnidad) {
+                    $validator->errors()->add('id_equipo', 'La unidad/equipo es obligatoria para registrar gastos en esta empresa.');
+                } elseif (!empty($idEquipo)) {
+                    $equipoValido = \App\Models\Equipo::where('id', $idEquipo)
+                        ->where('id_empresa', $idEmpresa)
+                        ->where('tipo', 'Tractos / Camiones')
+                        ->exists();
+                    if (!$equipoValido) {
+                        $validator->errors()->add('id_equipo', 'La unidad seleccionada no pertenece a la empresa actual o no es del tipo Tractos / Camiones.');
+                    }
+                }
+
+                if (!empty($unidades) && is_array($unidades)) {
+                    $invalidos = \App\Models\Equipo::whereIn('id', $unidades)
+                        ->where(function ($q) use ($idEmpresa) {
+                            $q->where('id_empresa', '!=', $idEmpresa)
+                              ->orWhere('tipo', '!=', 'Tractos / Camiones');
+                        })
+                        ->exists();
+                    if ($invalidos) {
+                        $validator->errors()->add('unidades', 'Una o más unidades seleccionadas no pertenecen a la empresa actual o no son del tipo Tractos / Camiones.');
+                    }
+                }
+            }
+        });
     }
 
     public function messages(): array

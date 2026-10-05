@@ -24,6 +24,29 @@
                             <!-- ACTION BAR -->
                             <div class="d-flex align-items-center gap-2 flex-wrap">
 
+                                <!-- Filtro por Unidad / Equipo -->
+                                <div class="d-flex align-items-center gap-1">
+                                    <label for="filtroUnidadBanco" class="small text-muted mb-0 fw-bold text-nowrap">
+                                        <i class="fa fa-truck text-primary"></i> Unidad:
+                                    </label>
+                                    <select id="filtroUnidadBanco" class="form-select form-select-sm"
+                                        style="min-width: 190px;">
+                                        <option value="">-- Todas las unidades --</option>
+                                        @if (isset($equipos))
+                                            @foreach ($equipos as $eq)
+                                                <option value="{{ $eq->id }}">
+                                                    {{ $eq->id_equipo ?: $eq->placas }}
+                                                    {{ $eq->marca ? '(' . $eq->marca . ')' : '' }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <button type="button" id="btnLimpiarFiltroUnidad"
+                                        class="btn btn-outline-secondary btn-sm d-none" title="Limpiar filtro de unidad">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </div>
+
                                 <!-- Switch -->
                                 <div class="form-check form-switch mb-0">
                                     <input class="form-check-input" type="checkbox" id="switchConCuentas" checked>
@@ -62,12 +85,46 @@
             </div>
         </div>
 
+        {{-- PANEL DE MOVIMIENTOS POR UNIDAD (SE MUESTRA AL FILTRAR) --}}
+        <div id="panelMovimientosUnidad" class="card shadow-sm border-0 mb-4 d-none">
+            <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h6 class="mb-0 fw-bold text-primary">
+                        <i class="fa fa-truck me-1"></i> Movimientos bancarios de la unidad: <span id="nombreUnidadFiltrada"
+                            class="text-dark">-</span>
+                    </h6>
+                    <small class="text-muted" id="resumenUnidadFiltrada">Cargando...</small>
+                </div>
+                <button type="button" class="btn-close" id="btnCerrarPanelUnidad" aria-label="Cerrar"></button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 380px;">
+                    <table class="table table-hover table-striped align-middle mb-0 text-center" style="font-size: 13px;">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Banco</th>
+                                <th>Cuenta</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Concepto</th>
+                                <th>Referencia</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyMovimientosUnidad">
+                            <!-- Filas generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         {{-- GRID DE BANCOS --}}
         <div class="row">
 
             @forelse ($catbancos as $banco)
-                <div class="col-xl-3 col-lg-4 col-md-6 mb-4 banco-item"
+                <div class="col-xl-3 col-lg-4 col-md-6 mb-4 banco-item" data-banco-id="{{ $banco->id }}"
                     data-tiene-cuentas="{{ $banco->tiene_cuentas ? '1' : '0' }}">
 
                     <div class="card h-100 shadow-sm border-0 banco-card"
@@ -100,6 +157,8 @@
                                     {{ $banco->razon_social }}
                                 </div>
                             @endif
+
+                            <div class="badge-unidad-container mb-2 d-none"></div>
 
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-center gap-2">
@@ -455,7 +514,133 @@
         document.getElementById('switchConCuentas')
             .addEventListener('change', aplicarFiltroBancos);
 
-
         document.addEventListener('DOMContentLoaded', aplicarFiltroBancos);
+
+        // --- FILTRO DE BANCOS POR UNIDAD / EQUIPO ---
+        const filtroUnidad = document.getElementById('filtroUnidadBanco');
+        const btnLimpiarUnidad = document.getElementById('btnLimpiarFiltroUnidad');
+        const panelUnidad = document.getElementById('panelMovimientosUnidad');
+        const btnCerrarPanel = document.getElementById('btnCerrarPanelUnidad');
+        const tbodyUnidad = document.getElementById('tbodyMovimientosUnidad');
+        const nombreUnidadSpan = document.getElementById('nombreUnidadFiltrada');
+        const resumenUnidadSpan = document.getElementById('resumenUnidadFiltrada');
+
+        if (filtroUnidad) {
+            filtroUnidad.addEventListener('change', async function() {
+                const unidadId = this.value;
+                const unidadTexto = this.options[this.selectedIndex]?.text || '';
+
+                if (!unidadId) {
+                    limpiarFiltroUnidad();
+                    return;
+                }
+
+                if (btnLimpiarUnidad) btnLimpiarUnidad.classList.remove('d-none');
+                if (nombreUnidadSpan) nombreUnidadSpan.textContent = unidadTexto;
+                if (resumenUnidadSpan) resumenUnidadSpan.textContent =
+                    'Buscando movimientos en todas las cuentas bancarias...';
+                if (panelUnidad) panelUnidad.classList.remove('d-none');
+                if (tbodyUnidad) {
+                    tbodyUnidad.innerHTML =
+                        '<tr><td colspan="8" class="text-center py-4"><i class="fa fa-spinner fa-spin me-1"></i> Consultando movimientos...</td></tr>';
+                }
+
+                try {
+                    const resp = await fetch(`{{ route('bancos.movimientos.unidad') }}?id_equipo=${unidadId}`);
+                    const data = await resp.json();
+
+                    if (resumenUnidadSpan) {
+                        resumenUnidadSpan.innerHTML =
+                            `<strong>${data.total_movimientos}</strong> movimiento(s) encontrado(s) por un total acumulado de <strong class="text-danger">${data.total_monto_formateado}</strong>.`;
+                    }
+
+                    const bancoMap = {};
+                    (data.bancos_resumen || []).forEach(b => {
+                        bancoMap[b.cat_banco_id] = b;
+                    });
+
+                    document.querySelectorAll('.banco-item').forEach(card => {
+                        const bancoId = card.getAttribute('data-banco-id');
+                        const badgeCont = card.querySelector('.badge-unidad-container');
+
+                        if (bancoMap[bancoId]) {
+                            const info = bancoMap[bancoId];
+                            card.style.opacity = '1';
+                            if (badgeCont) {
+                                badgeCont.innerHTML =
+                                    `<span class="badge bg-success py-1 px-2"><i class="fa fa-check-circle me-1"></i> ${info.conteo} mov. (${info.total_formateado})</span>`;
+                                badgeCont.classList.remove('d-none');
+                            }
+                        } else {
+                            card.style.opacity = '0.35';
+                            if (badgeCont) {
+                                badgeCont.innerHTML =
+                                    `<span class="badge bg-secondary py-1 px-2">Sin movimientos</span>`;
+                                badgeCont.classList.remove('d-none');
+                            }
+                        }
+                    });
+
+                    if (!data.movimientos || data.movimientos.length === 0) {
+                        if (tbodyUnidad) {
+                            tbodyUnidad.innerHTML =
+                                '<tr><td colspan="8" class="text-center py-4 text-muted">No se encontraron movimientos registrados para esta unidad en ninguna cuenta bancaria.</td></tr>';
+                        }
+                        return;
+                    }
+
+                    let html = '';
+                    data.movimientos.forEach(m => {
+                        const tipoBadge = m.tipo === 'cargo' ?
+                            '<span class="badge bg-danger">Cargo</span>' :
+                            '<span class="badge bg-success">Abono</span>';
+                        html += `
+                            <tr>
+                                <td>${m.fecha_movimiento}</td>
+                                <td><strong>${m.banco_nombre}</strong></td>
+                                <td><span class="text-muted small">${m.cuenta_bancaria}</span></td>
+                                <td>${tipoBadge}</td>
+                                <td class="fw-bold">${m.monto_formateado}</td>
+                                <td class="text-start" style="max-width: 280px;">
+                                    <div class="text-truncate" title="${m.concepto}">${m.concepto}</div>
+                                </td>
+                                <td><small class="text-muted">${m.referencia || '-'}</small></td>
+                                <td>
+                                    <a href="${m.url_cuenta}" class="btn btn-outline-primary btn-sm py-0 px-2" title="Ir a la cuenta">
+                                        <i class="fa fa-external-link-alt"></i> Ver cuenta
+                                    </a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    if (tbodyUnidad) tbodyUnidad.innerHTML = html;
+
+                } catch (e) {
+                    console.error(e);
+                    if (tbodyUnidad) {
+                        tbodyUnidad.innerHTML =
+                            '<tr><td colspan="8" class="text-center py-4 text-danger">Error al consultar los movimientos de la unidad.</td></tr>';
+                    }
+                }
+            });
+
+            if (btnLimpiarUnidad) btnLimpiarUnidad.addEventListener('click', limpiarFiltroUnidad);
+            if (btnCerrarPanel) btnCerrarPanel.addEventListener('click', () => panelUnidad.classList.add('d-none'));
+
+            function limpiarFiltroUnidad() {
+                filtroUnidad.value = '';
+                if (btnLimpiarUnidad) btnLimpiarUnidad.classList.add('d-none');
+                if (panelUnidad) panelUnidad.classList.add('d-none');
+                if (tbodyUnidad) tbodyUnidad.innerHTML = '';
+                document.querySelectorAll('.banco-item').forEach(card => {
+                    card.style.opacity = '1';
+                    const badgeCont = card.querySelector('.badge-unidad-container');
+                    if (badgeCont) {
+                        badgeCont.classList.add('d-none');
+                        badgeCont.innerHTML = '';
+                    }
+                });
+            }
+        }
     </script>
 @endpush

@@ -17,6 +17,7 @@ class Gasto extends Model
 
     protected $fillable = [
         'id_empresa',
+        'id_equipo',
         'categoria_gasto_id',
         'gasto_concepto_id',
         'folio',
@@ -40,6 +41,11 @@ class Gasto extends Model
         'fecha_operacion' => 'date',
         'monto_total' => 'decimal:2',
     ];
+
+    public function equipo()
+    {
+        return $this->belongsTo(Equipo::class, 'id_equipo');
+    }
 
     public function categoria()
     {

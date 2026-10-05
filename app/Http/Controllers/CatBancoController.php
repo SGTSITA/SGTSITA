@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\Equipo;
 use App\Exports\CuentaBancosExport;
 
 class CatBancoController extends Controller
@@ -51,9 +52,14 @@ class CatBancoController extends Controller
                    ->where('estado', 1)
                    ->get();
 
+        $equipos = Equipo::where('id_empresa', Auth::user()->id_empresa)
+            ->where('tipo', 'Tractos / Camiones')
+            ->orderBy('id_equipo')
+            ->get();
+
         $CatBancosDefault = config('CatAuxiliares.catalogBank');
 
-        return view('bancos.indexv2', compact('catbancos', 'CatBancosDefault', 'cuentas'));
+        return view('bancos.indexv2', compact('catbancos', 'CatBancosDefault', 'cuentas', 'equipos'));
     }
 
 
@@ -482,8 +488,95 @@ class CatBancoController extends Controller
         }
 
         abort(400);
+    }
 
+    public function getMovimientosPorUnidad(Request $request)
+    {
+        $request->validate([
+            'id_equipo' => 'required|integer|exists:equipos,id',
+        ]);
 
+        $idEmpresa = Auth::user()->id_empresa;
+        $idEquipo = (int) $request->id_equipo;
+
+        // Cuentas activas de la empresa
+        $cuentas = Bancos::where('id_empresa', $idEmpresa)
+            ->where('estado', 1)
+            ->with('catBanco')
+            ->get();
+
+        $cuentasIds = $cuentas->pluck('id')->toArray();
+
+        if (empty($cuentasIds)) {
+            return response()->json([
+                'movimientos' => [],
+                'bancos_resumen' => [],
+                'total_movimientos' => 0,
+                'total_monto' => 0,
+                'total_monto_formateado' => '$0.00',
+            ]);
+        }
+
+        $movimientos = CatBancoCuentasMovimientos::whereIn('cuenta_bancaria_id', $cuentasIds)
+            ->where('cancelado', false)
+            ->deUnidad($idEquipo)
+            ->with(['cuentaBancaria.catBanco'])
+            ->orderBy('fecha_movimiento', 'desc')
+            ->get();
+
+        $bancosResumen = [];
+        $totalMonto = 0;
+
+        $formateados = $movimientos->map(function ($m) use (&$bancosResumen, &$totalMonto) {
+            $catBancoId = $m->cuentaBancaria?->cat_banco_id;
+            $catBancoNombre = $m->cuentaBancaria?->catBanco?->nombre ?? 'Banco';
+            $monto = (float) $m->monto;
+
+            if ($m->tipo === 'cargo') {
+                $totalMonto += $monto;
+            }
+
+            if ($catBancoId) {
+                if (!isset($bancosResumen[$catBancoId])) {
+                    $bancosResumen[$catBancoId] = [
+                        'cat_banco_id' => $catBancoId,
+                        'banco_nombre' => $catBancoNombre,
+                        'conteo' => 0,
+                        'total' => 0,
+                    ];
+                }
+                $bancosResumen[$catBancoId]['conteo']++;
+                $bancosResumen[$catBancoId]['total'] += $monto;
+            }
+
+            return [
+                'id' => $m->id,
+                'fecha_movimiento' => $m->fecha_movimiento ? Carbon::parse($m->fecha_movimiento)->format('d/m/Y') : '-',
+                'concepto' => $m->concepto,
+                'referencia' => $m->referencia,
+                'tipo' => $m->tipo,
+                'monto' => $monto,
+                'monto_formateado' => '$' . number_format($monto, 2),
+                'banco_nombre' => $catBancoNombre,
+                'cat_banco_id' => $catBancoId,
+                'cuenta_bancaria' => $m->cuentaBancaria?->cuenta_bancaria ?? '-',
+                'nombre_beneficiario' => $m->cuentaBancaria?->nombre_beneficiario ?? '-',
+                'url_cuenta' => route('bancoscuentas.movimientos', $m->cuenta_bancaria_id),
+            ];
+        });
+
+        // Formatear totales en bancos_resumen
+        foreach ($bancosResumen as &$res) {
+            $res['total_formateado'] = '$' . number_format($res['total'], 2);
+        }
+
+        return response()->json([
+            'movimientos' => $formateados,
+            'bancos_resumen' => array_values($bancosResumen),
+            'total_movimientos' => $movimientos->count(),
+            'total_monto' => $totalMonto,
+            'total_monto_formateado' => '$' . number_format($totalMonto, 2),
+        ]);
     }
 
 }

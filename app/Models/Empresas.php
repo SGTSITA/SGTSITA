@@ -25,6 +25,11 @@ class Empresas extends Model
         'email',
         'fecha',
         'id_configuracion',
+        'requiere_unidad_gasto',
+    ];
+
+    protected $casts = [
+        'requiere_unidad_gasto' => 'boolean',
     ];
 
     public function configuracion()
