@@ -39,7 +39,7 @@
                                 @if(isset($equipos))
                                     @foreach ($equipos as $eq)
                                         <option value="{{ $eq->id }}" {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
-                                            {{ $eq->id_equipo }} - {{ $eq->marca ?? 'Tracto' }}
+                                            {{ $eq->texto_select }}
                                         </option>
                                     @endforeach
                                 @endif

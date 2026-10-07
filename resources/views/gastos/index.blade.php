@@ -77,7 +77,7 @@
                     <select id="gastosNewEquipo" class="form-control form-control-sm">
                         <option value="">Todas las unidades</option>
                         @foreach ($equipos as $e)
-                            <option value="{{ $e->id }}">{{ $e->marca }} - {{ $e->id_equipo ?: $e->placas }}</option>
+                            <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -302,8 +302,7 @@
                             <label class="form-label font-weight-bold text-info">Seleccione Unidades (Equipo)</label>
                             <select class="form-control" name="unidades[]" id="selectUnidadesNew" multiple>
                                 @foreach ($equipos as $e)
-                                    <option value="{{ $e->id }}">{{ $e->marca }} -
-                                        {{ $e->id_equipo ?: $e->placas }}</option>
+                                    <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -544,9 +543,7 @@
                             <select class="form-select" name="id_equipo" id="selectPeriodoUnidadNew">
                                 <option value="">-- Seleccionar Unidad / Equipo --</option>
                                 @foreach ($equipos as $e)
-                                    <option value="{{ $e->id }}">
-                                        {{ $e->marca }} - {{ $e->id_equipo ?: $e->placas }}
-                                    </option>
+                                    <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted">
@@ -568,10 +565,7 @@
                             <select class="form-control" name="unidades[]" id="selectUnidadesNew" multiple>
 
                                 @foreach ($equipos as $e)
-                                    <option value="{{ $e->id }}">
-                                        {{ $e->marca }} -
-                                        {{ $e->id_equipo ?: $e->placas }}
-                                    </option>
+                                    <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                                 @endforeach
 
                             </select>
