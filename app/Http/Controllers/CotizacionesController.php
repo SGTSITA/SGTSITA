@@ -1146,11 +1146,16 @@ else{
 
     public function cotizacionesFull(Request $request)
     {
+        $uuid = trim($request->uuid ?? '');
+        if (empty($uuid)) {
+            return response()->json([]);
+        }
+
         $cotizaciones = Cotizaciones::leftJoin('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
-                                                ->where('referencia_full', '=', $request->uuid)
+                                                ->where('referencia_full', '=', $uuid)
                                                 ->orderBy('jerarquia')
                                                 ->get();
-        return $cotizaciones;
+        return response()->json($cotizaciones);
     }
 
     public function convertirFull(Request $request)
