@@ -289,7 +289,7 @@ class AppMovilAdminController extends Controller
 
     private function verificarGastoPagado(int $idAsignacion, string $tipoConcepto): bool
     {
-        return Gasto::where(function($q) use ($idAsignacion, $tipoConcepto) {
+        return Gasto::withTrashed()->where(function($q) use ($idAsignacion, $tipoConcepto) {
                 $q->where(function($q2) use ($idAsignacion, $tipoConcepto) {
                     $q2->where('origen_legacy_id', $idAsignacion)
                        ->where('origen_legacy', 'like', 'asignacion_planeacion%')
@@ -509,7 +509,7 @@ class AppMovilAdminController extends Controller
         $costoDieselModificado = ($request->filled('costo') && floatval($request->costo) != floatval($bitacora->costo));
         $comprobanteDieselModificado = $request->hasFile('comprobante_diesel_file');
 
-        $gastoDieselExistente = Gasto::where(function($q) use ($idAsignacion) {
+        $gastoDieselExistente = Gasto::withTrashed()->where(function($q) use ($idAsignacion) {
             $q->where(function($q2) use ($idAsignacion) {
                 $q2->where('origen_legacy_id', $idAsignacion)
                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
@@ -536,7 +536,7 @@ class AppMovilAdminController extends Controller
         $costoUreaModificado = ($request->filled('costo_urea') && floatval($request->costo_urea) != floatval($bitacora->costo_urea));
         $comprobanteUreaModificado = $request->hasFile('comprobante_urea_file');
 
-        $gastoUreaExistente = Gasto::where(function($q) use ($idAsignacion) {
+        $gastoUreaExistente = Gasto::withTrashed()->where(function($q) use ($idAsignacion) {
             $q->where(function($q2) use ($idAsignacion) {
                 $q2->where('origen_legacy_id', $idAsignacion)
                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
