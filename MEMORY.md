@@ -20,11 +20,12 @@ Memoria del proyecto entre sesiones. Máximo ~50 líneas: resume o elimina lo qu
 - Caché de Tokens Naanix (50 min) y Llave UTC dinámica: previene saturación de peticiones de autenticación en el cron `rastreo:intervalConfig`.
 - Consulta masiva por lote (`ObtenerPosicionActualGeneral`): reduce latencia de sincronización de ~40s a < 1s.
 - `sincronizarGastoConBancos()` en `GastosService`: unifica propagación en cascada de importes hacia `gasto_pagos`, `cat_bancos_cuentas_movimientos` y saldo en `bancos`.
-- `EquipoService` centralizado (`app/Services/EquipoService.php`): unifica `getTractocamiones()` para reportería y gastos eliminando duplicación de consultas en controladores (Principio 7 de la Constitución).
+- `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
 
 ## Aprendizajes y errores a evitar
 - NUNCA modificar la respuesta JSON de endpoints en `routes/api.php` sin verificar el impacto en la app Flutter `operador_appsgt`.
 - No ejecutar `migrate:fresh` ni `db:wipe` en ningún entorno.
+- En selectores de unidad/equipo, mostrar siempre `id_equipo - marca` (vía `$equipo->texto_select`) para consistencia en todo el sistema.
 - En Naanix REST, la llave debe calcularse estrictamente en UTC (`UtcNow.Hour + UtcNow.Day + IdCliente`).
 - En modal de nuevo gasto, disparar `handleSelectionNew` en `show.bs.modal` para asegurar que el bloque de Unidad/Equipo se muestre inmediatamente.
 - En reportes y catálogos de imputación a unidad, filtrar siempre `where('tipo', 'Tractos / Camiones')` en `Equipo` para excluir remolques, chasis o dollys.

@@ -53,4 +53,15 @@ class EquipoService
 
         return $query->orderBy('id_equipo', 'asc')->get();
     }
+
+    /**
+     * Devuelve el texto formateado estándar para selects (id_equipo - marca).
+     *
+     * @param Equipo $equipo
+     * @return string
+     */
+    public function formatTextoSelect(Equipo $equipo): string
+    {
+        return $equipo->texto_select;
+    }
 }
