@@ -52,6 +52,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center">
                             <h3 class="mb-3">Editar Cotizacion</h3>
                             <div class="col-3 offset-3">
+                                <div>
                                     <span class="text-xs text-muted text-bold d-none" id="referencia_full">{{ trim($cotizacion->referencia_full ?? '') }}</span>
                                 </div>
                                 <div class="option-group">
