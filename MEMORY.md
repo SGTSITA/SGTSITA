@@ -1,6 +1,6 @@
 # MEMORY.md — SGTSITA
 
-Memoria viva del proyecto entre sesiones (máximo ~50 líneas).
+Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.

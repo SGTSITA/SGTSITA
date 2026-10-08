@@ -79,6 +79,17 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                    <div class="d-flex flex-column" style="min-width: 220px;">
+                                        <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Unidad / Equipo</label>
+                                        <select id="selEquipoUtilidad" class="form-select form-select-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;">
+                                            <option value="">-- Todas las Unidades --</option>
+                                            @if(isset($equipos))
+                                                @foreach ($equipos as $eq)
+                                                    <option value="{{ $eq->id }}">{{ $eq->id_equipo }} - {{ $eq->marca ?? 'Tracto' }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
                                 </div>
                             </h5>
 

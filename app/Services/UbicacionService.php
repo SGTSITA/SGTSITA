@@ -1261,6 +1261,14 @@ private function consultarSisGpsGrupo(array $items, array $credenciales): array
     try {
         $posicionesResp = NaanixGPSTrait::sisGetPosicionesActuales($idCliente, 0);
         $unidadesResp = NaanixGPSTrait::sisObtenerUnidades($idCliente);
+  log::info('Respuesta de servicio REST/JSON de Naanix', [
+            'data' => $posicionesResp,
+        ]);
+
+          log::info('Respuesta de servicio REST/JSON de Naanix', [
+            'data' => $unidadesResp,
+        ]);
+
 
         $posicionesPorIdUnidad = [];
         if ($posicionesResp->success && !empty($posicionesResp->data['Posiciones'])) {

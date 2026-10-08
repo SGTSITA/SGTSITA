@@ -30,6 +30,16 @@
                             <option value="pagados">Pagados</option>
                             <option value="todos">Todos</option>
                         </select>
+
+                        <label class="mb-0 fw-semibold text-sm ms-3">Unidad / Equipo:</label>
+                        <select id="selEquipoGxp" class="form-select form-select-sm" style="width: auto; min-width: 180px; box-shadow: none">
+                            <option value="">-- Todas las Unidades --</option>
+                            @if(isset($equipos))
+                                @foreach ($equipos as $eq)
+                                    <option value="{{ $eq->id }}">{{ $eq->id_equipo }} - {{ $eq->marca ?? 'Tracto' }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
 
                     <div class="card-body">
