@@ -53,9 +53,7 @@
                             <h3 class="mb-3">Editar Cotizacion</h3>
                             <div class="col-3 offset-3">
                                 <div>
-                                    <span class="text-xs text-muted text-bold d-none" id="referencia_full">
-                                        {{ $cotizacion->referencia_full }}
-                                    </span>
+                                    <span class="text-xs text-muted text-bold d-none" id="referencia_full">{{ trim($cotizacion->referencia_full ?? '') }}</span>
                                 </div>
                                 <div class="option-group">
                                     @if (is_null($cotizacion->referencia_full))

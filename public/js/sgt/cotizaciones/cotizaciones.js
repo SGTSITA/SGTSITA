@@ -1693,9 +1693,9 @@ async function getContenedoresOnFull() {
         .getAttribute("content");
     let referencia = document.querySelector("#referencia_full");
 
-    let uuid = referencia.textContent;
+    let uuid = referencia ? referencia.textContent.trim() : "";
 
-    if (uuid.length == 0) return false;
+    if (!uuid || uuid.length == 0) return false;
     let ContenedorFields = ContenedorA;
 
     await $.ajax({
@@ -1704,11 +1704,13 @@ async function getContenedoresOnFull() {
         data: { _token, uuid },
         beforeSend: () => {},
         success: (response) => {
-            ContenedorA = response[0];
-            ContenedorB = response[1];
+            if (response && response.length >= 2) {
+                ContenedorA = response[0];
+                ContenedorB = response[1];
 
-            sobrePesoViaje();
-            calcularTotal();
+                sobrePesoViaje();
+                calcularTotal();
+            }
         },
         error: () => {},
     });
