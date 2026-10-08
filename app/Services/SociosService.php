@@ -345,6 +345,68 @@ class SociosService
         $totalPagadoPeriodo = collect($pagosDesglose)->sum('monto');
         $totalPagadoSociosColumna = collect($sociosFinal)->sum('total_pagado');
 
+        // 5. Agrupación Mensual (Resumen Ejecutivo por Mes)
+        $mesesAgrupados = [];
+        foreach ($viajesDesglose as $v) {
+            $periodoClave = substr($v['fecha_viaje'], 0, 7); // e.g. "2025-08"
+            if (!isset($mesesAgrupados[$periodoClave])) {
+                $carbonFecha = \Carbon\Carbon::parse($v['fecha_viaje'])->locale('es');
+                $nombreMes = ucfirst($carbonFecha->translatedFormat('F Y')); // e.g. "Agosto 2025"
+                $mesesAgrupados[$periodoClave] = [
+                    'periodo_clave' => $periodoClave,
+                    'mes_nombre' => $nombreMes,
+                    'cantidad_viajes' => 0,
+                    'utilidad_bruta' => 0.0,
+                    'utilidad_total_mes' => 0.0,
+                    'gastos_indirectos' => 0.0,
+                    'utilidad_mensual' => 0.0,
+                    'promedio_por_viaje' => 0.0,
+                    'viajes' => []
+                ];
+            }
+
+            $mesesAgrupados[$periodoClave]['cantidad_viajes']++;
+            $mesesAgrupados[$periodoClave]['utilidad_bruta'] += (float)$v['utilidad_viaje'];
+            $mesesAgrupados[$periodoClave]['utilidad_total_mes'] += (float)$v['utilidad_viaje'];
+            $mesesAgrupados[$periodoClave]['viajes'][] = $v;
+        }
+
+        // Distribuir los gastos indirectos (gastos generales) a cada mes correspondiente por su fecha de imputación
+        foreach ($gastosGenerales as $g) {
+            $periodoClave = substr($g->fecha_aplicada, 0, 7);
+            if (!isset($mesesAgrupados[$periodoClave])) {
+                $carbonFecha = \Carbon\Carbon::parse($g->fecha_aplicada)->locale('es');
+                $nombreMes = ucfirst($carbonFecha->translatedFormat('F Y'));
+                $mesesAgrupados[$periodoClave] = [
+                    'periodo_clave' => $periodoClave,
+                    'mes_nombre' => $nombreMes,
+                    'cantidad_viajes' => 0,
+                    'utilidad_bruta' => 0.0,
+                    'utilidad_total_mes' => 0.0,
+                    'gastos_indirectos' => 0.0,
+                    'utilidad_mensual' => 0.0,
+                    'promedio_por_viaje' => 0.0,
+                    'viajes' => []
+                ];
+            }
+            $mesesAgrupados[$periodoClave]['gastos_indirectos'] += (float)$g->monto_aplicado;
+        }
+
+        ksort($mesesAgrupados);
+
+        foreach ($mesesAgrupados as $k => &$m) {
+            $m['utilidad_bruta'] = round($m['utilidad_bruta'], 2);
+            $m['utilidad_total_mes'] = $m['utilidad_bruta'];
+            $m['gastos_indirectos'] = round($m['gastos_indirectos'], 2);
+            $m['utilidad_mensual'] = round($m['utilidad_bruta'] - $m['gastos_indirectos'], 2);
+            $m['promedio_por_viaje'] = $m['cantidad_viajes'] > 0
+                ? round($m['utilidad_bruta'] / $m['cantidad_viajes'], 2)
+                : 0.0;
+        }
+        unset($m);
+
+        $mesesResumen = array_values($mesesAgrupados);
+
         return [
             'fecha_desde' => $startDate,
             'fecha_hasta' => $endDate,
@@ -361,6 +423,7 @@ class SociosService
             'total_unidades_configuradas' => count($unidadesDesglose),
             'socios_desglose' => $sociosFinal,
             'unidades_desglose' => $unidadesDesglose,
+            'meses_resumen' => $mesesResumen,
             'viajes_desglose' => $viajesDesglose,
             'pagos_desglose' => $pagosDesglose
         ];

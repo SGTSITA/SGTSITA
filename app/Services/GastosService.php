@@ -391,6 +391,9 @@ class GastosService
             ];
 
             if ($gasto) {
+                if ($gasto->trashed()) {
+                    $gasto->restore();
+                }
                 $gasto->update($payload);
             } else {
                 $gasto = Gasto::create($payload);
