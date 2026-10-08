@@ -52,6 +52,7 @@ class GastosController extends Controller
                 'cotizacion_id' => $request->cotizacion_id,
                 'categoria_id' => $request->categoria_id,
                 'subcategoria_id' => $request->subcategoria_id,
+                'id_equipo' => $request->id_equipo,
             ]),
         ]);
     }
@@ -740,6 +741,27 @@ class GastosController extends Controller
                 }
             }
         }
+        // Compatibilidad con id_equipo / equipo_id único o general con unidad
+        elseif (($request->tipo_gasto === 'unidad' || $request->filled('id_equipo') || $request->filled('equipo_id')) && ($request->filled('id_equipo') || $request->filled('equipo_id'))) {
+            $equipoId = $request->id_equipo ?: $request->equipo_id;
+            $equipo = Equipo::find($equipoId);
+            if ($equipo) {
+                $vinculos[] = [
+                    'tipo_vinculo' => 'unidad',
+                    'vinculable_type' => Equipo::class,
+                    'vinculable_id' => $equipo->id,
+                    'observaciones' => 'Vinculo manual a unidad: ' . ($equipo->id_equipo ?: $equipo->placas),
+                ];
+                $imputaciones[] = [
+                    'fecha_imputacion' => $request->fecha_gasto,
+                    'tipo_imputacion' =>  $tipoImputacion,
+                    'imputable_type' => Equipo::class,
+                    'imputable_id' => $equipo->id,
+                    'monto_imputado' => $montoTotal,
+                    'origen' => 'directo',
+                ];
+            }
+        }
         // 2. Viajes links
         elseif (in_array($request->tipo_gasto, ['viaje', 'contenedor', 'cotizacion']) && $request->filled('viajes')) {
             $viajesIds = $request->viajes;
@@ -954,10 +976,13 @@ class GastosController extends Controller
                 }
             }
 
+            $selectedEquipoId = $request->id_equipo ?: ($request->equipo_id ?: (is_array($request->unidades) && count($request->unidades) === 1 ? $request->unidades[0] : null));
+
             // Save updated gasto details
             $storeData = array_merge($request->validated(), [
                 'id' => $gasto->id,
                 'id_empresa' => auth()->user()->id_empresa,
+                'id_equipo' => $selectedEquipoId,
                 'vinculos' => $vinculos,
                 'imputaciones' => $imputaciones,
                 'programaciones' => $programaciones,

@@ -195,9 +195,22 @@
                                     </div>
                                 </div>
                                 <div class="col-12 mb-4">
-                                    <h6>Desglose Individual de Viajes</h6>
-                                    <div id="gridViajesDesglose" class="ag-theme-alpine"
-                                        style="height: 250px; width: 100%;"></div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                        <div>
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-calendar-alt text-primary me-2"></i>Resumen Mensual de Operaciones y Utilidad
+                                            </h6>
+                                            <small class="text-xs text-muted">Consolidado por mes con cuadratura financiera. Haga clic en un mes o en "Ver Desglose" para ver sus viajes.</small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <span class="badge bg-gradient-info text-white px-2 py-1" id="badgeTotalMesesPeriodo">0 meses</span>
+                                            <span class="badge bg-gradient-secondary text-white px-2 py-1" id="badgeTotalUtilidadBruta">Bruta: $ 0.00</span>
+                                            <span class="badge bg-gradient-danger text-white px-2 py-1" id="badgeTotalGastosIndirectos">Indirectos: $ 0.00</span>
+                                            <span class="badge bg-gradient-success text-white px-2 py-1" id="badgeTotalUtilidadMensual">Mensual: $ 0.00</span>
+                                        </div>
+                                    </div>
+                                    <div id="gridMesesResumen" class="ag-theme-alpine"
+                                        style="height: 320px; width: 100%;"></div>
                                 </div>
                             </div>
 
@@ -494,6 +507,74 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Detalle de Viajes y Contenedores por Mes -->
+    <div class="modal fade" id="modalDetalleMes" tabindex="-1" aria-labelledby="modalDetalleMesLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-gradient-dark text-white">
+                    <div>
+                        <h5 class="modal-title text-white mb-0" id="modalDetalleMesLabel">
+                            <i class="fas fa-calendar-check me-2 text-warning"></i>Desglose de Viajes: <span id="modalMesTitulo">Mes</span>
+                        </h5>
+                        <p class="text-xs text-white opacity-8 mb-0">Contenedores, unidades y rentabilidad operativa de este periodo.</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <!-- Tarjetas de resumen del mes -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border p-2 text-center shadow-none">
+                                <span class="text-xs text-muted text-uppercase font-weight-bold">Viajes Realizados</span>
+                                <h5 class="font-weight-bolder mb-0 text-primary" id="modalMesViajes">0</h5>
+                                <small class="text-xs text-muted" id="modalMesPromedio">Prom: $ 0.00</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border p-2 text-center shadow-none">
+                                <span class="text-xs text-muted text-uppercase font-weight-bold">Total Utilidad Bruta</span>
+                                <h5 class="font-weight-bolder mb-0 text-info" id="modalMesUtilidadBruta">$ 0.00</h5>
+                                <small class="text-xs text-muted">Suma de viajes del mes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border p-2 text-center shadow-none">
+                                <span class="text-xs text-muted text-uppercase font-weight-bold">Gastos Indirectos</span>
+                                <h5 class="font-weight-bolder mb-0 text-danger" id="modalMesGastosIndirectos">$ 0.00</h5>
+                                <small class="text-xs text-muted">Gastos de empresa en este mes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card bg-light border p-2 text-center shadow-none">
+                                <span class="text-xs text-muted text-uppercase font-weight-bold">Utilidad Mensual</span>
+                                <h5 class="font-weight-bolder mb-0 text-success" id="modalMesUtilidadMensual">$ 0.00</h5>
+                                <small class="text-xs text-muted">Bruta - Indirectos</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grilla interactiva de viajes del mes -->
+                    <div class="card border shadow-none p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="text-sm font-weight-bold text-muted mb-0">
+                                <i class="fas fa-truck me-1"></i>Detalle Individual de Viajes y Contenedores
+                            </h6>
+                            <input type="text" id="filtroModalViajes" class="form-control form-control-sm w-25"
+                                placeholder="Buscar contenedor, cliente o unidad..." onkeyup="filtrarViajesModal()">
+                        </div>
+                        <div id="gridModalViajesMes" class="ag-theme-alpine" style="height: 380px; width: 100%;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <span class="text-xs text-muted me-auto">
+                        <i class="fas fa-check-circle text-success me-1"></i>Los montos individuales cuadran exactamente con la utilidad total de este mes.
+                    </span>
+                    <button type="button" class="btn btn-sm btn-secondary mb-0" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('js_custom')
@@ -506,8 +587,10 @@
 
     <script>
         let gridSociosOptions, gridConfigsOptions, gridUtilidadOptions, gridViajesOptions, gridHistorialPagosOptions,
-            gridHistorialCortesOptions;
-        let gridSociosApi, gridConfigsApi, gridUtilidadApi, gridViajesApi, gridHistorialPagosApi, gridHistorialCortesApi;
+            gridHistorialCortesOptions, gridMesesResumenOptions, gridModalViajesOptions;
+        let gridSociosApi, gridConfigsApi, gridUtilidadApi, gridViajesApi, gridHistorialPagosApi, gridHistorialCortesApi,
+            gridMesesApi, gridModalViajesApi;
+        let mesesResumenGlobal = [];
         let comparativaData = null;
         let corteGuardadoGlobal = false;
         let configsList = [];
@@ -544,6 +627,17 @@
             $('#utilidadDaterange').daterangepicker({
                 startDate: start,
                 endDate: end,
+                showDropdowns: true,
+                linkedCalendars: false,
+                minYear: 2022,
+                maxYear: moment().year() + 2,
+                ranges: {
+                    'Este Mes': [moment().startOf('month'), moment().endOf('month')],
+                    'Mes Anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                    ['Año Actual (' + moment().year() + ')']: [moment().startOf('year'), moment().endOf('year')],
+                    ['Año Anterior (' + (moment().year() - 1) + ')']: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+                    'Últimos 12 Meses': [moment().subtract(11, 'months').startOf('month'), moment().endOf('month')]
+                },
                 locale: {
                     format: 'YYYY-MM-DD',
                     separator: ' - ',
@@ -849,53 +943,156 @@
             gridUtilidadApi = agGrid.createGrid(document.querySelector('#gridUtilidad'), gridUtilidadOptions);
 
 
-            gridViajesOptions = {
-                columnDefs: [{
+            gridMesesResumenOptions = {
+                columnDefs: [
+                    {
+                        headerName: 'Mes / Periodo',
+                        field: 'mes_nombre',
+                        width: 200,
+                        sortable: true,
+                        filter: true,
+                        cellRenderer: params => {
+                            if (params.node.rowPinned) {
+                                return `<b class="text-uppercase text-dark"><i class="fas fa-calculator me-1"></i>${params.value || 'TOTALES'}</b>`;
+                            }
+                            return `<b><i class="fas fa-calendar-alt text-primary me-2"></i>${params.value || ''}</b>`;
+                        }
+                    },
+                    {
+                        headerName: 'Cantidad Viajes',
+                        field: 'cantidad_viajes',
+                        width: 150,
+                        sortable: true,
+                        cellStyle: { textAlign: 'center' },
+                        cellRenderer: params => {
+                            if (params.node.rowPinned) {
+                                return `<b class="text-dark font-weight-bolder">${params.value || 0} viajes</b>`;
+                            }
+                            return `<span class="badge bg-gradient-info text-white font-weight-bold px-3 py-1">${params.value || 0} viajes</span>`;
+                        }
+                    },
+                    {
+                        headerName: 'Total Utilidad Bruta',
+                        field: 'utilidad_bruta',
+                        width: 190,
+                        sortable: true,
+                        cellStyle: { textAlign: 'right', fontWeight: 'bold' },
+                        cellRenderer: params => {
+                            const val = parseFloat(params.value || 0);
+                            const color = val >= 0 ? '#17a2b8' : '#dc3545';
+                            const weight = params.node.rowPinned ? 'font-weight: 800; font-size: 1.05rem;' : '';
+                            return `<span style="color: ${color}; ${weight}">${formatCurrency(val)}</span>`;
+                        }
+                    },
+                    {
+                        headerName: 'Gastos Indirectos',
+                        field: 'gastos_indirectos',
+                        width: 180,
+                        sortable: true,
+                        cellStyle: { textAlign: 'right', fontWeight: 'bold' },
+                        cellRenderer: params => {
+                            const val = parseFloat(params.value || 0);
+                            const weight = params.node.rowPinned ? 'font-weight: 800; font-size: 1.05rem;' : '';
+                            return `<span class="text-danger" style="${weight}">${formatCurrency(val)}</span>`;
+                        }
+                    },
+                    {
+                        headerName: 'Utilidad Mensual',
+                        field: 'utilidad_mensual',
+                        width: 200,
+                        sortable: true,
+                        cellStyle: { textAlign: 'right', fontWeight: 'bold' },
+                        cellRenderer: params => {
+                            const val = parseFloat(params.value || 0);
+                            const color = val >= 0 ? '#28a745' : '#dc3545';
+                            const weight = params.node.rowPinned ? 'font-weight: 900; font-size: 1.1rem;' : 'font-weight: bold;';
+                            return `<span style="color: ${color}; ${weight}">${formatCurrency(val)}</span>`;
+                        }
+                    },
+                    {
+                        headerName: 'Acciones',
+                        field: 'periodo_clave',
+                        width: 150,
+                        sortable: false,
+                        filter: false,
+                        cellStyle: { textAlign: 'center' },
+                        cellRenderer: params => {
+                            if (params.node.rowPinned || !params.value) return '';
+                            return `<button class="btn btn-xs btn-outline-primary py-1 px-3" onclick="abrirModalDesgloseMes('${params.value}')">
+                                <i class="fas fa-search-plus me-1"></i> Ver Desglose
+                            </button>`;
+                        }
+                    }
+                ],
+                rowData: [],
+                pinnedBottomRowData: [],
+                rowSelection: 'single',
+                onRowDoubleClicked: params => {
+                    if (params.data && params.data.periodo_clave) {
+                        abrirModalDesgloseMes(params.data.periodo_clave);
+                    }
+                }
+            };
+            const gridMesesDiv = document.querySelector('#gridMesesResumen');
+            if (gridMesesDiv) {
+                gridMesesApi = agGrid.createGrid(gridMesesDiv, gridMesesResumenOptions);
+            }
+
+            gridModalViajesOptions = {
+                columnDefs: [
+                    {
                         headerName: 'Fecha Viaje',
                         field: 'fecha_viaje',
-                        width: 120,
+                        width: 130,
                         sortable: true,
                         cellRenderer: params => formatDate(params.value)
                     },
                     {
-                        headerName: 'Contenedor',
+                        headerName: 'Contenedor(es)',
                         field: 'contenedor',
+                        width: 230,
+                        sortable: true,
+                        filter: true,
+                        cellRenderer: params => `<b>${params.value || 'S/N'}</b>`
+                    },
+                    {
+                        headerName: 'Cliente',
+                        field: 'cliente',
+                        width: 180,
+                        sortable: true,
+                        filter: true
+                    },
+                    {
+                        headerName: 'Unidad / Tracto',
+                        field: 'unidad',
                         width: 170,
                         sortable: true,
                         filter: true
                     },
                     {
-                        headerName: 'Cliente',
-                        field: 'cliente',
-                        width: 160,
-                        sortable: true,
-                        filter: true
-                    },
-                    {
-                        headerName: 'Unidad',
-                        field: 'unidad',
-                        width: 110,
-                        sortable: true
-                    },
-                    {
                         headerName: 'Estatus',
                         field: 'estatus_viaje',
-                        width: 110,
+                        width: 120,
                         sortable: true,
+                        cellStyle: { textAlign: 'center' },
                         cellRenderer: params =>
-                            `<span class="badge ${params.value === 'Planeada' ? 'bg-info' : 'bg-success'}">${params.value}</span>`
+                            `<span class="badge ${params.value === 'Planeada' ? 'bg-info' : 'bg-success'}">${params.value || 'S/N'}</span>`
                     },
                     {
                         headerName: 'Utilidad Viaje',
                         field: 'utilidad_viaje',
-                        width: 130,
+                        width: 150,
                         sortable: true,
-                        cellRenderer: params => formatCurrency(params.value)
+                        cellStyle: { textAlign: 'right', fontWeight: 'bold' },
+                        cellRenderer: params => {
+                            const val = parseFloat(params.value || 0);
+                            const color = val >= 0 ? '#28a745' : '#dc3545';
+                            return `<span style="color: ${color};">${formatCurrency(val)}</span>`;
+                        }
                     }
                 ],
                 rowData: []
             };
-            gridViajesApi = agGrid.createGrid(document.querySelector('#gridViajesDesglose'), gridViajesOptions);
 
             // Initialize Historial de Pagos Grid
             gridHistorialPagosOptions = {
@@ -1053,6 +1250,17 @@
             $('#historialDaterange').daterangepicker({
                 startDate: moment().startOf('year'),
                 endDate: end,
+                showDropdowns: true,
+                linkedCalendars: false,
+                minYear: 2022,
+                maxYear: moment().year() + 2,
+                ranges: {
+                    'Este Mes': [moment().startOf('month'), moment().endOf('month')],
+                    'Mes Anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                    ['Año Actual (' + moment().year() + ')']: [moment().startOf('year'), moment().endOf('year')],
+                    ['Año Anterior (' + (moment().year() - 1) + ')']: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+                    'Últimos 12 Meses': [moment().subtract(11, 'months').startOf('month'), moment().endOf('month')]
+                },
                 locale: {
                     format: 'YYYY-MM-DD',
                     separator: ' - ',
@@ -1168,10 +1376,39 @@
                 document.getElementById('divAccionesCorte').classList.remove('d-none');
 
                 if (gridUtilidadApi) {
-                    gridUtilidadApi.setGridOption('rowData', json.socios_desglose);
+                    gridUtilidadApi.setGridOption('rowData', json.socios_desglose || []);
                 }
-                if (gridViajesApi) {
-                    gridViajesApi.setGridOption('rowData', json.viajes_desglose);
+
+                mesesResumenGlobal = json.meses_resumen || [];
+                if (gridMesesApi) {
+                    gridMesesApi.setGridOption('rowData', mesesResumenGlobal);
+
+                    const totalViajes = mesesResumenGlobal.reduce((acc, m) => acc + (parseInt(m.cantidad_viajes) || 0), 0);
+                    const totalBruta = mesesResumenGlobal.reduce((acc, m) => acc + (parseFloat(m.utilidad_bruta) || 0), 0);
+                    const totalIndirectos = mesesResumenGlobal.reduce((acc, m) => acc + (parseFloat(m.gastos_indirectos) || 0), 0);
+                    const totalMensual = mesesResumenGlobal.reduce((acc, m) => acc + (parseFloat(m.utilidad_mensual) || 0), 0);
+
+                    gridMesesApi.setGridOption('pinnedBottomRowData', [{
+                        mes_nombre: 'TOTALES (' + mesesResumenGlobal.length + ' Meses)',
+                        cantidad_viajes: totalViajes,
+                        utilidad_bruta: totalBruta,
+                        gastos_indirectos: totalIndirectos,
+                        utilidad_mensual: totalMensual,
+                        periodo_clave: null
+                    }]);
+
+                    if (document.getElementById('badgeTotalMesesPeriodo')) {
+                        document.getElementById('badgeTotalMesesPeriodo').textContent = `${mesesResumenGlobal.length} meses (${totalViajes} viajes)`;
+                    }
+                    if (document.getElementById('badgeTotalUtilidadBruta')) {
+                        document.getElementById('badgeTotalUtilidadBruta').textContent = `Bruta: ${formatCurrency(totalBruta)}`;
+                    }
+                    if (document.getElementById('badgeTotalGastosIndirectos')) {
+                        document.getElementById('badgeTotalGastosIndirectos').textContent = `Indirectos: ${formatCurrency(totalIndirectos)}`;
+                    }
+                    if (document.getElementById('badgeTotalUtilidadMensual')) {
+                        document.getElementById('badgeTotalUtilidadMensual').textContent = `Mensual: ${formatCurrency(totalMensual)}`;
+                    }
                 }
 
                 const compRes = await fetch(
@@ -1573,24 +1810,50 @@
         let socioCortesData = [];
 
         function onSocioSelectionChanged() {
-            const selectedRows = gridUtilidadApi.getSelectedRows();
-            if (selectedRows && selectedRows.length > 0) {
-                const selected = selectedRows[0];
-                if (gridViajesApi) {
-                    gridViajesApi.setFilterModel({
-                        cliente: null,
-                        contenedor: null,
-                        socio: {
-                            filterType: 'text',
-                            type: 'contains',
-                            filter: selected.socio
-                        }
-                    });
+            // Manejador de selección de socio en gridUtilidad
+        }
+
+        function abrirModalDesgloseMes(periodoClave) {
+            const mesData = mesesResumenGlobal.find(m => m.periodo_clave === periodoClave);
+            if (!mesData) {
+                Swal.fire('Atención', 'No se encontró la información del mes seleccionado.', 'warning');
+                return;
+            }
+
+            document.getElementById('modalMesTitulo').textContent = mesData.mes_nombre;
+            document.getElementById('modalMesViajes').textContent = mesData.cantidad_viajes;
+            document.getElementById('modalMesPromedio').textContent = `Prom: ${formatCurrency(mesData.promedio_por_viaje)}`;
+            document.getElementById('modalMesUtilidadBruta').textContent = formatCurrency(mesData.utilidad_bruta);
+            document.getElementById('modalMesGastosIndirectos').textContent = formatCurrency(mesData.gastos_indirectos);
+            document.getElementById('modalMesUtilidadMensual').textContent = formatCurrency(mesData.utilidad_mensual);
+            document.getElementById('filtroModalViajes').value = '';
+
+            if (!gridModalViajesApi) {
+                const gridDiv = document.querySelector('#gridModalViajesMes');
+                if (gridDiv) {
+                    gridModalViajesApi = agGrid.createGrid(gridDiv, gridModalViajesOptions);
                 }
-            } else {
-                if (gridViajesApi) {
-                    gridViajesApi.setFilterModel(null);
+            }
+            if (gridModalViajesApi) {
+                gridModalViajesApi.setGridOption('rowData', mesData.viajes || []);
+                gridModalViajesApi.setGridOption('quickFilterText', '');
+            }
+
+            const modalEl = document.getElementById('modalDetalleMes');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+
+            setTimeout(() => {
+                if (gridModalViajesApi) {
+                    gridModalViajesApi.sizeColumnsToFit();
                 }
+            }, 250);
+        }
+
+        function filtrarViajesModal() {
+            const val = document.getElementById('filtroModalViajes').value;
+            if (gridModalViajesApi) {
+                gridModalViajesApi.setGridOption('quickFilterText', val);
             }
         }
 

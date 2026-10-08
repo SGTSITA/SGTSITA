@@ -240,8 +240,8 @@ function ejecutarExportacion(fileType) {
     const rowData = JSON.stringify(apiGrid.getSelectedRows());
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
-    let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
 
     $.ajax({
         url: "/reporteria/utilidad/export",
@@ -254,6 +254,7 @@ function ejecutarExportacion(fileType) {
             fechaFin: fechaFin,
             fileType: fileType,
             id_proveedor: idProveedor,
+            id_equipo: idEquipo,
         },
         xhrFields: {
             responseType: "blob",
@@ -309,10 +310,13 @@ function getUtilidadesViajes(startDate, endDate) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
+   let idEquipo = $("#selEquipoUtilidad").val();
+    return $.ajax({
+   
     $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
-        data: { _token, startDate, endDate, id_proveedor: idProveedor },
+        data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },
         beforeSend: () => {
             mostrarLoading("Consultando viajes...");
         },
@@ -335,7 +339,7 @@ function getUtilidadesViajes(startDate, endDate) {
     });
 }
 
-$("#selProveedorUtilidad").on("change", function () {
+$("#selProveedorUtilidad, #selEquipoUtilidad").on("change", function () {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     if (fechaInicio && fechaFin) {
@@ -353,6 +357,7 @@ function cargarPdfVistaPreliminar() {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
 
     let iframeContainer = document.getElementById("iframePreviewContainer");
     iframeContainer.innerHTML = ''; // Clear previous
@@ -398,7 +403,8 @@ function cargarPdfVistaPreliminar() {
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
             fileType: 'pdf',
-            id_proveedor: idProveedor
+            id_proveedor: idProveedor,
+            id_equipo: idEquipo
         };
 
         for (const [key, value] of Object.entries(inputs)) {
@@ -422,45 +428,200 @@ document.getElementById("btnVistaPreliminar").addEventListener("click", function
 });
 
 
-function verDetalleGastos() {
-    let contenedor = apiGrid.getSelectedRows();
-    if (contenedor.length <= 0) {
-        Swal.fire(
-            "Seleccione un contenedor",
-            "Debe seleccionar un contenedor de la lista",
-            "warning",
-        );
+let currentGastosModalTab = 'contenedor';
+
+function cambiarTabGastos(tipo) {
+    currentGastosModalTab = tipo;
+    const btnContenedor = document.getElementById("tabBtnContenedor");
+    const btnIndirectos = document.getElementById("tabBtnIndirectos");
+
+    if (tipo === 'contenedor') {
+        if (btnContenedor) {
+            btnContenedor.classList.add("active", "bg-white", "shadow-sm", "text-primary");
+            btnContenedor.classList.remove("text-muted");
+        }
+        if (btnIndirectos) {
+            btnIndirectos.classList.remove("active", "bg-white", "shadow-sm", "text-primary");
+            btnIndirectos.classList.add("text-muted");
+        }
+        renderizarGastosContenedor();
+    } else {
+        if (btnIndirectos) {
+            btnIndirectos.classList.add("active", "bg-white", "shadow-sm", "text-primary");
+            btnIndirectos.classList.remove("text-muted");
+        }
+        if (btnContenedor) {
+            btnContenedor.classList.remove("active", "bg-white", "shadow-sm", "text-primary");
+            btnContenedor.classList.add("text-muted");
+        }
+        renderizarGastosIndirectos();
+    }
+}
+
+function renderizarGastosContenedor() {
+    let seleccionados = (window.apiGrid && typeof apiGrid.getSelectedRows === 'function') 
+        ? apiGrid.getSelectedRows() 
+        : [];
+    const ul = document.getElementById("infoGastos");
+    if (!ul) return;
+    ul.innerHTML = "";
+
+    if (seleccionados.length === 0) {
+        ul.innerHTML = `<li class="list-group-item border-0 text-center py-4 text-muted"><i class="fas fa-box-open fa-2x mb-2 text-warning"></i><br>No hay contenedor seleccionado. Seleccione un contenedor de la tabla para ver sus gastos de viaje.</li>`;
+        const badge = document.getElementById("badgeTotalGastosModal");
+        if (badge) badge.textContent = moneyFormat(0);
+        const footer = document.getElementById("resumenConteoGastos");
+        if (footer) footer.textContent = "0 gastos";
         return;
     }
-    document.getElementById("labelContenedor").textContent =
-        contenedor[0].numContenedor;
-    let elementos = contenedor[0].detalleGastos;
-    const ul = document.getElementById("infoGastos");
-    while (ul.firstChild) {
-        ul.removeChild(ul.firstChild);
+
+    const cont = seleccionados[0];
+    const elementos = cont.detalleGastos || [];
+    let total = 0;
+
+    if (elementos.length === 0) {
+        ul.innerHTML = `<li class="list-group-item border-0 text-center py-4 text-muted"><i class="fas fa-check-circle fa-2x mb-2 text-success"></i><br>Este contenedor no tiene gastos de viaje registrados.</li>`;
+    } else {
+        elementos.forEach((item) => {
+            const monto = parseFloat(item.monto_gasto || 0);
+            total += monto;
+            const fechaStr = item.fecha_gasto || '';
+            const fechaLetra = fechaStr ? obtenerFechaFormateada(fechaStr) : 'Sin fecha';
+            const liTemplate = `
+                <li class="list-group-item border-0 d-flex justify-content-between align-items-center ps-0 mb-2 border-radius-lg p-2 bg-light">
+                    <div class="d-flex flex-column">
+                        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo_gasto || 'Gasto de Viaje'}</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-xs text-muted"><i class="far fa-calendar-alt me-1"></i>${fechaLetra}</span>
+                            <span class="badge bg-purple-transparent text-xs">${item.tipo_gasto || 'Directo'}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex fw-semibold align-items-right text-dark" style="font-size:15px;">
+                        ${moneyFormat(monto)}
+                    </div>
+                </li>`;
+            ul.innerHTML += liTemplate;
+        });
     }
 
-    elementos.forEach((item) => {
-        let liTemplate = `<li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
-      <div class="d-flex flex-column">
-        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${item.motivo_gasto}</h6>
-        <span class="text-xs">${obtenerFechaEnLetra(item.fecha_gasto)}</span>
-        <span class="badge bg-purple-transparent">${item.tipo_gasto}</span>
-      </div>
-      <div class="d-flex fw-semibold align-items-right" style="color:#333335; font-size:16px;">
-       ${moneyFormat(item.monto_gasto)}
-      </div>
-    </li>`;
+    const sub = document.getElementById("subtituloSeccionGastos");
+    if (sub) sub.textContent = `Gastos de Viaje: ${cont.numContenedor || ''} (${elementos.length})`;
+    const badge = document.getElementById("badgeTotalGastosModal");
+    if (badge) badge.textContent = moneyFormat(total);
+    const footer = document.getElementById("resumenConteoGastos");
+    if (footer) footer.textContent = `${elementos.length} gasto(s) de viaje - Total: ${moneyFormat(total)}`;
+}
 
-        ul.innerHTML += liTemplate;
-    });
+function renderizarGastosIndirectos() {
+    const ul = document.getElementById("infoGastos");
+    if (!ul) return;
+    ul.innerHTML = "";
+    const elementos = window.latestGastosGenerales || [];
+    let total = 0;
+
+    if (elementos.length === 0) {
+        ul.innerHTML = `<li class="list-group-item border-0 text-center py-4 text-muted"><i class="fas fa-info-circle fa-2x mb-2 text-info"></i><br>No se encontraron gastos indirectos/generales para el periodo seleccionado.</li>`;
+    } else {
+        elementos.forEach((item) => {
+            const monto = parseFloat(item.monto_aplicado || item.monto_total || item.monto_gasto || 0);
+            total += monto;
+            const concepto = item.concepto || item.motivo_gasto || (item.categoria ? item.categoria.categoria : 'Gasto General');
+            const catNombre = (item.categoria && item.categoria.categoria) ? item.categoria.categoria : (item.tipo_gasto || 'Indirecto');
+            const fechaStr = item.fecha_aplicada || item.fecha_gasto || '';
+            const fechaLetra = fechaStr ? obtenerFechaFormateada(fechaStr) : 'Sin fecha';
+            const metodo = item.metodo_imputacion ? `<span class="badge bg-light text-secondary border text-xxs ms-1">${item.metodo_imputacion}</span>` : '';
+            const estatus = item.estatus ? `<span class="badge bg-success-transparent text-success text-xxs text-uppercase ms-1">${item.estatus}</span>` : '';
+
+            const liTemplate = `
+                <li class="list-group-item border-0 d-flex justify-content-between align-items-center ps-0 mb-2 border-radius-lg p-2 bg-light">
+                    <div class="d-flex flex-column" style="max-width: 68%;">
+                        <h6 class="mb-1 text-dark font-weight-bold text-sm" style="color:#333335 !important">${concepto}</h6>
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <span class="text-xs text-muted"><i class="far fa-calendar-alt me-1"></i>${fechaLetra}</span>
+                            <span class="badge bg-purple-transparent text-xs">${catNombre}</span>
+                            ${metodo}
+                            ${estatus}
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column text-end align-items-end">
+                        <span class="fw-bold text-danger" style="font-size:15px;">${moneyFormat(monto)}</span>
+                    </div>
+                </li>`;
+            ul.innerHTML += liTemplate;
+        });
+    }
+
+    const sub = document.getElementById("subtituloSeccionGastos");
+    if (sub) sub.textContent = `Gastos Indirectos / Generales (${elementos.length})`;
+    const badge = document.getElementById("badgeTotalGastosModal");
+    if (badge) badge.textContent = moneyFormat(total);
+    const footer = document.getElementById("resumenConteoGastos");
+    if (footer) footer.textContent = `${elementos.length} gasto(s) indirecto(s) - Total: ${moneyFormat(total)}`;
+}
+
+function obtenerFechaFormateada(fecha) {
+    if (!fecha) return '';
+    try {
+        const clean = String(fecha).split('T')[0].replace(/-/g, '/');
+        return obtenerFechaEnLetra(clean);
+    } catch(e) {
+        return String(fecha).split('T')[0];
+    }
+}
+
+async function verDetalleGastos() {
+    const startDate = $("#daterange").attr("data-start");
+    const endDate = $("#daterange").attr("data-end");
+
+    // Si los gastos indirectos aún no se han consultado en memoria, consultarlos
+    if (window.latestGastosGenerales === undefined && startDate && endDate) {
+        mostrarLoading("Consultando gastos...");
+        await getUtilidadesViajes(startDate, endDate);
+        ocultarLoading();
+    }
+
+    let seleccionados = (window.apiGrid && typeof apiGrid.getSelectedRows === 'function') 
+        ? apiGrid.getSelectedRows() 
+        : [];
+    
+    const gastosIndirectos = window.latestGastosGenerales || [];
+    const countIndirectos = gastosIndirectos.length;
+    const tabCountInd = document.getElementById("tabCountIndirectos");
+    if (tabCountInd) tabCountInd.textContent = countIndirectos;
+
+    const tabsBar = document.getElementById("gastosModalTabs");
+    if (seleccionados.length > 0) {
+        // Caso 1: Hay un contenedor seleccionado
+        const cont = seleccionados[0];
+        if (tabsBar) tabsBar.style.display = "flex";
+        const tabItemContenedor = document.getElementById("tabItemContenedor");
+        if (tabItemContenedor) tabItemContenedor.style.display = "block";
+        const gastosContenedor = cont.detalleGastos || [];
+        const tabCountCont = document.getElementById("tabCountContenedor");
+        if (tabCountCont) tabCountCont.textContent = gastosContenedor.length;
+        const lblContenedor = document.getElementById("labelContenedor");
+        if (lblContenedor) lblContenedor.textContent = `Contenedor ${cont.numContenedor || ''}`;
+        cambiarTabGastos('contenedor');
+    } else {
+        // Caso 2: No hay contenedor seleccionado (o no hay viajes en el periodo)
+        // Se pasa automáticamente a los gastos indirectos del mes/periodo y se oculta la barra de tabs
+        if (tabsBar) tabsBar.style.display = "none";
+        const tabItemContenedor = document.getElementById("tabItemContenedor");
+        if (tabItemContenedor) tabItemContenedor.style.display = "none";
+        const lblContenedor = document.getElementById("labelContenedor");
+        if (lblContenedor) lblContenedor.textContent = `Periodo General: ${startDate || ''} AL ${endDate || ''}`;
+        cambiarTabGastos('indirectos');
+    }
 
     mostrarModal();
 }
 
-btnVerDetalle.addEventListener("click", () => {
-    verDetalleGastos();
-});
+const btnVerDetalleEl = document.getElementById("btnVerDetalle");
+if (btnVerDetalleEl) {
+    btnVerDetalleEl.addEventListener("click", () => {
+        verDetalleGastos();
+    });
+}
 
 $(".moneyformat").on("focus", (e) => {
     var val = e.target.value;
