@@ -112,7 +112,7 @@
                         <label class="mt-4 form-label">Seleccione equipos</label>
                         <select class="form-control" name="selectUnidades" id="selectUnidades" multiple>
                             @foreach ($equipos as $e)
-                                <option value="{{ $e->id }}">{{ $e->marca }} - {{ $e->id_equipo }}</option>
+                                <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                             @endforeach
                         </select>
                     </div>

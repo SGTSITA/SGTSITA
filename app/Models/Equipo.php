@@ -59,6 +59,14 @@ class Equipo extends Model
             }
         });
     }
+
+    public function getTextoSelectAttribute(): string
+    {
+        $codigo = $this->id_equipo ?: ($this->placas ?: 'ID #' . $this->id);
+        $marca = $this->marca ?: 'Tracto';
+        return "{$codigo} - {$marca}";
+    }
+
     public function getEstadoGpsAttribute()
     {
         if ($this->usar_config_global) {

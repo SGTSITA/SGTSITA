@@ -36,7 +36,7 @@
                             <option value="">-- Todas las Unidades --</option>
                             @if(isset($equipos))
                                 @foreach ($equipos as $eq)
-                                    <option value="{{ $eq->id }}">{{ $eq->id_equipo }} - {{ $eq->marca ?? 'Tracto' }}</option>
+                                    <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
                                 @endforeach
                             @endif
                         </select>
