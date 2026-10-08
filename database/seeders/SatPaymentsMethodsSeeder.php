@@ -3,7 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use DB;
+use Illuminate\Support\Facades\DB;
+
 class SatPaymentsMethodsSeeder extends Seeder
 {
     /**
@@ -16,7 +17,7 @@ class SatPaymentsMethodsSeeder extends Seeder
         $paymentMethods = [
             ['sat_code' => 'PUE', 'metodo_pago' => 'PAGO EN UNA SOLA EXHIBICIÓN', 'is_active' => true],
             ['sat_code' => 'PPD', 'metodo_pago' => 'PAGO EN PARCIALIDADES O DIFERIDO', 'is_active' => true]
-       
+
         ];
 
         DB::table('sat_metodos_pago')->insert($paymentMethods);

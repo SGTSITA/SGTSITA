@@ -1,11 +1,11 @@
 ---
 title: Hdd stack
 categories:
-  - Devices
+    - Devices
 tags:
-  - "hard drive"
-  - "hard disk"
-  - ssd
-  - drive
-  - server
+    - 'hard drive'
+    - 'hard disk'
+    - ssd
+    - drive
+    - server
 ---

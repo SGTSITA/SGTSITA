@@ -1,9 +1,9 @@
 ---
 title: Sticky fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - postit
-  - note
-  - sticky
+    - postit
+    - note
+    - sticky
 ---

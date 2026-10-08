@@ -1,8 +1,8 @@
 ---
 title: Zoom out
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - minify
-  - scale
+    - minify
+    - scale
 ---

@@ -1,11 +1,11 @@
 ---
 title: Filetype rb
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
-  - ruby
+    - file
+    - 'file type'
+    - extension
+    - code
+    - ruby
 ---

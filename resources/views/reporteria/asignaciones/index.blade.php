@@ -7,12 +7,12 @@
 @section('content')
     <style>
         #viajesGrid {
-            height: 600px;
-            width: 100%;
+            height: 620px;
+            width: 98%;
         }
     </style>
 
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 
     <div class="container-fluid py-4">
         <div class="row">
@@ -22,11 +22,24 @@
                         <h5 class="mb-0 fw-bold">Reporte de viajes</h5>
                     </div>
 
-                    <!-- Rango de fechas -->
-                    <div class="d-flex align-items-center gap-2 px-4 pt-3">
-                        <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none;" />
+                    <!-- Rango de fechas y Filtro de Unidad -->
+                    <div class="d-flex align-items-center gap-3 px-4 pt-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Periodo:</label>
+                            <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                                style="width: auto; min-width: 200px; box-shadow: none" />
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
+                            <select id="selEquipoViajes" class="form-select form-select-sm" style="width: auto; min-width: 220px;">
+                                <option value="">-- Todas las unidades --</option>
+                                @if (isset($equipos))
+                                    @foreach ($equipos as $eq)
+                                        <option value="{{ $eq->id }}">{{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
                     </div>
 
                     <div class="card-body">
@@ -34,7 +47,7 @@
                             <form id="exportForm" action="{{ route('export_viajes.viajes') }}" method="POST">
                                 @csrf
 
-                                <button type="button" id="exportButtonGenericExcel" class="btn btn-outline-info btn-xs ">
+                                <button type="button" id="exportButtonGenericExcel" class="btn btn-outline-info btn-xs">
                                     Exportar Tablero
                                 </button>
 
@@ -47,11 +60,9 @@
                                     Exportar a PDF
                                 </button>
 
-
                                 <!-- 👇 Este input oculta todos los datos del grid -->
-                                <input type="hidden" id="txtDataGenericExcel" value='@json($viajesData ?? [])'>
+                                <input type="hidden" id="txtDataGenericExcel" value="@json($viajesData ?? [])" />
                             </form>
-
                         </div>
 
                         <div id="viajesGrid" class="ag-theme-alpine"></div>
@@ -63,7 +74,7 @@
 
     <script>
         window.viajesData = @json($viajesData ?? []);
-        const exportUrl = "{{ route('export_viajes.viajes') }}";
+        const exportUrl = '{{ route('export_viajes.viajes') }}';
     </script>
 @endsection
 
@@ -74,6 +85,7 @@
     <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
-    <script src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}">
+    <script
+        src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}">
     </script>
 @endsection

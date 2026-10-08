@@ -1,7 +1,7 @@
 ---
 title: Cloud fog fill
 categories:
-  - Weather
+    - Weather
 tags:
-  - foggy
+    - foggy
 ---

@@ -1,10 +1,10 @@
 ---
 title: SD card
 categories:
-  - Devices
+    - Devices
 tags:
-  - storage
-  - microsd
-  - chip
-  - memory
+    - storage
+    - microsd
+    - chip
+    - memory
 ---

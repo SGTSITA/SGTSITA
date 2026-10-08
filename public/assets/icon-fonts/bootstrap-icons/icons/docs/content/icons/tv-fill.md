@@ -1,9 +1,9 @@
 ---
 title: TV fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - television
-  - monitor
-  - display
+    - television
+    - monitor
+    - display
 ---

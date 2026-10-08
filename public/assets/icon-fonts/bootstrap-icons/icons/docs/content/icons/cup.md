@@ -1,7 +1,7 @@
 ---
 title: Cup
 categories:
-  - Real world
+    - Real world
 tags:
-  - mug
+    - mug
 ---

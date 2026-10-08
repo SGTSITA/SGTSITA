@@ -1,8 +1,8 @@
 ---
 title: Columns
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
+    - grid
+    - layout
 ---

@@ -1,10 +1,10 @@
 ---
 title: Pin map
 categories:
-  - Geo
+    - Geo
 tags:
-  - geography
-  - map
-  - pin
-  - location
+    - geography
+    - map
+    - pin
+    - location
 ---

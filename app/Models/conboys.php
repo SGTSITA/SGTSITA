@@ -6,17 +6,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\conboysContenedores;
+use App\Traits\Auditable;
+
 class conboys extends Model
 {
-     use HasFactory;
+    use HasFactory;
+    use Auditable;
 
-   protected $fillable = [
-    'id','nombre', 'user_id',
-     'no_conboy','fecha_inicio',
-     'fecha_fin','tipo_disolucion',
-     'estatus','fecha_disolucion',
-     'geocerca_lat','geocerca_lng',
-    'geocerca_radio'];
+    protected $fillable = [
+     'id','nombre', 'user_id',
+      'no_conboy','fecha_inicio',
+      'fecha_fin','tipo_disolucion',
+      'estatus','fecha_disolucion',
+      'geocerca_lat','geocerca_lng',
+     'geocerca_radio'];
 
     // Relación: Un Conboy tiene muchos contenedores
     public function contenedores()

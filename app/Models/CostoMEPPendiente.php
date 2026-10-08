@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class CostoMEPPendiente extends Model
 {
+    use Auditable;
     protected $table = 'costos_mep_pendientes';
 
     protected $fillable = [
@@ -23,11 +25,11 @@ class CostoMEPPendiente extends Model
         'precio_sobrepeso',
         'estatus',
         'total',
-        'motivo_cambio', 
+        'motivo_cambio',
         'campo_observado',
     ];
     protected $casts = [
-        'campo_observado' => 'array' 
+        'campo_observado' => 'array'
     ];
 
     public function asignacion()

@@ -1,7 +1,7 @@
 ---
 title: Badge tm
 categories:
-  - Badges
+    - Badges
 tags:
-  - trademark
+    - trademark
 ---

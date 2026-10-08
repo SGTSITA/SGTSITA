@@ -1,8 +1,8 @@
 ---
 title: Save
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - save
-  - floppy
+    - save
+    - floppy
 ---

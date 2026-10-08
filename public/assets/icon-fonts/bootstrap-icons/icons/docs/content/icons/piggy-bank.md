@@ -1,10 +1,10 @@
 ---
 title: Piggy bank
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
-  - banking
-  - savings
+    - money
+    - finance
+    - banking
+    - savings
 ---

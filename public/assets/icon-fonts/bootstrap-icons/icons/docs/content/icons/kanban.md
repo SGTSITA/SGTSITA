@@ -1,8 +1,8 @@
 ---
 title: Kanban
 categories:
-  - Miscellaneous
+    - Miscellaneous
 tags:
-  - board
-  - project-management
+    - board
+    - project-management
 ---

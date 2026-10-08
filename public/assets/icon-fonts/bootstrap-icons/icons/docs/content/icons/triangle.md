@@ -1,7 +1,7 @@
 ---
 title: Triangle
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
+    - shape
 ---

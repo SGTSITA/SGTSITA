@@ -1,8 +1,8 @@
 ---
 title: Arrow up right square
 categories:
-  - Shape Arrows
+    - Shape Arrows
 tags:
-  - arrow
-  - square
+    - arrow
+    - square
 ---

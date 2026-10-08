@@ -1,12 +1,12 @@
 ---
 title: Shop
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - shop
-  - store
-  - market
-  - marketplace
-  - shopping
-  - retail
+    - shop
+    - store
+    - market
+    - marketplace
+    - shopping
+    - retail
 ---

@@ -1,8 +1,8 @@
 ---
 title: Type underline
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

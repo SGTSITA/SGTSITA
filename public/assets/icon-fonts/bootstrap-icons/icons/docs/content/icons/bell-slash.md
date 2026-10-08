@@ -1,9 +1,9 @@
 ---
 title: Bell slash
 categories:
-  - Communications
+    - Communications
 tags:
-  - notification
-  - silenced
-  - clock
+    - notification
+    - silenced
+    - clock
 ---

@@ -29,7 +29,7 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-    
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
@@ -66,11 +66,21 @@ return [
     ],
     'WialonGpsCustomized' => [
         'url_base'  => env('GPS_WIALON_URL')
-    ],    
-    'GooMaps'=>[
-        'apikey'=> env('GOOLEAPIMAPS',)
+    ],
+    'GooMaps' => [
+        'apikey' => env('GOOLEAPIMAPS', )
 
-    ]
+    ],
+    'googleMapsApi' => [
+        'apikey' => env('GOOLEAPIMAPS')
 
+    ],
+
+    'GPS_SIS_URL' => [
+        'urlbasesoap' => env('GPS_SIS_URL_SOAP', env('GPS_SIS_URL')),
+        'url_base'    => env('GPS_NAANIX_URL', 'https://3.90.229.208:8058/MClientesExternosJSPY'),
+        'client_id'   => env('GPS_NAANIX_CLIENT_ID', '937184269'),
+        'timeout'     => env('GPS_NAANIX_TIMEOUT', 10),
+        'verify_ssl'  => env('GPS_NAANIX_VERIFY_SSL', false),
+    ],
 ];
-

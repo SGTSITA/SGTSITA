@@ -1,8 +1,8 @@
 ---
 title: Plug
 categories:
-  - Real world
+    - Real world
 tags:
-  - power
-  - outlet
+    - power
+    - outlet
 ---

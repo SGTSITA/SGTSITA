@@ -11,20 +11,26 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span id="card_title">
-                            <i class="fas fa-users me-1"></i> Operadores
+                            <i class="fas fa-users me-1"></i>
+                            Operadores
                         </span>
                         <div class="float-right">
                             @can('operadores-create')
-                                <button type="button" class="btn bg-gradient-info btn-xs mb-2" data-bs-toggle="modal"
-                                    data-bs-target="#operadoresModal">
-                                    <i class="fas fa-plus"></i> Crear
+                                <button
+                                    type="button"
+                                    class="btn bg-gradient-info btn-xs mb-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#operadoresModal"
+                                >
+                                    <i class="fas fa-plus"></i>
+                                    Crear
                                 </button>
                             @endcan
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <div id="operadoresGrid" class="ag-theme-alpine" style="height: 600px; width: 100%;"></div>
+                        <div id="operadoresGrid" class="ag-theme-alpine" style="height: 600px; width: 100%"></div>
                     </div>
                 </div>
             </div>
@@ -38,12 +44,12 @@
     @endforeach
 
     {{-- Formularios ocultos --}}
-    <form id="form-eliminar" method="POST" style="display: none;">
+    <form id="form-eliminar" method="POST" style="display: none">
         @csrf
         @method('DELETE')
     </form>
 
-    <form id="form-restaurar" method="POST" style="display: none;">
+    <form id="form-restaurar" method="POST" style="display: none">
         @csrf
     </form>
 @endsection
@@ -68,10 +74,11 @@
                 icon: 'success',
                 title: 'Éxito',
                 text: '{{ Session::get('success') }}',
-                confirmButtonColor: '#3085d6'
+                confirmButtonColor: '#3085d6',
             });
         </script>
     @endif
+
     @if (session('operador_con_restante'))
         <script>
             Swal.fire({
@@ -79,7 +86,7 @@
                 title: 'No se puede dar de baja',
                 html: `{!! addslashes(session('operador_con_restante')) !!}`,
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#d33'
+                confirmButtonColor: '#d33',
             });
         </script>
     @endif

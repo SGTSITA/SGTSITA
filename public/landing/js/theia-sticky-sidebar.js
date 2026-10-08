@@ -8,18 +8,18 @@
  * Released under the MIT license
  */
 (function ($) {
-    "use strict";
+    'use strict';
     $.fn.theiaStickySidebar = function (options) {
         var defaults = {
-            'containerSelector': '',
-            'additionalMarginTop': 0,
-            'additionalMarginBottom': 0,
-            'updateSidebarHeight': true,
-            'minWidth': 0,
-            'disableOnResponsiveLayouts': true,
-            'sidebarBehavior': 'modern',
-            'defaultPosition': 'relative',
-            'namespace': 'TSS'
+            containerSelector: '',
+            additionalMarginTop: 0,
+            additionalMarginBottom: 0,
+            updateSidebarHeight: true,
+            minWidth: 0,
+            disableOnResponsiveLayouts: true,
+            sidebarBehavior: 'modern',
+            defaultPosition: 'relative',
+            namespace: 'TSS',
         };
         options = $.extend(defaults, options);
         // Validate options
@@ -31,22 +31,28 @@
             var success = tryInit(options, $that);
             if (!success) {
                 console.log('TSS: Body width smaller than options.minWidth. Init is delayed.');
-                $(document).on('scroll.' + options.namespace, function (options, $that) {
-                    return function (evt) {
-                        var success = tryInit(options, $that);
-                        if (success) {
-                            $(this).unbind(evt);
-                        }
-                    };
-                }(options, $that));
-                $(window).on('resize.' + options.namespace, function (options, $that) {
-                    return function (evt) {
-                        var success = tryInit(options, $that);
-                        if (success) {
-                            $(this).unbind(evt);
-                        }
-                    };
-                }(options, $that))
+                $(document).on(
+                    'scroll.' + options.namespace,
+                    (function (options, $that) {
+                        return function (evt) {
+                            var success = tryInit(options, $that);
+                            if (success) {
+                                $(this).unbind(evt);
+                            }
+                        };
+                    })(options, $that),
+                );
+                $(window).on(
+                    'resize.' + options.namespace,
+                    (function (options, $that) {
+                        return function (evt) {
+                            var success = tryInit(options, $that);
+                            if (success) {
+                                $(this).unbind(evt);
+                            }
+                        };
+                    })(options, $that),
+                );
             }
         }
         // Try doing init if proper conditions are met.
@@ -66,7 +72,13 @@
             // Add CSS
             var existingStylesheet = $('#theia-sticky-sidebar-stylesheet-' + options.namespace);
             if (existingStylesheet.length === 0) {
-                $('head').append($('<style id="theia-sticky-sidebar-stylesheet-' + options.namespace + '">.theiaStickySidebar:after {content: ""; display: table; clear: both;}</style>'));
+                $('head').append(
+                    $(
+                        '<style id="theia-sticky-sidebar-stylesheet-' +
+                            options.namespace +
+                            '">.theiaStickySidebar:after {content: ""; display: table; clear: both;}</style>',
+                    ),
+                );
             }
             $that.each(function () {
                 var o = {};
@@ -81,21 +93,24 @@
                 // Create sticky sidebar
                 o.sidebar.parents().css('-webkit-transform', 'none'); // Fix for WebKit bug - https://code.google.com/p/chromium/issues/detail?id=20574
                 o.sidebar.css({
-                    'position': o.options.defaultPosition,
-                    'overflow': 'visible',
+                    position: o.options.defaultPosition,
+                    overflow: 'visible',
                     // The "box-sizing" must be set to "content-box" because we set a fixed height to this element when the sticky sidebar has a fixed position.
                     '-webkit-box-sizing': 'border-box',
                     '-moz-box-sizing': 'border-box',
-                    'box-sizing': 'border-box'
+                    'box-sizing': 'border-box',
                 });
                 // Get the sticky sidebar element. If none has been found, then create one.
                 o.stickySidebar = o.sidebar.find('.theiaStickySidebar');
                 if (o.stickySidebar.length == 0) {
                     // Remove <script> tags, otherwise they will be run again when added to the stickySidebar.
                     var javaScriptMIMETypes = /(?:text|application)\/(?:x-)?(?:javascript|ecmascript)/i;
-                    o.sidebar.find('script').filter(function (index, script) {
-                        return script.type.length === 0 || script.type.match(javaScriptMIMETypes);
-                    }).remove();
+                    o.sidebar
+                        .find('script')
+                        .filter(function (index, script) {
+                            return script.type.length === 0 || script.type.match(javaScriptMIMETypes);
+                        })
+                        .remove();
                     o.stickySidebar = $('<div>').addClass('theiaStickySidebar').append(o.sidebar.children());
                     o.sidebar.append(o.stickySidebar);
                 }
@@ -113,15 +128,13 @@
                 if (collapsedTopHeight == 0) {
                     o.stickySidebar.css('padding-top', 0);
                     o.stickySidebarPaddingTop = 0;
-                }
-                else {
+                } else {
                     o.stickySidebarPaddingTop = 1;
                 }
                 if (collapsedBottomHeight == 0) {
                     o.stickySidebar.css('padding-bottom', 0);
                     o.stickySidebarPaddingBottom = 0;
-                }
-                else {
+                } else {
                     o.stickySidebarPaddingBottom = 1;
                 }
                 // We use this to know whether the user is scrolling up or down.
@@ -132,7 +145,7 @@
                 resetSidebar();
                 o.onScroll = function (o) {
                     // Stop if the sidebar isn't visible.
-                    if (!o.stickySidebar.is(":visible")) {
+                    if (!o.stickySidebar.is(':visible')) {
                         return;
                     }
                     // Stop if the window is too small.
@@ -161,12 +174,13 @@
                         // The top and bottom offsets relative to the window screen top (zero) and bottom (window height).
                         var windowOffsetTop = 0 + options.additionalMarginTop;
                         var windowOffsetBottom;
-                        var sidebarSmallerThanWindow = (o.stickySidebar.outerHeight() + offsetTop + offsetBottom) < $(window).height();
+                        var sidebarSmallerThanWindow =
+                            o.stickySidebar.outerHeight() + offsetTop + offsetBottom < $(window).height();
                         if (sidebarSmallerThanWindow) {
                             windowOffsetBottom = windowOffsetTop + o.stickySidebar.outerHeight();
-                        }
-                        else {
-                            windowOffsetBottom = $(window).height() - o.marginBottom - o.paddingBottom - options.additionalMarginBottom;
+                        } else {
+                            windowOffsetBottom =
+                                $(window).height() - o.marginBottom - o.paddingBottom - options.additionalMarginBottom;
                         }
                         var staticLimitTop = containerTop - scrollTop + o.paddingTop;
                         var staticLimitBottom = containerBottom - scrollTop - o.paddingBottom - o.marginBottom;
@@ -184,10 +198,11 @@
                         if (o.options.sidebarBehavior == 'stick-to-bottom') {
                             top = windowOffsetBottom - o.stickySidebar.outerHeight();
                         }
-                        if (scrollTopDiff > 0) { // If the user is scrolling up.
+                        if (scrollTopDiff > 0) {
+                            // If the user is scrolling up.
                             top = Math.min(top, windowOffsetTop);
-                        }
-                        else { // If the user is scrolling down.
+                        } else {
+                            // If the user is scrolling down.
                             top = Math.max(top, windowOffsetBottom - o.stickySidebar.outerHeight());
                         }
                         top = Math.max(top, staticLimitTop);
@@ -196,15 +211,18 @@
                         var sidebarSameHeightAsContainer = o.container.height() == o.stickySidebar.outerHeight();
                         if (!sidebarSameHeightAsContainer && top == windowOffsetTop) {
                             position = 'fixed';
-                        }
-                        else if (!sidebarSameHeightAsContainer && top == windowOffsetBottom - o.stickySidebar.outerHeight()) {
+                        } else if (
+                            !sidebarSameHeightAsContainer &&
+                            top == windowOffsetBottom - o.stickySidebar.outerHeight()
+                        ) {
                             position = 'fixed';
-                        }
-                        else if (scrollTop + top - o.sidebar.offset().top - o.paddingTop <= options.additionalMarginTop) {
+                        } else if (
+                            scrollTop + top - o.sidebar.offset().top - o.paddingTop <=
+                            options.additionalMarginTop
+                        ) {
                             // Stuck to the top of the page. No special behavior.
                             position = 'static';
-                        }
-                        else {
+                        } else {
                             // Stuck to the bottom of the page.
                             position = 'absolute';
                         }
@@ -216,31 +234,40 @@
                     if (position == 'fixed') {
                         var scrollLeft = $(document).scrollLeft();
                         o.stickySidebar.css({
-                            'position': 'fixed',
-                            'width': getWidthForObject(o.stickySidebar) + 'px',
-                            'transform': 'translateY(' + top + 'px)',
-                            'left': (o.sidebar.offset().left + parseInt(o.sidebar.css('padding-left')) - scrollLeft) + 'px',
-                            'top': '0px'
+                            position: 'fixed',
+                            width: getWidthForObject(o.stickySidebar) + 'px',
+                            transform: 'translateY(' + top + 'px)',
+                            left: o.sidebar.offset().left + parseInt(o.sidebar.css('padding-left')) - scrollLeft + 'px',
+                            top: '0px',
                         });
-                    }
-                    else if (position == 'absolute') {
+                    } else if (position == 'absolute') {
                         var css = {};
                         if (o.stickySidebar.css('position') != 'absolute') {
                             css.position = 'absolute';
-                            css.transform = 'translateY(' + (scrollTop + top - o.sidebar.offset().top - o.stickySidebarPaddingTop - o.stickySidebarPaddingBottom) + 'px)';
+                            css.transform =
+                                'translateY(' +
+                                (scrollTop +
+                                    top -
+                                    o.sidebar.offset().top -
+                                    o.stickySidebarPaddingTop -
+                                    o.stickySidebarPaddingBottom) +
+                                'px)';
                             css.top = '0px';
                         }
                         css.width = getWidthForObject(o.stickySidebar) + 'px';
                         css.left = '';
                         o.stickySidebar.css(css);
-                    }
-                    else if (position == 'static') {
+                    } else if (position == 'static') {
                         resetSidebar();
                     }
                     if (position != 'static') {
                         if (o.options.updateSidebarHeight == true) {
                             o.sidebar.css({
-                                'min-height': o.stickySidebar.outerHeight() + o.stickySidebar.offset().top - o.sidebar.offset().top + o.paddingBottom
+                                'min-height':
+                                    o.stickySidebar.outerHeight() +
+                                    o.stickySidebar.offset().top -
+                                    o.sidebar.offset().top +
+                                    o.paddingBottom,
                             });
                         }
                     }
@@ -249,35 +276,44 @@
                 // Initialize the sidebar's position.
                 o.onScroll(o);
                 // Recalculate the sidebar's position on every scroll and resize.
-                $(document).on('scroll.' + o.options.namespace, function (o) {
-                    return function () {
-                        o.onScroll(o);
-                    };
-                }(o));
-                $(window).on('resize.' + o.options.namespace, function (o) {
-                    return function () {
-                        o.stickySidebar.css({'position': 'static'});
-                        o.onScroll(o);
-                    };
-                }(o));
-                // Recalculate the sidebar's position every time the sidebar changes its size.
-                if (typeof ResizeSensor !== 'undefined') {
-                    new ResizeSensor(o.stickySidebar[0], function (o) {
+                $(document).on(
+                    'scroll.' + o.options.namespace,
+                    (function (o) {
                         return function () {
                             o.onScroll(o);
                         };
-                    }(o));
+                    })(o),
+                );
+                $(window).on(
+                    'resize.' + o.options.namespace,
+                    (function (o) {
+                        return function () {
+                            o.stickySidebar.css({ position: 'static' });
+                            o.onScroll(o);
+                        };
+                    })(o),
+                );
+                // Recalculate the sidebar's position every time the sidebar changes its size.
+                if (typeof ResizeSensor !== 'undefined') {
+                    new ResizeSensor(
+                        o.stickySidebar[0],
+                        (function (o) {
+                            return function () {
+                                o.onScroll(o);
+                            };
+                        })(o),
+                    );
                 }
                 // Reset the sidebar to its default state
                 function resetSidebar() {
                     o.fixedScrollTop = 0;
                     o.sidebar.css({
-                        'min-height': '1px'
+                        'min-height': '1px',
                     });
                     o.stickySidebar.css({
-                        'position': 'static',
-                        'width': '',
-                        'transform': 'none'
+                        position: 'static',
+                        width: '',
+                        transform: 'none',
                     });
                 }
                 // Get the height of a div as if its floated children were cleared. Note that this function fails if the floats are more than one level deep.
@@ -294,14 +330,12 @@
             var width;
             try {
                 width = object[0].getBoundingClientRect().width;
-            }
-            catch (err) {
-            }
-            if (typeof width === "undefined") {
+            } catch (err) {}
+            if (typeof width === 'undefined') {
                 width = object.width();
             }
             return width;
         }
         return this;
-    }
+    };
 })(jQuery);

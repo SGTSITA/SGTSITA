@@ -1,8 +1,8 @@
 ---
 title: Thermometer snow
 categories:
-  - Weather
+    - Weather
 tags:
-  - temperature
-  - weather
+    - temperature
+    - weather
 ---

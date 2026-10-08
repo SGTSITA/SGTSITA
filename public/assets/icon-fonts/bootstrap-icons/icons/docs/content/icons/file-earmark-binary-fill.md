@@ -1,10 +1,10 @@
 ---
 title: File earmark binary fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - binary
-  - source
+    - doc
+    - document
+    - binary
+    - source
 ---

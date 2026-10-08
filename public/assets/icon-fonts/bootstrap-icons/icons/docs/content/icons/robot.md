@@ -1,7 +1,7 @@
 ---
 title: Robot
 categories:
-  - Devices
+    - Devices
 tags:
-  - bot
+    - bot
 ---

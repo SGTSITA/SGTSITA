@@ -1,10 +1,10 @@
 ---
 title: Tag
 categories:
-  - Real world
+    - Real world
 tags:
-  - price
-  - category
-  - taxonomy
-  - label
+    - price
+    - category
+    - taxonomy
+    - label
 ---

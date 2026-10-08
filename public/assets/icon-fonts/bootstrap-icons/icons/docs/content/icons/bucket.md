@@ -1,8 +1,8 @@
 ---
 title: Bucket
 categories:
-  - Tools
+    - Tools
 tags:
-  - tool
-  - pail
+    - tool
+    - pail
 ---
