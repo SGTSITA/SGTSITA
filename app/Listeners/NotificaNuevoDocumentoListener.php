@@ -34,11 +34,15 @@ class NotificaNuevoDocumentoListener
                               ->pluck('correo')
                               ->toArray();
 
-        $emailList = [env('MAIL_NOTIFICATIONS'),Auth::User()->email];
+        $emailList = [env('MAIL_NOTIFICATIONS'), Auth::User()->email];
         foreach ($emailList1 as $m) {
             array_push($emailList, $m);
         }
 
-        Mail::to($emailList1)->send(new \App\Mail\NotificaNuevoDocumentoMail($event->cotizacion, $event->documento));
+        $emailList = array_values(array_filter(array_unique($emailList)));
+
+        if (!empty($emailList)) {
+            Mail::to($emailList)->send(new \App\Mail\NotificaNuevoDocumentoMail($event->cotizacion, $event->documento));
+        }
     }
 }

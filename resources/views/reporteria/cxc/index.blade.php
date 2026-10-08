@@ -34,8 +34,8 @@
                     </div>
                     <div class="card-body d-flex flex-column">
                         <form id="filtroReporte" method="GET" action="{{ route('reporteria.advance') }}">
-                            <div class="row align-items-end">
-                                <div class="col-md-3">
+                            <div class="row align-items-end g-2">
+                                <div class="col-md-2">
                                     <label for="id_client">Cliente</label>
                                     <select name="id_client" id="id_client" class="form-control">
                                         <option value="">Seleccionar Cliente</option>
@@ -48,7 +48,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="id_subcliente">Subcliente</label>
                                     <select name="id_subcliente" id="id_subcliente" class="form-control">
                                         <option value="">Seleccionar Subcliente</option>
@@ -61,7 +61,7 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="id_proveedor">Proveedor</label>
                                     <select name="id_proveedor" id="id_proveedor" class="form-control">
                                         <option value="">Seleccionar Proveedor</option>
@@ -73,8 +73,22 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-2 ">
-                                    <label for="numero_edo_cuenta">Num. Estado de Cuenta</label>
+                                <div class="col-md-2">
+                                    <label for="id_equipo">Unidad / Equipo</label>
+                                    <select name="id_equipo" id="id_equipo" class="form-control">
+                                        <option value="">Todas las unidades</option>
+                                        @if(isset($equipos))
+                                            @foreach ($equipos as $eq)
+                                                <option value="{{ $eq->id }}"
+                                                    {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
+                                                    {{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="numero_edo_cuenta">Num. Edo. Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
                                         <option value="">Seleccionar numero</option>
                                         @foreach ($estadosCuentas as $edoCuenta)
@@ -85,12 +99,17 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-1 d-flex align-items-end">
+                                <div class="col-md-2 d-flex align-items-end gap-1">
                                     <button type="submit"
                                         class="btn btn-primary btn-sm d-flex align-items-center justify-content-center"
-                                        style="height: 38px; width: 38px; border-radius: 8px;">
+                                        style="height: 38px; width: 38px; border-radius: 8px;" title="Buscar">
                                         <i class="fas fa-search"></i>
                                     </button>
+                                    <a href="{{ route('index.reporteria') }}"
+                                        class="btn btn-secondary btn-sm d-flex align-items-center justify-content-center"
+                                        style="height: 38px; width: 38px; border-radius: 8px;" title="Limpiar filtros">
+                                        <i class="fas fa-undo"></i>
+                                    </a>
                                 </div>
                             </div>
                         </form>
@@ -184,47 +203,45 @@
                                                             value="{{ $cotizacion->id }}"
                                                             class="select-checkbox visually-hidden" />
                                                     </td>
+
                                                     <td>{{ $cotizacion->id }}</td>
+
                                                     <td>
                                                         {{ $cotizacion->numero_edo_cuenta ?? 'NA' }}
                                                     </td>
-                                                    <td>{{ $cotizacion->id_numero_edo_cuenta }}</td>
+
                                                     <td>
-                                                        {{ optional($cotizacion->DocCotizacion->Asignaciones)->fehca_inicio_guard ? Carbon\Carbon::parse($cotizacion->DocCotizacion->Asignaciones->fehca_inicio_guard)->format('d-m-Y') : 'Sin fecha' }}
+                                                        {{ $cotizacion->id_numero_edo_cuenta ?? '-' }}
                                                     </td>
 
-                                                    <td>{{ $cotizacion->Cliente->nombre }}</td>
-                                                    <td>{{ $cotizacion->Subcliente->nombre ?? '-' }}</td>
-                                                    <td>{{ $cotizacion->origen }}</td>
-                                                    <td>{{ $cotizacion->destino }}</td>
-                                                    @php
-                                                        $docPrincipal = optional($cotizacion->DocCotizacion);
-                                                        $numContenedor = $docPrincipal->num_contenedor ?? '';
-
-                                                        if (
-                                                            $cotizacion->jerarquia === 'Principal' &&
-                                                            $cotizacion->referencia_full
-                                                        ) {
-                                                            $cotSecundaria = \App\Models\Cotizaciones::where(
-                                                                'referencia_full',
-                                                                $cotizacion->referencia_full,
-                                                            )
-                                                                ->where('jerarquia', 'Secundario')
-                                                                ->with('DocCotizacion')
-                                                                ->first();
-
-                                                            $docSecundaria = optional($cotSecundaria)->DocCotizacion;
-                                                            if ($docSecundaria && $docSecundaria->num_contenedor) {
-                                                                $numContenedor .=
-                                                                    ' / ' . $docSecundaria->num_contenedor;
-                                                            }
-                                                        }
-                                                    @endphp
-
-                                                    <td>{{ $numContenedor }}</td>
+                                                    <td>
+                                                        {{ $cotizacion->fecha_inicio_guard
+                                                            ? \Carbon\Carbon::parse($cotizacion->fecha_inicio_guard)->format('d-m-Y')
+                                                            : 'Sin fecha' }}
+                                                    </td>
 
                                                     <td>
-                                                        {{ $cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full ? 'Full' : 'Sencillo' }}
+                                                        {{ $cotizacion->cliente_nombre }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->nombre_subcliente ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->origen ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->destino ?? '-' }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->num_contenedor }}
+                                                    </td>
+
+                                                    <td>
+                                                        {{ $cotizacion->tipo }}
                                                     </td>
 
                                                     <td>
@@ -292,7 +309,15 @@
 
                     <input type="hidden" id="registroSeleccionado">
                     <input type="hidden" id="edoCuentaIdActual">
-                    <input type="hidden" id="modoEdoCuenta"> <!-- nuevo | editar -->
+                    <input type="hidden" id="modoEdoCuenta"> <!-- crear | anexar | editar -->
+
+                    <div class="mb-3 d-none" id="opcionModoEdoCuentaGroup">
+                        <label class="form-label font-weight-bold">Acción a realizar</label>
+                        <select class="form-select" id="selectModoAccionEdoCuenta">
+                            <option value="crear">Crear nuevo estado de cuenta</option>
+                            <option value="anexar">Anexar a estado de cuenta existente</option>
+                        </select>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label">Número de estado de cuenta</label>
@@ -691,6 +716,74 @@
 
 
 
+            function ejecutarGuardarEdoCuenta(payload) {
+                $.ajax({
+                    url: '/reporteria/cxp/EdoCuenta/store',
+                    method: 'POST',
+                    data: payload,
+                    beforeSend: () => {
+                        Swal.fire({
+                            title: 'Guardando...',
+                            text: payload.modo === 'anexar' ? 'Anexando a estado de cuenta...' : 'Asignando estado de cuenta...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                    },
+                    success: (resp) => {
+                        if (!resp || !resp.ok) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: resp?.message ?? 'Error al guardar el estado de cuenta'
+                            });
+                            return;
+                        }
+
+                        $('#modalAsignarEdoCuenta').modal('hide');
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Procesado',
+                            text: resp.message || 'Estado de cuenta guardado correctamente',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        buscarInformacion(parametrosSearch);
+                        evaluarEstadoCuentaSeleccion();
+                    },
+                    error: (xhr) => {
+                        const resp = xhr.responseJSON;
+                        if (resp && resp.already_exists && payload.modo === 'crear') {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Estado de Cuenta Ya Existe',
+                                html: (resp.message || 'El número de estado de cuenta ya existe.') + '<br><br><b>¿Deseas anexar las cotizaciones seleccionadas a este estado de cuenta existente?</b>',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, Anexar',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33'
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    payload.modo = 'anexar';
+                                    $('#modoEdoCuenta').val('anexar');
+                                    $('#selectModoAccionEdoCuenta').val('anexar');
+                                    ejecutarGuardarEdoCuenta(payload);
+                                }
+                            });
+                            return;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: resp?.message ?? 'Error inesperado del servidor'
+                        });
+                    }
+                });
+            }
+
             $('#btnGuardarEdoCuenta').on('click', function() {
                 let cotizacionesId = table
                     .rows('.selected')
@@ -706,7 +799,6 @@
                     edo_cuenta_actual_id: $('#edoCuentaIdActual').val(),
                     solo_esta: $('#soloEstaCotizacion').is(':checked')
                 };
-
 
                 if (!payload.numero) {
                     Swal.fire({
@@ -726,54 +818,12 @@
                     return;
                 }
 
-                $.ajax({
-                    url: '/reporteria/cxp/EdoCuenta/store',
-                    method: 'POST',
-                    data: payload,
-                    beforeSend: () => {
-                        Swal.fire({
-                            title: 'Guardando...',
-                            text: 'Asignando estado de cuenta',
-                            allowOutsideClick: false,
-                            didOpen: () => Swal.showLoading()
-                        });
-                    },
-                    success: (resp) => {
-
-                        if (!resp || !resp.ok) {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: resp?.message ??
-                                    'Error al guardar el estado de cuenta'
-                            });
-                            return;
-                        }
-
-                        $('#modalAsignarEdoCuenta').modal('hide');
-
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Asignado',
-                            text: 'Estado de cuenta asignado correctamente',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-
-
-                        buscarInformacion(parametrosSearch);
-                        evaluarEstadoCuentaSeleccion();
-                    },
-                    error: (xhr) => {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: xhr.responseJSON?.message ??
-                                'Error inesperado del servidor'
-                        });
-                    }
-                });
+                ejecutarGuardarEdoCuenta(payload);
             });
+        });
+
+        $('#selectModoAccionEdoCuenta').on('change', function() {
+            $('#modoEdoCuenta').val($(this).val());
         });
 
         function prepararModalCrear() {
@@ -781,6 +831,8 @@
                 .text('Asignar No Edo Cuenta');
 
             $('#modoEdoCuenta').val('crear');
+            $('#selectModoAccionEdoCuenta').val('crear');
+            $('#opcionModoEdoCuentaGroup').removeClass('d-none');
             $('#edoCuentaIdActual').val('');
 
             $('#noEdoCuenta')
@@ -797,6 +849,7 @@
                 .text('Editar No Edo Cuenta');
 
             $('#modoEdoCuenta').val('editar');
+            $('#opcionModoEdoCuentaGroup').addClass('d-none');
             $('#edoCuentaIdActual').val(edoCuentaId ?? '');
 
             $('#noEdoCuenta')

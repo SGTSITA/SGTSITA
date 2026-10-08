@@ -3,7 +3,10 @@ let fechaFinViajes;
 let gridApi = null;
 
 function searchviajesGet(inicio, fin) {
-    fetch(`/reporteria/viajes/data?fecha_inicio=${inicio}&fecha_fin=${fin}`)
+    fechaInicioViajes = inicio;
+    fechaFinViajes = fin;
+    const idEquipo = document.getElementById("selEquipoViajes")?.value || "";
+    fetch(`/reporteria/viajes/data?fecha_inicio=${inicio}&fecha_fin=${fin}&id_equipo=${encodeURIComponent(idEquipo)}`)
         .then((response) => response.json())
         .then((data) => {
             window.viajesData = data;
@@ -28,6 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
         endDate.format("YYYY-MM-DD"),
     );
 
+    document.getElementById("selEquipoViajes")?.addEventListener("change", () => {
+        if (fechaInicioViajes && fechaFinViajes) {
+            searchviajesGet(fechaInicioViajes, fechaFinViajes);
+        }
+    });
+
     const gridDiv = document.querySelector("#viajesGrid");
 
     const columnDefs = [
@@ -46,6 +55,13 @@ document.addEventListener("DOMContentLoaded", () => {
             filter: "agTextColumnFilter",
             floatingFilter: true,
             flex: 1,
+        },
+        {
+            headerName: "Unidad",
+            field: "camion",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 130,
         },
         {
             headerName: "Proveedor",
@@ -260,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
             startDate,
             endDate,
-            maxDate: moment().endOf("month"),
+            // maxDate: moment().endOf("month"),
             opens: "right",
             locale: {
                 format: "YYYY-MM-DD",

@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             startDate: getUrlParam('fecha_inicio') || moment().subtract(7, 'days'),
             endDate: getUrlParam('fecha_fin') || moment(),
-            maxDate: moment(),
+            // maxDate: moment(),
             opens: 'right',
             locale: {
                 format: 'YYYY-MM-DD',
@@ -287,6 +287,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 ],
                 firstDay: 1,
             },
+            ranges: {
+                'Hoy': [moment(), moment()],
+                'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                'Mes anterior': [
+                    moment().subtract(1, 'month').startOf('month'),
+                    moment().subtract(1, 'month').endOf('month')
+                ]
+            }
         },
         function (start, end) {
             const currentStart = getUrlParam('fecha_inicio');
@@ -309,4 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('fecha_fin', endDate);
         window.location.href = url.toString();
     }
+
+    $('#selEquipoDocumentos').on('change', function () {
+        const url = new URL(window.location.href);
+        const equipoId = $(this).val();
+        if (equipoId) {
+            url.searchParams.set('id_equipo', equipoId);
+        } else {
+            url.searchParams.delete('id_equipo');
+        }
+        window.location.href = url.toString();
+    });
 });

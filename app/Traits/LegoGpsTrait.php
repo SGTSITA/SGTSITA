@@ -26,73 +26,115 @@ trait LegoGpsTrait
         return ($legoApiKey['lego_api_key'] == config('services.LegoGps.appKey')) ? true : false;
     }
 
-    public static function getLocation($accessAccount)
-    {
-        try {
+public static function getLocation(
+    $accessAccount,
+    bool $forceRefresh = false
+) {
 
-            if ($accessAccount['lego_api_key'] != config('services.LegoGps.appKey')) {
-                return new ApiResponse(
-                    success: false,
-                    data: null,
-                    message: 'No está autorizado para utilizar este servicio',
-                    status: 401
+    $cacheKey = 'gps:lego:locations:' . md5(
+        $accessAccount['lego_api_key'] ?? 'default'
+    );
+
+    try {
+
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+
+            return self::fetchLocation($accessAccount);
+        }
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        $lockKey = 'lock:' . $cacheKey;
+
+        return Cache::lock($lockKey, 10)->block(5, function () use (
+            $cacheKey,
+            $accessAccount
+        ) {
+
+            if (Cache::has($cacheKey)) {
+                return Cache::get($cacheKey);
+            }
+
+            Log::warning('LEGO GPS LOCATION REAL API HIT');
+
+            $response = self::fetchLocation($accessAccount);
+
+            if ($response->success) {
+                Cache::put(
+                    $cacheKey,
+                    $response,
+                    now()->addSeconds(30)
                 );
             }
 
-            $endpoint = config('services.LegoGps.url_base');
+            return $response;
+        });
 
-            $response = Http::get($endpoint);
+    } catch (\Throwable $e) {
 
-            // Puedes validar la respuesta aquí si tu API devuelve un código de error dentro del JSON
-            if ($response->failed()) {
-                Log::error('API request failed Lego Gps', [
-                    'endpoint' => $endpoint,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
+        Log::error('LEGO GPS CACHE WRAPPER ERROR', [
+            'message' => $e->getMessage(),
+        ]);
 
-                return new ApiResponse(
-                    success: false,
-                    data: $response->json(),
-                    message: 'Error al consultar Lego GPS',
-                    status: $response->status()
-                );
+        return self::fetchLocation($accessAccount);
+    }
+}
 
-            }
+ private static function fetchLocation($accessAccount)
+{
+    try {
+        if (($accessAccount['lego_api_key'] ?? null) != config('services.LegoGps.appKey')) {
+            return new ApiResponse(
+                success: false,
+                data: null,
+                message: 'No está autorizado para utilizar este servicio',
+                status: 401
+            );
+        }
+
+        $endpoint = config('services.LegoGps.url_base');
+
+        $response = Http::connectTimeout(5)
+            ->timeout(10)
+            ->retry(1, 300)
+            ->get($endpoint);
+
+        if ($response->failed()) {
+            Log::error('API request failed Lego Gps', [
+                'endpoint' => $endpoint,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             return new ApiResponse(
-                success: true,
+                success: false,
                 data: $response->json(),
-                message: 'Consulta exitosa',
+                message: 'Error al consultar Lego GPS',
                 status: $response->status()
             );
-
-        } catch (RequestException $e) {
-            Log::error('HTTP exception', [
-                'endpoint' => $endpoint,
-                'message' => $e->getMessage(),
-            ]);
-
-            return new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Excepción HTTP LegoGps::getLocation => ' .$e->getMessage(),
-                status: 500
-            );
-
-        } catch (\Throwable $e) {
-            Log::critical('Unexpected error ', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return new ApiResponse(
-                success: false,
-                data: null,
-                message: 'Error inesperado LegoGps::getLocation => ' .$e->getMessage(),
-                status: 500
-            );
-
         }
+
+        return new ApiResponse(
+            success: true,
+            data: $response->json(),
+            message: 'Consulta exitosa',
+            status: $response->status()
+        );
+
+    } catch (\Throwable $e) {
+        Log::error('LEGO GPS LOCATION ERROR', [
+            'message' => $e->getMessage(),
+        ]);
+
+        return new ApiResponse(
+            success: false,
+            data: null,
+            message: 'Error LegoGps::fetchLocation => ' . $e->getMessage(),
+            status: 500
+        );
     }
+}
 }

@@ -31,7 +31,7 @@
                             <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
                                 <div class="row">
                                     <!-- Campo para proveedor -->
-                                    <div class="col-3">
+                                    <div class="col-md-3">
                                         <label for="id_proveedor">Buscar proveedor:</label>
                                         <select class="form-control cliente" name="id_proveedor" id="id_proveedor">
                                             <option selected value="">Seleccionar proveedor</option>
@@ -45,7 +45,7 @@
                                     </div>
 
                                     <!-- Campo para cliente -->
-                                    <div class="col-3">
+                                    <div class="col-md-2">
                                         <label for="id_cliente">Buscar cliente:</label>
                                         <select class="form-control cliente" name="id_cliente" id="id_cliente">
                                             <option selected value="">Seleccionar cliente</option>
@@ -59,7 +59,7 @@
                                     </div>
 
                                     <!-- Campo para subcliente -->
-                                    <div class="col-3">
+                                    <div class="col-md-2">
                                         <label for="id_subcliente">Buscar subcliente:</label>
                                         <select class="form-control cliente" name="id_subcliente" id="id_subcliente">
                                             <option selected value="">Seleccionar subcliente</option>
@@ -72,8 +72,24 @@
                                         </select>
                                     </div>
 
+                                    <!-- Campo para unidad / equipo -->
                                     <div class="col-md-2">
-                                        <label for="numero_edo_cuenta">Numero de Estado de Cuenta</label>
+                                        <label for="id_equipo">Unidad / Equipo:</label>
+                                        <select class="form-control" name="id_equipo" id="id_equipo">
+                                            <option value="">Todas las unidades</option>
+                                            @if(isset($equipos))
+                                                @foreach ($equipos as $eq)
+                                                    <option value="{{ $eq->id }}"
+                                                        {{ request('id_equipo') == $eq->id ? 'selected' : '' }}>
+                                                        {{ $eq->marca }} - {{ $eq->id_equipo ?: $eq->placas }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2">
+                                        <label for="numero_edo_cuenta">Num. Estado Cuenta</label>
                                         <select name="numero_edo_cuenta" id="numero_edo_cuenta"
                                             class="form-control numero_edo_cuenta">
                                             <option value="">Seleccionar numero</option>
@@ -86,15 +102,33 @@
                                         </select>
                                     </div>
 
-                                    <div class="col-3">
-                                        <br>
-                                        <button class="btn btn-sm mb-0 mt-sm-0 mt-1" type="submit"
-                                            style="background-color: #F82018; color: #ffffff;">Buscar</button>
+                                    <div class="col-md-1 d-flex align-items-end gap-1">
+                                        <button class="btn btn-sm mb-0" type="submit"
+                                            style="background-color: #F82018; color: #ffffff;" title="Buscar">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <a href="{{ route('index_cxp.reporteria') }}" class="btn btn-sm btn-secondary mb-0" title="Limpiar">
+                                            <i class="fas fa-undo"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </form>
 
+
+                        @if (!empty($advertenciasCuentas))
+                            <div class="alert alert-warning text-dark my-3 p-3" role="alert" style="background-color: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px;">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-exclamation-triangle me-2 text-warning fs-4"></i>
+                                    <strong>Atención de Configuración de Cuentas Bancarias:</strong>
+                                </div>
+                                <ul class="mb-0 ps-4">
+                                    @foreach ($advertenciasCuentas as $msg)
+                                        <li>{{ $msg }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
 
                         <div class="table-responsive">
                             <div class="mb-3">
@@ -105,9 +139,7 @@
                             </div>
                             <form id="exportForm" action="{{ route('cotizaciones_cxp.export') }}" method="POST">
                                 @csrf
-                                @if (Route::currentRouteName() != 'index_cxp.reporteria' && isset($proveedor_cxp))
-                                    <h3>{{ $proveedor_cxp->nombre }}</h3>
-                                @endif
+
                                 <table class="table table-flush" id="datatable-search">
                                     <thead class="thead">
                                         <tr>
@@ -192,8 +224,8 @@
                                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton1">
                                             <li><a class="dropdown-item" id="exportButtonGenericExcel" data-report="0"
                                                     href="#">Exportar Tablero</a></li>
-                                            <li><a class="dropdown-item exportButton" data-filetype="pdf" id="exportButton"
-                                                    href="#">PDF Cuentas por Pagar</a></li>
+                                            <li><a class="dropdown-item exportButton" data-filetype="pdf"
+                                                    id="exportButton" href="#">PDF Cuentas por Pagar</a></li>
                                             <li><a class="dropdown-item exportButton" data-filetype="xlsx"
                                                     id="exportButtonXlsx" href="#">Excel Cuentas por Pagar</a></li>
                                         </ul>
@@ -296,8 +328,16 @@
 
                 // Verificar si no se seleccionó ninguna fila
                 if (selectedIds.length === 0) {
-                    // Mostrar el mensaje de advertencia si no se seleccionó ninguna fila
-                    $('#warningMessage').removeClass('d-none');
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Atención',
+                            text: 'Por favor, elija al menos una cotización para realizar la exportación.',
+                            confirmButtonColor: '#F82018'
+                        });
+                    } else {
+                        $('#warningMessage').removeClass('d-none');
+                    }
                     return; // Detener la ejecución del código
                 }
 
@@ -341,12 +381,9 @@
                         // Limpiar después de la descarga
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
-
-                        alert('El archivo se ha descargado correctamente.');
                     },
                     error: function(xhr, status, error) {
-                        console.error(error);
-                        alert('Ocurrió un error al exportar los datos.');
+                        console.error('Export Error:', xhr, error);
                     }
                 });
             });

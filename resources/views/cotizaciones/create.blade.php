@@ -15,20 +15,16 @@
                             <div class="col-6">
                                 <div class="option-group">
                                     <label class="custom-option selected">
-                                        <input
-                                            type="radio"
-                                            checked
-                                            name="plan"
-                                            value="Sencillo"
-                                            onchange="handleSelection(this)"
-                                        />
+                                        <input type="radio" checked name="plan" value="Sencillo"
+                                            onchange="handleSelection(this)" />
                                         <i class="fas fa-truck icon"></i>
                                         <span class="text">Sencillo</span>
                                         <i class="fas fa-check check-icon"></i>
                                     </label>
 
                                     <label class="custom-option">
-                                        <input type="radio" name="plan" value="Full" onchange="handleSelection(this)" />
+                                        <input type="radio" name="plan" value="Full"
+                                            onchange="handleSelection(this)" />
                                         <i class="fas fa-truck-moving icon"></i>
                                         <span class="text">Full</span>
                                         <i class="fas fa-check check-icon"></i>
@@ -39,14 +35,8 @@
                     </div>
 
                     <div class="card-body">
-                        <form
-                            method="POST"
-                            action="{{ route('v2store.cotizaciones') }}"
-                            id="cotizacionCreateMultiple"
-                            enctype="multipart/form-data"
-                            sgt-cotizacion-action="create"
-                            role="form"
-                        >
+                        <form method="POST" action="{{ route('v2store.cotizaciones') }}" id="cotizacionCreateMultiple"
+                            enctype="multipart/form-data" sgt-cotizacion-action="create" role="form">
                             @csrf
 
                             <div class="modal-body">
@@ -55,16 +45,15 @@
                                     <div class="col-12">
                                         <div class="row">
                                             <!--div class="col-3">
-                                                <label for="precio">Nuevo cliente</label><br>
-                                                <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                                                    Agregar <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="25px">
-                                                </button>
-                                            </div-->
+                                                    <label for="precio">Nuevo cliente</label><br>
+                                                    <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                                        Agregar <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="25px">
+                                                    </button>
+                                                </div-->
                                             <div class="col-4 col-md-6">
                                                 <ul class="list-group">
                                                     <li
-                                                        class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg"
-                                                    >
+                                                        class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                         <div class="d-flex flex-column">
                                                             <h6 class="mb-2 text-md">Cliente</h6>
                                                             <span class="mb-2 text-sm">
@@ -72,11 +61,8 @@
                                                                 <span class="text-dark font-weight-bold ms-2">
                                                                     <select
                                                                         class="form-select bg-transparent cliente d-inline-block"
-                                                                        data-toggle="select"
-                                                                        id="id_cliente"
-                                                                        name="id_cliente"
-                                                                        value="{{ old('id_cliente') }}"
-                                                                    >
+                                                                        data-toggle="select" id="id_cliente"
+                                                                        name="id_cliente" value="{{ old('id_cliente') }}">
                                                                         <option value="">Seleccionar cliente</option>
                                                                         @foreach ($clientes as $item)
                                                                             <option value="{{ $item->id }}">
@@ -88,17 +74,13 @@
                                                             </span>
                                                             <span class="mb-2 text-sm">
                                                                 Teléfono:
-                                                                <span
-                                                                    class="text-dark ms-2 font-weight-bold"
-                                                                    id="telClient"
-                                                                ></span>
+                                                                <span class="text-dark ms-2 font-weight-bold"
+                                                                    id="telClient"></span>
                                                             </span>
                                                             <span class="text-xs">
                                                                 Correo Electrónico:
-                                                                <span
-                                                                    class="text-dark ms-2 font-weight-bold"
-                                                                    id="mailClient"
-                                                                ></span>
+                                                                <span class="text-dark ms-2 font-weight-bold"
+                                                                    id="mailClient"></span>
                                                             </span>
                                                         </div>
                                                     </li>
@@ -108,50 +90,43 @@
                                             <div class="col-4 col-md-6">
                                                 <ul class="list-group">
                                                     <li
-                                                        class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg"
-                                                    >
+                                                        class="list-group-item border-1 border-dashed d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
                                                         <div class="d-flex flex-column">
                                                             <h6 class="mb-2 text-md">SubCliente</h6>
                                                             <span class="mb-2 text-sm">
                                                                 Nombre:
                                                                 <span class="text-dark font-weight-bold ms-2">
-                                                                    <select
-                                                                        class="form-select subcliente d-inline-block"
-                                                                        id="id_subcliente"
-                                                                        name="id_subcliente"
-                                                                    >
-                                                                        <option value="">Seleccionar subcliente</option>
+                                                                    <select class="form-select subcliente d-inline-block"
+                                                                        id="id_subcliente" name="id_subcliente">
+                                                                        <option value="">Seleccionar subcliente
+                                                                        </option>
                                                                     </select>
                                                                 </span>
                                                             </span>
                                                             <span class="mb-2 text-sm">
                                                                 Teléfono:
-                                                                <span
-                                                                    class="text-dark ms-2 font-weight-bold"
-                                                                    id="telClient"
-                                                                ></span>
+                                                                <span class="text-dark ms-2 font-weight-bold"
+                                                                    id="telClient"></span>
                                                             </span>
                                                             <span class="text-xs">
                                                                 Correo Electrónico:
-                                                                <span
-                                                                    class="text-dark ms-2 font-weight-bold"
-                                                                    id="mailClient"
-                                                                ></span>
+                                                                <span class="text-dark ms-2 font-weight-bold"
+                                                                    id="mailClient"></span>
                                                             </span>
                                                         </div>
                                                     </li>
                                                 </ul>
                                             </div>
                                             <!--div class="col-lg-2 col-md-2 col-2 my-auto text-end">
-                                                <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
-                                                <p class="text-sm mt-2 mb-0">
+                                                    <a href="javascript:;" class="btn btn-sm bg-gradient-info mb-0"><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">Crear Cliente</font></font></a>
+                                                    <p class="text-sm mt-2 mb-0">
 
-                                                    <font style="vertical-align: inherit;">
-                                                    ¿Cliente no registrado? Puede crearlo aquí
-                                                    </font>
+                                                        <font style="vertical-align: inherit;">
+                                                        ¿Cliente no registrado? Puede crearlo aquí
+                                                        </font>
 
-                                                </p>
-                                            </div-->
+                                                    </p>
+                                                </div-->
                                         </div>
                                     </div>
                                     <hr class="horizontal dark mt-0 mb-4" />
@@ -164,19 +139,12 @@
                                                         <label for="name">Nombre completo *</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img
-                                                                    src="{{ asset('assets/icons/cliente.png') }}"
-                                                                    alt=""
-                                                                    width="29px"
-                                                                />
+                                                                <img src="{{ asset('assets/icons/cliente.png') }}"
+                                                                    alt="" width="29px" />
                                                             </span>
-                                                            <input
-                                                                id="nombre_cliente"
-                                                                name="nombre_cliente"
-                                                                type="text"
-                                                                class="form-control"
-                                                                placeholder="Nombre(s) y Apellidos"
-                                                            />
+                                                            <input id="nombre_cliente" name="nombre_cliente"
+                                                                type="text" class="form-control"
+                                                                placeholder="Nombre(s) y Apellidos" />
                                                         </div>
                                                     </div>
 
@@ -184,21 +152,12 @@
                                                         <label for="name">Telefono *</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img
-                                                                    src="{{ asset('assets/icons/phone.png') }}"
-                                                                    alt=""
-                                                                    width="29px"
-                                                                />
+                                                                <img src="{{ asset('assets/icons/phone.png') }}"
+                                                                    alt="" width="29px" />
                                                             </span>
-                                                            <input
-                                                                id="telefono_cliente"
-                                                                name="telefono_cliente"
-                                                                class="form-control"
-                                                                type="tel"
-                                                                minlength="10"
-                                                                maxlength="10"
-                                                                placeholder="555555555"
-                                                            />
+                                                            <input id="telefono_cliente" name="telefono_cliente"
+                                                                class="form-control" type="tel" minlength="10"
+                                                                maxlength="10" placeholder="555555555" />
                                                         </div>
                                                     </div>
 
@@ -206,19 +165,12 @@
                                                         <label for="name">Correo</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img
-                                                                    src="{{ asset('assets/icons/correo-electronico.png') }}"
-                                                                    alt=""
-                                                                    width="29px"
-                                                                />
+                                                                <img src="{{ asset('assets/icons/correo-electronico.png') }}"
+                                                                    alt="" width="29px" />
                                                             </span>
-                                                            <input
-                                                                id="correo_cliente"
-                                                                name="correo_cliente"
-                                                                type="email"
-                                                                class="form-control"
-                                                                placeholder="correo@correo.com"
-                                                            />
+                                                            <input id="correo_cliente" name="correo_cliente"
+                                                                type="email" class="form-control"
+                                                                placeholder="correo@correo.com" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -232,16 +184,11 @@
                                         <label for="name">Origen</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/gps.webp') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/gps.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="origen"
-                                                id="origen"
-                                                autocomplete="off"
-                                                type="text"
-                                                class="form-control"
-                                                value="{{ old('origen') }}"
-                                            />
+                                            <input name="origen" id="origen" autocomplete="off" type="text"
+                                                class="form-control" value="{{ old('origen') }}" />
                                             @error('origen')
                                                 <span class="error text-danger">{{ $message }}</span>
                                             @enderror
@@ -252,16 +199,11 @@
                                         <label for="name">Destino</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/origen.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="destino"
-                                                id="destino"
-                                                autocomplete="off"
-                                                type="text"
-                                                class="form-control"
-                                                value="APARTADO"
-                                            />
+                                            <input name="destino" id="destino" autocomplete="off" type="text"
+                                                class="form-control" value="APARTADO" />
                                             @error('destino')
                                                 <span class="error text-danger">{{ $message }}</span>
                                             @enderror
@@ -272,20 +214,12 @@
                                         <label for="name">Precio Viaje</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/bolsa-de-dinero.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="precio_viaje"
-                                                id="precio_viaje"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="precio_viaje" id="precio_viaje" type="text"
+                                                autocomplete="off" class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -293,16 +227,12 @@
                                         <label for="name">Burreo</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/burro.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="burreo"
-                                                id="burreo"
-                                                type="float"
-                                                autocomplete="off"
+                                            <input name="burreo" id="burreo" type="float" autocomplete="off"
                                                 class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -310,16 +240,12 @@
                                         <label for="name">Maniobra</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/logistica.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="maniobra"
-                                                id="maniobra"
-                                                type="float"
-                                                autocomplete="off"
+                                            <input name="maniobra" id="maniobra" type="float" autocomplete="off"
                                                 class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -327,20 +253,12 @@
                                         <label for="name">Estadia</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/servidor-en-la-nube.png') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="estadia"
-                                                id="estadia"
-                                                type="float"
-                                                autocomplete="off"
+                                            <input name="estadia" id="estadia" type="float" autocomplete="off"
                                                 class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -348,20 +266,12 @@
                                         <label for="name">Otros</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/inventario.png.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/inventario.png.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="otro"
-                                                id="otro"
-                                                type="float"
-                                                autocomplete="off"
+                                            <input name="otro" id="otro" type="float" autocomplete="off"
                                                 class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -369,51 +279,58 @@
                                         <label for="name">IVA</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/impuesto.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="iva"
-                                                id="iva"
-                                                type="text"
-                                                autocomplete="off"
-                                                readonly
-                                                class="form-control"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="iva" id="iva" type="text" autocomplete="off"
+                                                readonly class="form-control" oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
                                     <div class="col-4 form-group">
-                                        <label for="name">Retención</label>
-                                        <div class="input-group mb-3">
-                                            <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px" />
-                                            </span>
-                                            <input
-                                                name="retencion"
-                                                readonly
-                                                id="retencion"
-                                                autocomplete="off"
-                                                type="text"
-                                                class="form-control"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+
+                                            <label for="retencion" class="mb-0">
+                                                Retención
+                                            </label>
+
+                                            <div class="form-check form-switch">
+
+                                                <input class="form-check-input" type="checkbox" id="retencion_automatica"
+                                                    name="retencion_automatica" checked>
+
+                                                <label class="form-check-label small" for="retencion_automatica">
+                                                    Automática
+                                                </label>
+
+                                            </div>
+
                                         </div>
+
+                                        <div class="input-group mb-3">
+
+                                            <span class="input-group-text" id="basic-addon1">
+                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
+                                                    width="25px" />
+                                            </span>
+
+                                            <input name="retencion" id="retencion" autocomplete="off" type="text"
+                                                class="form-control" readonly oninput="allowOnlyDecimals(event)" />
+
+                                        </div>
+
                                     </div>
                                     <div class="col-4 form-group">
                                         <label for="name">Precio Sobre Peso</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="precio_sobre_peso"
-                                                id="precio_sobre_peso"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text"
+                                                autocomplete="off" class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -421,16 +338,12 @@
                                         <label for="name">Sobre Peso Viaje</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="sobrepeso_viaje"
-                                                id="sobrepeso_viaje"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="sobrepeso_viaje" id="sobrepeso_viaje" type="text"
+                                                autocomplete="off" class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -438,16 +351,12 @@
                                         <label for="name">Total Sobre Peso Viaje</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="total_sobrepeso_viaje"
-                                                id="total_sobrepeso_viaje"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="total_sobrepeso_viaje" id="total_sobrepeso_viaje" type="text"
+                                                autocomplete="off" class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -455,16 +364,12 @@
                                         <label for="name">Base 1</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/factura.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/factura.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="base_factura"
-                                                id="base_factura"
-                                                autocomplete="off"
-                                                type="float"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="base_factura" id="base_factura" autocomplete="off"
+                                                type="float" class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -472,21 +377,12 @@
                                         <label for="name">Base 2</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/factura.png.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/factura.png.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="base_taref"
-                                                id="base_taref"
-                                                autocomplete="off"
-                                                type="float"
-                                                readonly
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="base_taref" id="base_taref" autocomplete="off" type="float"
+                                                readonly class="form-control moneyformat calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -494,30 +390,20 @@
                                         <label for="name">Total</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="total"
-                                                id="total"
-                                                readonly
-                                                type="float"
+                                            <input name="total" id="total" readonly type="float"
                                                 class="form-control moneyformat calculo-cotizacion total-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
                                     <div class="col-12">
                                         <div class="custom-nav-tabs">
                                             <label class="custom-nav-item">
-                                                <input
-                                                    type="radio"
-                                                    checked="checked"
-                                                    value="Contenedor-A"
-                                                    class="custom-nav-radio"
-                                                    name="contenedorTabs"
-                                                    id="tab1"
-                                                />
+                                                <input type="radio" checked="checked" value="Contenedor-A"
+                                                    class="custom-nav-radio" name="contenedorTabs" id="tab1" />
                                                 <div class="custom-nav-link active">
                                                     <h6>
                                                         <i class="ni ni-box-2 text-warning text-gradient"></i>
@@ -527,13 +413,8 @@
                                             </label>
 
                                             <label class="custom-nav-item d-none" id="tab-contenedor-b">
-                                                <input
-                                                    type="radio"
-                                                    class="custom-nav-radio"
-                                                    value="Contenedor-B"
-                                                    name="contenedorTabs"
-                                                    id="tab2"
-                                                />
+                                                <input type="radio" class="custom-nav-radio" value="Contenedor-B"
+                                                    name="contenedorTabs" id="tab2" />
                                                 <div class="custom-nav-link">
                                                     <h6>
                                                         <i class="ni ni-box-2 text-info text-gradient"></i>
@@ -548,19 +429,11 @@
                                         <label for="name">Num. Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/contenedor.png') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="num_contenedor"
-                                                id="num_contenedor"
-                                                type="text"
-                                                class="form-control"
-                                                autocomplete="off"
-                                            />
+                                            <input name="num_contenedor" id="num_contenedor" type="text"
+                                                class="form-control" autocomplete="off" />
                                             @error('num_contenedor')
                                                 <span class="error text-danger">{{ $message }}</span>
                                             @enderror
@@ -571,17 +444,12 @@
                                         <label for="name">Tamaño Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/escala.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="tamano"
-                                                id="tamano"
-                                                autocomplete="off"
-                                                type="text"
-                                                oninput="allowOnlyDecimals(event)"
-                                                class="form-control"
-                                                value="{{ old('tamano') }}"
-                                            />
+                                            <input name="tamano" id="tamano" autocomplete="off" type="text"
+                                                oninput="allowOnlyDecimals(event)" class="form-control"
+                                                value="{{ old('tamano') }}" />
                                             @error('tamano')
                                                 <span class="error text-danger">{{ $message }}</span>
                                             @enderror
@@ -592,20 +460,11 @@
                                         <label for="name">Peso Reglamentario</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/perdida-de-peso.png') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="peso_reglamentario"
-                                                autocomplete="off"
-                                                id="peso_reglamentario"
-                                                type="number"
-                                                class="form-control calculo-cotizacion"
-                                                value="22"
-                                            />
+                                            <input name="peso_reglamentario" autocomplete="off" id="peso_reglamentario"
+                                                type="number" class="form-control calculo-cotizacion" value="22" />
                                         </div>
                                     </div>
 
@@ -613,16 +472,12 @@
                                         <label for="name">Peso Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="peso_contenedor"
-                                                id="peso_contenedor"
-                                                autocomplete="off"
-                                                type="text"
-                                                class="form-control calculo-cotizacion"
-                                                oninput="allowOnlyDecimals(event)"
-                                            />
+                                            <input name="peso_contenedor" id="peso_contenedor" autocomplete="off"
+                                                type="text" class="form-control calculo-cotizacion"
+                                                oninput="allowOnlyDecimals(event)" />
                                         </div>
                                     </div>
 
@@ -630,16 +485,11 @@
                                         <label for="name">Sobrepeso Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="sobrepeso"
-                                                id="sobrepeso"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control calculo-cotizacion"
-                                                readonly
-                                            />
+                                            <input name="sobrepeso" id="sobrepeso" type="text" autocomplete="off"
+                                                class="form-control calculo-cotizacion" readonly />
                                         </div>
                                     </div>
 
@@ -647,18 +497,12 @@
                                         <label for="name">Precio Tonelada</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px" />
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="precio_tonelada"
-                                                id="precio_tonelada"
-                                                type="text"
-                                                autocomplete="off"
-                                                class="form-control moneyformat calculo-cotizacion"
-                                                value="0"
-                                                oninput="allowOnlyDecimals(event)"
-                                                readonly
-                                            />
+                                            <input name="precio_tonelada" id="precio_tonelada" type="text"
+                                                autocomplete="off" class="form-control moneyformat calculo-cotizacion"
+                                                value="0" oninput="allowOnlyDecimals(event)" readonly />
                                         </div>
                                     </div>
 
@@ -668,18 +512,11 @@
                                         <label for="name">Fecha modulación</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/calendar-dar.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="fecha_modulacion"
-                                                id="fecha_modulacion"
-                                                type="date"
-                                                class="form-control"
-                                            />
+                                            <input name="fecha_modulacion" id="fecha_modulacion" type="date"
+                                                class="form-control" />
                                         </div>
                                     </div>
 
@@ -687,18 +524,11 @@
                                         <label for="name">Fecha entrega</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img
-                                                    src="{{ asset('img/icon/calendar-dar.webp') }}"
-                                                    alt=""
-                                                    width="25px"
-                                                />
+                                                <img src="{{ asset('img/icon/calendar-dar.webp') }}" alt=""
+                                                    width="25px" />
                                             </span>
-                                            <input
-                                                name="fecha_entrega"
-                                                id="fecha_entrega"
-                                                type="date"
-                                                class="form-control"
-                                            />
+                                            <input name="fecha_entrega" id="fecha_entrega" type="date"
+                                                class="form-control" />
                                         </div>
                                     </div>
                                 </div>
@@ -789,7 +619,8 @@
         .select2-container .select2-selection--single {
             background-color: transparent !important;
             border: none !important;
-            box-shadow: none !important; /* Eliminar sombras */
+            box-shadow: none !important;
+            /* Eliminar sombras */
         }
 
         .select2-container .select2-selection--single:focus {
@@ -797,7 +628,8 @@
         }
 
         .select2-container .select2-selection--single .select2-selection__rendered {
-            color: inherit; /* Heredar color del texto */
+            color: inherit;
+            /* Heredar color del texto */
             background-color: transparent !important;
         }
     </style>
@@ -820,7 +652,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 3px; /* Ajustado para reducir la altura */
+            padding: 3px;
+            /* Ajustado para reducir la altura */
             background-color: #f1f1f1;
             color: #999;
             border-radius: 12px 12px 0 0;
@@ -844,7 +677,8 @@
         .custom-nav-link.active {
             background-color: #fff;
             color: #111;
-            border: 1px solid #0d6efd; /* más delgado */
+            border: 1px solid #0d6efd;
+            /* más delgado */
             border-bottom: 2px solid #fff;
 
             transform: scale(1.02);
@@ -852,7 +686,8 @@
         }
 
         .custom-nav-link.active h6 {
-            font-weight: 600; /* negrita */
+            font-weight: 600;
+            /* negrita */
         }
 
         .custom-nav-link:not(.active) i {
@@ -873,7 +708,9 @@
     <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
-    <script src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}"></script>
+    <script
+        src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
+    </script>
     <script>
         // JavaScript para manejar la clase 'active'
         const radios = document.querySelectorAll('.custom-nav-radio');
@@ -881,7 +718,8 @@
 
         radios.forEach((radio, index) => {
             radio.addEventListener('change', () => {
-                links.forEach((link) => link.classList.remove('active')); // Remover la clase active de todos
+                links.forEach((link) => link.classList.remove(
+                'active')); // Remover la clase active de todos
                 links[index].classList.add('active');
                 let Contenedor = radios[index].value;
                 showInfoContenedor(Contenedor);

@@ -101,9 +101,14 @@
         text-align: center;
         color: #888;
     }
+    .negativo {
+        color: #ea580c;
+        font-weight: bold;
+    }
 </style>
 @php
     $logo = optional($cuenta->catBanco)->logo;
+    $bancoTipoText = $cuenta->banco_1 == 1 ? 'Banco 1 (Base 1 / Oficial)' : 'Banco 2 (Base 2 / Secundaria)';
 @endphp
 <div
     style="
@@ -132,6 +137,7 @@
             <td width="70%" class="text-end">
                 <div class="titulo">Estado de Cuenta</div>
                 <div class="subinfo">
+                    <strong style="color: #2563eb;">{{ $bancoTipoText }}</strong><br>
                     {{ $cuenta->nombre_beneficiario }}<br>
                     Cuenta: {{ $cuenta->cuenta_bancaria }} ({{ $cuenta->tipo }})<br>
                     Moneda: {{ $cuenta->moneda }}<br>
@@ -148,8 +154,8 @@
         <tr>
             <td>
                 <small>Saldo inicial</small><br>
-                <span class="saldo-inicial">
-                    ${{ number_format($saldoAnterior, 2) }}
+                <span class="{{ $saldoAnterior < 0 ? 'negativo' : 'saldo-inicial' }}">
+                    {{ $saldoAnterior < 0 ? '-$' . number_format(abs($saldoAnterior), 2) : '$' . number_format($saldoAnterior, 2) }}
                 </span>
             </td>
 
@@ -169,8 +175,8 @@
 
             <td>
                 <small>Saldo final</small><br>
-                <span class="saldo-final">
-                    ${{ number_format($saldoActual, 2) }}
+                <span class="{{ $saldoActual < 0 ? 'negativo' : 'saldo-final' }}">
+                    {{ $saldoActual < 0 ? '-$' . number_format(abs($saldoActual), 2) : '$' . number_format($saldoActual, 2) }}
                 </span>
             </td>
         </tr>
@@ -198,21 +204,30 @@
     </thead>
     <tbody>
         @foreach ($movimientos as $mov)
+            @php
+                $montoNum = (float) $mov->monto;
+                $esNeg = $montoNum < 0;
+                $saldoResNum = (float) $mov->saldo_resultante;
+            @endphp
             <tr>
                 <td>{{ \Carbon\Carbon::parse($mov->fecha_movimiento)->format('d/m/Y') }}</td>
                 <td>{{ $mov->concepto }}</td>
                 <td>{{ $mov->referencia }}</td>
 
-                <td class="text-end cargo">
-                    {{ $mov->tipo == 'cargo' ? number_format($mov->monto, 2) : '' }}
+                <td class="text-end {{ $esNeg ? 'negativo' : 'cargo' }}">
+                    @if ($mov->tipo == 'cargo')
+                        {{ $esNeg ? '-$' . number_format(abs($montoNum), 2) : '- $' . number_format($montoNum, 2) }}
+                    @endif
                 </td>
 
-                <td class="text-end abono">
-                    {{ $mov->tipo == 'abono' ? number_format($mov->monto, 2) : '' }}
+                <td class="text-end {{ $esNeg ? 'negativo' : 'abono' }}">
+                    @if ($mov->tipo == 'abono')
+                        {{ $esNeg ? '-$' . number_format(abs($montoNum), 2) : '+ $' . number_format($montoNum, 2) }}
+                    @endif
                 </td>
 
-                <td class="text-end">
-                    {{ number_format($mov->saldo_resultante, 2) }}
+                <td class="text-end {{ $saldoResNum < 0 ? 'negativo' : '' }}">
+                    {{ $saldoResNum < 0 ? '-$' . number_format(abs($saldoResNum), 2) : '$' . number_format($saldoResNum, 2) }}
                 </td>
 
                 <td>{{ strtoupper(substr($mov->origen, 0, 3)) }}</td>

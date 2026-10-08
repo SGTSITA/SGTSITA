@@ -172,7 +172,7 @@
     <style>
         #dp {
             flex: 1;
-            min-height: 0;
+            min-height: 200px;
         }
 
         .search-container {
@@ -261,24 +261,48 @@
     <script>
         $(document).ready(function() {
 
-
+            const startDate = moment().subtract(7, 'days');
+            const endDate = moment();
             $('#daterange').daterangepicker({
+                    startDate,
+                    endDate,
+                    // maxDate: moment().endOf('month'),
                     opens: 'right',
                     locale: {
-                        format: 'YYYY-MM-DD', // Formato de fecha
-                        separator: " AL ", // Separador entre la fecha inicial y final
-                        applyLabel: "Aplicar",
-                        cancelLabel: "Cancelar",
-                        fromLabel: "Desde",
-                        toLabel: "Hasta",
-                        customRangeLabel: "Personalizado",
-                        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                        monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
-                            "Septiembre", "Octubre", "Noviembre", "Diciembre"
+                        format: 'YYYY-MM-DD',
+                        separator: ' al ',
+                        applyLabel: 'Aplicar',
+                        cancelLabel: 'Cancelar',
+                        fromLabel: 'Desde',
+                        toLabel: 'Hasta',
+                        customRangeLabel: 'Personalizado',
+                        daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                        monthNames: [
+                            'Enero',
+                            'Febrero',
+                            'Marzo',
+                            'Abril',
+                            'Mayo',
+                            'Junio',
+                            'Julio',
+                            'Agosto',
+                            'Septiembre',
+                            'Octubre',
+                            'Noviembre',
+                            'Diciembre',
                         ],
-                        firstDay: 1
+                        firstDay: 1,
                     },
-                    maxDate: moment()
+                    ranges: {
+                        Hoy: [moment(), moment()],
+                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                        'Mes anterior': [
+                            moment().subtract(1, 'month').startOf('month'),
+                            moment().subtract(1, 'month').endOf('month'),
+                        ],
+                    },
                 },
                 function(start, end, label) {
                     initBoard(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));

@@ -66,6 +66,7 @@ class EquiposController extends Controller
             $proveedor->modelo = $request->get('modelo');
             $proveedor->acceso = $request->get('acceso');
             $proveedor->fecha = $request->get('fecha');
+            $proveedor->carga_diesel_al_final = $request->input('carga_diesel_al_final', 0);
             $proveedor->activo = true;
 
             if ($request->hasFile("tarjeta_circulacion")) {
@@ -165,7 +166,7 @@ class EquiposController extends Controller
         if ($request->tipo === 'Tractos / Camiones') {
             $data = $request->only([
                 'id_equipo', 'fecha', 'year', 'marca', 'modelo', 'placas',
-                'num_serie', 'motor', 'acceso'
+                'num_serie', 'motor', 'acceso', 'carga_diesel_al_final'
             ]);
         } elseif ($request->tipo === 'Chasis / Plataforma') {
             $data = $request->only([
@@ -269,7 +270,17 @@ class EquiposController extends Controller
     ])
          ->get();
 
-        $equipos = $equipos->map(function ($e) {
+        $duplicatedImeis = Equipo::where('activo', true)
+            ->whereNotNull('imei')
+            ->where('imei', '!=', '')
+            ->select('imei')
+            ->groupBy('imei')
+            ->havingRaw('count(*) > 1')
+            ->pluck('imei')
+            ->toArray();
+
+        $equipos = $equipos->map(function ($e) use ($duplicatedImeis) {
+            $e->is_duplicated_imei = !empty($e->imei) && in_array($e->imei, $duplicatedImeis);
 
             if ($e->credenciales_gps) {
                 try {
@@ -297,6 +308,19 @@ class EquiposController extends Controller
     public function updateMep(Request $request)
     {
         $mesagep = 'Equipo Actualizado con exito';
+
+        if (!empty($request->imei)) {
+            $query = Equipo::where('imei', $request->imei)->where('activo', true);
+            if ($request->equipo_id) {
+                $query->where('id', '!=', $request->equipo_id);
+            }
+            if ($query->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El IMEI ya se encuentra registrado en otro equipo activo.'
+                ], 422);
+            }
+        }
 
         if ($request->equipo_id) {
 

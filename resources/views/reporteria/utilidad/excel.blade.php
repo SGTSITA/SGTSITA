@@ -50,6 +50,7 @@
                     <th>Precio Viaje</th>
                     <th>Pago Operación</th>
                     <th>Gastos Extra</th>
+                    <th>Dinero Viaje S/Justificar</th>
                     <th>Gastos Viaje</th>
                     <th>Gastos Diferidos</th>
                     <th>Utilidad</th>
@@ -64,6 +65,7 @@
                         <td>{{ number_format($cotizacion['precioViaje'], 2) }}</td>
                         <td>{{ number_format($cotizacion['pagoOperacion'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosExtra'], 2) }}</td>
+                        <td>{{ number_format($cotizacion['dineroViajeSinJustificar'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosViaje'], 2) }}</td>
                         <td>{{ number_format($cotizacion['gastosDiferidos'], 2) }}</td>
                         <td @if ($cotizacion['utilidad'] < 0) style="background-color:#ffc107;" @endif>
@@ -90,11 +92,11 @@
             <tbody>
                 @foreach ($gastosGenerales as $gasto)
                     <tr>
-                        <td>{{ \Carbon\Carbon::parse($gasto->fecha)->format('d-m-Y') }}</td>
-                        <td>{{ $gasto->motivo }}</td>
-                        <td>{{ $gasto->Categoria->categoria ?? 'N/A' }}</td>
-                        <td>{{ $gasto->metodo_pago1 }}</td>
-                        <td>{{ number_format($gasto->monto1, 2) }}</td>
+                        <td>{{ \Carbon\Carbon::parse($gasto->fecha_aplicada)->format('d-m-Y') }}</td>
+                        <td>{{ $gasto->concepto }}</td>
+                        <td>{{ $gasto->categoria->categoria ?? 'N/A' }}</td>
+                        <td>{{ $gasto->pagos->first()->metodo_pago ?? 'N/A' }}</td>
+                        <td>{{ number_format($gasto->monto_aplicado, 2) }}</td>
                     </tr>
                 @endforeach
 
