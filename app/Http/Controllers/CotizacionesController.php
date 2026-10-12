@@ -2150,32 +2150,23 @@ $this->procesarDocumento(
 
         $this->CostosService->syncDesdeRequest($viaje, $request);
 
+        // Contabilizar provisión contable automática del viaje (CxC vs Ingresos por fletes)
+        try {
+            if ($request->TipoCotizacion == "Full" && !empty($referencia_full)) {
+                $cotizacionesFull = Cotizaciones::where('referencia_full', $referencia_full)->get();
+                foreach ($cotizacionesFull as $cotFull) {
+                    $this->CotizacionesService->contabilizarProvisionViaje($cotFull);
+                }
+            } else {
+                $cotizacionSingle = Cotizaciones::find($id);
+                if ($cotizacionSingle) {
+                    $this->CotizacionesService->contabilizarProvisionViaje($cotizacionSingle);
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable para cotización #{$id}: " . $e->getMessage());
+        }
 
-        /* if($request->get('id_cliente_clientes') == NULL){
-             $gasto_descripcion = $request->input('gasto_descripcion');
-             $ticket_ids = $request->input('ticket_id');
-
-             $suma =  $cotizaciones->total;
-             $cotizaciones->total = $suma;
-             $cotizaciones->restante = $cotizaciones->total;
-             $cotizaciones->update();
-
-
-
-
-             if ($asignacion) {
-                 if($asignacion->id_proveedor != NULL){
-
-                 }
-                 $cotizaciones->update();
-
-                 if($asignacion->id_proveedor == NULL){
-
-                 }else if($asignacion->id_operador == NULL){
-
-                 }
-             }
-         }*/
         DB::commit();
 
         return response()->json([

@@ -520,6 +520,36 @@ class SociosService
                 ]);
             }
 
+            // Generar Póliza Contable de Provisión de Utilidad a Socios (REPARTO_SOCIOS)
+            $montoTotalSocios = (float) ($calcData['total_distribuido_socios'] ?? 0);
+            if ($montoTotalSocios > 0) {
+                try {
+                    $polizaService = app(\App\Services\PolizaService::class);
+                    // Cancelar previa si existía para este corte
+                    $polizaPrevia = \App\Models\Poliza::where('origen_tipo', 'socio_corte')
+                        ->where('origen_id', $periodo->id)
+                        ->first();
+                    if ($polizaPrevia) {
+                        $polizaPrevia->delete();
+                    }
+
+                    $asientoData = $polizaService->resolverAsientoPorEvento('REPARTO_SOCIOS', null, $idEmpresa, [
+                        'id_equipo'   => $equipoId,
+                        'monto'       => $montoTotalSocios,
+                        'fecha'       => $endDate,
+                        'concepto'    => 'Provisión de utilidades a socios corte ' . $startDate . ' al ' . $endDate . ($equipoId ? " (Equipo #{$equipoId})" : ''),
+                        'origen_tipo' => 'socio_corte',
+                        'origen_id'   => $periodo->id,
+                    ]);
+
+                    if (!empty($asientoData)) {
+                        $polizaService->crearPoliza($asientoData);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza de reparto de socios para corte {$periodo->id}: " . $e->getMessage());
+                }
+            }
+
             return ['success' => true, 'Mensaje' => 'Corte guardado con éxito.'];
         });
     }
@@ -645,10 +675,20 @@ class SociosService
         }
         $totalPagado = $pagosQuery->sum('monto');
 
+        // Total de anticipos / pagos a cuenta (sin periodo)
+        $anticiposQuery = \App\Models\SocioPago::where('socio_id', $socioId)->whereNull('calculo_periodo_id');
+        if ($endDate) {
+            $anticiposQuery->where('fecha_aplicacion', '<=', $endDate);
+        }
+        $totalAnticipos = (float) $anticiposQuery->sum('monto');
+        $totalLiquidadoCortes = (float) ($totalPagado - $totalAnticipos);
+
         return [
-            'total_asignado' => (float)$totalAsignado,
-            'total_pagado' => (float)$totalPagado,
-            'saldo_pendiente' => (float)($totalAsignado - $totalPagado)
+            'total_asignado'         => round((float)$totalAsignado, 2),
+            'total_pagado'           => round((float)$totalPagado, 2),
+            'total_anticipos'        => round($totalAnticipos, 2),
+            'total_liquidado_cortes' => round($totalLiquidadoCortes, 2),
+            'saldo_pendiente'        => round((float)($totalAsignado - $totalPagado), 2)
         ];
     }
 
@@ -667,7 +707,7 @@ class SociosService
             ]);
 
             // Register bank movement (debit/cargo)
-            app(\App\Services\BancosService::class)->registrarMovimiento([
+            $mov = app(\App\Services\BancosService::class)->registrarMovimiento([
                 'cuenta_bancaria_id' => $data['banco_id'],
                 'tipo' => 'cargo', // cargo = debit
                 'monto' => $data['monto'],
@@ -678,6 +718,28 @@ class SociosService
                 'referenciaable_type' => \App\Models\SocioPago::class,
                 'referenciaable_id' => $pago->id
             ]);
+
+            // Generar Póliza Contable de Pago de Utilidades a Socios (PAGO_SOCIOS)
+            try {
+                $polizaService = app(\App\Services\PolizaService::class);
+                $asientoData = $polizaService->resolverAsientoPorEvento('PAGO_SOCIOS', null, $idEmpresa, [
+                    'monto'              => (float)$data['monto'],
+                    'fecha'              => $data['fecha_aplicacion'],
+                    'concepto'           => 'Pago utilidades a socio: ' . $socio->nombre,
+                    'cuenta_bancaria_id' => $data['banco_id'],
+                    'origen_tipo'        => 'socio_pago',
+                    'origen_id'          => $pago->id,
+                ]);
+
+                if (!empty($asientoData)) {
+                    $poliza = $polizaService->crearPoliza($asientoData);
+                    if ($mov && empty($mov->poliza_id)) {
+                        $mov->update(['poliza_id' => $poliza->id]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza de pago a socio {$pago->id}: " . $e->getMessage());
+            }
 
             return $pago;
         });

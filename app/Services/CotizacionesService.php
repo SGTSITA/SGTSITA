@@ -325,4 +325,92 @@ class CotizacionesService
 
         return $filesList;
     }
+
+    /**
+     * Contabiliza automáticamente la provisión del flete por viaje concluido (PROVISION_VIAJE).
+     */
+    public function contabilizarProvisionViaje(Cotizaciones $cotizacion): ?\App\Models\Poliza
+    {
+        return DB::transaction(function () use ($cotizacion) {
+            $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
+
+            $precioViaje = (float) ($cotizacion->total ?? 0);
+            if ($precioViaje <= 0) {
+                $precioViaje = (float) ($cotizacion->precio_viaje ?? 0)
+                    + (float) ($cotizacion->burreo ?? 0)
+                    + (float) ($cotizacion->maniobra ?? 0)
+                    + (float) ($cotizacion->estadia ?? 0)
+                    + (float) ($cotizacion->otro ?? 0);
+            }
+
+            if ($precioViaje <= 0) {
+                return null;
+            }
+
+            // Buscar tractocamión imputado
+            $camionId = null;
+            $doc = $cotizacion->DocCotizacion;
+            if ($doc && $doc->Asignaciones && $doc->Asignaciones->id_camion) {
+                $camionId = $doc->Asignaciones->id_camion;
+            }
+
+            $polizaService = app(\App\Services\PolizaService::class);
+
+            // Eliminar previa si existía para evitar duplicidad
+            $polizaPrevia = \App\Models\Poliza::where('origen_tipo', 'cotizacion')
+                ->where('origen_id', $cotizacion->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $fecha = !empty($cotizacion->fecha_entrega)
+                ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            $asientoData = $polizaService->resolverAsientoPorEvento('PROVISION_VIAJE', null, $cotizacion->id_empresa ?? 1, [
+                'id_equipo'   => $camionId,
+                'monto'       => $precioViaje,
+                'fecha'       => $fecha,
+                'concepto'    => 'Provisión viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'origen_tipo' => 'cotizacion',
+                'origen_id'   => $cotizacion->id,
+            ]);
+
+            return $polizaService->crearPoliza($asientoData);
+        });
+    }
+
+    /**
+     * Contabiliza el cobro al cliente por el flete del viaje (COBRO_CXC).
+     */
+    public function contabilizarCobroCliente(Cotizaciones $cotizacion, float $monto, int $bancoId, string $fecha): ?\App\Models\Poliza
+    {
+        return DB::transaction(function () use ($cotizacion, $monto, $bancoId, $fecha) {
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
+            $camionId = null;
+            $doc = $cotizacion->DocCotizacion;
+            if ($doc && $doc->Asignaciones && $doc->Asignaciones->id_camion) {
+                $camionId = $doc->Asignaciones->id_camion;
+            }
+
+            $polizaService = app(\App\Services\PolizaService::class);
+
+            $asientoData = $polizaService->resolverAsientoPorEvento('COBRO_CXC', null, $cotizacion->id_empresa ?? 1, [
+                'id_equipo'          => $camionId,
+                'monto'              => $monto,
+                'fecha'              => $fecha,
+                'concepto'           => 'Cobro CXC viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'cuenta_bancaria_id' => $bancoId,
+                'origen_tipo'        => 'cotizacion_cobro',
+                'origen_id'          => $cotizacion->id,
+            ]);
+
+            return $polizaService->crearPoliza($asientoData);
+        });
+    }
 }

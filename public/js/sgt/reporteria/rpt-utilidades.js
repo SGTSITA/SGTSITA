@@ -311,8 +311,8 @@ function getUtilidadesViajes(startDate, endDate) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
-    let idEquipo = $("#selEquipoUtilidad").val();
-    return $.ajax({
+   let idEquipo = $("#selEquipoUtilidad").val();
+    return  $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
         data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },
