@@ -124,7 +124,7 @@
     @if (!isset($isExcel))
         <div class="container" style="padding: 0;">
             <h4 class="margin_cero" style="margin: 2px">
-                Empresa: {{ $user->Empresa->nombre }}
+                Empresa: {{ optional($user?->Empresa)->nombre ?? optional($cotizacion?->Empresa)->nombre ?? 'SGT' }}
             </h4>
 
             <div style="display: flex; align-items: center; position: relative;">
@@ -142,7 +142,7 @@
             margin: 0;
             font-weight: bold;
         ">
-                    {{ $cotizacion->estadoCuenta->numero }}
+                    {{ optional($cotizacion?->estadoCuenta)->numero ?? 'S/N' }}
                 </h2>
 
                 <div class="container" style="position: relative">
@@ -154,7 +154,7 @@
             </div>
 
             <h4 class="margin_cero" style="margin: 2px">
-                Cliente: {{ $cotizacion->Cliente->nombre }}
+                Cliente: {{ optional($cotizacion?->Cliente)->nombre ?? 'S/N' }}
             </h4>
             <br />
         </div>
@@ -164,7 +164,7 @@
             <tr>
                 <td colspan="4">
 
-                    <b>Empresa:</b> {{ $user->Empresa->nombre }}
+                    <b>Empresa:</b> {{ optional($user?->Empresa)->nombre ?? optional($cotizacion?->Empresa)->nombre ?? 'SGT' }}
                 </td>
             </tr>
             <tr>
@@ -175,7 +175,7 @@
                 </td>
 
                 <td colspan="6" align="center" style="font-size:18pt; font-weight:bold;">
-                    <b> {{ $cotizacion->estadoCuenta->numero }} </b>
+                    <b> {{ optional($cotizacion?->estadoCuenta)->numero ?? 'S/N' }} </b>
                 </td>
 
                 <td colspan="7" align="right">
@@ -185,17 +185,17 @@
             </tr>
             <tr>
                 <td colspan="20">
-                    <b> Cliente: {{ $cotizacion->Cliente->nombre }} </b>
+                    <b> Cliente: {{ optional($cotizacion?->Cliente)->nombre ?? 'S/N' }} </b>
                 </td>
             </tr>
             {{-- <tr>
                 <td colspan="4">
-                    <b>Empresa:</b> {{ $user->Empresa->nombre }}<br>
+                    <b>Empresa:</b> {{ optional($user?->Empresa)->nombre ?? optional($cotizacion?->Empresa)->nombre ?? 'SGT' }}<br>
                     Estado de cuenta<br>
                     <b>Proveedor:</b> {{ $cotizacion->Proveedor->nombre }}
                 </td>
                 <td colspan="4" align="center">
-                    {{ $cotizacion->Contenedor->Cotizacion->estadoCuenta->numero }}
+                    {{ optional(optional(optional($cotizacion?->Contenedor)?->Cotizacion)?->estadoCuenta)->numero ?? 'S/N' }}
                 </td>
                 <td colspan="4" align="right">
                     {{ date('d-m-Y') }}
@@ -212,6 +212,13 @@
         <br />
     </div> --}}
 
+    @php
+        $empresaActualModel = $user?->Empresa ?? ($cotizacion?->Empresa ?? null);
+        $esEmpresaGlobal = $empresaActualModel ? $empresaActualModel->esGlobalMultiEquipo() : false;
+    @endphp
+
+    @if (!$esEmpresaGlobal)
+    {{-- MODO TRADICIONAL (Configuración Global = 0): Diseño original 100% intacto --}}
     <table class="table text-white tabla-completa"
         style="
                 color: #000;
@@ -310,13 +317,13 @@
                     <td style="padding: 2px; border: 1px solid #000">{{ $cotizacion->peso_contenedor }}</td>
                     <td style="padding: 2px; border: 1px solid #000">{{ $cotizacion->tamano }}</td>
                     <td style="padding: 2px; border: 1px solid #000">
-                        $ {{ number_format($cotizacion->burreo, 2, '.', ',') }}
+                        $ {{ number_format(floatval($cotizacion->burreo ?? 0), 2, '.', ',') }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000">
-                        $ {{ number_format($cotizacion->maniobra, 2, '.', ',') }}
+                        $ {{ number_format(floatval($cotizacion->maniobra ?? 0), 2, '.', ',') }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000">
-                        ${{ number_format($cotizacion->estadia, 2, '.', ',') }}
+                        ${{ number_format(floatval($cotizacion->estadia ?? 0), 2, '.', ',') }}
                     </td>
                     @php
                         $sobrepeso = ($cotizacion->peso_contenedor ?? 0) - ($cotizacion->peso_reglamentario ?? 0);
@@ -329,13 +336,13 @@
                     </td>
 
                     <td style="padding: 2px; border: 1px solid #000">
-                        $ {{ number_format($cotizacion->otro, 2, '.', ',') }}
+                        $ {{ number_format(floatval($cotizacion->otro ?? 0), 2, '.', ',') }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000">
-                        $ {{ number_format($cotizacion->precio, 2, '.', ',') }}
+                        $ {{ number_format(floatval($cotizacion->precio ?? 0), 2, '.', ',') }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000">
-                        $ {{ number_format($cotizacion->precio_viaje, 2, '.', ',') }}
+                        $ {{ number_format(floatval($cotizacion->precio_viaje ?? 0), 2, '.', ',') }}
                     </td>
                     <td style="padding: 2px; border: 1px solid #000">
                         $ {{ number_format($base_factura, 2, '.', ',') }}
@@ -357,10 +364,209 @@
             @endforeach
         </tbody>
     </table>
+    @else
+    {{-- MODO EMPRESA GLOBAL (Configuración Global = 1): Separación y agrupación por Unidad Tractocamión --}}
+    @php
+        $cotizacionesPorUnidad = $cotizaciones->groupBy(function($c) {
+            $camion = optional(optional(optional($c->DocCotizacion)->Asignaciones)->Camion);
+            if ($camion && ($camion->id_equipo || $camion->placas)) {
+                return $camion->texto_select;
+            }
+            return 'Unidad No Asignada';
+        });
+
+        $totalPrecioVentaSum = 0;
+        $totalPrecioViajeSum = 0;
+        $totalBaseFacturaSum = 0;
+        $totalIvaSum = 0;
+        $totalRetencionSum = 0;
+    @endphp
+
+    @foreach ($cotizacionesPorUnidad as $unidadTexto => $itemsUnidad)
+        @php
+            $subPrecioVenta = 0;
+            $subPrecioViaje = 0;
+            $subBaseFactura = 0;
+            $subIva = 0;
+            $subRetencion = 0;
+            $subTotalOficial = 0;
+            $subBaseTaref = 0;
+            $subImporteVta = 0;
+        @endphp
+
+        @if (!isset($isExcel))
+            <div style="background-color: #2c3e50; color: #ffffff; padding: 4px 8px; font-size: 8.5px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '10px' }}; margin-bottom: 2px; border-radius: 3px;">
+                🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }}
+            </div>
+        @endif
+
+        <table class="table text-white tabla-completa"
+            style="color: #000; width: 100%; padding: 5px; margin: 0px 0px 6px 0px; border-collapse: collapse; border: 1px solid #000;">
+            @if (isset($isExcel))
+                <thead>
+                    <tr>
+                        <th colspan="20" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-size: 10pt; font-weight: bold;">
+                            🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }}
+                        </th>
+                    </tr>
+                </thead>
+            @endif
+            <thead>
+                <tr style="font-size: 7px; border: 1px solid #000">
+                    <th style="padding: 2px; border: 1px solid #000">Fecha inicio</th>
+                    <th style="padding: 2px; border: 1px solid #000">Unidad</th>
+                    <th style="padding: 2px; border: 1px solid #000">Contenedor</th>
+                    <th style="padding: 2px; border: 1px solid #000">Facturado a</th>
+                    <th style="padding: 2px; border: 1px solid #000">Destino</th>
+                    <th style="padding: 2px; border: 1px solid #000">Peso</th>
+                    <th style="padding: 2px; border: 1px solid #000">Tam. Cont.</th>
+                    <th style="padding: 2px; border: 1px solid #000">Burreo</th>
+                    <th style="padding: 2px; border: 1px solid #000">Maniobra</th>
+                    <th style="padding: 2px; border: 1px solid #000">Estadia</th>
+                    <th style="padding: 2px; border: 1px solid #000">Sobre peso</th>
+                    <th style="padding: 2px; border: 1px solid #000">Otro</th>
+                    <th style="padding: 2px; border: 1px solid #000">Precio venta</th>
+                    <th style="padding: 2px; border: 1px solid #000">Precio viaje</th>
+                    <th style="padding: 2px; border: 1px solid #000; color: #000000; background: #56d1f7">Base factura</th>
+                    <th style="padding: 2px; border: 1px solid #000; color: #000000; background: #56d1f7">IVA</th>
+                    <th style="padding: 2px; border: 1px solid #000; color: #000000; background: #56d1f7">Retención</th>
+                    <th style="padding: 2px; border: 1px solid #000; color: #000000; background: yellow">Base 1</th>
+                    <th style="padding: 2px; border: 1px solid #000; color: #000000; background: #fb6340">Base 2</th>
+                    <th style="padding: 2px; border: 1px solid #000">Importe VTA</th>
+                </tr>
+            </thead>
+            <tbody style="text-align: center; font-size: 8px">
+                @foreach ($itemsUnidad as $cotizacion)
+                    @php
+                        $base_factura = floatval($cotizacion->base_factura ?? 0);
+                        $iva = floatval($cotizacion->iva ?? 0);
+                        $retencion = floatval($cotizacion->retencion ?? 0);
+                        $total = floatval($cotizacion->total ?? 0);
+                        $total_oficial = $base_factura + $iva - $retencion;
+                        $base_taref = $total - $base_factura - $iva + $retencion;
+                        $importe_vta = $base_taref + $total_oficial;
+
+                        $subPrecioVenta += floatval($cotizacion->precio ?? 0);
+                        $subPrecioViaje += floatval($cotizacion->precio_viaje ?? 0);
+                        $subBaseFactura += $base_factura;
+                        $subIva += $iva;
+                        $subRetencion += $retencion;
+                        $subTotalOficial += $total_oficial;
+                        $subBaseTaref += $base_taref;
+                        $subImporteVta += $importe_vta;
+
+                        $totalOficialSum += $total_oficial;
+                        $totalnoofi += $base_taref;
+                        $importeVtaSum += $importe_vta;
+                        $totalPrecioVentaSum += floatval($cotizacion->precio ?? 0);
+                        $totalPrecioViajeSum += floatval($cotizacion->precio_viaje ?? 0);
+                        $totalBaseFacturaSum += $base_factura;
+                        $totalIvaSum += $iva;
+                        $totalRetencionSum += $retencion;
+                    @endphp
+
+                    <tr style="font-size: 7px; border: 1px solid #000">
+                        <td style="padding: 2px; border: 1px solid #000">
+                            @php
+                                $fechaInicio = optional(optional(optional($cotizacion->DocCotizacion)->Asignaciones))->fehca_inicio_guard;
+                            @endphp
+                            {{ $fechaInicio ? \Carbon\Carbon::parse($fechaInicio)->format('d-m-Y') : 'Sin fecha' }}
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #000; font-weight: bold; background-color: #f8f9fa;">
+                            {{ $unidadTexto }}
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #000">
+                            @php
+                                $numContenedor = optional($cotizacion->DocCotizacion)->num_contenedor ?? '';
+                                if ($cotizacion->jerarquia === 'Principal' && $cotizacion->referencia_full) {
+                                    $cotSecundaria = \App\Models\Cotizaciones::where(
+                                        'referencia_full',
+                                        $cotizacion->referencia_full,
+                                    )
+                                        ->where('jerarquia', 'Secundario')
+                                        ->with('DocCotizacion')
+                                        ->first();
+
+                                    $contenedorSec = optional($cotSecundaria?->DocCotizacion)->num_contenedor;
+                                    if ($contenedorSec) {
+                                        $numContenedor .= ' / ' . $contenedorSec;
+                                    }
+                                }
+                                $arr = explode(' / ', $numContenedor);
+                                $arr = array_map(fn($c) => mb_substr($c, 0, 11), $arr);
+                                $numContenedor = implode(' / ', $arr);
+                            @endphp
+                            {{ $numContenedor }}
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #000; color: #020202; background: yellow">
+                            {{ $cotizacion->id_subcliente && $cotizacion->Subcliente ? $cotizacion->Subcliente->nombre : 'N/A' }}
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #000; color: #ffffff; background: #2778c4">
+                            {{ $cotizacion->destino }}
+                        </td>
+                        <td style="padding: 2px; border: 1px solid #000">{{ $cotizacion->peso_contenedor }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">{{ $cotizacion->tamano }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format(floatval($cotizacion->burreo ?? 0), 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format(floatval($cotizacion->maniobra ?? 0), 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">${{ number_format(floatval($cotizacion->estadia ?? 0), 2, '.', ',') }}</td>
+                        @php
+                            $sobrepeso = ($cotizacion->peso_contenedor ?? 0) - ($cotizacion->peso_reglamentario ?? 0);
+                            $sobrepeso_calc = $sobrepeso * ($cotizacion->precio_sobre_peso ?? 0);
+                        @endphp
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($sobrepeso_calc, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format(floatval($cotizacion->otro ?? 0), 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format(floatval($cotizacion->precio ?? 0), 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format(floatval($cotizacion->precio_viaje ?? 0), 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($base_factura, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($iva, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($retencion, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($total_oficial, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($base_taref, 2, '.', ',') }}</td>
+                        <td style="padding: 2px; border: 1px solid #000">$ {{ number_format($importe_vta, 2, '.', ',') }}</td>
+                    </tr>
+                @endforeach
+                {{-- Fila de Subtotal por Unidad --}}
+                <tr style="font-size: 7.5px; font-weight: bold; background-color: #d8e8f5; border: 1.5px solid #000;">
+                    <td colspan="12" style="padding: 3px; text-align: right; border: 1px solid #000;">
+                        SUBTOTAL {{ $unidadTexto }}:
+                    </td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subPrecioVenta, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subPrecioViaje, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subBaseFactura, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subIva, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subRetencion, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subTotalOficial, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subBaseTaref, 2, '.', ',') }}</td>
+                    <td style="padding: 3px; border: 1px solid #000;">$ {{ number_format($subImporteVta, 2, '.', ',') }}</td>
+                </tr>
+            </tbody>
+        </table>
+    @endforeach
+
+    {{-- Tabla de Gran Total Consolidado al finalizar todas las unidades --}}
+    <table class="table text-white tabla-completa"
+        style="color: #000; width: 100%; margin: 6px 0px 8px 0px; border-collapse: collapse; border: 2px solid #28a745;">
+        <tbody>
+            <tr style="font-size: 8px; font-weight: bold; background-color: #28a745; color: #ffffff;">
+                <td colspan="12" style="padding: 4px; text-align: right; border: 1px solid #000;">
+                    GRAN TOTAL CONSOLIDADO ESTADO DE CUENTA:
+                </td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalPrecioVentaSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalPrecioViajeSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalBaseFacturaSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalIvaSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalRetencionSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalOficialSum, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($totalnoofi, 2, '.', ',') }}</td>
+                <td style="padding: 4px; border: 1px solid #000; text-align: center;">$ {{ number_format($importeVtaSum, 2, '.', ',') }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @endif
 
     @php
         use App\Models\Bancos;
-        $empresaActual = auth()->user()->id_empresa;
+        $empresaActual = auth()->user()?->id_empresa ?? ($cotizacion?->id_empresa ?? null);
 
         // Recopila los IDs de los proveedores únicos de las cotizaciones, excluyendo NULL
         $proveedoresIds = $cotizaciones->pluck('DocCotizacion.Asignaciones.id_proveedor')->filter()->unique();
@@ -382,7 +588,7 @@
 
     <h3 class="sin_margem"
         style="color: #fff; background: rgb(24, 192, 141); margin-top: 0px; padding: 0px; font-size: 10px">
-        Cuentas Bancarias Proveedores
+        {{ $esEmpresaGlobal ? 'Cuentas Bancarias y Desglose' : 'Cuentas Bancarias Proveedores' }}
     </h3>
 
     <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%">
@@ -390,7 +596,7 @@
         @php
             use App\Models\Empresas;
 
-            $empresaActual = auth()->user()->id_empresa;
+            $empresaActual = auth()->user()?->id_empresa ?? ($cotizacion?->id_empresa ?? null);
             $empresa = Empresas::find($empresaActual);
             $esEmpresaPropia = $empresa?->empresa_propia ?? false;
 
@@ -424,10 +630,10 @@
                         $facturadosPorProveedor = [];
 
                         foreach ($cotizaciones as $cotizacion) {
-                            $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                            $cuenta1 = floatval($cotizacion->base_factura ?? 0) + floatval($cotizacion->iva ?? 0) - floatval($cotizacion->retencion ?? 0);
                             $totalFacturaProveedor += $cuenta1;
 
-                            $facturadoA = $cotizacion->Subcliente->nombre ?? 'N/A';
+                            $facturadoA = optional($cotizacion->Subcliente)->nombre ?? 'N/A';
                             if (!isset($facturadosPorProveedor[$facturadoA])) {
                                 $facturadosPorProveedor[$facturadoA] = 0;
                             }
@@ -492,10 +698,10 @@
                             if ($proveedor && isset($cotizacionesPorProveedor[$proveedor->id])) {
                                 $cotizacionesProveedor = $cotizacionesPorProveedor[$proveedor->id];
                                 foreach ($cotizacionesProveedor as $cotizacion) {
-                                    $cuenta1 = $cotizacion->base_factura + $cotizacion->iva - $cotizacion->retencion;
+                                    $cuenta1 = floatval($cotizacion->base_factura ?? 0) + floatval($cotizacion->iva ?? 0) - floatval($cotizacion->retencion ?? 0);
                                     $totalFacturaProveedor += $cuenta1;
 
-                                    $facturadoA = $cotizacion->Subcliente->nombre ?? 'N/A';
+                                    $facturadoA = optional($cotizacion->Subcliente)->nombre ?? 'N/A';
                                     if (!isset($facturadosPorProveedor[$facturadoA])) {
                                         $facturadosPorProveedor[$facturadoA] = 0;
                                     }
@@ -571,7 +777,7 @@
             </h3>
 
             @php
-                $empresaActual = auth()->user()->id_empresa;
+                $empresaActual = auth()->user()?->id_empresa ?? ($cotizacion?->id_empresa ?? null);
                 $bancoGlobal = Bancos::where('cuenta_global', 1)->where('id_empresa', $empresaActual)->first();
 
                 $cuentaGlobal = $bancoGlobal
@@ -596,7 +802,7 @@
                         floatval($cotizacion->base_factura ?? 0) -
                         floatval($cotizacion->iva ?? 0) +
                         floatval($cotizacion->retencion ?? 0);
-                    $subcliente = $cotizacion->Subcliente->nombre ?? 'N/A ';
+                    $subcliente = optional($cotizacion->Subcliente)->nombre ?? 'N/A';
 
                     if (!isset($totalesPorProveedor[$proveedorId])) {
                         $totalesPorProveedor[$proveedorId] = [
@@ -625,7 +831,7 @@
                             {{-- si hay cuenta global mostramos ese título, si no ponemos "Cuenta Bancaria Proveedor" o el nombre que quieras --}}
                             {{ $bancoGlobal ? 'Cuenta Global' : 'Cuenta Bancaria Proveedor' }}
                         </th>
-                        <th style="padding: 2px; border: 1px solid #000">Proveedor</th>
+                        <th style="padding: 2px; border: 1px solid #000">{{ $esEmpresaGlobal ? "Unidad / Detalle" : "Proveedor" }}</th>
                         <th style="padding: 2px; border: 1px solid #000">Total</th>
                         @foreach ($subclientesLista as $subcliente)
                             <th style="padding: 2px; border: 1px solid #000">{{ $subcliente }}</th>
