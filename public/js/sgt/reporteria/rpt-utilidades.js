@@ -240,6 +240,7 @@ function ejecutarExportacion(fileType) {
     const rowData = JSON.stringify(apiGrid.getSelectedRows());
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
+    let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
     let idEquipo = $("#selEquipoUtilidad").val();
 

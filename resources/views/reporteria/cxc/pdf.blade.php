@@ -396,7 +396,7 @@
 
         @if (!isset($isExcel))
             <div style="background-color: #2c3e50; color: #ffffff; padding: 4px 8px; font-size: 8.5px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '10px' }}; margin-bottom: 2px; border-radius: 3px;">
-                🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }}
+                UNIDAD / TRACTOCAMION: {{ $unidadTexto }}
             </div>
         @endif
 
@@ -406,7 +406,7 @@
                 <thead>
                     <tr>
                         <th colspan="20" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-size: 10pt; font-weight: bold;">
-                            🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }}
+                            UNIDAD / TRACTOCAMION: {{ $unidadTexto }}
                         </th>
                     </tr>
                 </thead>
