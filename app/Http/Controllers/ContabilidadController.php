@@ -61,7 +61,54 @@ class ContabilidadController extends Controller
 
         $equipoSeleccionado = $idEquipo ? Equipo::find($idEquipo) : null;
 
-        // 4. Calcular balance y estado de resultados
+        // 4. Tipo de reporte solicitado
+        $tipoReporte = $request->input('tipo_reporte', 'balance_general');
+        $catalogoReportes = [
+            'balance_general'   => [
+                'nombre'      => 'Balance General (Estado de Situación Financiera)',
+                'codigo_conac'=> 'ESF-01',
+                'icono'       => 'fas fa-balance-scale',
+                'disponible'  => true,
+                'descripcion' => 'Muestra los saldos de Activo, Pasivo y Patrimonio bajo la ecuación contable A = P + C.',
+            ],
+            'estado_resultados' => [
+                'nombre'      => 'Estado de Actividades / Resultados',
+                'codigo_conac'=> 'ERA-02',
+                'icono'       => 'fas fa-chart-line',
+                'disponible'  => true,
+                'descripcion' => 'Desglose detallado de Ingresos por Fletes, Rendimientos e Intereses Financieros menos Gastos Operativos.',
+            ],
+            'balanza_comprobacion' => [
+                'nombre'      => 'Balanza de Comprobación',
+                'codigo_conac'=> 'BC-03',
+                'icono'       => 'fas fa-list-alt',
+                'disponible'  => false,
+                'descripcion' => 'Listado de todas las cuentas CONAC de mayor y detalle con movimientos Debe, Haber y Saldos.',
+            ],
+            'variacion_hacienda' => [
+                'nombre'      => 'Estado de Variación en la Hacienda Pública / Patrimonio',
+                'codigo_conac'=> 'EVH-04',
+                'icono'       => 'fas fa-chart-pie',
+                'disponible'  => false,
+                'descripcion' => 'Modificaciones en el patrimonio generado, reservas y resultados acumulados del ejercicio.',
+            ],
+            'flujos_efectivo' => [
+                'nombre'      => 'Estado de Flujos de Efectivo',
+                'codigo_conac'=> 'EFE-05',
+                'icono'       => 'fas fa-money-bill-wave',
+                'disponible'  => false,
+                'descripcion' => 'Origen y aplicación de recursos bancarios y de tesorería clasificados por actividades operativas.',
+            ],
+            'libro_diario' => [
+                'nombre'      => 'Libro Diario de Pólizas',
+                'codigo_conac'=> 'LD-06',
+                'icono'       => 'fas fa-book',
+                'disponible'  => false,
+                'descripcion' => 'Registro cronológico exhaustivo de pólizas de Ingreso, Egreso, Diario y Apertura.',
+            ],
+        ];
+
+        // 5. Calcular balance y estado de resultados
         $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
 
         if ($request->ajax() || $request->wantsJson() || $request->has('json')) {
@@ -80,6 +127,8 @@ class ContabilidadController extends Controller
             'equipoSeleccionado' => $equipoSeleccionado,
             'idEquipo'           => $idEquipo,
             'fechaCorte'         => $fechaCorte,
+            'tipoReporte'        => $tipoReporte,
+            'catalogoReportes'   => $catalogoReportes,
         ]);
     }
 
@@ -110,6 +159,8 @@ class ContabilidadController extends Controller
 
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
         $equipoSeleccionado = $idEquipo ? Equipo::find($idEquipo) : null;
+        $tipoReporte = $request->input('tipo_reporte', 'balance_general');
+        $descargarPdf = (bool) $request->input('download', false);
 
         $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
 
@@ -118,12 +169,22 @@ class ContabilidadController extends Controller
             $nombresEmpresas = 'CONSOLIDADO GENERAL';
         }
 
-        return view('contabilidad.balance-general-print', [
+        $dataView = [
             'balance'            => $balance,
             'nombresEmpresas'    => $nombresEmpresas,
             'equipoSeleccionado' => $equipoSeleccionado,
             'fechaCorte'         => $fechaCorte,
-        ]);
+            'tipoReporte'        => $tipoReporte,
+        ];
+
+        if ($descargarPdf && class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('contabilidad.balance-general-print', $dataView);
+            $pdf->setPaper('letter', 'portrait');
+            $fileName = 'Reporte_Contable_' . ($tipoReporte === 'estado_resultados' ? 'Resultados' : 'Balance') . '_' . $fechaCorte . '.pdf';
+            return $pdf->download($fileName);
+        }
+
+        return view('contabilidad.balance-general-print', $dataView);
     }
 
     /**
@@ -300,5 +361,13 @@ class ContabilidadController extends Controller
                 'message' => 'Error al guardar la póliza de apertura: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Muestra el Manual Contable y Guía Contabilizadora CONAC / LGCG.
+     */
+    public function manual()
+    {
+        return view('contabilidad.manual');
     }
 }

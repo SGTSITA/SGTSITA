@@ -270,7 +270,7 @@ class PolizaService
     /**
      * Resuelve la subcuenta analítica de un banco por su ID o asigna una default de bancos.
      */
-    protected function resolverCuentaBanco(?int $bancoId, int $idEmpresa): int
+    public function resolverCuentaBanco(?int $bancoId, int $idEmpresa): int
     {
         if ($bancoId) {
             $banco = Bancos::find($bancoId);
@@ -303,7 +303,7 @@ class PolizaService
     /**
      * Resuelve la subcuenta analítica de gasto operativo.
      */
-    protected function resolverCuentaGasto(?int $categoriaGastoId, int $idEmpresa, ?string $concepto = null): int
+    public function resolverCuentaGasto(?int $categoriaGastoId, int $idEmpresa, ?string $concepto = null): int
     {
         $conceptoStr = strtoupper($concepto ?? '');
 
@@ -478,6 +478,409 @@ class PolizaService
                 'concepto' => trim($poliza->concepto . ($motivo ? " (CANCELADA: {$motivo})" : " (CANCELADA)")),
             ]);
             return $poliza;
+        });
+    }
+
+    /**
+     * Contabiliza un gasto devengado (Cargo a Cuenta de Gasto, Abono a Proveedores CXP).
+     */
+    public function contabilizarGastoDevengado(\App\Models\Gasto $gasto): ?Poliza
+    {
+        return DB::transaction(function () use ($gasto) {
+            $monto = round((float) ($gasto->monto_total ?? 0), 2);
+            if ($monto <= 0 || $gasto->estatus === 'cancelado') {
+                return null;
+            }
+
+            // Eliminar previa si existía para evitar duplicidad
+            $polizaPrevia = Poliza::where('origen_tipo', 'gasto_devengado')
+                ->where('origen_id', $gasto->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $idEmpresa = $gasto->id_empresa ?? 1;
+            $cuentaGastoId = $this->resolverCuentaGasto($gasto->categoria_gasto_id, $idEmpresa, $gasto->concepto);
+
+            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+
+            if (!$cuentaProveedores) {
+                return null;
+            }
+
+            $fecha = !empty($gasto->fecha_gasto)
+                ? Carbon::parse($gasto->fecha_gasto)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => $gasto->id_equipo,
+                'tipo'         => 'diario',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => 'Provisión Gasto #' . $gasto->id . ' - ' . ($gasto->concepto ?? 'Gasto Operativo'),
+                'origen_tipo'  => 'gasto_devengado',
+                'origen_id'    => $gasto->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaGastoId,
+                        'id_equipo'          => $gasto->id_equipo,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'GASTO_' . $gasto->id,
+                        'concepto_detalle'   => $gasto->concepto ?? 'Gasto Devengado',
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaProveedores->id,
+                        'id_equipo'          => $gasto->id_equipo,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'CXP_PROV',
+                        'concepto_detalle'   => 'Pasivo Proveedores / Gasto #' . $gasto->id,
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza el pago de un gasto (Cargo a Proveedores CXP, Abono a Bancos).
+     */
+    public function contabilizarGastoPago(\App\Models\GastoPago $pago): ?Poliza
+    {
+        return DB::transaction(function () use ($pago) {
+            $monto = round((float) ($pago->monto ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $pago->loadMissing('gasto');
+            $idEmpresa = $pago->gasto?->id_empresa ?? 1;
+
+            // Eliminar previa si existía
+            $polizaPrevia = Poliza::where('origen_tipo', 'gasto_pago')
+                ->where('origen_id', $pago->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+
+            $cuentaBancoId = $this->resolverCuentaBanco($pago->cuenta_bancaria_id, $idEmpresa);
+
+            if (!$cuentaProveedores) {
+                return null;
+            }
+
+            $fecha = !empty($pago->fecha_pago)
+                ? Carbon::parse($pago->fecha_pago)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => $pago->gasto?->id_equipo,
+                'tipo'         => 'egreso',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => 'Pago de Gasto #' . ($pago->gasto_id ?? 'N/A') . ' - Ref: ' . ($pago->referencia ?? 'Pago Bancario'),
+                'origen_tipo'  => 'gasto_pago',
+                'origen_id'    => $pago->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaProveedores->id,
+                        'id_equipo'          => $pago->gasto?->id_equipo,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'CANC_CXP',
+                        'concepto_detalle'   => 'Cancelación Pasivo Proveedor Gasto #' . $pago->gasto_id,
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaBancoId,
+                        'id_equipo'          => $pago->gasto?->id_equipo,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'PAGO_BANCO',
+                        'concepto_detalle'   => 'Salida de Bancos por Pago Gasto #' . $pago->gasto_id,
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza un cobro a cliente de CxC (Cargo a Bancos, Abono a Clientes CXC).
+     */
+    public function contabilizarCobroCxc(\App\Models\CobroPagoCotizacion $cpc): ?Poliza
+    {
+        return DB::transaction(function () use ($cpc) {
+            $monto = round((float) ($cpc->monto ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $cpc->loadMissing(['cotizacion.cliente', 'cobroPago']);
+            $cotizacion = $cpc->cotizacion;
+            $cobroPago = $cpc->cobroPago;
+
+            $idEmpresa = $cotizacion?->id_empresa ?? 1;
+
+            // Eliminar previa si existía
+            $polizaPrevia = Poliza::where('origen_tipo', 'cobro_cxc')
+                ->where('origen_id', $cpc->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+
+            $bancoId = $cobroPago?->id_banco ?? null;
+            $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
+
+            if (!$cuentaClientes) {
+                return null;
+            }
+
+            $fecha = !empty($cobroPago?->fecha_pago)
+                ? Carbon::parse($cobroPago->fecha_pago)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'ingreso',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => 'Cobro CXC Cotización #' . ($cotizacion?->id ?? 'N/A') . ' Cliente: ' . ($cotizacion?->cliente?->nombre ?? 'N/A'),
+                'origen_tipo'  => 'cobro_cxc',
+                'origen_id'    => $cpc->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaBancoId,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'DEP_BANCO',
+                        'concepto_detalle'   => 'Ingreso en Bancos Cobro CXC Viaje #' . ($cotizacion?->id ?? ''),
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaClientes->id,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'AMORT_CXC',
+                        'concepto_detalle'   => 'Abono a CXC Cliente Viaje #' . ($cotizacion?->id ?? ''),
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza un préstamo u adelanto otorgado a un operador (Cargo a Préstamos Activo, Abono a Bancos).
+     */
+    public function contabilizarPrestamoOperador(\App\Models\Prestamo $prestamo): ?Poliza
+    {
+        return DB::transaction(function () use ($prestamo) {
+            $monto = round((float) ($prestamo->cantidad ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $prestamo->loadMissing('operador');
+            $idEmpresa = auth()->user()?->id_empresa ?? 1;
+
+            // Eliminar previa si existía
+            $polizaPrevia = Poliza::where('origen_tipo', 'prestamo_operador')
+                ->where('origen_id', $prestamo->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
+
+            $cuentaBancoId = $this->resolverCuentaBanco($prestamo->id_banco, $idEmpresa);
+
+            if (!$cuentaPrestamos) {
+                return null;
+            }
+
+            $fecha = !empty($prestamo->fecha_prestamo)
+                ? Carbon::parse($prestamo->fecha_prestamo)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            $tipoDesc = ($prestamo->tipo === \App\Models\Prestamo::TIPO_ADELANTO) ? 'Adelanto' : 'Préstamo';
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'egreso',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => "{$tipoDesc} Otorgado a Operador: " . ($prestamo->operador?->nombre ?? 'N/A') . " (#{$prestamo->id})",
+                'origen_tipo'  => 'prestamo_operador',
+                'origen_id'    => $prestamo->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaPrestamos->id,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'DEUDOR_OPE',
+                        'concepto_detalle'   => "{$tipoDesc} Operador " . ($prestamo->operador?->nombre ?? ''),
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaBancoId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'SALIDA_BANCO',
+                        'concepto_detalle'   => "Salida de Bancos por {$tipoDesc} #" . $prestamo->id,
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza la provisión de CXP a proveedores de fletes subcontratados (exclusivo GC).
+     */
+    public function contabilizarProvisionCxpProveedor(\App\Models\Cotizaciones $cotizacion): ?Poliza
+    {
+        return DB::transaction(function () use ($cotizacion) {
+            $cotizacion->loadMissing(['DocCotizacion.Asignaciones.Proveedor']);
+            $asignacion = $cotizacion->DocCotizacion?->Asignaciones;
+
+            if (!$asignacion || $asignacion->tipo_contrato !== 'Subcontratado') {
+                return null;
+            }
+
+            $monto = round((float) ($asignacion->total_proveedor ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $idEmpresa = $cotizacion->id_empresa ?? 7;
+
+            // Eliminar previa si existía
+            $polizaPrevia = Poliza::where('origen_tipo', 'cotizacion_cxp')
+                ->where('origen_id', $cotizacion->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaGasto = CatCuentaContable::where('codigo', '5.1.1.3')->first()
+                ?: CatCuentaContable::where('codigo', '5.1.3.1')->first();
+
+            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+
+            if (!$cuentaGasto || !$cuentaProveedores) {
+                return null;
+            }
+
+            $fecha = !empty($cotizacion->fecha_entrega)
+                ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'diario',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => 'Provisión CXP Flete Subcontratado Viaje #' . $cotizacion->id . ' Prov: ' . ($asignacion->Proveedor?->nombre ?? 'N/A'),
+                'origen_tipo'  => 'cotizacion_cxp',
+                'origen_id'    => $cotizacion->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaGasto->id,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'COSTO_SUBCONTRATO',
+                        'concepto_detalle'   => 'Costo Flete Subcontratado Viaje #' . $cotizacion->id,
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaProveedores->id,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'CXP_PROV_FLETE',
+                        'concepto_detalle'   => 'Pasivo Proveedor Flete Viaje #' . $cotizacion->id,
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza el pago bancario a un proveedor de flete subcontratado (exclusivo GC).
+     */
+    public function contabilizarPagoCxpProveedor(\App\Models\CobroPagoCotizacion $cpc): ?Poliza
+    {
+        return DB::transaction(function () use ($cpc) {
+            $monto = round((float) ($cpc->monto ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $cpc->loadMissing(['cotizacion', 'cobroPago']);
+            $cotizacion = $cpc->cotizacion;
+            $cobroPago = $cpc->cobroPago;
+
+            $idEmpresa = $cotizacion?->id_empresa ?? 7;
+
+            // Eliminar previa si existía
+            $polizaPrevia = Poliza::where('origen_tipo', 'cxp_proveedor_pago')
+                ->where('origen_id', $cpc->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+
+            $bancoId = $cobroPago?->id_banco ?? null;
+            $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
+
+            if (!$cuentaProveedores) {
+                return null;
+            }
+
+            $fecha = !empty($cobroPago?->fecha_pago)
+                ? Carbon::parse($cobroPago->fecha_pago)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'egreso',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => 'Pago CXP Proveedor Flete Viaje #' . ($cotizacion?->id ?? 'N/A'),
+                'origen_tipo'  => 'cxp_proveedor_pago',
+                'origen_id'    => $cpc->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaProveedores->id,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'CANC_CXP_FLETE',
+                        'concepto_detalle'   => 'Cancelación CXP Proveedor Flete Viaje #' . ($cotizacion?->id ?? ''),
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaBancoId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'SALIDA_BANCO',
+                        'concepto_detalle'   => 'Pago Bancario a Proveedor Flete Viaje #' . ($cotizacion?->id ?? ''),
+                    ],
+                ],
+            ]);
         });
     }
 }

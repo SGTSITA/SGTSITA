@@ -8,14 +8,33 @@
 <div class="container-fluid py-3">
 
     {{-- BARRA DE FILTROS Y CONTROL --}}
+    {{-- PANEL SUPERIOR DE CONTROL Y REPORTES CONTABLES --}}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-3">
             <form method="GET" action="{{ route('contabilidad.balance-general.index') }}" id="formFiltroBalance">
-                <div class="row g-3 align-items-end">
+                {{-- FILA 1: FILTROS PRINCIPALES Y TIPO DE REPORTE --}}
+                <div class="row g-3 align-items-end mb-3">
+
+                    {{-- Selector de Tipo de Reporte Contable --}}
+                    <div class="col-xl-3 col-lg-4 col-md-6">
+                        <label class="form-label fw-bold text-dark text-xs mb-1">
+                            <i class="fas fa-file-invoice text-primary me-1"></i> Tipo de Reporte Contable:
+                        </label>
+                        <select name="tipo_reporte" id="selectTipoReporte" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()">
+                            @foreach ($catalogoReportes as $key => $rep)
+                                <option value="{{ $key }}" {{ $tipoReporte === $key ? 'selected' : '' }}>
+                                    [{{ $rep['codigo_conac'] }}] {{ $rep['nombre'] }} {{ !$rep['disponible'] ? '(Próximamente)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted text-xxs d-block mt-1">
+                            <i class="fas fa-info-circle me-1"></i>{{ $catalogoReportes[$tipoReporte]['descripcion'] ?? '' }}
+                        </small>
+                    </div>
 
                     {{-- Filtro de Empresas (solo si es_admin == 1) --}}
                     @if ($esAdmin)
-                        <div class="col-md-3">
+                        <div class="col-xl-3 col-lg-3 col-md-6">
                             <label class="form-label fw-bold text-dark text-xs mb-1">
                                 <i class="fas fa-building text-primary me-1"></i> Empresa(s):
                             </label>
@@ -27,12 +46,12 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted text-xxs">Mantén Ctrl presionado para seleccionar varias.</small>
+                            <small class="text-muted text-xxs">Mantén Ctrl presionado para multi-selección.</small>
                         </div>
                     @endif
 
                     {{-- Filtro de Unidad / Camión (id_equipo - marca) --}}
-                    <div class="col-md-{{ $esAdmin ? '3' : '4' }}">
+                    <div class="col-xl-{{ $esAdmin ? '3' : '4' }} col-lg-{{ $esAdmin ? '3' : '4' }} col-md-6">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
                             <i class="fas fa-truck text-primary me-1"></i> Unidad / Camión:
                         </label>
@@ -44,29 +63,52 @@
                                 </option>
                             @endforeach
                         </select>
+                        <small class="text-muted text-xxs">Filtra la operatividad por unidad vehicular.</small>
                     </div>
 
                     {{-- Fecha de Corte --}}
-                    <div class="col-md-{{ $esAdmin ? '3' : '4' }}">
+                    <div class="col-xl-{{ $esAdmin ? '3' : '4' }} col-lg-{{ $esAdmin ? '2' : '4' }} col-md-6">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
                             <i class="fas fa-calendar-alt text-primary me-1"></i> Fecha de Corte:
                         </label>
                         <input type="date" name="fecha_corte" class="form-control form-control-sm" value="{{ $fechaCorte }}" required>
+                        <small class="text-muted text-xxs">Calcula saldos al día especificado.</small>
                     </div>
 
-                    {{-- Botones de Acción --}}
-                    <div class="col-md-{{ $esAdmin ? '3' : '4' }} d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1 mb-0 shadow-sm">
-                            <i class="fas fa-filter me-1"></i> Actualizar
+                </div>
+
+                {{-- FILA 2: BARRA DE ACCIONES Y BOTONES CON WRAP Y VISIBILIDAD GARANTIZADA --}}
+                <div class="d-flex flex-wrap align-items-center justify-content-between pt-2 border-top gap-2">
+                    
+                    {{-- Botón de Aplicar Filtro --}}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm mb-0">
+                            <i class="fas fa-sync-alt me-1"></i> Actualizar Reporte
                         </button>
-                        <a href="{{ route('contabilidad.poliza-apertura.index') }}" class="btn btn-outline-info btn-sm mb-0 shadow-sm" title="Póliza de Apertura / Saldos Iniciales">
-                            <i class="fas fa-file-invoice-dollar me-1"></i> Apertura
+                    </div>
+
+                    {{-- Accesos Directos Contables --}}
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('contabilidad.poliza-apertura.index') }}" class="btn btn-outline-info btn-sm shadow-sm mb-0" title="Póliza de Apertura / Saldos Iniciales">
+                            <i class="fas fa-file-invoice-dollar me-1"></i> Póliza de Apertura
                         </a>
-                        <a href="{{ route('contabilidad.configuracion.index') }}" class="btn btn-outline-secondary btn-sm mb-0 shadow-sm" title="Configurar cuentas CONAC y matriz">
-                            <i class="fas fa-sliders-h me-1"></i> Configurar
+                        <a href="{{ route('contabilidad.configuracion.index') }}" class="btn btn-outline-secondary btn-sm shadow-sm mb-0" title="Configurar cuentas CONAC y matriz">
+                            <i class="fas fa-sliders-h me-1"></i> Matriz y Cuentas CONAC
                         </a>
-                        <a href="{{ route('contabilidad.balance-general.imprimir', request()->all()) }}" target="_blank" class="btn btn-outline-danger btn-sm mb-0 shadow-sm" title="Imprimir o guardar PDF">
-                            <i class="fas fa-file-pdf me-1"></i> PDF
+                        <a href="{{ route('contabilidad.manual') }}" class="btn btn-outline-warning btn-sm shadow-sm mb-0" title="Manual Contable y Guía CONAC">
+                            <i class="fas fa-book me-1"></i> Guía Contabilizadora
+                        </a>
+
+                        {{-- Botón Vista Previa / Imprimir --}}
+                        @php
+                            $queryParams = array_merge(request()->all(), ['tipo_reporte' => $tipoReporte]);
+                            $queryPdf = array_merge($queryParams, ['download' => 1]);
+                        @endphp
+                        <a href="{{ route('contabilidad.balance-general.imprimir', $queryParams) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm mb-0" title="Abrir versión imprimible">
+                            <i class="fas fa-print me-1"></i> Imprimir
+                        </a>
+                        <a href="{{ route('contabilidad.balance-general.imprimir', $queryPdf) }}" target="_blank" class="btn btn-outline-danger btn-sm shadow-sm mb-0" title="Descargar archivo PDF directo">
+                            <i class="fas fa-file-pdf me-1"></i> Descargar PDF
                         </a>
                     </div>
 
