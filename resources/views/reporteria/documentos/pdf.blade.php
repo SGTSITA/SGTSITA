@@ -74,157 +74,76 @@
     </head>
 
     <body>
-        @php
-            $empresaActual = $user?->Empresa ?? null;
-            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
-        @endphp
-
-        <h4>Empresa: {{ optional($user?->Empresa)->nombre ?? 'SGT' }}</h4>
+        <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
         <h4>Estatus Documentos</h4>
         <h5 style="text-align: right">Fecha: {{ date('d-m-Y') }}</h5>
 
-        @php
-            $renderEstado = function ($eir, $cima) {
-                if ($cima == 1) {
-                    return '<span class="cima-badge">CIMA</span>';
-                }
-                if ($eir) {
-                    return '<span class="status-check checked"></span>';
-                }
-                return '<span class="status-check unchecked"></span>';
-            };
-        @endphp
-
-        @if (!$esEmpresaGlobal)
-            {{-- MODO TRADICIONAL (Configuración Global = 0): Diseño 100% original e intacto --}}
-            <table>
-                <thead>
+        <table>
+            <thead>
+                <tr>
+                    <th># Contenedor</th>
+                    <th>Formato CCP</th>
+                    <th>Boleta Liberación</th>
+                    <th>Doda</th>
+                    <th>Carta Porte</th>
+                    <th>Boleta Vacío</th>
+                    <th>EIR</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($cotizaciones as $cotizacion)
                     <tr>
-                        <th># Contenedor</th>
-                        <th>Formato CCP</th>
-                        <th>Boleta Liberación</th>
-                        <th>Doda</th>
-                        <th>Carta Porte</th>
-                        <th>Boleta Vacío</th>
-                        <th>EIR</th>
+                        <td>{{ $cotizacion['num_contenedor'] }}</td>
+                        <td>
+                            <span class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}"></span>
+                        </td>
+                        <td>
+                            <span
+                                class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"
+                            ></span>
+                        </td>
+                        <td><span class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}"></span></td>
+                        <td>
+                            <span
+                                class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}"
+                            ></span>
+                        </td>
+                        <td>
+                            <span
+                                class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"
+                            ></span>
+                        </td>
+                        <td>
+                            @php
+                                $esFull = $cotizacion['tipo'] === 'Full';
+
+                                $eir1 = $esFull ? $cotizacion['eir_primario'] ?? false : $cotizacion['doc_eir'] ?? false;
+                                $eir2 = $esFull ? $cotizacion['eir_secundario'] ?? false : null;
+
+                                $cima1 = $esFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
+                                $cima2 = $esFull ? $cotizacion['cima_secundario'] ?? 0 : null;
+
+                                $renderEstado = function ($eir, $cima) {
+                                    if ($cima == 1) {
+                                        return '<span class="cima-badge">CIMA</span>';
+                                    }
+                                    if ($eir) {
+                                        return '<span class="status-check checked"></span>';
+                                    }
+                                    return '<span class="status-check unchecked"></span>';
+                                };
+                            @endphp
+
+                            @if ($esFull)
+                                {!! $renderEstado($eir1, $cima1) !!} /
+                                {!! $renderEstado($eir2, $cima2) !!}
+                            @else
+                                {!! $renderEstado($eir1, $cima1) !!}
+                            @endif
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach ($cotizaciones as $cotizacion)
-                        <tr>
-                            <td>{{ $cotizacion['num_contenedor'] }}</td>
-                            <td>
-                                <span class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}"></span>
-                            </td>
-                            <td>
-                                <span
-                                    class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"
-                                ></span>
-                            </td>
-                            <td><span class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}"></span></td>
-                            <td>
-                                <span
-                                    class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}"
-                                ></span>
-                            </td>
-                            <td>
-                                <span
-                                    class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"
-                                ></span>
-                            </td>
-                            <td>
-                                @php
-                                    $esFull = $cotizacion['tipo'] === 'Full';
-
-                                    $eir1 = $esFull ? $cotizacion['eir_primario'] ?? false : $cotizacion['doc_eir'] ?? false;
-                                    $eir2 = $esFull ? $cotizacion['eir_secundario'] ?? false : null;
-
-                                    $cima1 = $esFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
-                                    $cima2 = $esFull ? $cotizacion['cima_secundario'] ?? 0 : null;
-                                @endphp
-
-                                @if ($esFull)
-                                    {!! $renderEstado($eir1, $cima1) !!} /
-                                    {!! $renderEstado($eir2, $cima2) !!}
-                                @else
-                                    {!! $renderEstado($eir1, $cima1) !!}
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            {{-- MODO EMPRESA GLOBAL (H00): Agrupación separada por Unidad / Tractocamión --}}
-            @php
-                $documentosPorUnidad = collect($cotizaciones)->groupBy(function($item) {
-                    return $item['unidad'] ?? 'SIN UNIDAD ASIGNADA';
-                });
-            @endphp
-
-            @foreach ($documentosPorUnidad as $unidadTexto => $itemsUnidad)
-                <div style="background-color: #2c3e50; color: #ffffff; padding: 5px 10px; font-size: 11px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '15px' }}; margin-bottom: 5px; border-radius: 3px;">
-                    🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }} ({{ count($itemsUnidad) }} contenedores)
-                </div>
-
-                <table style="margin-top: 5px; margin-bottom: 10px;">
-                    <thead>
-                        <tr>
-                            <th># Contenedor</th>
-                            <th>Formato CCP</th>
-                            <th>Boleta Liberación</th>
-                            <th>Doda</th>
-                            <th>Carta Porte</th>
-                            <th>Boleta Vacío</th>
-                            <th>EIR</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($itemsUnidad as $cotizacion)
-                            <tr>
-                                <td>{{ $cotizacion['num_contenedor'] }}</td>
-                                <td>
-                                    <span class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}"></span>
-                                </td>
-                                <td>
-                                    <span
-                                        class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"
-                                    ></span>
-                                </td>
-                                <td><span class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}"></span></td>
-                                <td>
-                                    <span
-                                        class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}"
-                                    ></span>
-                                </td>
-                                <td>
-                                    <span
-                                        class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}"
-                                    ></span>
-                                </td>
-                                <td>
-                                    @php
-                                        $esFull = $cotizacion['tipo'] === 'Full';
-
-                                        $eir1 = $esFull ? $cotizacion['eir_primario'] ?? false : $cotizacion['doc_eir'] ?? false;
-                                        $eir2 = $esFull ? $cotizacion['eir_secundario'] ?? false : null;
-
-                                        $cima1 = $esFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
-                                        $cima2 = $esFull ? $cotizacion['cima_secundario'] ?? 0 : null;
-                                    @endphp
-
-                                    @if ($esFull)
-                                        {!! $renderEstado($eir1, $cima1) !!} /
-                                        {!! $renderEstado($eir2, $cima2) !!}
-                                    @else
-                                        {!! $renderEstado($eir1, $cima1) !!}
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endforeach
-        @endif
+                @endforeach
+            </tbody>
+        </table>
     </body>
 </html>

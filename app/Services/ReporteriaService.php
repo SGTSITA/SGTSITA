@@ -82,10 +82,7 @@ class ReporteriaService
             'a.fecha_fin',
             DB::raw('DATEDIFF(a.fecha_fin, a.fecha_inicio) as tiempo_viaje'),
             'c.referencia_full',
-            'c.estatus_planeacion',
-            'eq.id_equipo as camion_codigo',
-            'eq.marca as camion_marca',
-            'eq.placas as camion_placas'
+            'c.estatus_planeacion'
         )->get();
 
         // Agrupar asignaciones por camión para calcular el prorrateo de gastos por viaje en memoria
@@ -170,14 +167,6 @@ class ReporteriaService
             $sumGastosExtra = $gastosExtra->sum('monto_total');
             $sumGastosOperador = $gastosOperador->sum('monto_total');
 
-            $textoUnidad = 'SIN UNIDAD ASIGNADA';
-            if ($d->id_camion) {
-                $codigo = $d->camion_codigo ?: ($d->camion_placas ?: 'UNIDAD #' . $d->id_camion);
-                $marca = $d->camion_marca ?: 'TRACTO';
-                $placas = $d->camion_placas ?: 'S/P';
-                $textoUnidad = trim("{$codigo} - {$marca} [{$placas}]");
-            }
-
             $Columns = [
                 "numContenedor" => $contenedor,
                 "cliente" => $d->cliente,
@@ -196,8 +185,6 @@ class ReporteriaService
                 "estatusPago" => $d->estatus_pago == 1 ? 'Pagado' : 'Por Cobrar',
                 "utilidad" => ($d->total + $sumGastosExtra) - ($pagoOperacion + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
                 "detalleGastos" => $detalleGastos,
-                "id_camion" => $d->id_camion,
-                "unidad" => $textoUnidad,
             ];
 
             $Info[] = $Columns;
@@ -409,7 +396,7 @@ class ReporteriaService
     {
         $fechaCarbon = Carbon::now();
 
-        $cotizaciones = Cotizaciones::with(['Cliente', 'DocCotizacion.Asignaciones.Proveedor', 'DocCotizacion.Asignaciones.Camion', 'cobros.cobroPago.bancoA', 'cobros.cobroPago.bancoB', 'estadoCuenta'])
+        $cotizaciones = Cotizaciones::with(['Cliente', 'DocCotizacion.Asignaciones.Proveedor', 'cobros.cobroPago.bancoA', 'cobros.cobroPago.bancoB', 'estadoCuenta'])
             ->whereIn('id', $cotizacionIds)
             ->get();
 

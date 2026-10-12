@@ -801,7 +801,6 @@ class PlaneacionController extends Controller
                         $dineroViaje->id_banco = $request->get('cmbBanco');
                         $dineroViaje->motivo = 'Dinero para viaje';
                         $dineroViaje->monto =  $CantineroViaje;
-                        $dineroViaje->es_principal = 1;
                         $dineroViaje->fecha_entrega_monto = \Carbon\Carbon::createFromFormat(
                             'd/m/Y',
                             $request->get('FechaAplicacionDinero')
@@ -822,7 +821,7 @@ class PlaneacionController extends Controller
                                     'd/m/Y',
                                     $request->get('FechaAplicacionDinero')
                                 )->format('Y-m-d'),
-                                'origen' => 'sistema',
+                                'origen' => null,
                                 'referencia' => 'del ' .\Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') . ' al '.\Carbon\Carbon::parse($fechaFinal)->format('d/m/Y') ,
                                 'detalles' => json_encode($contenedoresAbonos),
                                  'referenciaable_id' => $asignaciones->id,
@@ -838,9 +837,6 @@ class PlaneacionController extends Controller
                         if (!$movimeintoCrear) {
                             throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje ');
                         }
-
-                        $dineroViaje->id_movimiento_bancario = $movimeintoCrear->id;
-                        $dineroViaje->save();
 
 
 
@@ -1268,49 +1264,26 @@ class PlaneacionController extends Controller
                 }
             }
 
-            // 1. Obtener o inicializar el registro principal de DineroContenedor (es_principal = 1)
-            $dineroViajeModel = DineroContenedor::where('id_contenedor', $contenedor->id)
+            // Buscar movimiento bancario existente para dinero de viaje de esta asignación
+            $movimientoBancoExistente = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $asignaciones->id)
                 ->where(function ($q) {
-                    $q->where('es_principal', 1)
-                      ->orWhere('motivo', 'Dinero para viaje');
+                    $q->where('referenciaable_type', \App\Models\Asignaciones::class)
+                      ->orWhere('referenciaable_type', 'like', '%Asignaciones%');
                 })
-                ->orderByDesc('es_principal')
+                ->where('cancelado', 0)
+                ->where('tipo', 'cargo')
+                ->where('concepto', 'not like', 'Devolución%')
+                ->latest('id')
                 ->first();
 
-            if (!$dineroViajeModel && floatval($dineroViaje) > 0) {
-                $dineroViajeModel = new DineroContenedor();
-                $dineroViajeModel->id_contenedor = $contenedor->id;
-                $dineroViajeModel->motivo = 'Dinero para viaje';
-                $dineroViajeModel->es_principal = 1;
+            if (!$movimientoBancoExistente && $asignaciones->id && $asignaciones->id_banco1_dinero_viaje) {
+                $movimientoBancoExistente = $this->BancosService->findMovimiento(
+                    $asignaciones->id,
+                    \App\Models\Asignaciones::class,
+                    $asignaciones->id_banco1_dinero_viaje
+                );
             }
 
-            // 2. Buscar movimiento bancario existente EXCLUSIVO del dinero principal
-            $movimientoBancoExistente = null;
-            if ($dineroViajeModel && $dineroViajeModel->id_movimiento_bancario) {
-                $movimientoBancoExistente = \App\Models\CatBancoCuentasMovimientos::where('id', $dineroViajeModel->id_movimiento_bancario)
-                    ->where('cancelado', 0)
-                    ->first();
-            }
-
-            if (!$movimientoBancoExistente && $asignaciones->id) {
-                $movimientoBancoExistente = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $asignaciones->id)
-                    ->where(function ($q) {
-                        $q->where('referenciaable_type', \App\Models\Asignaciones::class)
-                          ->orWhere('referenciaable_type', 'like', '%Asignaciones%');
-                    })
-                    ->where('cancelado', 0)
-                    ->where('tipo', 'cargo')
-                    ->where('concepto', 'not like', 'Devolución%')
-                    ->where('concepto', 'not like', 'Dinero para viaje: %') // Excluir dinero extra de liquidaciones
-                    ->where(function ($q) use ($contenedor) {
-                        $q->where('concepto', 'like', 'Dinero para viaje ' . $contenedor->num_contenedor . ' %')
-                          ->orWhere('concepto', 'Dinero para viaje');
-                    })
-                    ->latest('id')
-                    ->first();
-            }
-
-            // 3. Resolución bancaria
             if ($movimientoBancoExistente) {
                 $montoMismo = abs(floatval($movimientoBancoExistente->monto) - floatval($dineroViaje)) < 0.01;
                 $bancoMismo = ($movimientoBancoExistente->cuenta_bancaria_id == $nuevoBancoDinero);
@@ -1320,16 +1293,9 @@ class PlaneacionController extends Controller
                 $fechaMisma = ($fechaMovStr === $nuevaFechaAppDinero);
 
                 if ($montoMismo && $bancoMismo && $fechaMisma && floatval($dineroViaje) > 0) {
-                    // ¡Importe, banco y fecha idénticos! NO TOCAR BANCOS para evitar cancelaciones y pagos duplicados.
-                    if ($dineroViajeModel) {
-                        $dineroViajeModel->es_principal = 1;
-                        if (!$dineroViajeModel->id_movimiento_bancario) {
-                            $dineroViajeModel->id_movimiento_bancario = $movimientoBancoExistente->id;
-                            $dineroViajeModel->save();
-                        }
-                    }
+                    // ¡Ya está pagado y aplicado sin cambios! NO TOCAR BANCOS para evitar duplicidad.
                 } else {
-                    // Cambió monto (ej. $1000 -> $1500), banco o fecha, o se puso en 0: cancelar movimiento anterior
+                    // Cambió monto, banco o fecha, o se puso en 0: cancelar movimiento anterior usando su fecha original
                     $fechaCancelacionMov = $fechaMovStr ?: now()->format('Y-m-d');
                     $this->BancosService->cancelarMovimiento(
                         $movimientoBancoExistente->cuenta_bancaria_id,
@@ -1337,7 +1303,6 @@ class PlaneacionController extends Controller
                         $fechaCancelacionMov
                     );
 
-                    $nuevoMovId = null;
                     // Si el nuevo monto es > 0, registrar el nuevo movimiento con los datos actualizados
                     if (floatval($dineroViaje) > 0 && $nuevoBancoDinero && $nuevaFechaAppDinero) {
                         $operadorN = \App\Models\Operador::find($request->get('cmbOperador'));
@@ -1364,21 +1329,10 @@ class PlaneacionController extends Controller
                         if (!$movimientoCrear) {
                             throw new \Exception('No se pudo crear el nuevo movimiento bancario, dinero para viaje ');
                         }
-                        $nuevoMovId = $movimientoCrear->id;
-                    }
-
-                    if ($dineroViajeModel) {
-                        $dineroViajeModel->es_principal = 1;
-                        $dineroViajeModel->id_banco = $nuevoBancoDinero;
-                        $dineroViajeModel->monto = floatval($dineroViaje);
-                        $dineroViajeModel->fecha_entrega_monto = $nuevaFechaAppDinero ?? date('Y-m-d');
-                        $dineroViajeModel->id_movimiento_bancario = $nuevoMovId;
-                        $dineroViajeModel->save();
                     }
                 }
             } else {
                 // No existía movimiento previo: registrar si dineroViaje > 0
-                $nuevoMovId = null;
                 if (floatval($dineroViaje) > 0 && $nuevoBancoDinero && $nuevaFechaAppDinero) {
                     $operadorN = \App\Models\Operador::find($request->get('cmbOperador'));
                     $contenedoresAbonos = [
@@ -1404,21 +1358,6 @@ class PlaneacionController extends Controller
                     if (!$movimientoCrear) {
                         throw new \Exception('No se pudo crear el nuevo movimiento bancario, dinero para viaje ');
                     }
-                    $nuevoMovId = $movimientoCrear->id;
-                }
-
-                if (floatval($dineroViaje) > 0 && $nuevaFechaAppDinero) {
-                    if (!$dineroViajeModel) {
-                        $dineroViajeModel = new DineroContenedor();
-                        $dineroViajeModel->id_contenedor = $contenedor->id;
-                        $dineroViajeModel->motivo = 'Dinero para viaje';
-                    }
-                    $dineroViajeModel->es_principal = 1;
-                    $dineroViajeModel->id_banco = $nuevoBancoDinero;
-                    $dineroViajeModel->monto = floatval($dineroViaje);
-                    $dineroViajeModel->fecha_entrega_monto = $nuevaFechaAppDinero;
-                    $dineroViajeModel->id_movimiento_bancario = $nuevoMovId;
-                    $dineroViajeModel->save();
                 }
             }
 
@@ -1434,6 +1373,22 @@ class PlaneacionController extends Controller
             $asignaciones->estatus_pagado = 'Pendiente Pago';
 
             $asignaciones->save();
+
+            if ($nuevaFechaAppDinero) {
+                // Registrar/Actualizar el DineroContenedor
+                $dineroViajeModel = DineroContenedor::where('id_contenedor', $contenedor->id)
+                    ->where('motivo', 'Dinero para viaje')
+                    ->first();
+                if (!$dineroViajeModel) {
+                    $dineroViajeModel = new DineroContenedor();
+                    $dineroViajeModel->id_contenedor = $contenedor->id;
+                    $dineroViajeModel->motivo = 'Dinero para viaje';
+                }
+                $dineroViajeModel->id_banco = $nuevoBancoDinero;
+                $dineroViajeModel->monto = $dineroViaje;
+                $dineroViajeModel->fecha_entrega_monto = $nuevaFechaAppDinero;
+                $dineroViajeModel->save();
+            }
 
             $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
             $cotizacion->litros_urea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;

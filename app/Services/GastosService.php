@@ -687,35 +687,6 @@ class GastosService
                 'user_id' => $data['user_id'] ?? auth()->id(),
             ]);
 
-            // Generar Póliza Contable Automática bajo la Guía Contabilizadora
-            try {
-                $polizaService = app(\App\Services\PolizaService::class);
-                $eventoGasto = ($gasto->metodo_imputacion === 'diferido' || ($gasto->programaciones && $gasto->programaciones->count() > 1))
-                    ? 'GASTO_ANTICIPADO'
-                    : 'GASTO_OPERATIVO';
-                $subtipoGasto = ($eventoGasto === 'GASTO_ANTICIPADO') ? 'diferido' : 'directo';
-
-                $asientoData = $polizaService->resolverAsientoPorEvento($eventoGasto, $subtipoGasto, $gasto->id_empresa, [
-                    'id_equipo'          => $equipoId,
-                    'monto'              => $monto,
-                    'fecha'              => $fechaPago,
-                    'concepto'           => 'Pago gasto: ' . $gasto->concepto . ($equipoNombre ? " (Unidad {$equipoNombre})" : ''),
-                    'categoria_gasto_id' => $gasto->categoria_gasto_id,
-                    'cuenta_bancaria_id' => $cuentaId,
-                    'origen_tipo'        => 'gasto',
-                    'origen_id'          => $gasto->id,
-                ]);
-
-                if (!empty($asientoData)) {
-                    $poliza = $polizaService->crearPoliza($asientoData);
-                    if ($movimiento && empty($movimiento->poliza_id)) {
-                        $movimiento->update(['poliza_id' => $poliza->id]);
-                    }
-                }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable para pago de gasto {$gasto->id}: " . $e->getMessage());
-            }
-
             $this->actualizarProgramacionPagada($pago);
             $this->sincronizarEstatusPago($gasto);
 
@@ -741,34 +712,6 @@ class GastosService
             'estatus' => 'aplicado',
             'user_id' => $data['user_id'] ?? auth()->id(),
         ]);
-
-        // Generar Póliza Contable Automática si el movimiento no tiene póliza
-        try {
-            $polizaService = app(\App\Services\PolizaService::class);
-            $gasto->loadMissing('equipo');
-            $eqId = $gasto->id_equipo ?: $gasto->equipo?->id;
-            $asientoData = $polizaService->resolverAsientoPorEvento('GASTO_OPERATIVO', 'directo', $gasto->id_empresa, [
-                'id_equipo'          => $eqId,
-                'monto'              => $monto,
-                'fecha'              => $fechaPago,
-                'concepto'           => 'Pago gasto: ' . $gasto->concepto,
-                'categoria_gasto_id' => $gasto->categoria_gasto_id,
-                'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
-                'origen_tipo'        => 'gasto',
-                'origen_id'          => $gasto->id,
-            ]);
-
-            if (!empty($asientoData)) {
-                $poliza = $polizaService->crearPoliza($asientoData);
-                if (!empty($data['movimiento_bancario_id'])) {
-                    CatBancoCuentasMovimientos::where('id', $data['movimiento_bancario_id'])
-                        ->whereNull('poliza_id')
-                        ->update(['poliza_id' => $poliza->id]);
-                }
-            }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza para gasto {$gasto->id}: " . $e->getMessage());
-        }
 
         $this->actualizarProgramacionPagada($pago);
         $this->sincronizarEstatusPago($gasto);

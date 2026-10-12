@@ -349,32 +349,32 @@ class CatBancoController extends Controller
 
     public function store_movimientos_cuentas(Request $request, bancos $cuenta)
     {
-        $request->validate([
-            'tipo'             => ['required', 'in:abono,cargo'],
-            'concepto'         => ['required', 'string'],
-            'monto'            => ['required', 'numeric', 'not_in:0'],
-            'fecha_movimiento' => ['required', 'date'],
-            'referencia'       => ['nullable', 'string'],
-            'origen'           => 'required|in:manual,banco,ajuste,importacion',
-            'tipo_concepto'    => 'nullable|in:operativo,interes,traspaso,comision',
-        ]);
 
-        $mov = $this->bankService->registrarMovimiento([
-            'cuenta_bancaria_id' => $cuenta->id,
-            'tipo'               => $request->tipo,
-            'concepto'           => $request->concepto,
-            'monto'              => $request->monto,
-            'fecha_movimiento'   => $request->fecha_movimiento,
-            'referencia'         => $request->referencia,
-            'origen'             => $request->origen,
-            'tipo_concepto'      => $request->tipo_concepto ?? 'operativo',
+        $request->validate([
+        'tipo'       => ['required', 'in:abono,cargo'],
+        'concepto'   => ['required', 'string'],
+        'monto'      => ['required', 'numeric', 'not_in:0'],
+        'fecha_movimiento'      => ['required', 'date'],
+        'referencia' => ['nullable', 'string'],
+        'origen' => 'required|in:manual,banco,ajuste,importacion',
+
+    ]);
+
+        $cuenta->movimientos()->create([
+            'tipo'         => $request->tipo,
+            'concepto'     => $request->concepto,
+            'monto'        => $request->monto,
+            'fecha_movimiento'        => $request->fecha_movimiento,
+            'referencia'   => $request->referencia,
+              'origen' => $request->origen,
+              'user_id' => auth()->id()
+
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'El movimiento se registró correctamente',
-            'data'    => $mov,
-        ]);
+    'success' => true,
+    'message' => 'El movimiento se registró correctamente'
+]);
     }
 
 

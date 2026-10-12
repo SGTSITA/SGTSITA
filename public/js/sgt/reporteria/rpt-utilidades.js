@@ -311,7 +311,9 @@ function getUtilidadesViajes(startDate, endDate) {
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
    let idEquipo = $("#selEquipoUtilidad").val();
-    return  $.ajax({
+    return $.ajax({
+   
+    $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
         data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },

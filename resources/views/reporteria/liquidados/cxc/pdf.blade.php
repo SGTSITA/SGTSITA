@@ -74,11 +74,6 @@
             $grandTotalContenedores = 0;
         @endphp
 
-        @php
-            $empresaActual = $user?->Empresa ?? null;
-            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
-        @endphp
-
         @foreach($cotizacionesGrouped as $numEdoCuenta => $items)
             @php
                 $subTotalOficial = 0;
@@ -100,7 +95,7 @@
                 <table class="table text-white tabla-completa" style="color: #000; width: 100%; font-size: 11px; border-collapse: collapse;" border="1">
                     <thead>
                         <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #000; padding: 5px;">{{ $esEmpresaGlobal ? 'Unidad / Tracto' : 'Contratista' }}</th>
+                            <th style="border: 1px solid #000; padding: 5px;">Contratista</th>
                             <th style="border: 1px solid #000; padding: 5px;">Contenedor</th>
                             <th style="border: 1px solid #000; padding: 5px;">Importe VTA</th>
                             <th style="border: 1px solid #000; padding: 5px; color: #000000; background: yellow;">Total oficial</th>
@@ -148,35 +143,15 @@
                                 $grandTotalContenedores++;
 
                                 $contratistaNombre = optional($cotizacionItem->DocCotizacion?->Asignaciones?->Proveedor)->nombre;
-                                $camion = optional($cotizacionItem->DocCotizacion?->Asignaciones)->Camion;
-                                $unidadTexto = '-';
-                                if ($camion) {
-                                    $codigo = $camion->id_equipo ?: ($camion->placas ?: 'UNIDAD #' . $camion->id);
-                                    $marca = $camion->marca ?: 'TRACTO';
-                                    $placas = $camion->placas ?: 'S/P';
-                                    $unidadTexto = trim("{$codigo} - {$marca} [{$placas}]");
-                                }
-
-                                if ($esEmpresaGlobal) {
-                                    if ($unidadTexto !== '-') {
-                                        $subContratistas[] = $unidadTexto;
-                                        $grandContratistas[] = $unidadTexto;
-                                    }
-                                } else {
-                                    if (!empty($contratistaNombre) && trim($contratistaNombre) !== '-') {
-                                        $subContratistas[] = trim($contratistaNombre);
-                                        $grandContratistas[] = trim($contratistaNombre);
-                                    }
+                                if (!empty($contratistaNombre) && trim($contratistaNombre) !== '-') {
+                                    $subContratistas[] = trim($contratistaNombre);
+                                    $grandContratistas[] = trim($contratistaNombre);
                                 }
                             @endphp
 
                             <tr>
                                 <td style="border: 1px solid #000;">
-                                    @if ($esEmpresaGlobal)
-                                        {{ $unidadTexto }}
-                                    @else
-                                        {{ optional($cotizacionItem->DocCotizacion?->Asignaciones?->Proveedor)->nombre ?? '-' }}
-                                    @endif
+                                    {{ optional($cotizacionItem->DocCotizacion?->Asignaciones?->Proveedor)->nombre ?? '-' }}
                                 </td>
                                 <td style="border: 1px solid #000;">{{ $cotizacionItem->DocCotizacion?->num_contenedor ?? '-' }}</td>
                                 <td style="border: 1px solid #000;">
@@ -302,7 +277,7 @@
                     <tfoot style="text-align: center; font-size: 11px; font-weight: bold;">
                         <tr style="background-color: #f2f2f2;">
                             <td style="border: 1px solid #000; padding: 5px;">
-                                {{ $esEmpresaGlobal ? 'Unidades' : 'Contratistas' }}: {{ count(array_unique($subContratistas)) }}
+                                Contratistas: {{ count(array_unique($subContratistas)) }}
                             </td>
                             <td style="border: 1px solid #000; padding: 5px;">
                                 Contenedores: {{ $items->count() }}
@@ -334,7 +309,7 @@
                 <table class="table tabla-completa" style="color: #000; width: 100%; padding: 5px; font-size: 12px; border-collapse: collapse; text-align: center; font-weight: bold;" border="1">
                     <thead>
                         <tr style="background-color: #344767; color: #ffffff;">
-                            <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">{{ $esEmpresaGlobal ? 'Unidades Distintas' : 'Contratistas Distintos' }}</th>
+                            <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Contratistas Distintos</th>
                             <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Contenedores</th>
                             <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Importe VTA</th>
                             <th style="border: 1px solid #000; padding: 6px; background: yellow; color: #000;">Total Oficial</th>

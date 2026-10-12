@@ -14,10 +14,6 @@
                 <div class="d-flex justify-content-end gap-2 mt-3">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
 
-                    <button type="button" id="btnVerViaticosGuardados" class="btn btn-outline-info">
-                        <i class="fa fa-receipt me-1"></i> Ver / Eliminar Guardados
-                    </button>
-
                     <button type="button" id="btnAddRow" class="btn btn-outline-primary">+ Agregar fila</button>
 
                     <button type="button" id="btnLimpiarTabla" class="btn btn-outline-danger">Limpiar tabla</button>

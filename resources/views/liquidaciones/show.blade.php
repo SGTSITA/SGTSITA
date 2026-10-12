@@ -92,10 +92,6 @@
                                     <i class="fa fa-coins"></i>
                                     Justificar Gastos
                                 </button>
-                                <button type="button" id="btnGestionarDineroViaje" class="btn btn-sm bg-gradient-secondary">
-                                    <i class="fa fa-list-check"></i>
-                                    Ver / Quitar dinero viaje
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -118,8 +114,6 @@
     @include('liquidaciones.modal-justificar-gasto')
     @include('liquidaciones.modal-justificar-hotable')
     @include('liquidaciones.modal-detalle-pagar')
-    @include('liquidaciones.modal-historial-dinero-viaje')
-    @include('liquidaciones.modal-gestionar-viaticos')
 @endsection
 
 @push('custom-javascript')

@@ -93,7 +93,6 @@ class CuentasCobrarService
               $join->on(DB::raw('COALESCE(cotizaciones.referencia_full, cotizaciones.id)'), '=', 'cobros.grupo');
           })
            ->leftJoin('asignaciones as a', 'a.id_contenedor', '=', 'docum_cotizacion.id')
-           ->leftJoin('equipos as eq', 'eq.id', '=', 'a.id_camion')
            ->whereIn('cotizaciones.estatus', ['Aprobada', 'Finalizado'])
            ->where('cotizaciones.id_empresa', '=', auth()->user()->id_empresa)
            ->where('cotizaciones.estatus_pago', '=', '0')
@@ -117,10 +116,6 @@ class CuentasCobrarService
                          'docum_cotizacion.num_contenedor',
                          'viajes.id as viaje_id',
                          'a.fehca_inicio_guard as fecha_inicio_guard',
-                          'a.id_camion',
-                          'eq.id_equipo as camion_codigo',
-                          'eq.marca as camion_marca',
-                          'eq.placas as camion_placas',
 
                          DB::raw('COALESCE(costos.total_costos,0) + COALESCE(gastos_ext.gastos_T,0) as total_costos'),
 
@@ -331,11 +326,6 @@ class CuentasCobrarService
 
 // fecha asignacion (si ya la traes en basequery)
 'fecha_inicio_guard' => $principal->fecha_inicio_guard ?? null,
-'id_camion' => $principal->id_camion ?? null,
-'camion_codigo' => $principal->camion_codigo ?? null,
-'camion_marca' => $principal->camion_marca ?? null,
-'camion_placas' => $principal->camion_placas ?? null,
-'texto_unidad' => $principal->camion_codigo ? ($principal->camion_codigo . ' - ' . ($principal->camion_marca ?: 'Tracto')) : ($principal->camion_placas ?: 'Sin unidad'),
             ];
         })->values();
     }

@@ -24,10 +24,6 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - `linkedCalendars: false` en `daterangepicker`: desacopla el calendario izquierdo del derecho al cambiar de año/mes.
 - `/reporteria/utilidad`: botón "Ver Gastos" muestra gastos indirectos del periodo si no hay viajes o contenedor seleccionado.
 - `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
-- Naanix GPS: trait independiente, consulta masiva (`ObtenerPosicionActualGeneral`) y caché de token (50 min).
-- `sincronizarGastoConBancos()` en `GastosService`: unifica cascada a pagos, movimientos y saldos bancarios.
-- `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
-
 ## Aprendizajes y errores a evitar
 - NUNCA modificar la respuesta JSON de endpoints en `routes/api.php` sin verificar el impacto en Flutter (`operador_appsgt`).
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.

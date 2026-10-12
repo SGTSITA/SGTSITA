@@ -30,6 +30,3 @@ docker-compose.yml
 /public/uploads/
 .prettierrc.json
 .vscode/
-/specs
-*.md
-MEMORY.md
