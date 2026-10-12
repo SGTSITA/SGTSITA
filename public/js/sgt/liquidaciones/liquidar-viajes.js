@@ -235,6 +235,8 @@ let btnConfirmaPago = document.querySelector("#btnConfirmaPago");
 let btnConfirmaPagov2 = document.querySelector("#btnConfirmaPagov2");
 let btnJustificar = document.querySelector("#btnJustificar");
 let btnDineroViaje = document.querySelector("#btnDineroViaje");
+let btnGestionarDineroViaje = document.querySelector("#btnGestionarDineroViaje");
+let btnVerViaticosGuardados = document.querySelector("#btnVerViaticosGuardados");
 let montoPagoPrestamo = document.querySelector("#montoPagoPrestamo");
 
 let totalMontoPago = 0;
@@ -1374,6 +1376,19 @@ function justificarGastoMultiple() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
+    const btnGuardar = document.querySelector("#btnGuardarJustificacion");
+    if (btnGuardar) btnGuardar.disabled = true;
+
+    Swal.fire({
+        title: "Guardando justificaciones...",
+        text: "Por favor espere mientras se registran los viáticos.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     fetch("/liquidaciones/viajes/gastos/justificar-multiple", {
         method: "POST",
         headers: {
@@ -1384,6 +1399,7 @@ function justificarGastoMultiple() {
     })
         .then((res) => res.json())
         .then((res) => {
+            if (btnGuardar) btnGuardar.disabled = false;
             Swal.fire({
                 icon: "success",
                 title: "Guardado exitoso",
@@ -1400,6 +1416,7 @@ function justificarGastoMultiple() {
             }
         })
         .catch((err) => {
+            if (btnGuardar) btnGuardar.disabled = false;
             console.error(err);
             Swal.fire({
                 icon: "error",
@@ -1436,3 +1453,313 @@ $(".moneyformat").on("blur", (e) => {
     var val = e.target.value;
     e.target.value = moneyFormat(val);
 });
+
+// =========================================================================
+// GESTIÓN Y ELIMINACIÓN DE DINERO PARA VIAJE EXTRA (SPEC-008)
+// =========================================================================
+
+if (btnGestionarDineroViaje) {
+    btnGestionarDineroViaje.addEventListener("click", () => {
+        abrirModalGestionarDineroViaje();
+    });
+}
+
+function abrirModalGestionarDineroViaje() {
+    let seleccionados = apiGrid ? apiGrid.getSelectedRows() : [];
+    if (!seleccionados || seleccionados.length === 0) {
+        // Fallback a todos los viajes en pantalla
+        seleccionados = (dataRespons && dataRespons.viajes) ? dataRespons.viajes : [];
+    }
+
+    if (!seleccionados || seleccionados.length === 0) {
+        Swal.fire("Atención", "No hay viajes cargados para consultar el dinero de viaje.", "warning");
+        return;
+    }
+
+    const idContenedores = seleccionados.map(c => c.IdContenedor);
+    const tbody = document.getElementById("tbodyDinerosViaje");
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-2"></i>Consultando entregas de dinero...</td></tr>';
+
+    const modalElem = document.getElementById("modal-historial-dinero");
+    const bsModal = new bootstrap.Modal(modalElem);
+    bsModal.show();
+
+    let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    fetch("/liquidaciones/viajes/dinero-viaje/lista", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": token
+        },
+        body: JSON.stringify({ id_contenedores: idContenedores })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || !res.data || res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No hay registros de dinero para viaje para los viajes seleccionados.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = "";
+        res.data.forEach(item => {
+            const tr = document.createElement("tr");
+
+            let tipoBadge = "";
+            let accionBtn = "";
+
+            if (item.es_cancelacion) {
+                tipoBadge = '<span class="badge bg-secondary">Cancelación / Neteo</span>';
+                accionBtn = '<span class="text-muted small">Neteado</span>';
+            } else if (item.es_principal) {
+                tipoBadge = '<span class="badge bg-primary">Principal (Planeación)</span>';
+                accionBtn = `<button type="button" class="btn btn-xs btn-outline-warning text-dark fw-bold" onclick="eliminarDineroViajeModal(${item.id}, ${item.monto}, '${item.num_contenedor}', true)">
+                                <i class="fa fa-ban me-1"></i> Eliminar Principal
+                             </button>`;
+            } else {
+                tipoBadge = '<span class="badge bg-success">Extra (Liquidación)</span>';
+                accionBtn = `<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarDineroViajeModal(${item.id}, ${item.monto}, '${item.num_contenedor}', false)">
+                                <i class="fa fa-trash me-1"></i> Eliminar Extra
+                             </button>`;
+            }
+
+            const montoClase = item.es_cancelacion ? "text-danger fw-bold" : "text-success fw-bold";
+            const montoSigno = item.es_cancelacion ? "-$" : "$";
+
+            tr.innerHTML = `
+                <td><strong>${item.num_contenedor}</strong></td>
+                <td>${item.fecha || 'N/A'}</td>
+                <td>${item.motivo || 'Dinero para viaje'}</td>
+                <td>${item.banco}</td>
+                <td class="text-end ${montoClase}">${montoSigno}${Math.abs(item.monto).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-center">${tipoBadge}</td>
+                <td class="text-center">${accionBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Error al cargar registros.</td></tr>';
+    });
+}
+
+window.eliminarDineroViajeModal = function(idDinero, monto, numContenedor, esPrincipal = false) {
+    const titulo = esPrincipal ? "¿Eliminar Dinero Principal de Planeación?" : "¿Eliminar dinero extra de viaje?";
+    const mensajeAlerta = esPrincipal
+        ? `¿Estás seguro de cancelar el <strong>Dinero Principal</strong> de <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong> del contenedor <strong>${numContenedor}</strong>?<br><br>` +
+          `<div class="alert alert-warning text-start small mb-0">` +
+          `<strong>Atención:</strong> Este es el dinero asignado originalmente en Planeación. Al eliminarlo:<br>` +
+          `• Se generará la devolución bancaria y neteo negativo (-$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}).<br>` +
+          `• La asignación del viaje quedará con $0.00 en dinero para viaje.<br>` +
+          `• Se reintegrará el saldo al pago del operador.</div>`
+        : `¿Estás seguro de cancelar el dinero extra de <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong> del contenedor <strong>${numContenedor}</strong>?<br><br>` +
+          `<small class="text-muted">Se generará la devolución bancaria, se insertará un registro de neteo negativo y se reintegrará al saldo del operador.</small>`;
+
+    Swal.fire({
+        title: titulo,
+        html: mensajeAlerta,
+        icon: esPrincipal ? "warning" : "question",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: esPrincipal ? "Sí, eliminar Dinero Principal" : "Sí, cancelar dinero extra",
+        cancelButtonText: "No, conservar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+            mostrarLoading();
+
+            fetch("/liquidaciones/viajes/dinero-viaje/eliminar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": token
+                },
+                body: JSON.stringify({ id_dinero_contenedor: idDinero })
+            })
+            .then(r => r.json())
+            .then(res => {
+                ocultarLoading();
+                if (res.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: res.Titulo,
+                        text: res.Mensaje
+                    });
+                    // Refrescar modal y viajes del operador
+                    abrirModalGestionarDineroViaje();
+                    const opVal = (IdOperador && IdOperador.value) ? IdOperador.value : (typeof IdOperador === "string" ? IdOperador : null);
+                    if (opVal) {
+                        mostrarViajesOperador(opVal);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: res.TMensaje || "error",
+                        title: res.Titulo || "No se pudo cancelar",
+                        text: res.Mensaje || "Ocurrió un error inesperado"
+                    });
+                }
+            })
+            .catch(err => {
+                ocultarLoading();
+                console.error(err);
+                Swal.fire("Error", "Ocurrió un error de conexión al cancelar el dinero.", "error");
+            });
+        }
+    });
+};
+
+// =========================================================================
+// GESTIÓN Y ELIMINACIÓN DE VIÁTICOS DE OPERADOR (SPEC-008)
+// =========================================================================
+
+if (btnVerViaticosGuardados) {
+    btnVerViaticosGuardados.addEventListener("click", () => {
+        abrirModalGestionarViaticos();
+    });
+}
+
+function abrirModalGestionarViaticos() {
+    const tbody = document.getElementById("tbodyViaticosGuardados");
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-2"></i>Cargando viáticos guardados...</td></tr>';
+
+    const modalElem = document.getElementById("modal-gestionar-viaticos");
+    const bsModal = new bootstrap.Modal(modalElem);
+    bsModal.show();
+
+    // Obtener los contenedores seleccionados en el grid principal
+    let seleccionados = apiGrid ? apiGrid.getSelectedRows() : [];
+    let idContenedores = [];
+
+    if (seleccionados && seleccionados.length > 0) {
+        idContenedores = seleccionados.map(s => s.IdContenedor).filter(Boolean);
+    }
+
+    // Fallback: si no hay seleccionados en el grid, tomar todas las filas de la tabla
+    if (idContenedores.length === 0 && apiGrid) {
+        apiGrid.forEachNode(node => {
+            if (node.data && node.data.IdContenedor) {
+                idContenedores.push(node.data.IdContenedor);
+            }
+        });
+    }
+
+    if (idContenedores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay viajes cargados para consultar viáticos.</td></tr>';
+        return;
+    }
+
+    let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    fetch("/liquidaciones/viajes/gastos/guardados", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": token
+        },
+        body: JSON.stringify({ id_contenedores: idContenedores })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || !res.data || res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay justificaciones de viáticos registradas para estos viajes.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = "";
+        let ultimoContenedor = null;
+
+        res.data.forEach(v => {
+            // Fila divisoria visual de contenedor si cambia de contenedor
+            if (v.contenedor !== ultimoContenedor) {
+                ultimoContenedor = v.contenedor;
+                const trHeader = document.createElement("tr");
+                trHeader.className = "table-light border-top border-bottom border-secondary";
+                trHeader.innerHTML = `
+                    <td colspan="4" class="fw-bold text-primary py-2">
+                        <i class="fa fa-truck me-1"></i> Contenedor: <span class="badge bg-secondary">${v.contenedor}</span>
+                    </td>
+                `;
+                tbody.appendChild(trHeader);
+            }
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="ps-4"><strong>${v.contenedor}</strong></td>
+                <td>${v.descripcion || 'Sin descripción'}</td>
+                <td class="text-end fw-bold text-dark">$${Number(v.monto).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarViaticoGuardado(${v.id}, ${v.monto}, '${(v.descripcion || '').replace(/'/g, "\\'")}')">
+                        <i class="fa fa-trash me-1"></i> Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Error al consultar viáticos en el servidor.</td></tr>';
+    });
+}
+
+window.eliminarViaticoGuardado = function(idViatico, monto, descripcion) {
+    Swal.fire({
+        title: "¿Eliminar viático de operador?",
+        html: `¿Estás seguro de eliminar el viático <strong>"${descripcion}"</strong> por <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>?<br><br>` +
+              `<small class="text-muted">Se descontará de las deducciones del operador y se cancelará el gasto unificado. No se afectarán cuentas bancarias.</small>`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, eliminar viático",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+            mostrarLoading();
+
+            fetch("/liquidaciones/viajes/gastos/eliminar-viatico", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": token
+                },
+                body: JSON.stringify({ idviatico: idViatico })
+            })
+            .then(r => r.json())
+            .then(res => {
+                ocultarLoading();
+                if (res.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: res.Titulo,
+                        text: res.Mensaje
+                    });
+
+                    // Cerrar modales y limpiar cache local
+                    $("#modal-gestionar-viaticos").modal("hide");
+                    $("#modal-justificar-multiple").modal("hide");
+                    localStorage.removeItem("justificaciones");
+
+                    const opVal = (IdOperador && IdOperador.value) ? IdOperador.value : (typeof IdOperador === "string" ? IdOperador : null);
+                    if (opVal) {
+                        mostrarViajesOperador(opVal);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: res.TMensaje || "error",
+                        title: res.Titulo || "Error",
+                        text: res.Mensaje || "No se pudo eliminar el viático"
+                    });
+                }
+            })
+            .catch(err => {
+                ocultarLoading();
+                console.error(err);
+                Swal.fire("Error", "Error de conexión al eliminar el viático.", "error");
+            });
+        }
+    });
+};

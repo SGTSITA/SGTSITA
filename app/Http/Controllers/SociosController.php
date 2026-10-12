@@ -286,7 +286,7 @@ class SociosController extends Controller
                         'user_id' => $userId
                     ]);
 
-                    app(\App\Services\BancosService::class)->registrarMovimiento([
+                    $mov = app(\App\Services\BancosService::class)->registrarMovimiento([
                         'cuenta_bancaria_id' => $validated['banco_id'],
                         'tipo' => 'cargo',
                         'monto' => $pData['monto'],
@@ -298,12 +298,33 @@ class SociosController extends Controller
                         'referenciaable_id' => $pago->id
                     ]);
 
+                    // Generar Póliza Contable de Pago de Utilidades
+                    try {
+                        $polizaService = app(\App\Services\PolizaService::class);
+                        $asientoData = $polizaService->resolverAsientoPorEvento('PAGO_SOCIOS', null, $idEmpresa, [
+                            'monto'              => (float) $pData['monto'],
+                            'fecha'              => $validated['fecha_aplicacion'],
+                            'concepto'           => $pagoConcepto,
+                            'cuenta_bancaria_id' => $validated['banco_id'],
+                            'origen_tipo'        => 'socio_pago',
+                            'origen_id'          => $pago->id,
+                        ]);
+                        if (!empty($asientoData)) {
+                            $poliza = $polizaService->crearPoliza($asientoData);
+                            if ($mov && empty($mov->poliza_id)) {
+                                $mov->update(['poliza_id' => $poliza->id]);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable de pago a socio: " . $e->getMessage());
+                    }
+
                     $pagos[] = $pago;
                 }
             } else {
                 $pagoConcepto = !empty($validated['concepto'])
                     ? $validated['concepto']
-                    : ('Abono a Cuenta: ' . $socio->nombre);
+                    : ('Anticipo a Cuenta: ' . $socio->nombre);
 
                 $pago = \App\Models\SocioPago::create([
                     'id_empresa' => $idEmpresa,
@@ -316,19 +337,38 @@ class SociosController extends Controller
                     'user_id' => $userId
                 ]);
 
-                $conceptoBanco = $pagoConcepto;
-
-                app(\App\Services\BancosService::class)->registrarMovimiento([
+                $mov = app(\App\Services\BancosService::class)->registrarMovimiento([
                     'cuenta_bancaria_id' => $validated['banco_id'],
                     'tipo' => 'cargo',
                     'monto' => $validated['monto'],
-                    'concepto' => $conceptoBanco,
+                    'concepto' => $pagoConcepto,
                     'fecha_movimiento' => $validated['fecha_aplicacion'],
                     'origen' => 'sistema',
-                    'referencia' => 'Pago de utilidades #' . $pago->id,
+                    'referencia' => 'Anticipo socio #' . $pago->id,
                     'referenciaable_type' => \App\Models\SocioPago::class,
                     'referenciaable_id' => $pago->id
                 ]);
+
+                // Generar Póliza Contable de Anticipo a Socio (Activo Circulante 1.1.2.3.003)
+                try {
+                    $polizaService = app(\App\Services\PolizaService::class);
+                    $asientoData = $polizaService->resolverAsientoPorEvento('ANTICIPO_SOCIO', null, $idEmpresa, [
+                        'monto'              => (float) $validated['monto'],
+                        'fecha'              => $validated['fecha_aplicacion'],
+                        'concepto'           => 'Anticipo a cuenta de utilidad: ' . $socio->nombre . ($validated['concepto'] ? ' (' . $validated['concepto'] . ')' : ''),
+                        'cuenta_bancaria_id' => $validated['banco_id'],
+                        'origen_tipo'        => 'socio_pago',
+                        'origen_id'          => $pago->id,
+                    ]);
+                    if (!empty($asientoData)) {
+                        $poliza = $polizaService->crearPoliza($asientoData);
+                        if ($mov && empty($mov->poliza_id)) {
+                            $mov->update(['poliza_id' => $poliza->id]);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza de anticipo a socio: " . $e->getMessage());
+                }
 
                 $pagos[] = $pago;
             }
@@ -625,6 +665,12 @@ class SociosController extends Controller
                 ->first();
 
             if ($mov) {
+                if (!empty($mov->poliza_id)) {
+                    try {
+                        app(\App\Services\PolizaService::class)->cancelarPoliza($mov->poliza_id, 'Pago de socio eliminado');
+                    } catch (\Throwable $e) {}
+                }
+
                 $banco = \App\Models\Bancos::find($mov->cuenta_bancaria_id);
                 if ($banco) {
                     if ($mov->tipo === 'cargo') {
@@ -634,6 +680,14 @@ class SociosController extends Controller
                     }
                 }
                 $mov->delete();
+            }
+
+            // También buscar póliza asociada por origen si mov no tenía poliza_id
+            $polizaDirecta = \App\Models\Poliza::where('origen_tipo', 'socio_pago')->where('origen_id', $pago->id)->first();
+            if ($polizaDirecta) {
+                try {
+                    app(\App\Services\PolizaService::class)->cancelarPoliza($polizaDirecta->id, 'Pago de socio eliminado');
+                } catch (\Throwable $e) {}
             }
 
             $pago->delete();
