@@ -127,7 +127,7 @@
                 @endphp
 
                 <div style="background-color: #2c3e50; color: #ffffff; padding: 5px 10px; font-size: 11px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '15px' }}; margin-bottom: 5px; border-radius: 3px;">
-                    🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }} ({{ count($itemsUnidad) }} gastos pendientes)
+                    UNIDAD / TRACTOCAMION: {{ $unidadTexto }} ({{ count($itemsUnidad) }} gastos pendientes)
                 </div>
 
                 <table style="margin-top: 5px; margin-bottom: 10px;">
