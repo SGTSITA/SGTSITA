@@ -77,19 +77,24 @@
     {{-- Botón de Imprimir visible solo en pantalla --}}
     <div class="no-print d-flex justify-content-between align-items-center mb-3 p-2 bg-light border rounded">
         <div>
-            <strong>Reporte para Impresión y PDF</strong>
-            <span class="text-muted ms-2">(Usa Ctrl+P o el botón para imprimir o Guardar como PDF)</span>
+            <strong>Reporte Contable CONAC: {{ ($tipoReporte ?? '') === 'estado_resultados' ? 'Estado de Resultados' : 'Balance General' }}</strong>
+            <span class="text-muted ms-2">(Usa el botón para Imprimir o Guardar como PDF)</span>
         </div>
-        <button class="btn btn-primary btn-sm" onclick="window.print()">
-            Imprimir / Guardar como PDF
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary btn-sm" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> Imprimir / Guardar como PDF
+            </button>
+            <a href="{{ request()->fullUrlWithQuery(['download' => 1]) }}" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> Descargar Archivo PDF
+            </a>
+        </div>
     </div>
 
     {{-- ENCABEZADO FORMAL --}}
     <div class="header-title">
         <p style="font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #777;">SISTEMA CONTABLE CONAC • PARTIDA DOBLE</p>
         <h4>{{ $nombresEmpresas }}</h4>
-        <h5>BALANCE GENERAL</h5>
+        <h5>{{ ($tipoReporte ?? '') === 'estado_resultados' ? 'ESTADO DE ACTIVIDADES / RESULTADOS' : 'BALANCE GENERAL (ESTADO DE SITUACIÓN FINANCIERA)' }}</h5>
         <p>
             @if ($equipoSeleccionado)
                 UNIDAD: <strong>{{ $equipoSeleccionado->texto_select }}</strong> &nbsp;|&nbsp;

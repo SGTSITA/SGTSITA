@@ -18,6 +18,9 @@
             </span>
         </div>
         <div class="d-flex gap-2">
+            <a href="{{ route('contabilidad.manual') }}" class="btn btn-outline-warning btn-sm mb-0">
+                <i class="fas fa-book me-1"></i> Manual Contable
+            </a>
             <a href="{{ route('contabilidad.balance-general.index') }}" class="btn btn-outline-secondary btn-sm mb-0">
                 <i class="fas fa-arrow-left me-1"></i> Ir al Balance General
             </a>

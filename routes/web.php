@@ -620,6 +620,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::get('poliza-apertura', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaIndex'])->name('poliza-apertura.index');
             Route::get('poliza-apertura/data', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaData'])->name('poliza-apertura.data');
             Route::post('poliza-apertura/guardar', [App\Http\Controllers\ContabilidadController::class, 'guardarPolizaApertura'])->name('poliza-apertura.store');
+            Route::get('manual', [App\Http\Controllers\ContabilidadController::class, 'manual'])->name('manual');
         });
 
 

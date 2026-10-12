@@ -334,11 +334,14 @@ class CotizacionesService
         return DB::transaction(function () use ($cotizacion) {
             $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
 
-            $precioViaje = (float) ($cotizacion->precio_viaje ?? 0)
-                + (float) ($cotizacion->burreo ?? 0)
-                + (float) ($cotizacion->maniobra ?? 0)
-                + (float) ($cotizacion->estadia ?? 0)
-                + (float) ($cotizacion->otro ?? 0);
+            $precioViaje = (float) ($cotizacion->total ?? 0);
+            if ($precioViaje <= 0) {
+                $precioViaje = (float) ($cotizacion->precio_viaje ?? 0)
+                    + (float) ($cotizacion->burreo ?? 0)
+                    + (float) ($cotizacion->maniobra ?? 0)
+                    + (float) ($cotizacion->estadia ?? 0)
+                    + (float) ($cotizacion->otro ?? 0);
+            }
 
             if ($precioViaje <= 0) {
                 return null;
@@ -346,13 +349,9 @@ class CotizacionesService
 
             // Buscar tractocamión imputado
             $camionId = null;
-            if ($cotizacion->DocCotizacion) {
-                foreach ($cotizacion->DocCotizacion as $doc) {
-                    if ($doc->Asignaciones && $doc->Asignaciones->id_camion) {
-                        $camionId = $doc->Asignaciones->id_camion;
-                        break;
-                    }
-                }
+            $doc = $cotizacion->DocCotizacion;
+            if ($doc && $doc->Asignaciones && $doc->Asignaciones->id_camion) {
+                $camionId = $doc->Asignaciones->id_camion;
             }
 
             $polizaService = app(\App\Services\PolizaService::class);
@@ -394,13 +393,9 @@ class CotizacionesService
 
             $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
             $camionId = null;
-            if ($cotizacion->DocCotizacion) {
-                foreach ($cotizacion->DocCotizacion as $doc) {
-                    if ($doc->Asignaciones && $doc->Asignaciones->id_camion) {
-                        $camionId = $doc->Asignaciones->id_camion;
-                        break;
-                    }
-                }
+            $doc = $cotizacion->DocCotizacion;
+            if ($doc && $doc->Asignaciones && $doc->Asignaciones->id_camion) {
+                $camionId = $doc->Asignaciones->id_camion;
             }
 
             $polizaService = app(\App\Services\PolizaService::class);
