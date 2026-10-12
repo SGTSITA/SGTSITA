@@ -37,6 +37,11 @@ class Empresas extends Model
         return $this->belongsTo(Configuracion::class, 'id_configuracion');
     }
 
+    public function esGlobalMultiEquipo(): bool
+    {
+        return (bool) ($this->requiere_unidad_gasto || $this->id == 28);
+    }
+
     public function estadosCuenta()
     {
         return $this->hasMany(

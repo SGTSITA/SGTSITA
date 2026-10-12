@@ -213,7 +213,13 @@ class ReporteriaController extends Controller
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        $cotizaciones = Cotizaciones::with(['estadoCuenta', 'DocCotizacion'])
+        $cotizaciones = Cotizaciones::with([
+            'estadoCuenta',
+            'DocCotizacion.Asignaciones.Camion',
+            'DocCotizacion.Asignaciones.Proveedor',
+            'Cliente',
+            'Subcliente'
+        ])
             ->whereIn('id', $cotizacionIds)
             ->get();
 
