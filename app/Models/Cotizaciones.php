@@ -242,8 +242,10 @@ public function costosViajes()
     {
         parent::boot();
 
-        static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+        static::creating(function ($cotizacion) {
+            if (empty($cotizacion->id_empresa) && Auth::check()) {
+                $cotizacion->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
 
