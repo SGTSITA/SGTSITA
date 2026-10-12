@@ -1811,9 +1811,12 @@ class ReporteriaController extends Controller
         }
 
         $cotizaciones1 = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->whereIn('cotizaciones.id', $cotizacionIds)
             ->where('cotizaciones.jerarquia', "Principal")
             ->select(
+                'docum_cotizacion.id as id_docum_cotizacion',
                 'docum_cotizacion.num_contenedor',
                 'docum_cotizacion.doc_ccp',
                 'docum_cotizacion.boleta_liberacion',
@@ -1822,7 +1825,11 @@ class ReporteriaController extends Controller
                 'docum_cotizacion.boleta_vacio',
                 'docum_cotizacion.doc_eir',
                 'docum_cotizacion.cima',
-                'cotizaciones.referencia_full'
+                'cotizaciones.referencia_full',
+                'asignaciones.id_camion',
+                'equipos.id_equipo as camion_codigo',
+                'equipos.marca as camion_marca',
+                'equipos.placas as camion_placas'
             )
             ->get();
 
@@ -1866,6 +1873,14 @@ class ReporteriaController extends Controller
                 }
             }
 
+            $textoUnidad = 'SIN UNIDAD ASIGNADA';
+            if ($cot->id_camion) {
+                $codigo = $cot->camion_codigo ?: ($cot->camion_placas ?: 'UNIDAD #' . $cot->id_camion);
+                $marca = $cot->camion_marca ?: 'TRACTO';
+                $placas = $cot->camion_placas ?: 'S/P';
+                $textoUnidad = trim("{$codigo} - {$marca} [{$placas}]");
+            }
+
             return [
                 "id" => $cot->id,
                 "cliente" => $cot->cliente ?? null,
@@ -1887,6 +1902,8 @@ class ReporteriaController extends Controller
                 "eir_secundario" => $eirSecundario,
                 "cima_primario" => $cimaPrimario,
                 "cima_secundario" => $cimaSecundario,
+                "id_camion" => $cot->id_camion,
+                "unidad" => $textoUnidad,
             ];
         });
 
