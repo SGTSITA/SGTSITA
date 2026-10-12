@@ -262,9 +262,10 @@ class ReporteriaController extends Controller
             ))->setPaper([0, 0, 595, 1200], 'landscape');
 
             $fileName = 'cxc.pdf';
-            $pdf->save(public_path($fileName));
+            $filePath = storage_path('app/public/' . $fileName);
+            $pdf->save($filePath);
 
-            return response()->download(public_path($fileName))->deleteFileAfterSend(true);
+            return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
         }
 
 
@@ -279,7 +280,7 @@ class ReporteriaController extends Controller
 
         $zip = new \ZipArchive();
         $zipName = 'cxc_' . time() . '.zip';
-        $zipPath = public_path($zipName);
+        $zipPath = storage_path('app/public/' . $zipName);
 
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
 
@@ -309,6 +310,7 @@ class ReporteriaController extends Controller
                 } else {
 
                     $pdfName = "cxc_{$nombreGrupo}.pdf";
+                    $pdfPath = storage_path('app/public/' . $pdfName);
 
                     $pdf = PDF::loadView('reporteria.cxc.pdf', [
                         'cotizaciones' => $items,
@@ -320,9 +322,9 @@ class ReporteriaController extends Controller
                         'cuentaGlobal' => $cuentaGlobal
                     ])->setPaper([0, 0, 595, 1200], 'landscape');
 
-                    $pdf->save(public_path($pdfName));
+                    $pdf->save($pdfPath);
 
-                    $zip->addFile(public_path($pdfName), $pdfName);
+                    $zip->addFile($pdfPath, $pdfName);
                 }
 
 
@@ -410,7 +412,7 @@ class ReporteriaController extends Controller
                     } else {
 
                         $pdfName = "cxc_{$nombreGrupo}.pdf";
-                        $pdfPath = public_path($pdfName);
+                        $pdfPath = storage_path('app/public/' . $pdfName);
 
                         $pdf = PDF::loadView('reporteria.cxc.pdf', [
                             'cotizaciones' => $items,
@@ -491,7 +493,7 @@ class ReporteriaController extends Controller
             }
 
             $txtName = "reporte_{$nombreGrupo}.txt";
-            $txtPath = public_path($txtName);
+            $txtPath = storage_path('app/public/' . $txtName);
 
             file_put_contents($txtPath, $reporte);
             $zip->addFile($txtPath, "{$nombreGrupoDocs}/{$txtName}");
