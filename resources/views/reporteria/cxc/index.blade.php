@@ -186,13 +186,6 @@
                                                     width="25px" />
                                                 # Contenedor
                                             </th>
-                                            @if (auth()->user()->Empresa?->esGlobalMultiEquipo())
-                                                <th>
-                                                    <img src="{{ asset('img/icon/camion.png') }}" alt=""
-                                                        width="25px" />
-                                                    Unidad / Tracto
-                                                </th>
-                                            @endif
                                             <th>Tipo</th>
                                             <th>
                                                 <img src="{{ asset('img/icon/semaforos.webp') }}" alt=""
@@ -246,14 +239,6 @@
                                                     <td>
                                                         {{ $cotizacion->num_contenedor }}
                                                     </td>
-
-                                                    @if (auth()->user()->Empresa?->esGlobalMultiEquipo())
-                                                        <td>
-                                                            <span class="badge bg-secondary">
-                                                                {{ $cotizacion->texto_unidad ?? 'Sin unidad' }}
-                                                            </span>
-                                                        </td>
-                                                    @endif
 
                                                     <td>
                                                         {{ $cotizacion->tipo }}

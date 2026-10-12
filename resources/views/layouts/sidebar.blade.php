@@ -572,44 +572,28 @@
                 </li>
             @endcan
 
-            @if (auth()->check() && (auth()->user()->es_admin || auth()->user()->can('reportes-utilidad') || auth()->user()->can('contabilidad')))
-                <li class="nav-item">
-                    <a data-bs-toggle="collapse" href="#pagesContabilidad"
-                        class="nav-link {{ Request::is('contabilidad*') ? 'active' : '' }}"
-                        aria-controls="pagesContabilidad" role="button" aria-expanded="{{ Request::is('contabilidad*') ? 'true' : 'false' }}">
-                        <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
-                            <i class="fas fa-calculator text-primary" style="font-size: 1rem;"></i>
-                        </div>
-                        <span class="nav-link-text ms-1"><b>XVI</b> Contabilidad</span>
-                    </a>
-
-                    <div class="collapse {{ Request::is('contabilidad*') ? 'show' : '' }}" id="pagesContabilidad">
-                        <ul class="nav ms-4">
-                            <li class="nav-item">
-                                <a class="nav-link {{ Request::is('contabilidad/balance-general*') ? 'active' : '' }}"
-                                    href="{{ route('contabilidad.balance-general.index') }}">
-                                    <span class="sidenav-mini-icon"> B </span>
-                                    <span class="sidenav-normal">Balance General</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ Request::is('contabilidad/poliza-apertura*') ? 'active' : '' }}"
-                                    href="{{ route('contabilidad.poliza-apertura.index') }}">
-                                    <span class="sidenav-mini-icon"> P </span>
-                                    <span class="sidenav-normal">Póliza de Apertura</span>
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ Request::is('contabilidad/configuracion*') ? 'active' : '' }}"
-                                    href="{{ route('contabilidad.configuracion.index') }}">
-                                    <span class="sidenav-mini-icon"> C </span>
-                                    <span class="sidenav-normal">Configuración y Matriz</span>
-                                </a>
-                            </li>
-                        </ul>
+            @can('reportes-utilidad-')
+                <a data-bs-toggle="collapse" href="#pagesContabilidad"
+                    class="nav-link {{ Request::is('contabilidad*') ? 'active' : '' }}"
+                    aria-controls="pagesContabilidad" role="button" aria-expanded="false">
+                    <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-calculator" style="font-size: 1rem; color: #5e72e4;"></i>
                     </div>
-                </li>
-            @endif
+                    <span class="nav-link-text ms-1"><b>XVI</b> Contabilidad</span>
+                </a>
+
+                <div class="collapse" id="pagesContabilidad">
+                    <ul class="nav ms-4">
+                        <li class="nav-item">
+                            <a class="nav-link {{ Request::is('contabilidad/balance-general*') ? 'show' : '' }}"
+                                href="{{ route('contabilidad.balance-general.index') }}">
+                                <span class="sidenav-mini-icon"> B </span>
+                                <span class="sidenav-normal">Balance General</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            @endcan
 
             <a data-bs-toggle="collapse" href="#pagesExamples"
                 class="nav-link {{ Request::is('users*') ? 'active' : '' }}{{ Request::is('roles*') ? 'active' : '' }}"

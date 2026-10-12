@@ -54,7 +54,6 @@ class GastosPorPagarExport implements FromView
                 $q->where('tipo_vinculo', 'asignacion');
             },
             'gasto.vinculos.vinculable.Operador',
-            'gasto.vinculos.vinculable.Camion',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
             'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
         ]);
@@ -64,15 +63,6 @@ class GastosPorPagarExport implements FromView
             $mapped = $gastos->map(function ($g) {
                 $vinculoAsignacion = $g->gasto?->vinculos?->first();
                 $asignacion = $vinculoAsignacion ? $vinculoAsignacion->vinculable : null;
-
-                $camion = optional($asignacion)->Camion;
-                $textoUnidad = 'SIN UNIDAD ASIGNADA';
-                if ($camion) {
-                    $codigo = $camion->id_equipo ?: ($camion->placas ?: 'UNIDAD #' . $camion->id);
-                    $marca = $camion->marca ?: 'TRACTO';
-                    $placas = $camion->placas ?: 'S/P';
-                    $textoUnidad = trim("{$codigo} - {$marca} [{$placas}]");
-                }
 
                 return [
                     'id' => $g->id,
@@ -84,8 +74,6 @@ class GastosPorPagarExport implements FromView
                     'motivo' => $g->motivo_gasto ?? 'Gasto pendiente',
                     'fecha_movimiento' => $g->created_at ? Carbon::parse($g->created_at)->format('d/m/Y') : '-',
                     'fecha_aplicacion' => $g->fecha_imputacion ? Carbon::parse($g->fecha_imputacion)->format('d/m/Y') : '-',
-                    'id_camion' => optional($asignacion)->id_camion,
-                    'unidad' => $textoUnidad,
                 ];
             });
             return ['status' => $this->status, 'gastos' => $mapped];

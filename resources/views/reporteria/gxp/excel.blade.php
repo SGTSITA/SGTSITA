@@ -90,123 +90,47 @@
     <br />
     <br />
 
-    @php
-        $empresaActual = auth()->user()?->Empresa ?? null;
-        $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
-    @endphp
-
     @if ($status === 'por_pagar')
-        @if (!$esEmpresaGlobal)
-            <table>
-                <thead>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Operador</th>
+                    <th>Cliente</th>
+                    <th>Subcliente</th>
+                    <th>Contenedor</th>
+                    <th>Monto</th>
+                    <th>Motivo</th>
+                    <th>Fecha Movimiento</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $totalGeneral = 0; @endphp
+                @foreach ($gastos as $gasto)
+                    @php $totalGeneral += is_numeric($gasto['monto']) ? $gasto['monto'] : 0; @endphp
                     <tr>
-                        <th>ID</th>
-                        <th>Operador</th>
-                        <th>Cliente</th>
-                        <th>Subcliente</th>
-                        <th>Contenedor</th>
-                        <th>Monto</th>
-                        <th>Motivo</th>
-                        <th>Fecha Movimiento</th>
+                        <td>{{ $gasto['id'] }}</td>
+                        <td>{{ $gasto['operador'] ?? '-' }}</td>
+                        <td>{{ $gasto['cliente'] ?? '-' }}</td>
+                        <td>{{ $gasto['subcliente'] ?? '-' }}</td>
+                        <td>{{ $gasto['num_contenedor'] ?? '-' }}</td>
+                        <td>${{ is_numeric($gasto['monto']) ? number_format($gasto['monto'], 2) : '0.00' }}</td>
+                        <td>{{ $gasto['motivo'] ?? '-' }}</td>
+                        <td>{{ $gasto['fecha_movimiento'] ?? '-' }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @php $totalGeneral = 0; @endphp
-                    @foreach ($gastos as $gasto)
-                        @php $totalGeneral += is_numeric($gasto['monto']) ? $gasto['monto'] : 0; @endphp
-                        <tr>
-                            <td>{{ $gasto['id'] }}</td>
-                            <td>{{ $gasto['operador'] ?? '-' }}</td>
-                            <td>{{ $gasto['cliente'] ?? '-' }}</td>
-                            <td>{{ $gasto['subcliente'] ?? '-' }}</td>
-                            <td>{{ $gasto['num_contenedor'] ?? '-' }}</td>
-                            <td>${{ is_numeric($gasto['monto']) ? number_format(floatval($gasto['monto']), 2) : '0.00' }}</td>
-                            <td>{{ $gasto['motivo'] ?? '-' }}</td>
-                            <td>{{ $gasto['fecha_movimiento'] ?? '-' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="5"
-                            style="text-align: right; font-weight: bold; font-size: 13px; background-color: #e5e7eb;">Total
-                            General:</td>
-                        <td style="font-weight: bold; font-size: 13px; background-color: #e5e7eb;">
-                            ${{ number_format($totalGeneral, 2) }}</td>
-                        <td colspan="2" style="background-color: #e5e7eb;"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        @else
-            @php
-                $gastosPorUnidad = collect($gastos)->groupBy(function($item) {
-                    return $item['unidad'] ?? 'SIN UNIDAD ASIGNADA';
-                });
-                $totalConsolidado = 0;
-            @endphp
-
-            @foreach ($gastosPorUnidad as $unidadTexto => $itemsUnidad)
-                @php
-                    $subtotalUnidad = collect($itemsUnidad)->sum(function($item) {
-                        return is_numeric($item['monto']) ? $item['monto'] : 0;
-                    });
-                    $totalConsolidado += $subtotalUnidad;
-                @endphp
-
-                <table style="margin-bottom: 10px;" border="1">
-                    <thead>
-                        <tr>
-                            <th colspan="8" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-weight: bold;">
-                                🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }} ({{ count($itemsUnidad) }} gastos pendientes)
-                            </th>
-                        </tr>
-                        <tr style="background-color: #f2f2f2;">
-                            <th>ID</th>
-                            <th>Operador</th>
-                            <th>Cliente</th>
-                            <th>Subcliente</th>
-                            <th>Contenedor</th>
-                            <th>Monto</th>
-                            <th>Motivo</th>
-                            <th>Fecha Movimiento</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($itemsUnidad as $gasto)
-                            <tr>
-                                <td>{{ $gasto['id'] }}</td>
-                                <td>{{ $gasto['operador'] ?? '-' }}</td>
-                                <td>{{ $gasto['cliente'] ?? '-' }}</td>
-                                <td>{{ $gasto['subcliente'] ?? '-' }}</td>
-                                <td>{{ $gasto['num_contenedor'] ?? '-' }}</td>
-                                <td>${{ is_numeric($gasto['monto']) ? number_format(floatval($gasto['monto']), 2) : '0.00' }}</td>
-                                <td>{{ $gasto['motivo'] ?? '-' }}</td>
-                                <td>{{ $gasto['fecha_movimiento'] ?? '-' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr style="background-color: #e9ecef; font-weight: bold;">
-                            <td colspan="5" style="text-align: right;">SUBTOTAL UNIDAD ({{ $unidadTexto }}):</td>
-                            <td>${{ number_format($subtotalUnidad, 2) }}</td>
-                            <td colspan="2"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            @endforeach
-
-            @if ($gastosPorUnidad->count() > 1)
-                <table style="margin-top: 10px;" border="1">
-                    <tfoot>
-                        <tr style="background-color: #344767; color: #ffffff; font-weight: bold;">
-                            <td colspan="5" style="text-align: right; color: #ffffff;">GRAN TOTAL CONSOLIDADO GASTOS (TODAS LAS UNIDADES):</td>
-                            <td style="color: #ffffff;">${{ number_format($totalConsolidado, 2) }}</td>
-                            <td colspan="2" style="color: #ffffff;"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            @endif
-        @endif
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5"
+                        style="text-align: right; font-weight: bold; font-size: 13px; background-color: #e5e7eb;">Total
+                        General:</td>
+                    <td style="font-weight: bold; font-size: 13px; background-color: #e5e7eb;">
+                        ${{ number_format($totalGeneral, 2) }}</td>
+                    <td colspan="2" style="background-color: #e5e7eb;"></td>
+                </tr>
+            </tfoot>
+        </table>
     @else
         <table>
             <thead>

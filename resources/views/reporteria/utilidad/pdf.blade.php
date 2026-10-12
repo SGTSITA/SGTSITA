@@ -173,171 +173,64 @@
             </tr>
         </table>
 
-        @php
-            $empresaActual = $user?->Empresa ?? null;
-            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
-        @endphp
-
-        @if (!$esEmpresaGlobal)
-            {{-- MODO TRADICIONAL (Configuración Global = 0): Diseño original 100% intacto --}}
-            <table
-                class="table text-white tabla-completa"
-                style="
-                    color: #000;
-                    width: 100%;
-                    padding: 5px;
-                    margin: 0px;
-                    border-collapse: collapse;
-                    border: 1px solid #000;
-                "
-            >
-                <thead>
+        <table
+            class="table text-white tabla-completa"
+            style="
+                color: #000;
+                width: 100%;
+                padding: 5px;
+                margin: 0px;
+                border-collapse: collapse;
+                border: 1px solid #000;
+            "
+        >
+            <thead>
+                <tr>
+                    <th>Núm Contenedor</th>
+                    <th>Cliente</th>
+                    <th>Precio Viaje</th>
+                    <th>Pago Operación</th>
+                    <th>Gastos Extra</th>
+                    <th>Dinero Viaje S/Justificar</th>
+                    <th>Gastos Viaje</th>
+                    <th>Gastos Diferidos</th>
+                    <th>Utilidad</th>
+                    <th>Transportado Por</th>
+                </tr>
+            </thead>
+            <tbody style="text-align: center; font-size: 100%">
+                @foreach ($cotizaciones as $cotizacion)
                     <tr>
-                        <th>Núm Contenedor</th>
-                        <th>Cliente</th>
-                        <th>Precio Viaje</th>
-                        <th>Pago Operación</th>
-                        <th>Gastos Extra</th>
-                        <th>Dinero Viaje S/Justificar</th>
-                        <th>Gastos Viaje</th>
-                        <th>Gastos Diferidos</th>
-                        <th>Utilidad</th>
-                        <th>Transportado Por</th>
+                        <td>{{ $cotizacion['numContenedor'] }}</td>
+                        <td>{{ $cotizacion['cliente'] }}</td>
+                        <td>$ {{ number_format($cotizacion['precioViaje'], 2) }}</td>
+                        <td>$ {{ number_format($cotizacion['pagoOperacion'], 2) }}</td>
+                        <td>$ {{ number_format($cotizacion['gastosExtra'], 2) }}</td>
+                        <td>$ {{ number_format($cotizacion['dineroViajeSinJustificar'], 2) }}</td>
+                        <td>$ {{ number_format($cotizacion['gastosViaje'], 2) }}</td>
+                        <td>$ {{ number_format($cotizacion['gastosDiferidos'], 2) }}</td>
+                        <td @if ($cotizacion['utilidad'] < 0) class="bg-warning" @endif>
+                            $ {{ number_format($cotizacion['utilidad'], 2) }}
+                        </td>
+                        <td>{{ $cotizacion['transportadoPor'] }}</td>
                     </tr>
-                </thead>
-                <tbody style="text-align: center; font-size: 100%">
-                    @foreach ($cotizaciones as $cotizacion)
-                        <tr>
-                            <td>{{ $cotizacion['numContenedor'] }}</td>
-                            <td>{{ $cotizacion['cliente'] }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['precioViaje'] ?? 0), 2) }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['pagoOperacion'] ?? 0), 2) }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['gastosExtra'] ?? 0), 2) }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['dineroViajeSinJustificar'] ?? 0), 2) }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['gastosViaje'] ?? 0), 2) }}</td>
-                            <td>$ {{ number_format(floatval($cotizacion['gastosDiferidos'] ?? 0), 2) }}</td>
-                            <td @if (($cotizacion['utilidad'] ?? 0) < 0) class="bg-warning" @endif>
-                                $ {{ number_format(floatval($cotizacion['utilidad'] ?? 0), 2) }}
-                            </td>
-                            <td>{{ $cotizacion['transportadoPor'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-                <tfoot style="text-align: center; font-size: 14px; font-weight: bold">
-                    <tr style="text-align: center; font-size: 14px; font-weight: bold">
-                        <td colspan="2">TOTAL</td>
+                @endforeach
+            </tbody>
+            <tfoot style="text-align: center; font-size: 14px; font-weight: bold">
+                <tr style="text-align: center; font-size: 14px; font-weight: bold">
+                    <td colspan="2">TOTAL</td>
 
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('precioViaje')), 2) }}</td>
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('pagoOperacion')), 2) }}</td>
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('gastosExtra')), 2) }}</td>
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('dineroViajeSinJustificar')), 2) }}</td>
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('gastosViaje')), 2) }}</td>
-                        <td>$ {{ number_format(floatval($cotizaciones->sum('gastosDiferidos')), 2) }}</td>
-                        <td>${{ number_format(floatval($cotizaciones->sum('utilidad')), 2) }}</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        @else
-            {{-- MODO EMPRESA GLOBAL (H00): Agrupación separada por Unidad / Tractocamión con subtotales y gran total --}}
-            @php
-                $cotizacionesPorUnidad = $cotizaciones->groupBy(function($item) {
-                    return $item['unidad'] ?? 'SIN UNIDAD ASIGNADA';
-                });
-            @endphp
-
-            @foreach ($cotizacionesPorUnidad as $unidadTexto => $itemsUnidad)
-                <div style="background-color: #2c3e50; color: #ffffff; padding: 5px 10px; font-size: 11px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '15px' }}; margin-bottom: 5px; border-radius: 3px;">
-                    🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }} ({{ count($itemsUnidad) }} viajes)
-                </div>
-
-                <table
-                    class="table text-white tabla-completa"
-                    style="
-                        color: #000;
-                        width: 100%;
-                        padding: 5px;
-                        margin: 0px 0px 10px 0px;
-                        border-collapse: collapse;
-                        border: 1px solid #000;
-                    "
-                >
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th>Núm Contenedor</th>
-                            <th>Cliente</th>
-                            <th>Precio Viaje</th>
-                            <th>Pago Operación</th>
-                            <th>Gastos Extra</th>
-                            <th>Dinero Viaje S/Justificar</th>
-                            <th>Gastos Viaje</th>
-                            <th>Gastos Diferidos</th>
-                            <th>Utilidad</th>
-                            <th>Transportado Por</th>
-                        </tr>
-                    </thead>
-                    <tbody style="text-align: center; font-size: 100%">
-                        @foreach ($itemsUnidad as $cotizacion)
-                            <tr>
-                                <td>{{ $cotizacion['numContenedor'] }}</td>
-                                <td>{{ $cotizacion['cliente'] }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['precioViaje'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['pagoOperacion'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosExtra'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['dineroViajeSinJustificar'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosViaje'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosDiferidos'] ?? 0), 2) }}</td>
-                                <td @if (($cotizacion['utilidad'] ?? 0) < 0) class="bg-warning" @endif>
-                                    $ {{ number_format(floatval($cotizacion['utilidad'] ?? 0), 2) }}
-                                </td>
-                                <td>{{ $cotizacion['transportadoPor'] }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot style="text-align: center; font-size: 12px; font-weight: bold">
-                        <tr style="background-color: #e9ecef;">
-                            <td colspan="2">SUBTOTAL UNIDAD ({{ $unidadTexto }})</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('precioViaje')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('pagoOperacion')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosExtra')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('dineroViajeSinJustificar')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosViaje')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosDiferidos')), 2) }}</td>
-                            <td>${{ number_format(floatval(collect($itemsUnidad)->sum('utilidad')), 2) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            @endforeach
-
-            @if ($cotizacionesPorUnidad->count() > 1)
-                <table
-                    class="table text-white tabla-completa"
-                    style="
-                        color: #000;
-                        width: 100%;
-                        padding: 5px;
-                        margin: 10px 0px;
-                        border-collapse: collapse;
-                        border: 2px solid #344767;
-                    "
-                >
-                    <tfoot style="text-align: center; font-size: 13px; font-weight: bold">
-                        <tr style="background-color: #344767; color: #ffffff;">
-                            <td colspan="2" style="color: #ffffff; padding: 6px;">GRAN TOTAL CONSOLIDADO (TODAS LAS UNIDADES)</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('precioViaje')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('pagoOperacion')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosExtra')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('dineroViajeSinJustificar')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosViaje')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosDiferidos')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">${{ number_format(floatval($cotizaciones->sum('utilidad')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            @endif
-        @endif
+                    <td>$ {{ number_format($cotizaciones->sum('precioViaje'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('pagoOperacion'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosExtra'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('dineroViajeSinJustificar'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosViaje'), 2) }}</td>
+                    <td>$ {{ number_format($cotizaciones->sum('gastosDiferidos'), 2) }}</td>
+                    <td>${{ number_format($cotizaciones->sum('utilidad'), 2) }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
 
         <h4 style="margin-top: 20px">Desglose de Otros Gastos</h4>
         <table style="width: 100%; font-size: 10px; border-collapse: collapse" border="1">

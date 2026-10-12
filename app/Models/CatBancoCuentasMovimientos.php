@@ -31,8 +31,6 @@ class CatBancoCuentasMovimientos extends Model
         'user_id',
         'observaciones',
         'detalles',
-        'tipo_concepto',
-        'poliza_id',
     ];
 
     protected $casts = [
@@ -60,19 +58,9 @@ class CatBancoCuentasMovimientos extends Model
         return $this->morphTo();
     }
 
-    public function poliza(): BelongsTo
-    {
-        return $this->belongsTo(Poliza::class, 'poliza_id');
-    }
-
     public function pagosGastos(): HasMany
     {
         return $this->hasMany(GastoPago::class, 'movimiento_bancario_id');
-    }
-
-    public function scopeIntereses($query)
-    {
-        return $query->where('tipo_concepto', 'interes');
     }
 
     public function scopeDeUnidad($query, int $equipoId)

@@ -374,25 +374,12 @@
                 let saldoResNum = parseFloat(mov.saldo_resultante || 0);
                 let styleSaldoRes = saldoResNum < 0 ? 'color: #ea580c; font-weight: bold;' : '';
 
-                let badgeConcepto = '';
-                if (mov.tipo_concepto === 'interes') {
-                    badgeConcepto = ' <span class="badge bg-info text-dark" style="font-size: 11px;"><i class="fa fa-percent me-1"></i>Interés</span>';
-                } else if (mov.tipo_concepto === 'traspaso') {
-                    badgeConcepto = ' <span class="badge bg-secondary text-white" style="font-size: 11px;"><i class="fa fa-exchange-alt me-1"></i>Traspaso</span>';
-                } else if (mov.tipo_concepto === 'comision') {
-                    badgeConcepto = ' <span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="fa fa-receipt me-1"></i>Comisión</span>';
-                }
-
-                if (mov.poliza_id) {
-                    badgeConcepto += ` <span class="badge bg-light text-primary border" style="font-size: 10px;" title="Póliza Contable #${mov.poliza_id}"><i class="fa fa-book me-1"></i>Póliza</span>`;
-                }
-
                 tbody.innerHTML += `
         <tr class="${claseFila}">
             <td>${formatearFecha(mov.fecha_movimiento)}</td>
 
             <td class="concepto-cell">
-                ${escapeHtml(mov.concepto ?? '')}${badgeConcepto}
+                ${escapeHtml(mov.concepto ?? '')}
             </td>
 
           <td class="referencia-cell" title="${escapeHtml(mov.referencia ?? '')}">
