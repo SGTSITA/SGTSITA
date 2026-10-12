@@ -658,10 +658,14 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::post('liquidaciones/viajes/pagos-operadores', [App\Http\Controllers\LiquidacionesController::class, 'getpagosOperadoressaldo'])->name('operadores.liquidacion');
         Route::post('liquidaciones/viajes/operador', [App\Http\Controllers\LiquidacionesController::class, 'getViajesOperador'])->name('operador.viajes');
         Route::post('liquidaciones/viajes/dinero_para_viaje', [App\Http\Controllers\LiquidacionesController::class, 'agregarDineroViaje'])->name('dinero.viaje');
+        Route::post('liquidaciones/viajes/dinero-viaje/lista', [App\Http\Controllers\LiquidacionesController::class, 'getDinerosViaje'])->name('dinero.viaje.lista');
+        Route::post('liquidaciones/viajes/dinero-viaje/eliminar', [App\Http\Controllers\LiquidacionesController::class, 'eliminarDineroViaje'])->name('dinero.viaje.eliminar');
 
         Route::post('liquidaciones/viajes/aplicar-pago', [App\Http\Controllers\LiquidacionesController::class, 'aplicarPago'])->name('pagar.viajes');
         Route::post('liquidaciones/viajes/gastos/justificar', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastos'])->name('justifica.gastos');
         Route::post('liquidaciones/viajes/gastos/justificar-multiple', [App\Http\Controllers\LiquidacionesController::class, 'justificarGastosMultiples'])->name('justifica.gastos.multiple');
+        Route::post('liquidaciones/viajes/gastos/guardados', [App\Http\Controllers\LiquidacionesController::class, 'getViaticosGuardados'])->name('justifica.gastos.guardados');
+        Route::post('liquidaciones/viajes/gastos/eliminar-viatico', [App\Http\Controllers\LiquidacionesController::class, 'eliminarViatico'])->name('justifica.gastos.eliminar');
 
 
         Route::post(
