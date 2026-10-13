@@ -796,7 +796,10 @@ class LiquidacionesController extends Controller
             $dineroViaje->id_banco = $request->get('bank');
             $dineroViaje->motivo = $request->txtDescripcion;
             $dineroViaje->monto = $request->montoJustificacion;
-            $dineroViaje->fecha_entrega_monto = date('Y-m-d');
+            $dineroViaje->es_principal = 0;
+            $dineroViaje->fecha_entrega_monto = $request->filled('FechaAplicacionDinero')
+                ? \Carbon\Carbon::createFromFormat('d/m/Y', $request->get('FechaAplicacionDinero'))->format('Y-m-d')
+                : date('Y-m-d');
             $dineroViaje->save();
 
             $contenedoresAbonos = [];
@@ -834,7 +837,7 @@ class LiquidacionesController extends Controller
                             'd/m/Y',
                             $fechaAplicacionDinero
                         )->format('Y-m-d'),
-                        'origen' => null,
+                        'origen' => 'sistema',
                         'referencia' => $request->numContenedor,
                         'detalles' => json_encode($contenedoresAbonos),
                          'referenciaable_id' => $asignacion->id,
@@ -845,13 +848,13 @@ class LiquidacionesController extends Controller
 
 
                 $movimeintoCrear = $this->BancosService->registrarMovimiento($data);
-                //   dd('no pasar', $movimeintoCrear);
 
                 if (!$movimeintoCrear) {
                     throw new \Exception('No se pudo crear el movimiento bancario, dinero para viaje adicional ');
                 }
 
-
+                $dineroViaje->id_movimiento_bancario = $movimeintoCrear->id;
+                $dineroViaje->save();
             }
 
 
@@ -863,6 +866,314 @@ class LiquidacionesController extends Controller
             $uniqid = uniqid();
             Log::channel('daily')->info("Codigo: $uniqid, Error: LiquidacionesController/agregarDineroViaje ".$t->getMessage());
             return response()->json(["Titulo" => "Ha ocurrido un problema", "Mensaje" => "Codigo error: $uniqid. Mensaje: ".$t->getMessage(), "TMensaje" => "error"]);
+        }
+    }
+
+    public function getViaticosGuardados(Request $request)
+    {
+        try {
+            $idContenedores = $request->get('id_contenedores');
+            if (!$idContenedores && $request->filled('id_contenedor')) {
+                $idContenedores = [$request->get('id_contenedor')];
+            }
+            if (!$idContenedores && $request->filled('numContenedor')) {
+                $doc = DocumCotizacion::where('num_contenedor', $request->get('numContenedor'))
+                    ->where('id_empresa', auth()->user()->id_empresa)
+                    ->first();
+                if ($doc) {
+                    $idContenedores = [$doc->id];
+                }
+            }
+
+            if (empty($idContenedores)) {
+                return response()->json(['success' => false, 'data' => [], 'message' => 'No se especificaron contenedores']);
+            }
+
+            $contenedores = DocumCotizacion::whereIn('id', (array) $idContenedores)->get()->keyBy('id');
+            $idCotizaciones = $contenedores->pluck('id_cotizacion')->filter()->unique();
+
+            $viaticos = ViaticosOperador::whereIn('id_cotizacion', $idCotizaciones)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            // Mapear cada viático a su contenedor correspondiente
+            $cotizacionToContenedor = [];
+            foreach ($contenedores as $cont) {
+                $cotizacionToContenedor[$cont->id_cotizacion] = $cont->num_contenedor;
+            }
+
+            $resultado = $viaticos->map(function ($v) use ($cotizacionToContenedor) {
+                return [
+                    'id' => $v->id,
+                    'id_cotizacion' => $v->id_cotizacion,
+                    'contenedor' => $cotizacionToContenedor[$v->id_cotizacion] ?? 'Contenedor',
+                    'descripcion' => $v->descripcion_gasto,
+                    'monto' => floatval($v->monto),
+                    'fecha' => $v->created_at ? $v->created_at->format('d/m/Y') : '',
+                ];
+            })
+            ->sortBy([
+                ['contenedor', 'asc'],
+                ['id', 'asc']
+            ])
+            ->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado
+            ]);
+        } catch (\Throwable $t) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener viáticos: ' . $t->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDinerosViaje(Request $request)
+    {
+        try {
+            $idContenedores = $request->get('id_contenedores');
+            if (!$idContenedores && $request->filled('id_contenedor')) {
+                $idContenedores = [$request->get('id_contenedor')];
+            }
+            if (!$idContenedores && $request->filled('numContenedor')) {
+                $doc = DocumCotizacion::where('num_contenedor', $request->get('numContenedor'))
+                    ->where('id_empresa', auth()->user()->id_empresa)
+                    ->first();
+                if ($doc) {
+                    $idContenedores = [$doc->id];
+                }
+            }
+
+            if (empty($idContenedores)) {
+                return response()->json(['success' => false, 'data' => [], 'message' => 'No se especificaron contenedores']);
+            }
+
+            $dineros = DineroContenedor::with(['banco.catBanco', 'DocCotizacion.Asignaciones', 'movimientoBancario.cuentaBancaria.catBanco'])
+                ->whereIn('id_contenedor', (array) $idContenedores)
+                ->orderBy('id_contenedor')
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $resultado = $dineros->map(function ($d) {
+                $nombreBanco = 'N/A';
+                if ($d->banco) {
+                    $nombreBanco = optional($d->banco->catBanco)->nombre 
+                        ?: ($d->banco->nombre_banco 
+                        ?: ($d->banco->nombre_beneficiario ?: 'N/A'));
+                    if (!empty($d->banco->cuenta_bancaria)) {
+                        $nombreBanco .= ' (••' . substr($d->banco->cuenta_bancaria, -4) . ')';
+                    }
+                } elseif ($d->movimientoBancario?->cuentaBancaria) {
+                    $cb = $d->movimientoBancario->cuentaBancaria;
+                    $nombreBanco = optional($cb->catBanco)->nombre ?: ($cb->nombre_banco ?: 'N/A');
+                    if (!empty($cb->cuenta_bancaria)) {
+                        $nombreBanco .= ' (••' . substr($cb->cuenta_bancaria, -4) . ')';
+                    }
+                }
+
+                $asignacion = $d->DocCotizacion?->Asignaciones;
+                $dineroAsignacion = floatval($asignacion?->dinero_viaje ?? 0);
+                $esPrincipal = (bool) $d->es_principal 
+                    || (strtolower(trim($d->motivo)) === 'dinero para viaje' && (abs(floatval($d->monto) - 1000.0) < 0.01 || (abs(floatval($d->monto) - $dineroAsignacion) < 0.01 && $dineroAsignacion > 0)));
+
+                return [
+                    'id' => $d->id,
+                    'id_contenedor' => $d->id_contenedor,
+                    'num_contenedor' => $d->DocCotizacion?->num_contenedor ?? 'N/A',
+                    'motivo' => $d->motivo,
+                    'monto' => floatval($d->monto),
+                    'monto_formateado' => number_format($d->monto, 2),
+                    'fecha' => $d->fecha_entrega_monto ? \Carbon\Carbon::parse($d->fecha_entrega_monto)->format('d/m/Y') : '',
+                    'es_principal' => $esPrincipal,
+                    'banco' => $nombreBanco,
+                    'id_banco' => $d->id_banco,
+                    'id_movimiento_bancario' => $d->id_movimiento_bancario,
+                    'movimiento_cancelado' => (bool) optional($d->movimientoBancario)->cancelado,
+                    'es_cancelacion' => floatval($d->monto) < 0,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $resultado
+            ]);
+        } catch (\Throwable $t) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener dinero de viaje: ' . $t->getMessage()
+            ], 500);
+        }
+    }
+
+    public function eliminarDineroViaje(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $idDinero = $request->get('id_dinero_contenedor');
+            $dinero = DineroContenedor::with('DocCotizacion.Asignaciones')->findOrFail($idDinero);
+
+            if (floatval($dinero->monto) <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'Titulo' => 'Operación no permitida',
+                    'Mensaje' => 'No es posible cancelar un registro que ya representa una cancelación o saldo negativo.',
+                    'TMensaje' => 'warning'
+                ], 422);
+            }
+
+            $montoPositivo = floatval($dinero->monto);
+            $asignacion = $dinero->DocCotizacion?->Asignaciones ?? Asignaciones::where('id_contenedor', $dinero->id_contenedor)->first();
+            $dineroAsignacion = floatval($asignacion?->dinero_viaje ?? 0);
+            $esPrincipal = (bool) $dinero->es_principal 
+                || (strtolower(trim($dinero->motivo)) === 'dinero para viaje' && (abs(floatval($dinero->monto) - 1000.0) < 0.01 || (abs(floatval($dinero->monto) - $dineroAsignacion) < 0.01 && $dineroAsignacion > 0)));
+
+            // 1. Cancelar movimiento bancario si existe
+            $movimientoBancario = null;
+            if ($dinero->id_movimiento_bancario) {
+                $movimientoBancario = \App\Models\CatBancoCuentasMovimientos::where('id', $dinero->id_movimiento_bancario)
+                    ->where('cancelado', 0)
+                    ->first();
+            }
+
+            // Fallback para registros sin id_movimiento_bancario
+            if (!$movimientoBancario && $asignacion) {
+                $movimientoBancario = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_id', $asignacion->id)
+                    ->where(function ($q) {
+                        $q->where('referenciaable_type', Asignaciones::class)
+                          ->orWhere('referenciaable_type', 'like', '%Asignaciones%');
+                    })
+                    ->where('cancelado', 0)
+                    ->where('tipo', 'cargo')
+                    ->where('monto', $montoPositivo)
+                    ->where('concepto', 'not like', 'Devolución%')
+                    ->latest('id')
+                    ->first();
+            }
+
+            if ($movimientoBancario && !$movimientoBancario->cancelado) {
+                $fechaCancelacion = $movimientoBancario->fecha_movimiento
+                    ? \Carbon\Carbon::parse($movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                    : now()->format('Y-m-d');
+
+                $this->BancosService->cancelarMovimiento(
+                    $movimientoBancario->cuenta_bancaria_id,
+                    $movimientoBancario->id,
+                    $fechaCancelacion
+                );
+            }
+
+            // 2. Insertar registro negativo en dinero_contenedor para netear
+            $dineroNeteo = new DineroContenedor();
+            $dineroNeteo->id_contenedor = $dinero->id_contenedor;
+            $dineroNeteo->id_banco = $dinero->id_banco;
+            $dineroNeteo->motivo = 'Cancelación: ' . $dinero->motivo;
+            $dineroNeteo->monto = -$montoPositivo;
+            $dineroNeteo->fecha_entrega_monto = date('Y-m-d');
+            $dineroNeteo->es_principal = $esPrincipal ? 1 : 0;
+            $dineroNeteo->save();
+
+            // 3. Reintegrar saldo al operador en asignaciones
+            if ($esPrincipal) {
+                Asignaciones::where('id_contenedor', $dinero->id_contenedor)->update([
+                    'dinero_viaje' => 0,
+                    'id_banco1_dinero_viaje' => null,
+                    'cantidad_banco1_dinero_viaje' => 0,
+                    'restante_pago_operador' => DB::raw('COALESCE(restante_pago_operador, 0) + ' . $montoPositivo)
+                ]);
+                $mensajeExito = 'Se canceló el dinero principal de viaje por $' . number_format($montoPositivo, 2) . ', se restableció el dinero de viaje a $0.00 en la asignación y se devolvió el saldo en bancos.';
+            } else {
+                Asignaciones::where('id_contenedor', $dinero->id_contenedor)->update([
+                    'restante_pago_operador' => DB::raw('COALESCE(restante_pago_operador, 0) + ' . $montoPositivo)
+                ]);
+                $mensajeExito = 'Se canceló el dinero extra de viaje por $' . number_format($montoPositivo, 2) . ', se reintegró a la asignación y se devolvió el saldo en bancos.';
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'Titulo' => $esPrincipal ? 'Dinero principal cancelado' : 'Dinero extra cancelado',
+                'Mensaje' => $mensajeExito,
+                'TMensaje' => 'success'
+            ]);
+        } catch (\Throwable $t) {
+            DB::rollBack();
+            Log::channel('daily')->error('Error en eliminarDineroViaje: ' . $t->getMessage());
+            return response()->json([
+                'success' => false,
+                'Titulo' => 'Error al cancelar',
+                'Mensaje' => 'Ocurrió un error al procesar la cancelación: ' . $t->getMessage(),
+                'TMensaje' => 'error'
+            ], 500);
+        }
+    }
+
+    public function eliminarViatico(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $idViatico = $request->get('idviatico');
+            $viatico = ViaticosOperador::findOrFail($idViatico);
+
+            $montoViatico = floatval($viatico->monto);
+            $idCotizacion = $viatico->id_cotizacion;
+
+            // 1. Localizar contenedor y descontar de restante_pago_operador
+            $documCotizacion = DocumCotizacion::where('id_cotizacion', $idCotizacion)->first();
+            if ($documCotizacion) {
+                Asignaciones::where('id_contenedor', $documCotizacion->id)->update([
+                    'restante_pago_operador' => DB::raw('COALESCE(restante_pago_operador, 0) - ' . $montoViatico)
+                ]);
+            }
+
+            // 2. Cancelar Gasto unificado vinculado si existe
+            $gastoOp = \App\Models\Gasto::where('origen_legacy', 'viaticos_operadores')
+                ->where('origen_legacy_id', $viatico->id)
+                ->first();
+
+            if ($gastoOp) {
+                foreach ($gastoOp->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                    app(\App\Services\GastosService::class)->cancelarPago($pago, now()->format('Y-m-d'));
+                }
+                $gastoOp->estatus = 'cancelado';
+                $gastoOp->save();
+            }
+
+            // 3. Cancelar excedente vinculado si existe
+            $excedenteGasto = \App\Models\Gasto::where('origen_legacy', 'viaticos_operadores_excedente')
+                ->where('origen_legacy_id', $viatico->id)
+                ->first();
+
+            if ($excedenteGasto) {
+                foreach ($excedenteGasto->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                    app(\App\Services\GastosService::class)->cancelarPago($pago, now()->format('Y-m-d'));
+                }
+                $excedenteGasto->estatus = 'cancelado';
+                $excedenteGasto->save();
+            }
+
+            // 4. Eliminar el registro de ViaticosOperador
+            $viatico->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'Titulo' => 'Viático eliminado',
+                'Mensaje' => 'La justificación por $' . number_format($montoViatico, 2) . ' fue eliminada correctamente y el saldo del operador fue recalculado.',
+                'TMensaje' => 'success'
+            ]);
+        } catch (\Throwable $t) {
+            DB::rollBack();
+            Log::channel('daily')->error('Error en eliminarViatico: ' . $t->getMessage());
+            return response()->json([
+                'success' => false,
+                'Titulo' => 'Error al eliminar viático',
+                'Mensaje' => 'Ocurrió un error: ' . $t->getMessage(),
+                'TMensaje' => 'error'
+            ], 500);
         }
     }
 
