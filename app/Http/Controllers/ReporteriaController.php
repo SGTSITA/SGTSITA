@@ -213,7 +213,13 @@ class ReporteriaController extends Controller
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        $cotizaciones = Cotizaciones::with(['estadoCuenta', 'DocCotizacion'])
+        $cotizaciones = Cotizaciones::with([
+            'estadoCuenta',
+            'DocCotizacion.Asignaciones.Camion',
+            'DocCotizacion.Asignaciones.Proveedor',
+            'Cliente',
+            'Subcliente'
+        ])
             ->whereIn('id', $cotizacionIds)
             ->get();
 
@@ -256,9 +262,10 @@ class ReporteriaController extends Controller
             ))->setPaper([0, 0, 595, 1200], 'landscape');
 
             $fileName = 'cxc.pdf';
-            $pdf->save(public_path($fileName));
+            $filePath = storage_path('app/public/' . $fileName);
+            $pdf->save($filePath);
 
-            return response()->download(public_path($fileName))->deleteFileAfterSend(true);
+            return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
         }
 
 
@@ -273,7 +280,7 @@ class ReporteriaController extends Controller
 
         $zip = new \ZipArchive();
         $zipName = 'cxc_' . time() . '.zip';
-        $zipPath = public_path($zipName);
+        $zipPath = storage_path('app/public/' . $zipName);
 
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
 
@@ -303,6 +310,7 @@ class ReporteriaController extends Controller
                 } else {
 
                     $pdfName = "cxc_{$nombreGrupo}.pdf";
+                    $pdfPath = storage_path('app/public/' . $pdfName);
 
                     $pdf = PDF::loadView('reporteria.cxc.pdf', [
                         'cotizaciones' => $items,
@@ -314,9 +322,9 @@ class ReporteriaController extends Controller
                         'cuentaGlobal' => $cuentaGlobal
                     ])->setPaper([0, 0, 595, 1200], 'landscape');
 
-                    $pdf->save(public_path($pdfName));
+                    $pdf->save($pdfPath);
 
-                    $zip->addFile(public_path($pdfName), $pdfName);
+                    $zip->addFile($pdfPath, $pdfName);
                 }
 
 
@@ -404,7 +412,7 @@ class ReporteriaController extends Controller
                     } else {
 
                         $pdfName = "cxc_{$nombreGrupo}.pdf";
-                        $pdfPath = public_path($pdfName);
+                        $pdfPath = storage_path('app/public/' . $pdfName);
 
                         $pdf = PDF::loadView('reporteria.cxc.pdf', [
                             'cotizaciones' => $items,
@@ -485,7 +493,7 @@ class ReporteriaController extends Controller
             }
 
             $txtName = "reporte_{$nombreGrupo}.txt";
-            $txtPath = public_path($txtName);
+            $txtPath = storage_path('app/public/' . $txtName);
 
             file_put_contents($txtPath, $reporte);
             $zip->addFile($txtPath, "{$nombreGrupoDocs}/{$txtName}");
@@ -1805,9 +1813,12 @@ class ReporteriaController extends Controller
         }
 
         $cotizaciones1 = Cotizaciones::join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+            ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
+            ->leftJoin('equipos', 'asignaciones.id_camion', '=', 'equipos.id')
             ->whereIn('cotizaciones.id', $cotizacionIds)
             ->where('cotizaciones.jerarquia', "Principal")
             ->select(
+                'docum_cotizacion.id as id_docum_cotizacion',
                 'docum_cotizacion.num_contenedor',
                 'docum_cotizacion.doc_ccp',
                 'docum_cotizacion.boleta_liberacion',
@@ -1816,7 +1827,11 @@ class ReporteriaController extends Controller
                 'docum_cotizacion.boleta_vacio',
                 'docum_cotizacion.doc_eir',
                 'docum_cotizacion.cima',
-                'cotizaciones.referencia_full'
+                'cotizaciones.referencia_full',
+                'asignaciones.id_camion',
+                'equipos.id_equipo as camion_codigo',
+                'equipos.marca as camion_marca',
+                'equipos.placas as camion_placas'
             )
             ->get();
 
@@ -1860,6 +1875,14 @@ class ReporteriaController extends Controller
                 }
             }
 
+            $textoUnidad = 'SIN UNIDAD ASIGNADA';
+            if ($cot->id_camion) {
+                $codigo = $cot->camion_codigo ?: ($cot->camion_placas ?: 'UNIDAD #' . $cot->id_camion);
+                $marca = $cot->camion_marca ?: 'TRACTO';
+                $placas = $cot->camion_placas ?: 'S/P';
+                $textoUnidad = trim("{$codigo} - {$marca} [{$placas}]");
+            }
+
             return [
                 "id" => $cot->id,
                 "cliente" => $cot->cliente ?? null,
@@ -1881,6 +1904,8 @@ class ReporteriaController extends Controller
                 "eir_secundario" => $eirSecundario,
                 "cima_primario" => $cimaPrimario,
                 "cima_secundario" => $cimaSecundario,
+                "id_camion" => $cot->id_camion,
+                "unidad" => $textoUnidad,
             ];
         });
 

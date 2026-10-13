@@ -210,6 +210,8 @@ class BancosService
 
         return DB::transaction(function () use ($data) {
 
+            $tipoConcepto = $data['tipo_concepto'] ?? 'operativo';
+
             $mov = CatBancoCuentasMovimientos::create([
                 'cuenta_bancaria_id' => $data['cuenta_bancaria_id'],
                 'tipo'               => $data['tipo'], // cargo | abono
@@ -222,6 +224,7 @@ class BancosService
                 'referenciaable_id'  => $data['referenciaable_id'] ?? null,
                 'detalles'           => $data['detalles'] ?? null,
                 'observaciones'      => $data['observaciones'] ?? null,
+                'tipo_concepto'      => $tipoConcepto,
                 'user_id'            => auth()->id(),
             ]);
 
@@ -232,6 +235,31 @@ class BancosService
                     $banco->increment('saldo', $data['monto']);
                 } else {
                     $banco->decrement('saldo', $data['monto']);
+                }
+
+                // Generar póliza automática si es interés bancario
+                if ($tipoConcepto === 'interes' && $data['tipo'] === 'abono') {
+                    try {
+                        $polizaService = app(\App\Services\PolizaService::class);
+                        $asientoData = $polizaService->resolverAsientoPorEvento('INTERES_BANCARIO', null, $banco->id_empresa, [
+                            'cuenta_bancaria_id' => $banco->id,
+                            'banco'              => $banco->nombre_banco,
+                            'cuenta'             => $banco,
+                            'monto'              => $data['monto'],
+                            'fecha'              => $data['fecha_movimiento'],
+                            'concepto'           => 'Interés bancario: ' . ($data['concepto'] ?? ('Rendimiento ' . $banco->nombre_banco)),
+                            'origen_tipo'        => 'bancos',
+                            'origen_id'          => $mov->id,
+                        ]);
+
+                        if (!empty($asientoData)) {
+                            $poliza = $polizaService->crearPoliza($asientoData);
+                            $mov->update(['poliza_id' => $poliza->id]);
+                            $mov->poliza_id = $poliza->id;
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable para interés bancario {$mov->id}: " . $e->getMessage());
+                    }
                 }
             }
 
