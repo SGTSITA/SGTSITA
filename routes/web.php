@@ -610,7 +610,18 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('reporteria/socios', [App\Http\Controllers\SociosController::class, 'reporteriaIndex'])->name('reporteria.socios.index');
 
         // ==================== C O N T A B I L I D A D ====================
-        Route::get('contabilidad/balance-general', [App\Http\Controllers\ReporteriaController::class, 'index_contabilidad_balance'])->name('contabilidad.balance-general.index')->middleware('finanzas:3');
+        Route::prefix('contabilidad')->name('contabilidad.')->group(function () {
+            Route::get('balance-general', [App\Http\Controllers\ContabilidadController::class, 'balanceGeneral'])->name('balance-general.index');
+            Route::get('balance-general/imprimir', [App\Http\Controllers\ContabilidadController::class, 'imprimirBalance'])->name('balance-general.imprimir');
+            Route::get('balance-general/data', [App\Http\Controllers\ContabilidadController::class, 'balanceGeneral'])->name('balance-general.data');
+            Route::get('configuracion', [App\Http\Controllers\ContabilidadController::class, 'configuracionIndex'])->name('configuracion.index');
+            Route::post('configuracion/balance-conceptos', [App\Http\Controllers\ContabilidadController::class, 'guardarConceptoBalance'])->name('configuracion.balance-conceptos.store');
+            Route::post('configuracion/guia-regla', [App\Http\Controllers\ContabilidadController::class, 'guardarReglaGuia'])->name('configuracion.guia-regla.store');
+            Route::get('poliza-apertura', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaIndex'])->name('poliza-apertura.index');
+            Route::get('poliza-apertura/data', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaData'])->name('poliza-apertura.data');
+            Route::post('poliza-apertura/guardar', [App\Http\Controllers\ContabilidadController::class, 'guardarPolizaApertura'])->name('poliza-apertura.store');
+            Route::get('manual', [App\Http\Controllers\ContabilidadController::class, 'manual'])->name('manual');
+        });
 
 
         // ==================== S O C I O S  (PARTNERS) ====================

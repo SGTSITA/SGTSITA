@@ -240,6 +240,7 @@ function ejecutarExportacion(fileType) {
     const rowData = JSON.stringify(apiGrid.getSelectedRows());
     const totalRows = apiGrid.paginationGetRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
+    let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
     let idEquipo = $("#selEquipoUtilidad").val();
 
@@ -311,9 +312,7 @@ function getUtilidadesViajes(startDate, endDate) {
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
    let idEquipo = $("#selEquipoUtilidad").val();
-    return $.ajax({
-   
-    $.ajax({
+    return  $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
         data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },

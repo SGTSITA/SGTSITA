@@ -186,6 +186,13 @@
                                                     width="25px" />
                                                 # Contenedor
                                             </th>
+                                            @if (auth()->user()->Empresa?->esGlobalMultiEquipo())
+                                                <th>
+                                                    <img src="{{ asset('img/icon/camion.png') }}" alt=""
+                                                        width="25px" />
+                                                    Unidad / Tracto
+                                                </th>
+                                            @endif
                                             <th>Tipo</th>
                                             <th>
                                                 <img src="{{ asset('img/icon/semaforos.webp') }}" alt=""
@@ -240,6 +247,14 @@
                                                         {{ $cotizacion->num_contenedor }}
                                                     </td>
 
+                                                    @if (auth()->user()->Empresa?->esGlobalMultiEquipo())
+                                                        <td>
+                                                            <span class="badge bg-secondary">
+                                                                {{ $cotizacion->texto_unidad ?? 'Sin unidad' }}
+                                                            </span>
+                                                        </td>
+                                                    @endif
+
                                                     <td>
                                                         {{ $cotizacion->tipo }}
                                                     </td>
@@ -273,11 +288,6 @@
                                             Exportar a Excel
                                         </button>
                                         @if (isset($cotizaciones) && $cotizaciones != null)
-                                            <button type="button" id="exportButtonExcel1" data-filetype="xlsx"
-                                                class="btn btn-outline-secondary btn-sm exportButton"
-                                                data-mode="download">
-                                                Exportar a Excel
-                                            </button>
                                             <input type="hidden" id="txtDataCotizaciones"
                                                 value="{{ json_encode($cotizaciones) }}" />
                                         @endif
@@ -584,6 +594,23 @@
                             //     // No ocultar la vista previa después de la descarga
                             //     window.URL.revokeObjectURL(url);
                             // });
+                        } else if (fileType === 'pdf' && modo === 'download') {
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download =
+                                'cxc_' +
+                                new Date().toLocaleDateString('es-ES').replaceAll('/', '-') +
+                                '_' +
+                                new Date()
+                                .toLocaleTimeString('es-ES', {
+                                    hour12: false,
+                                })
+                                .replaceAll(':', '_') +
+                                '.pdf';
+
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
                         } else if (fileType === 'xlsx') {
                             // Lógica para descargar el archivo Excel (si es necesario)
                             var a = document.createElement('a');
