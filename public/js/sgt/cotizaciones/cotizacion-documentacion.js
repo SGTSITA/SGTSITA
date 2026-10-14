@@ -179,6 +179,9 @@ $(document).ready(function () {
     let start = moment().subtract(3, "months");
     let end = moment().add(20, "days");
 
+    fechaInicioViajes = start.format("YYYY-MM-DD");
+    fechaFinViajes = end.format("YYYY-MM-DD");
+
     function setFechas(start, end) {
         fechaInicioViajes = start.format("YYYY-MM-DD");
         fechaFinViajes = end.format("YYYY-MM-DD");
@@ -190,18 +193,41 @@ $(document).ready(function () {
         getContenedoresPendientes(estatusSearch);
     }
 
-    initSgtDateRange(
-        "#rangoFechasViajes",
-        {
-            startDate: start,
-            endDate: end,
-            autoApply: true,
-            locale: {
-                format: "DD/MM/YYYY",
-            },
-        },
-        setFechas,
+    $("#rangoFechasViajes").val(
+        start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"),
     );
+
+    if (typeof initSgtDateRange === "function") {
+        initSgtDateRange(
+            "#rangoFechasViajes",
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+        $("#rangoFechasViajes").on("apply.daterangepicker", function (ev, picker) {
+            setFechas(picker.startDate, picker.endDate);
+        });
+    } else if ($.fn.daterangepicker) {
+        $("#rangoFechasViajes").daterangepicker(
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+    }
 
     // Event listeners para pestañas de estatus
     $(".status-tab-btn").on("click", function () {
