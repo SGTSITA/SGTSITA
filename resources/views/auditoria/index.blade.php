@@ -73,13 +73,6 @@
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
-    {{-- Moment --}}
-    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
-
-    {{-- DateRangePicker --}}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script>
@@ -90,25 +83,11 @@
         const hoy = moment();
         const hace15Dias = moment().subtract(15, 'days');
 
-        $('#auditoriaRange').daterangepicker({
+        initSgtDateRange('#auditoriaRange', {
             startDate: hace15Dias,
             endDate: hoy,
             autoUpdateInput: false,
-            opens: 'left',
-            locale: {
-                format: 'YYYY-MM-DD',
-                applyLabel: 'Aplicar',
-                cancelLabel: 'Cancelar',
-                fromLabel: 'Desde',
-                toLabel: 'Hasta',
-                customRangeLabel: 'Personalizado',
-                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                monthNames: [
-                    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                ],
-                firstDay: 1
-            }
+            opens: 'left'
         }, function(start, end) {
             fechaInicio = start.format('YYYY-MM-DD');
             fechaFin = end.format('YYYY-MM-DD');

@@ -8,6 +8,7 @@ use App\Models\BitacoraViajeOperador;
 use App\Models\Cotizaciones;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class CotizacionesService
@@ -411,6 +412,34 @@ class CotizacionesService
             ]);
 
             return $polizaService->crearPoliza($asientoData);
+        });
+    }
+
+    /**
+     * Obtiene los ejercicios / años disponibles a partir de cotizaciones en la base de datos,
+     * garantizando cubrir dinámicamente hasta el año actual + 1 sin requerir ajustes manuales futuros.
+     *
+     * @return array
+     */
+    public function getPeriodosCotizaciones(): array
+    {
+        return Cache::remember('sgt_periodos_cotizaciones', 3600, function () {
+            $minYear = (int) (DB::table('cotizaciones')->min(DB::raw('YEAR(created_at)')) ?? 2024);
+            $maxBd = (int) (DB::table('cotizaciones')->max(DB::raw('YEAR(created_at)')) ?? date('Y'));
+            $maxYear = max($maxBd, (int) date('Y') + 1);
+
+            $anios = [];
+            for ($y = $maxYear; $y >= $minYear; $y--) {
+                $anios[] = $y;
+            }
+
+            return [
+                'ejercicio_ini_bd' => $minYear,
+                'ejercicio_fin_bd' => $maxYear,
+                'anios'            => $anios,
+                'min_date'         => "{$minYear}-01-01",
+                'max_date'         => "{$maxYear}-12-31",
+            ];
         });
     }
 }
