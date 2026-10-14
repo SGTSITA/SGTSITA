@@ -168,22 +168,11 @@
             const start = moment().startOf('month');
             const end = moment().endOf('month');
 
-            $('#reporteDaterange').daterangepicker({
+            initSgtDateRange('#reporteDaterange', {
                 startDate: start,
                 endDate: end,
                 locale: {
-                    format: 'YYYY-MM-DD',
-                    separator: ' - ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                    ],
-                    firstDay: 1
+                    separator: ' - '
                 }
             });
 

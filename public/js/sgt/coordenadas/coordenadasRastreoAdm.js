@@ -1005,12 +1005,9 @@ document.addEventListener("DOMContentLoaded", function () {
     inicio = hoy.clone().subtract(10, "days");
     fin = hoy.clone().add(10, "days");
 
-    $("#daterange").daterangepicker({
+    initSgtDateRange("#daterange", {
         startDate: inicio,
         endDate: fin,
-        minDate: inicio,
-        maxDate: fin,
-        locale: { format: "YYYY-MM-DD" },
         opens: "left",
     });
 
@@ -4594,50 +4591,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const hoy = moment();
     inicio = hoy.clone().subtract(10, "days");
     fin = hoy.clone().add(10, "days");
-    $("#daterange").daterangepicker(
+    initSgtDateRange(
+        "#daterange",
         {
             startDate: moment(inicio),
             endDate: moment(fin),
-            // maxDate: moment(),
             opens: "right",
-            locale: {
-                format: "YYYY-MM-DD",
-                separator: " AL ",
-                applyLabel: "Aplicar",
-                cancelLabel: "Cancelar",
-                fromLabel: "Desde",
-                toLabel: "Hasta",
-                customRangeLabel: "Personalizado",
-                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                monthNames: [
-                    "Enero",
-                    "Febrero",
-                    "Marzo",
-                    "Abril",
-                    "Mayo",
-                    "Junio",
-                    "Julio",
-                    "Agosto",
-                    "Septiembre",
-                    "Octubre",
-                    "Noviembre",
-                    "Diciembre",
-                ],
-                firstDay: 1,
-            },
-            ranges: {
-                Hoy: [moment(), moment()],
-                "Últimos 7 días": [moment().subtract(6, "days"), moment()],
-                "Últimos 30 días": [moment().subtract(29, "days"), moment()],
-                "Este mes": [
-                    moment().startOf("month"),
-                    moment().endOf("month"),
-                ],
-                "Mes anterior": [
-                    moment().subtract(1, "month").startOf("month"),
-                    moment().subtract(1, "month").endOf("month"),
-                ],
-            },
         },
         function (start, end) {
             inicio = start.format("YYYY-MM-DD");

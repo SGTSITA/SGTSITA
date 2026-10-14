@@ -30,6 +30,8 @@
     @yield('css')
     <!-- Select2  -->
     <link rel="stylesheet" href="{{ asset('assets/vendor/select2/dist/css/select2.min.css') }}" />
+    <!-- DateRangePicker CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     <!-- CSS Files -->
     <link id="pagestyle" href="{{ asset('assets/css/argon-dashboard.css?v=2.0.4') }}" rel="stylesheet" />
@@ -200,11 +202,19 @@
             window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
             window.SGT_LOGOUT_URL = "{{ route('logout') }}";
             window.SGT_LOGIN_URL = "{{ url('login') }}";
+            window.SGT_DATE_CONFIG = @json(app(\App\Services\CotizacionesService::class)->getPeriodosCotizaciones());
         </script>
 
         <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
     @endauth
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Moment.js y soporte de idioma español -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/es.js"></script>
+    <!-- DateRangePicker JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <!-- Control propio DateRange SGT -->
+    <script src="{{ asset('js/sgt/common/sgt-daterange.js') }}"></script>
     <script src="{{ asset('js/sgt/common.js') }}"></script>
     @yield('js_custom')
 
