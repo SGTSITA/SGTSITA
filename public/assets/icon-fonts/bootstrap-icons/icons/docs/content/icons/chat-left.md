@@ -1,9 +1,9 @@
 ---
 title: Chat left
 categories:
-  - Communications
+    - Communications
 tags:
-  - chat bubble
-  - text
-  - message
+    - chat bubble
+    - text
+    - message
 ---

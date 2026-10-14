@@ -1,9 +1,9 @@
 ---
 title: File earmark post fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - post
+    - doc
+    - document
+    - post
 ---

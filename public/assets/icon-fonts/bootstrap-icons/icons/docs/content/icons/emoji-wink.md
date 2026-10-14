@@ -1,7 +1,7 @@
 ---
 title: Emoji wink
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
+    - emoticon
 ---

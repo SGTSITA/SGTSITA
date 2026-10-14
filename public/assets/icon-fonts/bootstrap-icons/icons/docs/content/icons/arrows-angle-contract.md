@@ -1,7 +1,7 @@
 ---
 title: Arrows angle contract
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---

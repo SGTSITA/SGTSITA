@@ -1,8 +1,8 @@
 ---
 title: Emoji sunglasses
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - cool
+    - emoticon
+    - cool
 ---

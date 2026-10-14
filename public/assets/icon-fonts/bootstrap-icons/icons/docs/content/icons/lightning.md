@@ -1,9 +1,9 @@
 ---
 title: Lightning
 categories:
-  - Weather
+    - Weather
 tags:
-  - storm
-  - thunder
-  - bolt
+    - storm
+    - thunder
+    - bolt
 ---

@@ -1,8 +1,8 @@
 ---
 title: Headset
 categories:
-  - Devices
+    - Devices
 tags:
-  - headphones
-  - microphone
+    - headphones
+    - microphone
 ---

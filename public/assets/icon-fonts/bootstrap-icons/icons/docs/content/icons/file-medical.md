@@ -1,11 +1,11 @@
 ---
 title: File medical
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - medical
-  - hospital
-  - health
+    - doc
+    - document
+    - medical
+    - hospital
+    - health
 ---

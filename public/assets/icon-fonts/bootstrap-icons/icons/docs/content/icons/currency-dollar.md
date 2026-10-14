@@ -1,9 +1,9 @@
 ---
 title: Currency dollar
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - money
-  - finance
-  - usd
+    - money
+    - finance
+    - usd
 ---

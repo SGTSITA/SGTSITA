@@ -1,9 +1,9 @@
 ---
 title: File earmark richtext
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - text
-  - doc
-  - document
+    - text
+    - doc
+    - document
 ---

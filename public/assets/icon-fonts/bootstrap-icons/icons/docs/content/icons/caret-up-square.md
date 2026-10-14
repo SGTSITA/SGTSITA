@@ -1,9 +1,9 @@
 ---
 title: Caret up square
 categories:
-  - Carets
+    - Carets
 tags:
-  - caret
-  - arrow
-  - triangle
+    - caret
+    - arrow
+    - triangle
 ---

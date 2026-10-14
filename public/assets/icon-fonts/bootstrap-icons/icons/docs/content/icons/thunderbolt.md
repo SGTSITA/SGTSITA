@@ -1,8 +1,8 @@
 ---
 title: Thunderbolt
 categories:
-  - Devices
+    - Devices
 tags:
-  - plug
-  - port
+    - plug
+    - port
 ---

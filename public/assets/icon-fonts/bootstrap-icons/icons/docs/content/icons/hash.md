@@ -1,8 +1,8 @@
 ---
 title: Hash
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

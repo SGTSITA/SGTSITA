@@ -1,10 +1,10 @@
 ---
 title: Badge 4k fill
 categories:
-  - Badges
+    - Badges
 tags:
-  - 4k
-  - display
-  - resolution
-  - retina
+    - 4k
+    - display
+    - resolution
+    - retina
 ---

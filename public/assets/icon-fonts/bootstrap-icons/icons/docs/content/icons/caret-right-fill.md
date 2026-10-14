@@ -1,9 +1,9 @@
 ---
 title: Caret right fill
 categories:
-  - Carets
+    - Carets
 tags:
-  - caret
-  - arrow
-  - triangle
+    - caret
+    - arrow
+    - triangle
 ---
