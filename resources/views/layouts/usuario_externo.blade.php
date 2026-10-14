@@ -6,12 +6,13 @@
     <title> Sistema de Gestión de Transporte</title>
     <meta charset="utf-8" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <meta name="id-cliente" content="{{ Auth::User()->id_cliente }}" />
+    <meta name="id-cliente" content="{{ Auth::check() ? Auth::user()->id_cliente : '' }}" />
     <link rel="shortcut icon" href="/assets/metronic/media/logos/favicon.ico" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700" />
     <link href="/assets/metronic/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css" />
     <link href="/assets/metronic/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
     <link href="/assets/metronic/css/style.bundle.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     @stack('handsontable')
 
     <style>
@@ -910,6 +911,7 @@
             window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
             window.SGT_LOGOUT_URL = "{{ route('logout') }}";
             window.SGT_LOGIN_URL = "{{ url('login') }}";
+            window.SGT_DATE_CONFIG = @json(app(\App\Services\CotizacionesService::class)->getPeriodosCotizaciones());
         </script>
 
         <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
@@ -917,7 +919,7 @@
 
     <script>
         var hostUrl = '/assets/metronic/';
-        var waClient = {{ auth()->user()->id }};
+        var waClient = {{ auth()->check() ? auth()->user()->id : 'null' }};
         var waHost = '{{ env('WHATSAPP_HOST') }}';
     </script>
     <script src="/assets/metronic/plugins/global/plugins.bundle.js"></script>
@@ -926,10 +928,24 @@
     <script src="/assets/metronic/js/widgets.bundle.js"></script>
     <script src="/assets/metronic/js/custom/widgets.js"></script>
     <script src="/js/sgt/common/whatsAppClient.js"></script>
+    <!-- Moment.js y soporte de idioma español -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/es.js"></script>
+    <!-- DateRangePicker JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <!-- Control propio DateRange SGT -->
+    <script src="{{ asset('js/sgt/common/sgt-daterange.js') }}"></script>
     @auth
         <script src="{{ asset('js/sgt/notificaciones/notificaciones_navbar.js') }}"></script>
     @endauth
     <script>
+        function generateUUID() {
+            if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
         $(document).ready(async () => {
             var genericUUID = localStorage.getItem('uuid');
             if (genericUUID == null) {
