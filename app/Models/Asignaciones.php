@@ -37,6 +37,9 @@ class Asignaciones extends Model
         'otro7',
         'otro8',
         'otro9',
+        'password_temporal',
+        'mensaje_compartido',
+        'ruta_coordenadas',
     ];
 
     public function Camion()
@@ -68,6 +71,10 @@ class Asignaciones extends Model
     {
         return $this->belongsTo(Proveedor::class, 'id_proveedor');
     }
+    public function Empresa()
+    {
+        return $this->belongsTo(Empresas::class, 'id_empresa');
+    }
     public function Banco1()
     {
         return $this->belongsTo(Bancos::class, 'id_banco1_dinero_viaje');
@@ -75,6 +82,11 @@ class Asignaciones extends Model
     public function Banco2()
     {
         return $this->belongsTo(Bancos::class, 'id_banco2_dinero_viaje');
+    }
+
+    public function bitacoraViaje()
+    {
+        return $this->hasOne(BitacoraViajeOperador::class, 'id_asignacion');
     }
 
     public function Justificacion()
@@ -105,11 +117,15 @@ class Asignaciones extends Model
         parent::boot();
 
         static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (empty($empresa->id_empresa)) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (empty($empresa->id_empresa)) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
 }

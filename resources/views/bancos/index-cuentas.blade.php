@@ -106,8 +106,10 @@
                                     ${{ number_format($cuenta->saldo_inicial, 2) }}
                                 </span> --}}
 
-                                @if ($cuenta->principal)
-                                    <span class="badge bg-success">Principal</span>
+                                @if ($cuenta->banco_1 == 1)
+                                    <span class="badge bg-success"><i class="fa fa-star me-1"></i>Banco 1 (Base 1)</span>
+                                @else
+                                    <span class="badge bg-secondary">Banco 2 (Base 2)</span>
                                 @endif
                             </div>
                         </div>
@@ -156,7 +158,7 @@
                                         data-clabe="{{ $cuenta->clabe }}"
                                         data-beneficiario="{{ $cuenta->nombre_beneficiario }}"
                                         data-saldo_inicial ="{{ $cuenta->inicial_saldo }}"
-                                        data-principal="{{ $cuenta->principal }}">
+                                        data-banco_1="{{ $cuenta->banco_1 ? 1 : 0 }}">
                                         <i class="fa fa-pen"></i>
                                     </button>
 
@@ -260,19 +262,18 @@
                             <!-- Saldo inicial -->
                             <div class="col-md-4">
                                 <label class="form-label">Saldo inicial *</label>
-                                <input type="number" step="0.01" min="0" name="saldo_inicial"
+                                <input type="number" step="0.01" name="saldo_inicial"
                                     id="saldo_inicial" class="form-control" required>
                             </div>
 
-                            <!-- Cuenta principal -->
+                            <!-- Tipo de Banco (Banco 1 / Banco 2) -->
                             <div class="col-md-12">
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" name="principal" id="principal"
-                                        value="1">
-                                    <label class="form-check-label" for="principal">
-                                        Cuenta principal
-                                    </label>
-                                </div>
+                                <label class="form-label">Tipo de Banco (Reportes CXC / CXP) *</label>
+                                <select name="banco_1" id="banco_1" class="form-select" required>
+                                    <option value="1">Banco 1 (Base 1 / Oficial)</option>
+                                    <option value="0">Banco 2 (Base 2 / Secundaria)</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">Al seleccionar "Banco 1", esta cuenta se establecerá como la cuenta oficial de la empresa para reportes.</small>
                             </div>
 
                         </div>
@@ -306,6 +307,7 @@
             formCuenta.dataset.mode = 'create';
             formCuenta.reset();
             document.getElementById('cuenta_id').value = '';
+            formCuenta.banco_1.value = '0';
 
             document.getElementById('cuentaModalTitle').innerHTML =
                 '<i class="fa fa-credit-card me-2"></i> Nueva cuenta bancaria';
@@ -326,7 +328,7 @@
             formCuenta.beneficiario.value = btn.dataset.beneficiario;
             formCuenta.saldo_inicial.value = btn.dataset.saldo_inicial
             formCuenta.clabe.value = btn.dataset.clabe ?? '';
-            formCuenta.principal.checked = btn.dataset.principal == 1;
+            formCuenta.banco_1.value = btn.dataset.banco_1 ?? '0';
 
             modalCuenta.show();
         }

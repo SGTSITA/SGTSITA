@@ -213,8 +213,11 @@ const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 let IdContenedor = null;
 let IdOperador = document.querySelector("#IdOperador");
@@ -232,6 +235,8 @@ let btnConfirmaPago = document.querySelector("#btnConfirmaPago");
 let btnConfirmaPagov2 = document.querySelector("#btnConfirmaPagov2");
 let btnJustificar = document.querySelector("#btnJustificar");
 let btnDineroViaje = document.querySelector("#btnDineroViaje");
+let btnGestionarDineroViaje = document.querySelector("#btnGestionarDineroViaje");
+let btnVerViaticosGuardados = document.querySelector("#btnVerViaticosGuardados");
 let montoPagoPrestamo = document.querySelector("#montoPagoPrestamo");
 
 let totalMontoPago = 0;
@@ -270,34 +275,38 @@ function mostrarViajesOperador(operador) {
             let dataCContenedores = response.data;
 
             if (dataCContenedores.length > 0) {
-                let saved =
-                    JSON.parse(localStorage.getItem("justificaciones")) || {};
-
-                saved = [];
-
+                let saved = [];
+                let maxJustificaciones = 0;
                 dataCContenedores.forEach((contenedor) => {
-                    if (
-                        contenedor.justificacion &&
-                        contenedor.justificacion.length > 0
-                    ) {
-                        contenedor.justificacion.forEach((c) => {
-                            saved.push({
-                                [`id_registro|${contenedor.id_contenedor}`]:
-                                    c.id,
-                                [`motivo|${contenedor.id_contenedor}`]:
-                                    c.descripcion_gasto,
-                                [`monto|${contenedor.id_contenedor}`]:
-                                    parseFloat(c.monto).toFixed(2),
-                            });
-                        });
-                    } else {
-                        saved.push({
-                            [`id_registro|${contenedor.id_contenedor}`]: null,
-                            [`motivo|${contenedor.id_contenedor}`]: "",
-                            [`monto|${contenedor.id_contenedor}`]: "",
-                        });
-                    }
+                    let len =
+                        (contenedor.justificacion &&
+                            contenedor.justificacion.length) ||
+                        0;
+                    if (len > maxJustificaciones) maxJustificaciones = len;
                 });
+
+                for (let i = 0; i < Math.max(maxJustificaciones, 10); i++) {
+                    let fila = {};
+                    dataCContenedores.forEach((contenedor) => {
+                        let id = contenedor.id_contenedor;
+                        let c =
+                            (contenedor.justificacion &&
+                                contenedor.justificacion[i]) ||
+                            null;
+                        if (c) {
+                            fila[`id_registro|${id}`] = c.id;
+                            fila[`motivo|${id}`] = c.descripcion_gasto;
+                            fila[`monto|${id}`] = parseFloat(c.monto).toFixed(
+                                2,
+                            );
+                        } else {
+                            fila[`id_registro|${id}`] = null;
+                            fila[`motivo|${id}`] = "";
+                            fila[`monto|${id}`] = "";
+                        }
+                    });
+                    saved.push(fila);
+                }
 
                 console.log("Justificaciones cargadas desde backend:", saved);
                 localStorage.setItem("justificaciones", JSON.stringify(saved));
@@ -460,10 +469,10 @@ function recalcularTotales() {
     let adelantoRestante = adelantoPendiente - abonoAdelanto;
     document.getElementById("adelantoLabel").innerText =
         "Adelantos (Abono: " + currencyFormatter(abonoAdelanto) + ")";
-    document.getElementById("totalFinalLabel").innerText =
-        currencyFormatter(totalFinal);
-    document.getElementById("prestamoRestanteLabel").innerText =
-        currencyFormatter(prestamoRestante);
+    if (document.getElementById("adelantoRestanteLabel")) {
+        document.getElementById("adelantoRestanteLabel").innerText =
+            currencyFormatter(adelantoRestante);
+    }
 }
 function renderResumen(selectedRows, data) {
     const resumen = calcularResumen(selectedRows);
@@ -480,129 +489,95 @@ function renderResumen(selectedRows, data) {
     let totalFinal = base - prestamo - adelanto;
 
     let html = `
-    <table class="table table-bordered align-middle text-center">
-
-        <tbody>
-
-        <!-- ENCABEZADOS -->
-        <tr class="table-light fw-bold">
-
-            <td id="baseLabel">
-                Base: ${currencyFormatter(base)}
-            </td>
-
-            <td id="prestamoLabel">
-                Préstamos (Abono: ${currencyFormatter(prestamo)})
-            </td>
-
-            <td id="adelantoLabel">
-                Adelantos (Abono: ${currencyFormatter(adelanto)})
-            </td>
-
-            <td rowspan="4" class="align-middle table-success">
-
-                <div>Total a Pagar</div>
-
-                <div id="totalFinalLabel" class="fs-4">
-                    ${currencyFormatter(totalFinal)}
+    <div class="card shadow-none border bg-light p-3 mb-4">
+        <div class="row">
+            <!-- Columna Percepciones -->
+            <div class="col-md-6 border-end">
+                <h6 class="text-uppercase text-secondary font-weight-bolder text-xs mb-3">Percepciones (Ingresos)</h6>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm">Total Sueldo Viajes:</span>
+                    <span class="text-dark font-weight-bold">${currencyFormatter(resumen.totalSueldo)}</span>
                 </div>
-
-            </td>
-
-        </tr>
-
-        <!-- FILA 1 -->
-        <tr>
-
-            <td class="text-end">
-                Sueldo : ${currencyFormatter(resumen.totalSueldo)}
-            </td>
-
-            <td class="text-end">
-                Pendiente: ${currencyFormatter(prestamoPendiente)}
-            </td>
-
-            <td class="text-end">
-                Pendiente: ${currencyFormatter(adelantoPendiente)}
-            </td>
-
-        </tr>
-
-        <!-- FILA 2 -->
-        <tr>
-
-            <td class="text-end text-danger">
-                (-) Dinero Viaje: - ${currencyFormatter(resumen.totalDinero)}
-            </td>
-
-            <td>
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <span>Abono Prestamo:</span>
-
-                    <input
-                        type="number"
-                        id="inputPrestamo"
-                        class="form-control form-control-sm text-end w-auto"
-                        value="${prestamo}"
-                        min="0"
-                        max="${prestamoPendiente}"
-                        style="max-width:120px;"
-                    >
-
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm text-success">(+) Gastos Justificados:</span>
+                    <span class="text-success font-weight-bold">+ ${currencyFormatter(resumen.totalJustificado)}</span>
                 </div>
-
-            </td>
-
-            <td>
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <span>Abono Adelanto:</span>
-
-                    <input
-                        type="number"
-                        id="inputAdelanto"
-                        class="form-control form-control-sm text-end w-auto"
-                        value="${adelanto}"
-                        min="0"
-                        max="${adelantoPendiente}"
-                        style="max-width:120px;"
-                    >
-
+                
+                <hr class="horizontal dark my-2">
+                
+                <div class="d-flex justify-content-between">
+                    <span class="text-sm font-weight-bold text-primary" id="baseLabel">Base: ${currencyFormatter(base)}</span>
+                    <span class="text-dark font-weight-bold">${currencyFormatter(resumen.totalSueldo + resumen.totalJustificado)}</span>
                 </div>
-
-            </td>
-
-        </tr>
-
-        <!-- FILA 3 -->
-        <tr>
-
-            <td class="text-end text-success">
-                (+) Justificado: + ${currencyFormatter(resumen.totalJustificado)}
-            </td>
-
-            <td class="text-end">
-                Restante:
-                <span id="prestamoRestanteLabel">
-                    ${currencyFormatter(prestamoPendiente - prestamo)}
-                </span>
-            </td>
-
-            <td class="text-end">
-                Restante:
-                <span id="adelantoRestanteLabel">
-                    ${currencyFormatter(adelantoPendiente - adelanto)}
-                </span>
-            </td>
-
-        </tr>
-
-        </tbody>
-
-    </table>
+            </div>
+            
+            <!-- Columna Deducciones -->
+            <div class="col-md-6">
+                <h6 class="text-uppercase text-secondary font-weight-bolder text-xs mb-3">Deducciones (Descuentos)</h6>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-sm text-danger">(-) Dinero Viaje (Entregado):</span>
+                    <span class="text-danger font-weight-bold">- ${currencyFormatter(resumen.totalDinero)}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-sm fw-semibold" id="prestamoLabel">Préstamos (Abono: ${currencyFormatter(prestamo)})</span>
+                        <input
+                            type="number"
+                            id="inputPrestamo"
+                            class="form-control form-control-sm text-end w-auto ms-2"
+                            value="${prestamo}"
+                            min="0"
+                            max="${prestamoPendiente}"
+                            style="max-width:120px;"
+                        >
+                    </div>
+                    <div class="d-flex justify-content-between text-xs text-muted mt-1 px-1">
+                        <span>Pendiente: ${currencyFormatter(prestamoPendiente)}</span>
+                        <span>Restante: <span id="prestamoRestanteLabel">${currencyFormatter(prestamoPendiente - prestamo)}</span></span>
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-sm fw-semibold" id="adelantoLabel">Adelantos (Abono: ${currencyFormatter(adelanto)})</span>
+                        <input
+                            type="number"
+                            id="inputAdelanto"
+                            class="form-control form-control-sm text-end w-auto ms-2"
+                            value="${adelanto}"
+                            min="0"
+                            max="${adelantoPendiente}"
+                            style="max-width:120px;"
+                        >
+                    </div>
+                    <div class="d-flex justify-content-between text-xs text-muted mt-1 px-1">
+                        <span>Pendiente: ${currencyFormatter(adelantoPendiente)}</span>
+                        <span>Restante: <span id="adelantoRestanteLabel">${currencyFormatter(adelantoPendiente - adelanto)}</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="horizontal dark my-3">
+        
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <span class="text-xs text-muted">Operador: <strong>${operadorNombre}</strong></span>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex justify-content-end align-items-baseline">
+                    <span class="text-sm me-3 font-weight-bold text-uppercase text-dark">Total Neto a Pagar:</span>
+                    <span class="text-success font-weight-bolder h4 mb-0" id="totalFinalLabel">
+                        ${currencyFormatter(totalFinal)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
     `;
 
     document.getElementById("previewResumen").innerHTML = html;
@@ -699,12 +674,7 @@ function renderDineroViaje(data) {
 function renderDeudas(data) {
     const tbody = document.querySelector("#tablaDeudas tbody");
 
-    if (!data.length) {
-        document.getElementById("sectionDeudas").style.display = "none";
-        return;
-    }
-
-    document.getElementById("sectionDeudas").style.display = "block";
+    document.getElementById("sectionDeudas").style.display = "none";
 
     tbody.innerHTML = data
         .map(
@@ -734,6 +704,7 @@ function renderVistaPrevia(selectedRows, data) {
     document.getElementById("modalPreviewLabel").innerText =
         "Vista Previa Liquidación " + operadorNombre;
 
+    btnConfirmaPagov2.disabled = false;
     new bootstrap.Modal(document.getElementById("modalPreview")).show();
 }
 document.getElementById("btnPreview").addEventListener("click", () => {
@@ -835,6 +806,17 @@ function aplicarPago() {
 
     let _IdOperador = IdOperador.value;
 
+    btnConfirmaPagov2.disabled = true;
+
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando pago y liquidación. Por favor espere...",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
+
     $.ajax({
         url: "/liquidaciones/viajes/aplicar-pago",
         type: "post",
@@ -854,11 +836,18 @@ function aplicarPago() {
 
             if (response.TMensaje == "success") {
                 $("#btnDescargar").attr("data-id", response.IdLiquidacion);
+                if (typeof mostrarViajesOperador === "function") {
+                    mostrarViajesOperador(IdOperador.value);
+                }
+                btnConfirmaPagov2.disabled = true; // Permanecer bloqueado tras éxito
+            } else {
+                btnConfirmaPagov2.disabled = false; // Habilitar si la lógica de negocio falló
             }
         },
 
         error: () => {
-            Swal.fire("Error", "Ha ocurrido un error", "error");
+            Swal.fire("Error", "Ha ocurrido un error al procesar el pago", "error");
+            btnConfirmaPagov2.disabled = false;
         },
     });
 }
@@ -1387,6 +1376,19 @@ function justificarGastoMultiple() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
+    const btnGuardar = document.querySelector("#btnGuardarJustificacion");
+    if (btnGuardar) btnGuardar.disabled = true;
+
+    Swal.fire({
+        title: "Guardando justificaciones...",
+        text: "Por favor espere mientras se registran los viáticos.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     fetch("/liquidaciones/viajes/gastos/justificar-multiple", {
         method: "POST",
         headers: {
@@ -1397,6 +1399,7 @@ function justificarGastoMultiple() {
     })
         .then((res) => res.json())
         .then((res) => {
+            if (btnGuardar) btnGuardar.disabled = false;
             Swal.fire({
                 icon: "success",
                 title: "Guardado exitoso",
@@ -1413,6 +1416,7 @@ function justificarGastoMultiple() {
             }
         })
         .catch((err) => {
+            if (btnGuardar) btnGuardar.disabled = false;
             console.error(err);
             Swal.fire({
                 icon: "error",
@@ -1449,3 +1453,313 @@ $(".moneyformat").on("blur", (e) => {
     var val = e.target.value;
     e.target.value = moneyFormat(val);
 });
+
+// =========================================================================
+// GESTIÓN Y ELIMINACIÓN DE DINERO PARA VIAJE EXTRA (SPEC-008)
+// =========================================================================
+
+if (btnGestionarDineroViaje) {
+    btnGestionarDineroViaje.addEventListener("click", () => {
+        abrirModalGestionarDineroViaje();
+    });
+}
+
+function abrirModalGestionarDineroViaje() {
+    let seleccionados = apiGrid ? apiGrid.getSelectedRows() : [];
+    if (!seleccionados || seleccionados.length === 0) {
+        // Fallback a todos los viajes en pantalla
+        seleccionados = (dataRespons && dataRespons.viajes) ? dataRespons.viajes : [];
+    }
+
+    if (!seleccionados || seleccionados.length === 0) {
+        Swal.fire("Atención", "No hay viajes cargados para consultar el dinero de viaje.", "warning");
+        return;
+    }
+
+    const idContenedores = seleccionados.map(c => c.IdContenedor);
+    const tbody = document.getElementById("tbodyDinerosViaje");
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-2"></i>Consultando entregas de dinero...</td></tr>';
+
+    const modalElem = document.getElementById("modal-historial-dinero");
+    const bsModal = new bootstrap.Modal(modalElem);
+    bsModal.show();
+
+    let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    fetch("/liquidaciones/viajes/dinero-viaje/lista", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": token
+        },
+        body: JSON.stringify({ id_contenedores: idContenedores })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || !res.data || res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No hay registros de dinero para viaje para los viajes seleccionados.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = "";
+        res.data.forEach(item => {
+            const tr = document.createElement("tr");
+
+            let tipoBadge = "";
+            let accionBtn = "";
+
+            if (item.es_cancelacion) {
+                tipoBadge = '<span class="badge bg-secondary">Cancelación / Neteo</span>';
+                accionBtn = '<span class="text-muted small">Neteado</span>';
+            } else if (item.es_principal) {
+                tipoBadge = '<span class="badge bg-primary">Principal (Planeación)</span>';
+                accionBtn = `<button type="button" class="btn btn-xs btn-outline-warning text-dark fw-bold" onclick="eliminarDineroViajeModal(${item.id}, ${item.monto}, '${item.num_contenedor}', true)">
+                                <i class="fa fa-ban me-1"></i> Eliminar Principal
+                             </button>`;
+            } else {
+                tipoBadge = '<span class="badge bg-success">Extra (Liquidación)</span>';
+                accionBtn = `<button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarDineroViajeModal(${item.id}, ${item.monto}, '${item.num_contenedor}', false)">
+                                <i class="fa fa-trash me-1"></i> Eliminar Extra
+                             </button>`;
+            }
+
+            const montoClase = item.es_cancelacion ? "text-danger fw-bold" : "text-success fw-bold";
+            const montoSigno = item.es_cancelacion ? "-$" : "$";
+
+            tr.innerHTML = `
+                <td><strong>${item.num_contenedor}</strong></td>
+                <td>${item.fecha || 'N/A'}</td>
+                <td>${item.motivo || 'Dinero para viaje'}</td>
+                <td>${item.banco}</td>
+                <td class="text-end ${montoClase}">${montoSigno}${Math.abs(item.monto).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-center">${tipoBadge}</td>
+                <td class="text-center">${accionBtn}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-3">Error al cargar registros.</td></tr>';
+    });
+}
+
+window.eliminarDineroViajeModal = function(idDinero, monto, numContenedor, esPrincipal = false) {
+    const titulo = esPrincipal ? "¿Eliminar Dinero Principal de Planeación?" : "¿Eliminar dinero extra de viaje?";
+    const mensajeAlerta = esPrincipal
+        ? `¿Estás seguro de cancelar el <strong>Dinero Principal</strong> de <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong> del contenedor <strong>${numContenedor}</strong>?<br><br>` +
+          `<div class="alert alert-warning text-start small mb-0">` +
+          `<strong>Atención:</strong> Este es el dinero asignado originalmente en Planeación. Al eliminarlo:<br>` +
+          `• Se generará la devolución bancaria y neteo negativo (-$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}).<br>` +
+          `• La asignación del viaje quedará con $0.00 en dinero para viaje.<br>` +
+          `• Se reintegrará el saldo al pago del operador.</div>`
+        : `¿Estás seguro de cancelar el dinero extra de <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong> del contenedor <strong>${numContenedor}</strong>?<br><br>` +
+          `<small class="text-muted">Se generará la devolución bancaria, se insertará un registro de neteo negativo y se reintegrará al saldo del operador.</small>`;
+
+    Swal.fire({
+        title: titulo,
+        html: mensajeAlerta,
+        icon: esPrincipal ? "warning" : "question",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: esPrincipal ? "Sí, eliminar Dinero Principal" : "Sí, cancelar dinero extra",
+        cancelButtonText: "No, conservar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+            mostrarLoading();
+
+            fetch("/liquidaciones/viajes/dinero-viaje/eliminar", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": token
+                },
+                body: JSON.stringify({ id_dinero_contenedor: idDinero })
+            })
+            .then(r => r.json())
+            .then(res => {
+                ocultarLoading();
+                if (res.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: res.Titulo,
+                        text: res.Mensaje
+                    });
+                    // Refrescar modal y viajes del operador
+                    abrirModalGestionarDineroViaje();
+                    const opVal = (IdOperador && IdOperador.value) ? IdOperador.value : (typeof IdOperador === "string" ? IdOperador : null);
+                    if (opVal) {
+                        mostrarViajesOperador(opVal);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: res.TMensaje || "error",
+                        title: res.Titulo || "No se pudo cancelar",
+                        text: res.Mensaje || "Ocurrió un error inesperado"
+                    });
+                }
+            })
+            .catch(err => {
+                ocultarLoading();
+                console.error(err);
+                Swal.fire("Error", "Ocurrió un error de conexión al cancelar el dinero.", "error");
+            });
+        }
+    });
+};
+
+// =========================================================================
+// GESTIÓN Y ELIMINACIÓN DE VIÁTICOS DE OPERADOR (SPEC-008)
+// =========================================================================
+
+if (btnVerViaticosGuardados) {
+    btnVerViaticosGuardados.addEventListener("click", () => {
+        abrirModalGestionarViaticos();
+    });
+}
+
+function abrirModalGestionarViaticos() {
+    const tbody = document.getElementById("tbodyViaticosGuardados");
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin me-2"></i>Cargando viáticos guardados...</td></tr>';
+
+    const modalElem = document.getElementById("modal-gestionar-viaticos");
+    const bsModal = new bootstrap.Modal(modalElem);
+    bsModal.show();
+
+    // Obtener los contenedores seleccionados en el grid principal
+    let seleccionados = apiGrid ? apiGrid.getSelectedRows() : [];
+    let idContenedores = [];
+
+    if (seleccionados && seleccionados.length > 0) {
+        idContenedores = seleccionados.map(s => s.IdContenedor).filter(Boolean);
+    }
+
+    // Fallback: si no hay seleccionados en el grid, tomar todas las filas de la tabla
+    if (idContenedores.length === 0 && apiGrid) {
+        apiGrid.forEachNode(node => {
+            if (node.data && node.data.IdContenedor) {
+                idContenedores.push(node.data.IdContenedor);
+            }
+        });
+    }
+
+    if (idContenedores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay viajes cargados para consultar viáticos.</td></tr>';
+        return;
+    }
+
+    let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    fetch("/liquidaciones/viajes/gastos/guardados", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-TOKEN": token
+        },
+        body: JSON.stringify({ id_contenedores: idContenedores })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success || !res.data || res.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No hay justificaciones de viáticos registradas para estos viajes.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = "";
+        let ultimoContenedor = null;
+
+        res.data.forEach(v => {
+            // Fila divisoria visual de contenedor si cambia de contenedor
+            if (v.contenedor !== ultimoContenedor) {
+                ultimoContenedor = v.contenedor;
+                const trHeader = document.createElement("tr");
+                trHeader.className = "table-light border-top border-bottom border-secondary";
+                trHeader.innerHTML = `
+                    <td colspan="4" class="fw-bold text-primary py-2">
+                        <i class="fa fa-truck me-1"></i> Contenedor: <span class="badge bg-secondary">${v.contenedor}</span>
+                    </td>
+                `;
+                tbody.appendChild(trHeader);
+            }
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="ps-4"><strong>${v.contenedor}</strong></td>
+                <td>${v.descripcion || 'Sin descripción'}</td>
+                <td class="text-end fw-bold text-dark">$${Number(v.monto).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-xs btn-outline-danger" onclick="eliminarViaticoGuardado(${v.id}, ${v.monto}, '${(v.descripcion || '').replace(/'/g, "\\'")}')">
+                        <i class="fa fa-trash me-1"></i> Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Error al consultar viáticos en el servidor.</td></tr>';
+    });
+}
+
+window.eliminarViaticoGuardado = function(idViatico, monto, descripcion) {
+    Swal.fire({
+        title: "¿Eliminar viático de operador?",
+        html: `¿Estás seguro de eliminar el viático <strong>"${descripcion}"</strong> por <strong>$${Number(monto).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>?<br><br>` +
+              `<small class="text-muted">Se descontará de las deducciones del operador y se cancelará el gasto unificado. No se afectarán cuentas bancarias.</small>`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sí, eliminar viático",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+            mostrarLoading();
+
+            fetch("/liquidaciones/viajes/gastos/eliminar-viatico", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": token
+                },
+                body: JSON.stringify({ idviatico: idViatico })
+            })
+            .then(r => r.json())
+            .then(res => {
+                ocultarLoading();
+                if (res.success) {
+                    Swal.fire({
+                        icon: "success",
+                        title: res.Titulo,
+                        text: res.Mensaje
+                    });
+
+                    // Cerrar modales y limpiar cache local
+                    $("#modal-gestionar-viaticos").modal("hide");
+                    $("#modal-justificar-multiple").modal("hide");
+                    localStorage.removeItem("justificaciones");
+
+                    const opVal = (IdOperador && IdOperador.value) ? IdOperador.value : (typeof IdOperador === "string" ? IdOperador : null);
+                    if (opVal) {
+                        mostrarViajesOperador(opVal);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: res.TMensaje || "error",
+                        title: res.Titulo || "Error",
+                        text: res.Mensaje || "No se pudo eliminar el viático"
+                    });
+                }
+            })
+            .catch(err => {
+                ocultarLoading();
+                console.error(err);
+                Swal.fire("Error", "Error de conexión al eliminar el viático.", "error");
+            });
+        }
+    });
+};

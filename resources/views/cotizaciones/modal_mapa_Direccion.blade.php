@@ -6,12 +6,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
-                <input
-                    type="text"
-                    id="searchInput"
-                    class="form-control mb-2"
-                    placeholder="Buscar código postal, dirección o una url de https://maps.app.goo.gl"
-                />
+                <input type="text" id="searchInput" class="form-control mb-2"
+                    placeholder="Buscar código postal, dirección, coordenadas o enlace de Google Maps (corto o completo)..." />
 
                 <div id="map" style="height: 500px"></div>
             </div>

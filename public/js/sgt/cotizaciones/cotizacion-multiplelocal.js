@@ -169,18 +169,49 @@ function buildHandsOntableLocal() {
         var uuid = localStorage.getItem('uuid');
         var permiso_proveedor = canElegirProveedor ? 1 : 0;
         var origen_captura = document.getElementById('origen_captura').value;
+        var btn = document.querySelector('#btnSolicitar');
 
-        $.post(
-            '/viajes/solicitud/multiple-local',
-            { _token, contenedores, uuid, permiso_proveedor, origen_captura },
-            function (response) {
-                Swal.fire(response.Titulo, response.Mensaje, response.TMensaje).then(() => {
-                    if (response.TMensaje === 'success' || response.TMensaje === 'ok') {
+        $.ajax({
+            url: "/viajes/solicitud/multiple-local",
+            type: "POST",
+            data: { _token, contenedores, uuid, permiso_proveedor, origen_captura },
+            beforeSend: function () {
+                if (btn) {
+                    btn.setAttribute('disabled', 'true');
+                    btn.innerHTML = 'Procesando... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>';
+                }
+            },
+            success: function (response) {
+                Swal.fire(
+                    response.Titulo,
+                    response.Mensaje,
+                    response.TMensaje,
+                ).then(() => {
+                    if (
+                        response.TMensaje === "success" ||
+                        response.TMensaje === "ok"
+                    ) {
                         location.reload();
+                    } else {
+                        if (btn) {
+                            btn.removeAttribute('disabled');
+                            btn.innerHTML = 'Solicitar viajes';
+                        }
                     }
                 });
             },
-        );
+            error: function () {
+                if (btn) {
+                    btn.removeAttribute('disabled');
+                    btn.innerHTML = 'Solicitar viajes';
+                }
+                Swal.fire(
+                    "Error",
+                    "Ocurrió un error al procesar la solicitud. Por favor intente nuevamente.",
+                    "error"
+                );
+            }
+        });
     }
 
     return {

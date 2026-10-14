@@ -24,6 +24,7 @@ class Client extends Model
         'nombre_empresa',
         'fecha',
         'id_empresa',
+        'captura_fcpp',
     ];
 
     protected static function boot()
