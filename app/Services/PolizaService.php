@@ -273,11 +273,17 @@ class PolizaService
     public function resolverCuentaBanco(?int $bancoId, int $idEmpresa): int
     {
         if ($bancoId) {
-            $banco = Bancos::find($bancoId);
+            $banco = Bancos::with('catBanco')->find($bancoId);
             if ($banco) {
-                $nombreBanco = strtoupper($banco->nombre_banco ?? $banco->nombre ?? $banco->banco ?? '');
+                if (!empty($banco->cuenta_contable_id)) {
+                    return (int) $banco->cuenta_contable_id;
+                }
+                $nombreBanco = strtoupper(($banco->catBanco?->nombre ?? '') . ' ' . ($banco->nombre_banco ?? '') . ' ' . ($banco->nombre ?? '') . ' ' . ($banco->banco ?? ''));
                 if (str_contains($nombreBanco, 'AZTECA')) {
                     $c = CatCuentaContable::where('codigo', '1.1.1.2.002')->first();
+                    if ($c) return $c->id;
+                } elseif (str_contains($nombreBanco, 'BANORTE')) {
+                    $c = CatCuentaContable::where('codigo', '1.1.1.2.005')->first();
                     if ($c) return $c->id;
                 } elseif (str_contains($nombreBanco, 'BANAMEX') || str_contains($nombreBanco, 'CITI')) {
                     $c = CatCuentaContable::where('codigo', '1.1.1.2.003')->first();
@@ -639,16 +645,18 @@ class PolizaService
             $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
                 ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
 
-            $bancoId = $cobroPago?->id_banco ?? null;
+            $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
 
             if (!$cuentaClientes) {
                 return null;
             }
 
-            $fecha = !empty($cobroPago?->fecha_pago)
-                ? Carbon::parse($cobroPago->fecha_pago)->format('Y-m-d')
-                : now()->format('Y-m-d');
+            $rawFecha = $cobroPago?->fechaAplicacion1 
+                ?: ($cobroPago?->fechaAplicacion2 
+                ?: ($cobroPago?->fecha_pago 
+                ?: ($cpc->created_at ?? now())));
+            $fecha = Carbon::parse($rawFecha)->format('Y-m-d');
 
             return $this->crearPoliza([
                 'id_empresa'   => $idEmpresa,
@@ -691,7 +699,7 @@ class PolizaService
             }
 
             $prestamo->loadMissing('operador');
-            $idEmpresa = auth()->user()?->id_empresa ?? 1;
+            $idEmpresa = $prestamo->operador?->id_empresa ?: (auth()->user()?->id_empresa ?? 1);
 
             // Eliminar previa si existía
             $polizaPrevia = Poliza::where('origen_tipo', 'prestamo_operador')
@@ -704,7 +712,9 @@ class PolizaService
             $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
                 ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
 
-            $cuentaBancoId = $this->resolverCuentaBanco($prestamo->id_banco, $idEmpresa);
+            $cuentaContraObj = CatCuentaContable::where('codigo', '1.1.2.3.004')->first()
+                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos);
+            $cuentaContra = $cuentaContraObj->id;
 
             if (!$cuentaPrestamos) {
                 return null;
@@ -712,7 +722,7 @@ class PolizaService
 
             $fecha = !empty($prestamo->fecha_prestamo)
                 ? Carbon::parse($prestamo->fecha_prestamo)->format('Y-m-d')
-                : now()->format('Y-m-d');
+                : ($prestamo->created_at ? Carbon::parse($prestamo->created_at)->format('Y-m-d') : now()->format('Y-m-d'));
 
             $tipoDesc = ($prestamo->tipo === \App\Models\Prestamo::TIPO_ADELANTO) ? 'Adelanto' : 'Préstamo';
 
@@ -734,14 +744,208 @@ class PolizaService
                         'concepto_detalle'   => "{$tipoDesc} Operador " . ($prestamo->operador?->nombre ?? ''),
                     ],
                     [
-                        'cuenta_contable_id' => $cuentaBancoId,
+                        'cuenta_contable_id' => $cuentaContra,
                         'debe'               => 0.00,
                         'haber'              => $monto,
-                        'referencia'         => 'SALIDA_BANCO',
-                        'concepto_detalle'   => "Salida de Bancos por {$tipoDesc} #" . $prestamo->id,
+                        'referencia'         => 'SALIDA_FONDOS',
+                        'concepto_detalle'   => "Salida de Fondos / Caja por {$tipoDesc} #" . $prestamo->id,
                     ],
                 ],
             ]);
+        });
+    }
+
+    /**
+     * Contabiliza un abono / amortización de préstamo u adelanto de operador (Deducción en liquidación de viaje).
+     */
+    public function contabilizarPagoPrestamoOperador(\App\Models\PagoPrestamo $pago): ?Poliza
+    {
+        return DB::transaction(function () use ($pago) {
+            $monto = round((float) ($pago->monto_pago ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $pago->loadMissing('prestamo.operador');
+            $idEmpresa = $pago->prestamo?->operador?->id_empresa ?: (auth()->user()?->id_empresa ?? 1);
+
+            $polizaPrevia = Poliza::where('origen_tipo', 'pago_prestamo_operador')
+                ->where('origen_id', $pago->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
+
+            // Los pagos de préstamos a operadores son amortizaciones descontadas de liquidaciones de viaje
+            $cuentaContra = CatCuentaContable::where('codigo', '2.1.1.1.001')->first()
+                ?: (CatCuentaContable::where('codigo', 'like', '2.1.1%')->where('es_afectable', true)->first()
+                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
+            $cuentaContraId = $cuentaContra?->id ?? $cuentaPrestamos->id;
+
+            if (!$cuentaPrestamos) {
+                return null;
+            }
+
+            $fecha = $pago->created_at ? Carbon::parse($pago->created_at)->format('Y-m-d') : now()->format('Y-m-d');
+            $nombreOp = $pago->prestamo?->operador?->nombre ?? 'N/A';
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'diario',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => "Descuento / Amortización Préstamo #{$pago->id_prestamo} de Operador: {$nombreOp} (Pago #{$pago->id})",
+                'origen_tipo'  => 'pago_prestamo_operador',
+                'origen_id'    => $pago->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaContraId,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'RET_LIQUIDACION',
+                        'concepto_detalle'   => "Retención en Liquidación / Sueldos por Préstamo #{$pago->id_prestamo}",
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaPrestamos->id,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'AMORT_PRESTAMO',
+                        'concepto_detalle'   => "Amortización de Préstamo Operador {$nombreOp}",
+                    ],
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Contabiliza un movimiento bancario real de CatBancoCuentasMovimientos.
+     */
+    public function contabilizarMovimientoBancario(\App\Models\CatBancoCuentasMovimientos $mov): ?Poliza
+    {
+        return DB::transaction(function () use ($mov) {
+            $monto = round((float) ($mov->monto ?? 0), 2);
+            if ($monto <= 0) {
+                return null;
+            }
+
+            $mov->loadMissing('cuentaBancaria');
+            $cuentaBanco = $mov->cuentaBancaria;
+            $idEmpresa = $cuentaBanco?->id_empresa ?? 1;
+
+            $polizaPrevia = Poliza::where('origen_tipo', 'banco_movimiento')
+                ->where('origen_id', $mov->id)
+                ->first();
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaBancoContableId = $this->resolverCuentaBanco($mov->cuenta_bancaria_id, $idEmpresa);
+
+            $tipoPoliza = ($mov->tipo === 'abono') ? 'ingreso' : 'egreso';
+            $fecha = $mov->fecha_movimiento ? Carbon::parse($mov->fecha_movimiento)->format('Y-m-d') : now()->format('Y-m-d');
+
+            $cuentaContraId = null;
+            $refContra = 'MOV_BANCO';
+            $conceptoContra = $mov->concepto ?? 'Movimiento Bancario';
+
+            if ($mov->tipo === 'abono') {
+                if (in_array($mov->referenciaable_type, ['App\Models\CobroPago', 'App\Models\Cotizaciones'])) {
+                    $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaClientes?->id;
+                    $refContra = 'COBRO_CXC';
+                } elseif ($mov->origen === 'transferencia') {
+                    $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
+                    $refContra = 'TRASPASO';
+                } else {
+                    $cuentaOtros = CatCuentaContable::where('codigo', '1.1.2.3.004')->first()
+                        ?: (CatCuentaContable::where('codigo', '1.1.2.3.002')->first() ?: $cuentaBancoContableId);
+                    $cuentaContraId = $cuentaOtros?->id;
+                    $refContra = 'OTROS_INGRESOS';
+                }
+
+                $movimientos = [
+                    [
+                        'cuenta_contable_id' => $cuentaBancoContableId,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'DEP_BANCO',
+                        'concepto_detalle'   => $mov->concepto ?? 'Depósito Bancario',
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaContraId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => $refContra,
+                        'concepto_detalle'   => $conceptoContra,
+                    ],
+                ];
+            } else {
+                if (in_array($mov->referenciaable_type, ['App\Models\Gasto', 'App\Models\GastosGenerales'])) {
+                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaProveedores?->id;
+                    $refContra = 'PAGO_CXP';
+                } elseif ($mov->referenciaable_type === 'App\Models\SocioPago') {
+                    $cuentaSocios = CatCuentaContable::where('codigo', '1.1.2.3.003')->first();
+                    $cuentaContraId = $cuentaSocios?->id;
+                    $refContra = 'ANTICIPO_SOCIO';
+                } elseif ($mov->referenciaable_type === 'App\Models\Prestamo') {
+                    $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first();
+                    $cuentaContraId = $cuentaPrestamos?->id;
+                    $refContra = 'PRESTAMO_OPE';
+                } elseif (in_array($mov->referenciaable_type, ['App\Models\Liquidaciones', 'App\Models\GastosOperadores', 'App\Models\Asignaciones'])) {
+                    $cuentaGastosOp = CatCuentaContable::where('codigo', '5.1.1.2')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '5.1.1%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaGastosOp?->id;
+                    $refContra = 'GASTO_OPERATIVO';
+                } elseif ($mov->origen === 'transferencia') {
+                    $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
+                    $refContra = 'TRASPASO';
+                } else {
+                    $cuentaGastosGen = CatCuentaContable::where('codigo', '5.1.1.9')->first()
+                        ?: (CatCuentaContable::where('codigo', '2.1.1.2.001')->first() ?: $cuentaBancoContableId);
+                    $cuentaContraId = $cuentaGastosGen?->id;
+                    $refContra = 'EGRESO_BANCO';
+                }
+
+                $movimientos = [
+                    [
+                        'cuenta_contable_id' => $cuentaContraId,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => $refContra,
+                        'concepto_detalle'   => $conceptoContra,
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaBancoContableId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'SALIDA_BANCO',
+                        'concepto_detalle'   => $mov->concepto ?? 'Retiro / Cargo Bancario',
+                    ],
+                ];
+            }
+
+            $poliza = $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => $tipoPoliza,
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => ($mov->tipo === 'abono' ? 'Depósito en Banco: ' : 'Cargo / Pago Bancario: ') . ($mov->concepto ?? ('Movimiento #' . $mov->id)),
+                'origen_tipo'  => 'banco_movimiento',
+                'origen_id'    => $mov->id,
+                'movimientos'  => $movimientos,
+            ]);
+
+            $mov->update(['poliza_id' => $poliza->id]);
+
+            return $poliza;
         });
     }
 
@@ -844,16 +1048,18 @@ class PolizaService
             $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
                 ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
 
-            $bancoId = $cobroPago?->id_banco ?? null;
+            $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
 
             if (!$cuentaProveedores) {
                 return null;
             }
 
-            $fecha = !empty($cobroPago?->fecha_pago)
-                ? Carbon::parse($cobroPago->fecha_pago)->format('Y-m-d')
-                : now()->format('Y-m-d');
+            $rawFecha = $cobroPago?->fechaAplicacion1 
+                ?: ($cobroPago?->fechaAplicacion2 
+                ?: ($cobroPago?->fecha_pago 
+                ?: ($cpc->created_at ?? now())));
+            $fecha = Carbon::parse($rawFecha)->format('Y-m-d');
 
             return $this->crearPoliza([
                 'id_empresa'   => $idEmpresa,
@@ -883,4 +1089,76 @@ class PolizaService
             ]);
         });
     }
+
+    /**
+     * Contabiliza un anticipo o retiro a cuenta de utilidades a socio (Egreso).
+     *
+     * @param \App\Models\SocioPago $socioPago
+     * @return Poliza|null
+     */
+    public function contabilizarSocioPago(\App\Models\SocioPago $socioPago): ?Poliza
+    {
+        $idEmpresa = $socioPago->id_empresa ?: $socioPago->socio?->id_empresa;
+        $monto = round((float) $socioPago->monto, 2);
+
+        if (!$idEmpresa || $monto <= 0) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($socioPago, $idEmpresa, $monto) {
+            $polizaPrevia = Poliza::where('origen_tipo', 'socio_pago')
+                ->where('origen_id', $socioPago->id)
+                ->first();
+
+            if ($polizaPrevia) {
+                $polizaPrevia->delete();
+            }
+
+            $cuentaAnticipo = CatCuentaContable::where('codigo', '1.1.2.3.003')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
+
+            $cuentaBancoId = $this->resolverCuentaBanco($socioPago->banco_id, $idEmpresa);
+
+            if (!$cuentaAnticipo || !$cuentaBancoId) {
+                return null;
+            }
+
+            $fecha = !empty($socioPago->fecha_aplicacion)
+                ? Carbon::parse($socioPago->fecha_aplicacion)->format('Y-m-d')
+                : now()->format('Y-m-d');
+
+            $socioNombre = $socioPago->socio?->nombre ?? 'Socio';
+            $concepto = !empty($socioPago->concepto) 
+                ? $socioPago->concepto 
+                : "Pago a cuenta de utilidades socio: {$socioNombre}";
+
+            return $this->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'id_equipo'    => null,
+                'tipo'         => 'egreso',
+                'es_apertura'  => false,
+                'fecha'        => $fecha,
+                'concepto'     => $concepto,
+                'origen_tipo'  => 'socio_pago',
+                'origen_id'    => $socioPago->id,
+                'movimientos'  => [
+                    [
+                        'cuenta_contable_id' => $cuentaAnticipo->id,
+                        'debe'               => $monto,
+                        'haber'              => 0.00,
+                        'referencia'         => 'ANTICIPO_SOCIO_' . $socioPago->id,
+                        'concepto_detalle'   => $concepto,
+                    ],
+                    [
+                        'cuenta_contable_id' => $cuentaBancoId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => 'SALIDA_BANCO_SOCIO',
+                        'concepto_detalle'   => "Salida Bancaria Anticipo Socio {$socioNombre}",
+                    ],
+                ],
+            ]);
+        });
+    }
 }
+

@@ -614,7 +614,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::prefix('contabilidad')->name('contabilidad.')->group(function () {
             Route::get('balance-general', [App\Http\Controllers\ContabilidadController::class, 'balanceGeneral'])->name('balance-general.index');
             Route::get('balance-general/imprimir', [App\Http\Controllers\ContabilidadController::class, 'imprimirBalance'])->name('balance-general.imprimir');
+            Route::get('balance-general/exportar', [App\Http\Controllers\ContabilidadController::class, 'imprimirBalance'])->name('balance-general.exportar');
             Route::get('balance-general/data', [App\Http\Controllers\ContabilidadController::class, 'balanceGeneral'])->name('balance-general.data');
+            Route::get('balance-general/detalle-concepto', [App\Http\Controllers\ContabilidadController::class, 'detalleConcepto'])->name('balance-general.detalle-concepto');
             Route::get('configuracion', [App\Http\Controllers\ContabilidadController::class, 'configuracionIndex'])->name('configuracion.index');
             Route::post('configuracion/balance-conceptos', [App\Http\Controllers\ContabilidadController::class, 'guardarConceptoBalance'])->name('configuracion.balance-conceptos.store');
             Route::post('configuracion/guia-regla', [App\Http\Controllers\ContabilidadController::class, 'guardarReglaGuia'])->name('configuracion.guia-regla.store');

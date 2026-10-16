@@ -48,6 +48,22 @@ class BalanceGeneralService
                 ->get();
         }
 
+        // Asegurar que exista la fila de Pagos/Retiros a Socios en la empresa
+        $hasPagosSocios = $configs->contains('tipo_calculo', 'pagos_socios');
+        if (!$hasPagosSocios) {
+            $newConfig = BalanceGeneralConfig::create([
+                'id_empresa' => $idEmpresa,
+                'grupo' => 'capital',
+                'concepto' => '(-) RETIROS A SOCIOS',
+                'tipo_calculo' => 'pagos_socios',
+                'valor_manual' => 0.00,
+                'detalles_calculo' => 'Pagos y retiros a cuenta de utilidades de socios',
+                'orden' => 15,
+            ]);
+            $configs->push($newConfig);
+            $configs = $configs->sortBy(['grupo', 'orden'])->values();
+        }
+
         return $configs;
     }
 
@@ -83,12 +99,18 @@ class BalanceGeneralService
             }
         }
 
+        $totales['activo'] = round($totales['activo'], 2);
+        $totales['pasivo'] = round($totales['pasivo'], 2);
+        $totales['capital'] = round($totales['capital'], 2);
+
+        $diferencia = round($totales['activo'] - ($totales['pasivo'] + $totales['capital']), 2);
+
         return [
             'fecha_corte' => $fechaCorte,
             'rows' => $rows,
             'totales' => $totales,
-            'cuadrado' => round($totales['activo'] - ($totales['pasivo'] + $totales['capital']), 2) === 0.00,
-            'diferencia' => round($totales['activo'] - ($totales['pasivo'] + $totales['capital']), 2),
+            'cuadrado' => abs($diferencia) < 0.01,
+            'diferencia' => $diferencia,
         ];
     }
 
@@ -99,7 +121,34 @@ class BalanceGeneralService
     {
         $targetYear = $fechaCorte->year;
 
-        // Find the earliest year that has an initial balance config <= targetYear
+        // 1. Bancos: si no hay saldo inicial manual en el ejercicio actual, obtener saldo acumulado real
+        if ($config->tipo_calculo === 'bancos') {
+            $hasSaldoManual = BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
+                ->where('config_id', $config->id)
+                ->where('ejercicio', $targetYear)
+                ->exists();
+
+            if (!$hasSaldoManual) {
+                return $this->calcularSaldoBancos($idEmpresa, $fechaCorte);
+            }
+        }
+
+        // 2. Gastos por Pagar (Pasivo): saldo insoluto real de gastos no cancelados al corte
+        if ($config->tipo_calculo === 'gxp') {
+            return $this->calcularGastosPorPagar($idEmpresa, $fechaCorte);
+        }
+
+        // 3. Utilidad del Ejercicio / Operación (Capital): vinculada a Reporte de Resultados y Socios
+        if ($config->tipo_calculo === 'utilidad_ejercicio') {
+            return $this->calcularUtilidadOperacion($idEmpresa, $fechaCorte);
+        }
+
+        // 4. Pagos / Retiros a Socios (Capital): deducción exacta de retiros aplicados
+        if ($config->tipo_calculo === 'pagos_socios') {
+            return $this->calcularPagosSocios($idEmpresa, $fechaCorte);
+        }
+
+        // 5. Conceptos estándar o con saldos iniciales manuales configurados
         $firstSaldo = BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
             ->where('config_id', $config->id)
             ->where('ejercicio', '<=', $targetYear)
@@ -112,7 +161,6 @@ class BalanceGeneralService
         $currentBalance = 0.00;
 
         for ($year = $startYear; $year <= $targetYear; $year++) {
-            // If there's an initial balance configuration for this specific year, override the start of the year balance
             $saldoConfig = BalanceGeneralSaldoInicial::where('id_empresa', $idEmpresa)
                 ->where('config_id', $config->id)
                 ->where('ejercicio', $year)
@@ -131,11 +179,129 @@ class BalanceGeneralService
             $currentBalance += $movements;
         }
 
-        if (in_array($config->tipo_calculo, ['cxc', 'cxp', 'gxp'])) {
-            return max(0.00, $currentBalance);
+        if (in_array($config->tipo_calculo, ['cxc', 'cxp'])) {
+            return max(0.00, round($currentBalance, 2));
         }
 
-        return $currentBalance;
+        return round($currentBalance, 2);
+    }
+
+    /**
+     * Calcula el saldo acumulado real de todas las cuentas bancarias activas de la empresa al corte.
+     */
+    public function calcularSaldoBancos(int $idEmpresa, Carbon $fechaCorte): float
+    {
+        $cuentas = Bancos::where('id_empresa', $idEmpresa)->where('estado', 1)->get();
+        if ($cuentas->isEmpty()) {
+            return 0.00;
+        }
+
+        $totalBancos = 0.00;
+        foreach ($cuentas as $cuenta) {
+            $res = $this->bancosService->getsaldoActualFecha($cuenta, null, $fechaCorte->format('Y-m-d'));
+            $totalBancos += (float) ($res['saldoActual'] ?? 0.00);
+        }
+
+        return round($totalBancos, 2);
+    }
+
+    /**
+     * Calcula el saldo insoluto pendiente de pago de los gastos registrados al corte.
+     */
+    public function calcularGastosPorPagar(int $idEmpresa, Carbon $fechaCorte): float
+    {
+        $fechaCorteStr = $fechaCorte->format('Y-m-d');
+
+        $gastos = DB::table('gastos')
+            ->where('id_empresa', $idEmpresa)
+            ->whereNull('deleted_at')
+            ->where('estatus', '!=', 'cancelado')
+            ->where('fecha_gasto', '<=', $fechaCorteStr)
+            ->select('id', 'monto_total')
+            ->get();
+
+        if ($gastos->isEmpty()) {
+            return 0.00;
+        }
+
+        $gastoIds = $gastos->pluck('id');
+
+        $pagosPorGasto = DB::table('gasto_pagos')
+            ->whereIn('gasto_id', $gastoIds)
+            ->where('fecha_pago', '<=', $fechaCorteStr)
+            ->groupBy('gasto_id')
+            ->select('gasto_id', DB::raw('SUM(monto) as total_pagado'))
+            ->pluck('total_pagado', 'gasto_id');
+
+        $saldoInsoluto = 0.00;
+        foreach ($gastos as $g) {
+            $pagado = (float) ($pagosPorGasto[$g->id] ?? 0.00);
+            $pendiente = (float) $g->monto_total - $pagado;
+            if ($pendiente > 0.009) {
+                $saldoInsoluto += $pendiente;
+            }
+        }
+
+        return round($saldoInsoluto, 2);
+    }
+
+    /**
+     * Calcula la Utilidad de Operación acumulada sincronizada con Reporte de Resultados y Socios.
+     */
+    public function calcularUtilidadOperacion(int $idEmpresa, Carbon $fechaCorte): float
+    {
+        $earliestTrip = DB::table('asignaciones as a')
+            ->join('docum_cotizacion as dc', 'dc.id', '=', 'a.id_contenedor')
+            ->join('cotizaciones as c', 'c.id', '=', 'dc.id_cotizacion')
+            ->where('c.id_empresa', $idEmpresa)
+            ->where('c.estatus', '!=', 'Cancelada')
+            ->min('a.fecha_inicio');
+
+        $startDate = $earliestTrip 
+            ? Carbon::parse($earliestTrip)->format('Y-m-d') 
+            : Carbon::create($fechaCorte->year, 1, 1)->format('Y-m-d');
+        $endDate = $fechaCorte->format('Y-m-d');
+
+        try {
+            $sociosService = app(\App\Services\SociosService::class);
+            $partnerUtil = $sociosService->calculatePartnerUtility($startDate, $endDate, $idEmpresa);
+
+            if (isset($partnerUtil['utilidad_neta_distribuible'])) {
+                return round((float) $partnerUtil['utilidad_neta_distribuible'], 2);
+            }
+        } catch (\Throwable $e) {
+            // Fallback en caso de que SociosService arroje error
+        }
+
+        // Fallback operativo: cotizaciones finalizadas/aprobadas menos gastos operativos
+        $ingresos = DB::table('cotizaciones')
+            ->where('id_empresa', $idEmpresa)
+            ->whereIn('estatus', ['Aprobada', 'Finalizado'])
+            ->where('created_at', '<=', $fechaCorte)
+            ->sum('total');
+
+        $egresos = DB::table('gastos')
+            ->where('id_empresa', $idEmpresa)
+            ->whereNull('deleted_at')
+            ->where('estatus', '!=', 'cancelado')
+            ->where('fecha_gasto', '<=', $endDate)
+            ->sum('monto_total');
+
+        return round((float) ($ingresos - $egresos), 2);
+    }
+
+    /**
+     * Calcula los pagos/anticipos acumulados aplicados a socios al corte (monto negativo deducible en Capital).
+     */
+    public function calcularPagosSocios(int $idEmpresa, Carbon $fechaCorte): float
+    {
+        $pagosSocios = DB::table('socio_pagos as sp')
+            ->join('socios as s', 's.id', '=', 'sp.socio_id')
+            ->where('s.id_empresa', $idEmpresa)
+            ->where('sp.fecha_aplicacion', '<=', $fechaCorte->format('Y-m-d'))
+            ->sum('sp.monto');
+
+        return -1 * abs(round((float) $pagosSocios, 2));
     }
 
     /**
@@ -145,7 +311,6 @@ class BalanceGeneralService
     {
         switch ($tipoCalculo) {
             case 'bancos':
-                // Sum of abonos - Sum of cargos from active bank accounts
                 $cuentaIds = Bancos::where('id_empresa', $idEmpresa)->where('estado', 1)->pluck('id');
                 if ($cuentaIds->isEmpty()) {
                     return 0.00;
@@ -168,11 +333,10 @@ class BalanceGeneralService
                 return (float) ($abonos - $cargos);
 
             case 'cxc':
-                // Approved/Finalized Cotizaciones in range - payments applied to cxc in range
                 $totalCotizado = DB::table('cotizaciones')
                     ->where('id_empresa', $idEmpresa)
                     ->whereIn('estatus', ['Aprobada', 'Finalizado'])
-                    ->whereBetween('created_at', [$start, $end])
+                    ->where('created_at', '<=', $end)
                     ->sum('total');
 
                 $totalCobrado = DB::table('cobros_pagos_cotizaciones as cpc')
@@ -180,23 +344,22 @@ class BalanceGeneralService
                     ->join('cotizaciones as c', 'c.id', '=', 'cpc.cotizacion_id')
                     ->where('c.id_empresa', $idEmpresa)
                     ->where('cp.tipo', 'cxc')
-                    ->where(function($query) use ($start, $end) {
-                        $query->whereBetween('cp.fechaAplicacion1', [$start, $end])
-                              ->orWhereBetween('cp.fechaAplicacion2', [$start, $end]);
+                    ->where(function($query) use ($end) {
+                        $query->where('cp.fechaAplicacion1', '<=', $end)
+                              ->orWhere('cp.fechaAplicacion2', '<=', $end);
                     })
                     ->sum('cpc.monto');
 
                 return (float) ($totalCotizado - $totalCobrado);
 
             case 'cxp':
-                // Total subcontracted assignments - payments applied to providers in range
                 $totalSubcontratado = DB::table('cotizaciones as c')
                     ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
                     ->join('asignaciones as a', 'dc.id', '=', 'a.id_contenedor')
                     ->where('c.id_empresa', $idEmpresa)
                     ->where('a.tipo_contrato', 'Subcontratado')
                     ->whereIn('c.estatus', ['Aprobada', 'Finalizado'])
-                    ->whereBetween('c.created_at', [$start, $end])
+                    ->where('c.created_at', '<=', $end)
                     ->sum('a.total_proveedor');
 
                 $totalPagadoProveedor = DB::table('cobros_pagos_cotizaciones as cpc')
@@ -204,48 +367,22 @@ class BalanceGeneralService
                     ->join('cotizaciones as c', 'c.id', '=', 'cpc.cotizacion_id')
                     ->where('c.id_empresa', $idEmpresa)
                     ->where('cp.tipo', 'cxp')
-                    ->where(function($query) use ($start, $end) {
-                        $query->whereBetween('cp.fechaAplicacion1', [$start, $end])
-                              ->orWhereBetween('cp.fechaAplicacion2', [$start, $end]);
+                    ->where(function($query) use ($end) {
+                        $query->where('cp.fechaAplicacion1', '<=', $end)
+                              ->orWhere('cp.fechaAplicacion2', '<=', $end);
                     })
                     ->sum('cpc.monto');
 
                 return (float) ($totalSubcontratado - $totalPagadoProveedor);
 
             case 'gxp':
-                // Expenses created in range - Payments applied in range
-                $totalGastado = DB::table('gastos')
-                    ->where('id_empresa', $idEmpresa)
-                    ->whereNull('deleted_at')
-                    ->where('estatus', '!=', 'cancelado')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('monto_total');
-
-                $totalPagado = DB::table('gasto_pagos as gp')
-                    ->join('gastos as g', 'g.id', '=', 'gp.gasto_id')
-                    ->where('g.id_empresa', $idEmpresa)
-                    ->whereNull('g.deleted_at')
-                    ->whereBetween('gp.fecha_pago', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                    ->sum('gp.monto');
-
-                return (float) ($totalGastado - $totalPagado);
+                return $this->calcularGastosPorPagar($idEmpresa, $end);
 
             case 'utilidad_ejercicio':
-                // Income - Expenses in range
-                $ingresos = DB::table('cotizaciones')
-                    ->where('id_empresa', $idEmpresa)
-                    ->whereIn('estatus', ['Aprobada', 'Finalizado'])
-                    ->whereBetween('created_at', [$start, $end])
-                    ->sum('total');
+                return $this->calcularUtilidadOperacion($idEmpresa, $end);
 
-                $egresos = DB::table('gastos')
-                    ->where('id_empresa', $idEmpresa)
-                    ->whereNull('deleted_at')
-                    ->where('estatus', '!=', 'cancelado')
-                    ->whereBetween('fecha_gasto', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                    ->sum('monto_total');
-
-                return (float) ($ingresos - $egresos);
+            case 'pagos_socios':
+                return $this->calcularPagosSocios($idEmpresa, $end);
 
             case 'utilidades_acumuladas':
             default:

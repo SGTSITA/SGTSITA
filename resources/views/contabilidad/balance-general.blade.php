@@ -99,16 +99,15 @@
                             <i class="fas fa-book me-1"></i> Guía Contabilizadora
                         </a>
 
-                        {{-- Botón Vista Previa / Imprimir --}}
+                        {{-- Exportación Oficial CONAC (PDF y Excel) --}}
                         @php
                             $queryParams = array_merge(request()->all(), ['tipo_reporte' => $tipoReporte]);
-                            $queryPdf = array_merge($queryParams, ['download' => 1]);
                         @endphp
-                        <a href="{{ route('contabilidad.balance-general.imprimir', $queryParams) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm mb-0" title="Abrir versión imprimible">
-                            <i class="fas fa-print me-1"></i> Imprimir
+                        <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'pdf'])) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm mb-0" title="Ver y descargar formato oficial CONAC en PDF">
+                            <i class="fas fa-file-pdf me-1"></i> Exportar PDF
                         </a>
-                        <a href="{{ route('contabilidad.balance-general.imprimir', $queryPdf) }}" target="_blank" class="btn btn-outline-danger btn-sm shadow-sm mb-0" title="Descargar archivo PDF directo">
-                            <i class="fas fa-file-pdf me-1"></i> Descargar PDF
+                        <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'excel'])) }}" class="btn btn-success btn-sm shadow-sm mb-0" title="Descargar formato oficial CONAC en Excel (XLSX)">
+                            <i class="fas fa-file-excel me-1"></i> Exportar Excel
                         </a>
                     </div>
 
@@ -121,283 +120,242 @@
     <div class="card shadow border-0" id="hojaBalance">
         <div class="card-body p-4 p-md-5">
 
-            {{-- ENCABEZADO FORMAL DEL BALANCE --}}
-            <div class="text-center border-bottom pb-4 mb-4">
-                <span class="badge bg-light text-primary border px-3 py-1 mb-2 fw-semibold" style="letter-spacing: 1px;">
-                    LINEAMIENTOS CONAC • PARTIDA DOBLE
-                </span>
-                <h3 class="fw-bolder text-dark mb-1 text-uppercase" style="letter-spacing: 1.5px;">BALANCE GENERAL</h3>
-                
-                <h5 class="text-secondary fw-normal mb-1">
-                    @if ($equipoSeleccionado)
-                        UNIDAD: <strong class="text-dark">{{ $equipoSeleccionado->texto_select }}</strong>
-                    @else
-                        CONSOLIDADO GLOBAL DE UNIDADES
-                    @endif
-                </h5>
+            @if ($tipoReporte === 'balanza_comprobacion')
+                {{-- VISTA PREVIA: BALANZA DE COMPROBACIÓN [BC-03] --}}
+                @include('contabilidad.partials.vista-balanza-comprobacion')
+            @elseif ($tipoReporte === 'estado_resultados')
+                {{-- VISTA PREVIA: ESTADO DE ACTIVIDADES / RESULTADOS [ERA-02] --}}
+                @include('contabilidad.partials.vista-estado-resultados')
+            @else
+                {{-- VISTA PREVIA: BALANCE GENERAL [ESF-01] --}}
+                @include('contabilidad.partials.vista-balance-general')
+            @endif
 
-                <p class="text-muted text-sm mb-0">
-                    AL <span class="fw-bold text-dark">{{ \Carbon\Carbon::parse($fechaCorte)->isoFormat('D [DE] MMMM [DE] YYYY') }}</span>
-                    @if ($esAdmin && in_array('todas', $seleccionEmpresas))
-                        <span class="badge bg-secondary text-white ms-2">Consolidado Multi-Empresa</span>
-                    @endif
-                </p>
-
-                {{-- Status de Cuadre Contable --}}
-                <div class="mt-2">
-                    @if ($balance['cuadrado'])
-                        <span class="badge bg-success-light text-success border border-success px-3 py-1 text-xs">
-                            <i class="fas fa-check-circle me-1"></i> Balance Cuadrado: Activo = Pasivo + Capital ($ {{ number_format($balance['activo']['total'], 2) }})
-                        </span>
-                    @else
-                        <span class="badge bg-danger-light text-danger border border-danger px-3 py-1 text-xs">
-                            <i class="fas fa-exclamation-triangle me-1"></i> Diferencia Contable: $ {{ number_format($balance['diferencia'], 2) }}
-                        </span>
-                    @endif
-                </div>
-            </div>
-
-            {{-- CUERPO DEL BALANCE: DOS COLUMNAS BALANCEADAS --}}
-            <div class="row g-4 mb-4">
-
-                {{-- COLUMNA IZQUIERDA: ACTIVO --}}
-                <div class="col-md-6 border-end pe-md-4">
-                    <div class="d-flex justify-content-between align-items-center bg-light p-2 px-3 rounded mb-3 border">
-                        <h6 class="mb-0 fw-bold text-primary text-uppercase" style="letter-spacing: 1px;">
-                            <i class="fas fa-wallet me-2"></i>ACTIVO
-                        </h6>
-                        <span class="text-xs text-muted">Bancos, Clientes y Equipos</span>
-                    </div>
-
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <tbody>
-                            @forelse ($balance['activo']['items'] as $item)
-                                <tr>
-                                    <td class="text-sm py-2 {{ $item['es_calculado'] ? 'fw-bold text-dark' : 'text-secondary ps-3' }}">
-                                        @if (!$item['es_calculado'])
-                                            <i class="fas fa-angle-right text-muted me-1" style="font-size: 10px;"></i>
-                                        @endif
-                                        {{ $item['concepto'] }}
-                                    </td>
-                                    <td class="text-end text-sm py-2 fw-semibold {{ $item['monto'] < 0 ? 'text-danger' : 'text-dark' }}" style="width: 140px;">
-                                        $ {{ number_format($item['monto'], 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center text-muted py-3 text-xs">Sin registros de activo en este corte.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-primary border-top border-2 border-primary">
-                                <th class="text-uppercase fw-bolder py-3 text-dark">SUMA DEL ACTIVO</th>
-                                <th class="text-end fw-bolder py-3 text-primary fs-6">
-                                    $ {{ number_format($balance['activo']['total'], 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
-                {{-- COLUMNA DERECHA: PASIVO Y PATRIMONIO --}}
-                <div class="col-md-6 ps-md-4">
-
-                    {{-- SECCIÓN PASIVO --}}
-                    <div class="d-flex justify-content-between align-items-center bg-light p-2 px-3 rounded mb-3 border">
-                        <h6 class="mb-0 fw-bold text-danger text-uppercase" style="letter-spacing: 1px;">
-                            <i class="fas fa-file-invoice-dollar me-2"></i>PASIVO
-                        </h6>
-                        <span class="text-xs text-muted">Proveedores y Acreedores</span>
-                    </div>
-
-                    <table class="table table-sm table-hover align-middle mb-4">
-                        <tbody>
-                            @forelse ($balance['pasivo']['items'] as $item)
-                                <tr>
-                                    <td class="text-sm py-2 {{ $item['es_calculado'] ? 'fw-bold text-dark' : 'text-secondary ps-3' }}">
-                                        @if (!$item['es_calculado'])
-                                            <i class="fas fa-angle-right text-muted me-1" style="font-size: 10px;"></i>
-                                        @endif
-                                        {{ $item['concepto'] }}
-                                    </td>
-                                    <td class="text-end text-sm py-2 fw-semibold {{ $item['monto'] < 0 ? 'text-danger' : 'text-dark' }}" style="width: 140px;">
-                                        $ {{ number_format($item['monto'], 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center text-muted py-2 text-xs">Sin pasivos registrados.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-light border-top">
-                                <th class="text-uppercase fw-bold py-2 text-dark text-xs">TOTAL PASIVO</th>
-                                <th class="text-end fw-bold py-2 text-dark text-sm">
-                                    $ {{ number_format($balance['pasivo']['total'], 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                    {{-- SECCIÓN PATRIMONIO / CAPITAL --}}
-                    <div class="d-flex justify-content-between align-items-center bg-light p-2 px-3 rounded mb-3 border">
-                        <h6 class="mb-0 fw-bold text-success text-uppercase" style="letter-spacing: 1px;">
-                            <i class="fas fa-chart-pie me-2"></i>CAPITAL CONTABLE / PATRIMONIO
-                        </h6>
-                        <span class="text-xs text-muted">Utilidades y Resultados</span>
-                    </div>
-
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <tbody>
-                            @forelse ($balance['patrimonio']['items'] as $item)
-                                <tr>
-                                    <td class="text-sm py-2 {{ $item['es_calculado'] ? 'fw-bold text-dark' : 'text-secondary ps-3' }}">
-                                        @if (!$item['es_calculado'])
-                                            <i class="fas fa-angle-right text-muted me-1" style="font-size: 10px;"></i>
-                                        @endif
-                                        {{ $item['concepto'] }}
-                                    </td>
-                                    <td class="text-end text-sm py-2 fw-semibold {{ $item['monto'] < 0 ? 'text-danger' : 'text-dark' }}" style="width: 140px;">
-                                        $ {{ number_format($item['monto'], 2) }}
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2" class="text-center text-muted py-2 text-xs">Sin movimientos de capital.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                        <tfoot>
-                            <tr class="table-light border-top">
-                                <th class="text-uppercase fw-bold py-2 text-dark text-xs">TOTAL CAPITAL CONTABLE</th>
-                                <th class="text-end fw-bold py-2 text-dark text-sm">
-                                    $ {{ number_format($balance['patrimonio']['total'], 2) }}
-                                </th>
-                            </tr>
-                            <tr class="table-primary border-top border-2 border-primary">
-                                <th class="text-uppercase fw-bolder py-3 text-dark">SUMA DEL PASIVO Y CAPITAL</th>
-                                <th class="text-end fw-bolder py-3 text-primary fs-6">
-                                    $ {{ number_format($balance['total_pasivo_patrimonio'], 2) }}
-                                </th>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                </div>
-
-            </div>
-
-            {{-- SECCIÓN INFERIOR: RESUMEN DE ESTADO DE RESULTADOS (MODELO PDF) --}}
-            <div class="mt-4 pt-4 border-top">
-                <div class="card bg-light border-0 shadow-sm">
-                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary text-white p-2 rounded-circle">
-                                <i class="fas fa-chart-line"></i>
-                            </span>
-                            <div>
-                                <h6 class="mb-0 fw-bold text-dark">ESTADO DE RESULTADOS (DEL EJERCICIO AL CORTE)</h6>
-                                <small class="text-muted">Desglose de Operación y Separación de Intereses Bancarios CONAC</small>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="text-xs text-muted">Periodo: </span>
-                            <span class="badge bg-light text-dark border">{{ $balance['fecha_inicio_ejercicio'] }} al {{ $balance['fecha_corte'] }}</span>
-                        </div>
-                    </div>
-
-                    <div class="card-body p-4">
-                        <div class="row g-4 align-items-center">
-
-                            {{-- Desglose Numérico con Intereses Separados --}}
-                            <div class="col-lg-8">
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0 bg-white rounded shadow-sm border">
-                                        <tbody>
-                                            <tr>
-                                                <td class="py-2 px-3 fw-semibold text-dark">
-                                                    <i class="fas fa-plus text-success me-2"></i> Ingresos por Fletes y Servicios
-                                                </td>
-                                                <td class="py-2 px-3 text-end fw-bold text-dark" style="width: 160px;">
-                                                    $ {{ number_format($balance['estado_resultados']['ingresos_fletes'], 2) }}
-                                                </td>
-                                            </tr>
-                                            <tr class="table-info">
-                                                <td class="py-2 px-3 fw-bold text-info">
-                                                    <i class="fas fa-percent text-info me-2"></i> Intereses Bancarios / Rendimientos Financieros (4.3.1.1)
-                                                    <span class="badge bg-info text-dark ms-2" style="font-size: 10px;">Separado de Fletes</span>
-                                                </td>
-                                                <td class="py-2 px-3 text-end fw-bold text-info" style="width: 160px;">
-                                                    $ {{ number_format($balance['estado_resultados']['intereses_ganados'], 2) }}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="py-2 px-3 fw-semibold text-danger">
-                                                    <i class="fas fa-minus text-danger me-2"></i> Gastos Operativos y Generales (5.1.*)
-                                                </td>
-                                                <td class="py-2 px-3 text-end fw-bold text-danger" style="width: 160px;">
-                                                    - $ {{ number_format($balance['estado_resultados']['gastos_totales'], 2) }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                        <tfoot>
-                                            <tr class="border-top border-2 border-dark">
-                                                <th class="py-3 px-3 text-uppercase fw-bolder text-dark">
-                                                    <i class="fas fa-equals text-primary me-2"></i> UTILIDAD NETA DEL EJERCICIO
-                                                </th>
-                                                <th class="py-3 px-3 text-end fw-bolder {{ $balance['estado_resultados']['utilidad_neta'] < 0 ? 'text-danger' : 'text-success' }} fs-6">
-                                                    $ {{ number_format($balance['estado_resultados']['utilidad_neta'], 2) }}
-                                                </th>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            {{-- Tarjeta de Resumen Visual --}}
-                            <div class="col-lg-4">
-                                <div class="card border-0 shadow-sm text-center p-3 {{ $balance['estado_resultados']['utilidad_neta'] >= 0 ? 'bg-success text-white' : 'bg-danger text-white' }}">
-                                    <small class="text-uppercase opacity-75 fw-semibold" style="letter-spacing: 1px;">Resultado del Ejercicio</small>
-                                    <h2 class="fw-bolder my-2 text-white">
-                                        $ {{ number_format($balance['estado_resultados']['utilidad_neta'], 2) }}
-                                    </h2>
-                                    <small class="opacity-75">
-                                        {{ $balance['estado_resultados']['utilidad_neta'] >= 0 ? 'Utilidad acumulada al corte' : 'Déficit acumulado al corte' }}
-                                    </small>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- FIRMAS DE CONFORMIDAD / AUDITORÍA (COMO EN EL PDF) --}}
+            {{-- FIRMAS INSTITUCIONALES CONAC Y LEYENDA LEGAL --}}
             <div class="row text-center mt-5 pt-4 text-xs text-muted">
                 <div class="col-4">
                     <div class="border-top pt-2 mx-4">
                         ELABORÓ<br>
-                        <strong>DEPARTAMENTO CONTABLE</strong>
+                        <strong class="text-dark">DEPARTAMENTO CONTABLE</strong>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="border-top pt-2 mx-4">
                         REVISÓ<br>
-                        <strong>DIRECCIÓN FINANCIERA</strong>
+                        <strong class="text-dark">DIRECCIÓN FINANCIERA</strong>
                     </div>
                 </div>
                 <div class="col-4">
                     <div class="border-top pt-2 mx-4">
                         AUTORIZÓ<br>
-                        <strong>DIRECCIÓN GENERAL</strong>
+                        <strong class="text-dark">DIRECCIÓN GENERAL</strong>
                     </div>
                 </div>
+            </div>
+
+            <div class="text-center mt-3 pt-2 text-xxs text-muted fst-italic border-top">
+                "Bajo protesta de decir verdad declaramos que los estados financieros y sus notas, son razonablemente correctos y son responsabilidad del emisor."
             </div>
 
         </div>
     </div>
 
 </div>
+
+{{-- MODAL DE AUXILIAR Y DESGLOSE DE MOVIMIENTOS CONTABLES --}}
+<div class="modal fade" id="modalDetalleConcepto" tabindex="-1" aria-labelledby="modalDetalleConceptoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white py-3">
+                <div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="modalDetalleConceptoLabel">
+                        <i class="fas fa-book-open text-primary me-2"></i>Auxiliar Contable: <span id="detalleTituloConcepto" class="text-primary">---</span>
+                    </h5>
+                    <small class="opacity-75 text-white" id="detalleSubtitulo">Fecha de Corte: {{ $fechaCorte }}</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                {{-- KPI Cards --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card border border-success bg-success-light p-3 rounded text-center shadow-sm">
+                            <span class="text-xs text-uppercase text-success fw-bold"><i class="fas fa-arrow-down me-1"></i>Total Cargos (Debe)</span>
+                            <h4 class="fw-bolder text-success mb-0 mt-1" id="kpiTotalDebe">$ 0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border border-danger bg-danger-light p-3 rounded text-center shadow-sm">
+                            <span class="text-xs text-uppercase text-danger fw-bold"><i class="fas fa-arrow-up me-1"></i>Total Abonos (Haber)</span>
+                            <h4 class="fw-bolder text-danger mb-0 mt-1" id="kpiTotalHaber">$ 0.00</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border border-primary bg-primary-light p-3 rounded text-center shadow-sm">
+                            <span class="text-xs text-uppercase text-primary fw-bold"><i class="fas fa-balance-scale me-1"></i>Saldo Neto Resultante</span>
+                            <h4 class="fw-bolder text-primary mb-0 mt-1" id="kpiSaldoNeto">$ 0.00</h4>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Barra de búsqueda y conteo --}}
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <div class="input-group input-group-sm" style="max-width: 420px;">
+                        <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="inputBuscarMovimiento" class="form-control" placeholder="Filtrar por contenedor, póliza, cuenta, concepto...">
+                    </div>
+                    <div>
+                        <span class="badge bg-secondary text-white px-3 py-2 text-xs" id="badgeTotalMovimientos">0 movimientos</span>
+                    </div>
+                </div>
+
+                {{-- Spinner de carga --}}
+                <div id="spinnerDetalle" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted mt-2 text-sm fw-semibold">Consultando auxiliares contables y movimientos de pólizas...</p>
+                </div>
+
+                {{-- Tabla de movimientos con scroll --}}
+                <div class="table-responsive" id="contenedorTablaDetalle" style="max-height: 480px; display: none;">
+                    <table class="table table-sm table-hover align-middle border mb-0 text-xs" id="tablaDetalleMovimientos">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th style="width: 85px;">Fecha</th>
+                                <th style="width: 130px;">Póliza</th>
+                                <th style="width: 160px;">Cuenta Contable</th>
+                                <th>Concepto</th>
+                                <th style="width: 170px;">Referencia / Contenedor</th>
+                                <th class="text-end" style="width: 120px;">Cargos (Debe)</th>
+                                <th class="text-end" style="width: 120px;">Abonos (Haber)</th>
+                                <th class="text-end" style="width: 130px;">Saldo Acumulado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyDetalleMovimientos">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="alertaSinMovimientos" class="alert alert-info text-center py-4 text-xs mb-0 shadow-sm" style="display: none;">
+                    <i class="fas fa-info-circle me-1"></i> No se encontraron movimientos contables registrados para este concepto al corte especificado.
+                </div>
+            </div>
+            <div class="modal-footer py-2 bg-light d-flex justify-content-between">
+                <small class="text-muted text-xxs">
+                    <i class="fas fa-shield-alt text-success me-1"></i>Información generada por el motor de pólizas contables CONAC
+                </small>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('modalDetalleConcepto');
+    if (!modalEl) return;
+    const modal = new bootstrap.Modal(modalEl);
+
+    document.querySelectorAll('.fila-concepto').forEach(row => {
+        row.addEventListener('click', function () {
+            const conceptoId = this.dataset.conceptoId;
+            const conceptoNombre = this.dataset.conceptoNombre || 'Detalle';
+            if (!conceptoId) return;
+
+            document.getElementById('detalleTituloConcepto').textContent = conceptoNombre;
+            document.getElementById('spinnerDetalle').style.display = 'block';
+            document.getElementById('contenedorTablaDetalle').style.display = 'none';
+            document.getElementById('alertaSinMovimientos').style.display = 'none';
+            document.getElementById('kpiTotalDebe').textContent = '$ 0.00';
+            document.getElementById('kpiTotalHaber').textContent = '$ 0.00';
+            document.getElementById('kpiSaldoNeto').textContent = '$ 0.00';
+            document.getElementById('badgeTotalMovimientos').textContent = 'Consultando...';
+            document.getElementById('tbodyDetalleMovimientos').innerHTML = '';
+            document.getElementById('inputBuscarMovimiento').value = '';
+
+            modal.show();
+
+            const form = document.getElementById('formFiltroBalance');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            params.set('concepto_id', conceptoId);
+
+            fetch(`{{ route('contabilidad.balance-general.detalle-concepto') }}?${params.toString()}`)
+                .then(res => res.json())
+                .then(res => {
+                    document.getElementById('spinnerDetalle').style.display = 'none';
+                    if (!res.success || !res.data) {
+                        alert(res.message || 'Error al cargar el detalle contable.');
+                        return;
+                    }
+
+                    const data = res.data;
+                    document.getElementById('kpiTotalDebe').textContent = '$ ' + Number(data.total_debe).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    document.getElementById('kpiTotalHaber').textContent = '$ ' + Number(data.total_haber).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    document.getElementById('kpiSaldoNeto').textContent = '$ ' + Number(data.saldo_neto).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    document.getElementById('badgeTotalMovimientos').textContent = data.conteo + ' movimientos registrados';
+
+                    if (!data.movimientos || data.movimientos.length === 0) {
+                        document.getElementById('alertaSinMovimientos').style.display = 'block';
+                        return;
+                    }
+
+                    const tbody = document.getElementById('tbodyDetalleMovimientos');
+                    let html = '';
+                    data.movimientos.forEach(m => {
+                        const tipoBadge = m.poliza_tipo === 'ingreso' ? 'bg-success' : (m.poliza_tipo === 'egreso' ? 'bg-danger' : 'bg-primary');
+                        const badgeContenedor = m.contenedor 
+                            ? `<span class="badge bg-primary text-white d-inline-block text-truncate mb-1" style="font-size: 10px; max-width: 160px;" title="Contenedor: ${m.contenedor}"><i class="fas fa-box me-1"></i>${m.contenedor}</span><br>` 
+                            : '';
+                        const refHtml = m.referencia ? `<small class="text-muted text-break"><i class="fas fa-tag me-1"></i>${m.referencia}</small>` : '<small class="text-muted">-</small>';
+
+                        html += `
+                            <tr>
+                                <td class="text-nowrap text-secondary">${m.fecha_formato}</td>
+                                <td>
+                                    <span class="badge ${tipoBadge} me-1" style="font-size: 9px;">${(m.poliza_tipo || '').toUpperCase()}</span>
+                                    <strong class="text-dark">${m.poliza_numero || ('#' + m.poliza_id)}</strong>
+                                </td>
+                                <td>
+                                    <code class="text-primary fw-bold">${m.cuenta_codigo}</code><br>
+                                    <span class="text-dark text-xxs">${m.cuenta_nombre}</span>
+                                </td>
+                                <td>
+                                    <span class="text-dark fw-semibold">${m.concepto}</span>
+                                </td>
+                                <td>
+                                    ${badgeContenedor}
+                                    ${refHtml}
+                                </td>
+                                <td class="text-end fw-semibold ${m.debe > 0 ? 'text-success' : 'text-muted'}">${m.debe > 0 ? '$ ' + Number(m.debe).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+                                <td class="text-end fw-semibold ${m.haber > 0 ? 'text-danger' : 'text-muted'}">${m.haber > 0 ? '$ ' + Number(m.haber).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+                                <td class="text-end fw-bold text-dark">$ ${Number(m.saldo_acumulado).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tbody.innerHTML = html;
+                    document.getElementById('contenedorTablaDetalle').style.display = 'block';
+                })
+                .catch(err => {
+                    document.getElementById('spinnerDetalle').style.display = 'none';
+                    alert('Error de conexión al obtener el detalle: ' + err.message);
+                });
+        });
+    });
+
+    // Filtro en tiempo real dentro del modal
+    const inputBuscar = document.getElementById('inputBuscarMovimiento');
+    if (inputBuscar) {
+        inputBuscar.addEventListener('keyup', function () {
+            const query = this.value.toLowerCase().trim();
+            document.querySelectorAll('#tbodyDetalleMovimientos tr').forEach(tr => {
+                const text = tr.innerText.toLowerCase();
+                tr.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+    }
+});
+</script>
 @endsection
