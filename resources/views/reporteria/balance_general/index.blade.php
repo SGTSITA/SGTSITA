@@ -319,8 +319,8 @@
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td class="text-end pe-3 font-weight-bold text-sm">
-                                                        ${{ number_format($row['valor'], 2) }}
+                                                    <td class="text-end pe-3 font-weight-bold text-sm @if($row['valor'] < 0) text-danger @endif">
+                                                        {{ $row['valor'] < 0 ? '-$' . number_format(abs($row['valor']), 2) : '$' . number_format($row['valor'], 2) }}
                                                     </td>
                                                     <td class="text-center">
                                                         <button class="btn btn-link text-secondary mb-0"
@@ -454,6 +454,7 @@
                                 <option value="cxp">Cuentas por Pagar (Proveedores)</option>
                                 <option value="gxp">Gastos por Pagar (Viáticos y Generales)</option>
                                 <option value="utilidad_ejercicio">Utilidad del Ejercicio</option>
+                                <option value="pagos_socios">Retiros / Anticipos a Socios (Deducción Capital)</option>
                                 <option value="utilidades_acumuladas">Utilidades Acumuladas</option>
                                 <option value="manual">Manual (Especificar Valor)</option>
                             </select>
