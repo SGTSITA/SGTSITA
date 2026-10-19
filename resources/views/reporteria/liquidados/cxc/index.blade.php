@@ -58,6 +58,14 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
+                                                    @php
+                                                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                                    @endphp
+                                                    @if ($esEmpresaGlobal)
+                                                    @php
+                                                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                                    @endphp
+                                                    @if ($esEmpresaGlobal)
                                                     <div class="col-md-2 mb-2">
                                                         <label for="id_unidad" class="form-label text-sm mb-1">Buscar unidad (equipo):</label>
                                                         <select
@@ -73,6 +81,8 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
+                                                    @endif
+                                                    @endif
                                                     <div class="col-md-3 mb-2">
                                                         <label class="form-label text-sm mb-1">Periodo (Rango de fechas):</label>
                                                         <input type="text" id="daterange" readonly class="form-control form-control-sm" style="background-color: #fff;" />
@@ -194,12 +204,16 @@
                                         id="txtDataGenericExcel"
                                         value="{{ json_encode($cotizaciones) }}"
                                     />
+                                    @if ($esEmpresaGlobal ?? false)
+                                    @if ($esEmpresaGlobal ?? false)
                                     <div class="form-check form-switch d-inline-flex align-items-center me-2">
                                         <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxc" name="separar_unidades" value="1">
                                         <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxc">
                                             Separar por unidades
                                         </label>
                                     </div>
+                                    @endif
+                                    @endif
                                     <button
                                         type="button"
                                         id="exportButtonExcel"

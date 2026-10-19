@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@php
+    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+@endphp
+
 @section('template_title')
     Viajes
 @endsection
@@ -29,29 +33,33 @@
                             <input type="text" id="daterange" readonly class="form-control form-control-sm"
                                 style="width: auto; min-width: 200px; box-shadow: none" />
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
-                            <select id="selEquipoViajes" class="form-select form-select-sm" style="width: auto; min-width: 220px;">
-                                <option value="">-- Todas las unidades --</option>
-                                @if (isset($equipos))
-                                    @foreach ($equipos as $eq)
-                                        <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                        </div>
+                        @if ($esEmpresaGlobal)
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
+                                <select id="selEquipoViajes" class="form-select form-select-sm" style="width: auto; min-width: 220px;">
+                                    <option value="">-- Todas las unidades --</option>
+                                    @if (isset($equipos))
+                                        @foreach ($equipos as $eq)
+                                            <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="card-body">
                             <form id="exportForm" action="{{ route('export_viajes.viajes') }}" method="POST" class="d-flex align-items-center gap-2 flex-wrap">
                                 @csrf
 
-                                <div class="form-check form-switch d-inline-flex align-items-center me-2">
-                                    <input class="form-check-input" type="checkbox" id="checkSepararUnidades" name="separar_unidades" value="1">
-                                    <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidades">
-                                        Separar por unidades
-                                    </label>
-                                </div>
+                                @if ($esEmpresaGlobal)
+                                    <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                        <input class="form-check-input" type="checkbox" id="checkSepararUnidades" name="separar_unidades" value="1">
+                                        <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidades">
+                                            Separar por unidades
+                                        </label>
+                                    </div>
+                                @endif
 
                                 <button type="button" id="exportButtonGenericExcel" class="btn btn-outline-info btn-xs">
                                     Exportar Tablero

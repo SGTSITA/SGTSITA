@@ -239,133 +239,304 @@
                 </tfoot>
             </table>
         @else
-            {{-- MODO EMPRESA GLOBAL (H00): Agrupación separada por Unidad / Tractocamión con subtotales y gran total --}}
+            {{-- MODO EMPRESA GLOBAL (H00 / Separación activa): Agrupación por Unidad con Viajes, Otros Gastos y Utilidad Neta --}}
             @php
                 $cotizacionesPorUnidad = $cotizaciones->groupBy(function($item) {
                     return $item['unidad'] ?? 'SIN UNIDAD ASIGNADA';
                 });
+                $gastosPorUnidad = $gastosGenerales->groupBy(function($gasto) {
+                    return $gasto->unidad_texto ?? 'SIN UNIDAD ASIGNADA';
+                });
+
+                $todasLasUnidades = $cotizacionesPorUnidad->keys()
+                    ->merge($gastosPorUnidad->keys())
+                    ->unique()
+                    ->filter(function($u) {
+                        return $u !== 'SIN UNIDAD ASIGNADA';
+                    })
+                    ->values();
             @endphp
 
-            @foreach ($cotizacionesPorUnidad as $unidadTexto => $itemsUnidad)
+            @foreach ($todasLasUnidades as $unidadTexto)
+                @php
+                    $itemsUnidad = $cotizacionesPorUnidad->get($unidadTexto, collect([]));
+                    $gastosUnidadItem = $gastosPorUnidad->get($unidadTexto, collect([]));
+                    $brutoUnidad = floatval(collect($itemsUnidad)->sum('utilidad'));
+                    $otrosGastosUnidad = floatval(collect($gastosUnidadItem)->sum('monto_aplicado'));
+                    $netoUnidad = $brutoUnidad - $otrosGastosUnidad;
+                @endphp
+
                 <div style="background-color: #2c3e50; color: #ffffff; padding: 5px 10px; font-size: 11px; font-weight: bold; margin-top: {{ $loop->first ? '0px' : '15px' }}; margin-bottom: 5px; border-radius: 3px;">
-                    UNIDAD / TRACTOCAMION: {{ $unidadTexto }} ({{ count($itemsUnidad) }} viajes)
+                    UNIDAD / TRACTOCAMION: {{ $unidadTexto }} ({{ count($itemsUnidad) }} viajes | {{ count($gastosUnidadItem) }} otros gastos)
                 </div>
 
-                <table
-                    class="table text-white tabla-completa"
-                    style="
-                        color: #000;
-                        width: 100%;
-                        padding: 5px;
-                        margin: 0px 0px 10px 0px;
-                        border-collapse: collapse;
-                        border: 1px solid #000;
-                    "
-                >
-                    <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th>Núm Contenedor</th>
-                            <th>Cliente</th>
-                            <th>Precio Viaje</th>
-                            <th>Pago Operación</th>
-                            <th>Gastos Extra</th>
-                            <th>Dinero Viaje S/Justificar</th>
-                            <th>Gastos Viaje</th>
-                            <th>Gastos Diferidos</th>
-                            <th>Utilidad</th>
-                            <th>Transportado Por</th>
-                        </tr>
-                    </thead>
-                    <tbody style="text-align: center; font-size: 100%">
-                        @foreach ($itemsUnidad as $cotizacion)
-                            <tr>
-                                <td>{{ $cotizacion['numContenedor'] }}</td>
-                                <td>{{ $cotizacion['cliente'] }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['precioViaje'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['pagoOperacion'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosExtra'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['dineroViajeSinJustificar'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosViaje'] ?? 0), 2) }}</td>
-                                <td>$ {{ number_format(floatval($cotizacion['gastosDiferidos'] ?? 0), 2) }}</td>
-                                <td @if (($cotizacion['utilidad'] ?? 0) < 0) class="bg-warning" @endif>
-                                    $ {{ number_format(floatval($cotizacion['utilidad'] ?? 0), 2) }}
-                                </td>
-                                <td>{{ $cotizacion['transportadoPor'] }}</td>
+                {{-- VIAJES DE LA UNIDAD --}}
+                @if (count($itemsUnidad) > 0)
+                    <table
+                        class="table text-white tabla-completa"
+                        style="
+                            color: #000;
+                            width: 100%;
+                            padding: 5px;
+                            margin: 0px 0px 5px 0px;
+                            border-collapse: collapse;
+                            border: 1px solid #000;
+                        "
+                    >
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th>Núm Contenedor</th>
+                                <th>Cliente</th>
+                                <th>Precio Viaje</th>
+                                <th>Pago Operación</th>
+                                <th>Gastos Extra</th>
+                                <th>Dinero Viaje S/Justificar</th>
+                                <th>Gastos Viaje</th>
+                                <th>Gastos Diferidos</th>
+                                <th>Utilidad</th>
+                                <th>Transportado Por</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot style="text-align: center; font-size: 12px; font-weight: bold">
-                        <tr style="background-color: #e9ecef;">
-                            <td colspan="2">SUBTOTAL UNIDAD ({{ $unidadTexto }})</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('precioViaje')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('pagoOperacion')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosExtra')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('dineroViajeSinJustificar')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosViaje')), 2) }}</td>
-                            <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosDiferidos')), 2) }}</td>
-                            <td>${{ number_format(floatval(collect($itemsUnidad)->sum('utilidad')), 2) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
+                        </thead>
+                        <tbody style="text-align: center; font-size: 100%">
+                            @foreach ($itemsUnidad as $cotizacion)
+                                <tr>
+                                    <td>{{ $cotizacion['numContenedor'] }}</td>
+                                    <td>{{ $cotizacion['cliente'] }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['precioViaje'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['pagoOperacion'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosExtra'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['dineroViajeSinJustificar'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosViaje'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosDiferidos'] ?? 0), 2) }}</td>
+                                    <td @if (($cotizacion['utilidad'] ?? 0) < 0) class="bg-warning" @endif>
+                                        $ {{ number_format(floatval($cotizacion['utilidad'] ?? 0), 2) }}
+                                    </td>
+                                    <td>{{ $cotizacion['transportadoPor'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot style="text-align: center; font-size: 12px; font-weight: bold">
+                            <tr style="background-color: #e9ecef;">
+                                <td colspan="2">SUBTOTAL VIAJES UNIDAD ({{ $unidadTexto }})</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('precioViaje')), 2) }}</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('pagoOperacion')), 2) }}</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosExtra')), 2) }}</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('dineroViajeSinJustificar')), 2) }}</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosViaje')), 2) }}</td>
+                                <td>$ {{ number_format(floatval(collect($itemsUnidad)->sum('gastosDiferidos')), 2) }}</td>
+                                <td>${{ number_format($brutoUnidad, 2) }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                @else
+                    <div style="padding: 4px; font-size: 10px; color: #666; font-style: italic; margin-bottom: 5px;">
+                        Sin viajes registrados para esta unidad en el periodo.
+                    </div>
+                @endif
+
+                {{-- OTROS GASTOS DE LA UNIDAD --}}
+                @if (count($gastosUnidadItem) > 0)
+                    <div style="font-weight: bold; font-size: 10px; margin-top: 5px; margin-bottom: 3px; color: #2c3e50;">
+                        Otros Gastos Asociados a la Unidad ({{ count($gastosUnidadItem) }})
+                    </div>
+                    <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 5px;" border="1">
+                        <thead style="background-color: #f7f9fa">
+                            <tr>
+                                <th style="padding: 4px; width: 12%">Fecha</th>
+                                <th style="padding: 4px; width: 38%">Motivo / Concepto</th>
+                                <th style="padding: 4px; width: 22%">Categoría</th>
+                                <th style="padding: 4px; width: 15%">Método de Pago</th>
+                                <th style="padding: 4px; width: 13%">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($gastosUnidadItem as $gastoU)
+                                <tr>
+                                    <td style="padding: 3px; text-align: center;">{{ \Carbon\Carbon::parse($gastoU->fecha_aplicada)->format('d-m-Y') }}</td>
+                                    <td style="padding: 3px;">{{ $gastoU->concepto }}</td>
+                                    <td style="padding: 3px; text-align: center;">{{ $gastoU->categoria->categoria ?? 'N/A' }}</td>
+                                    <td style="padding: 3px; text-align: center;">{{ $gastoU->pagos->first()->metodo_pago ?? 'N/A' }}</td>
+                                    <td style="padding: 3px; text-align: right;">$ {{ number_format($gastoU->monto_aplicado, 2) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr style="font-weight: bold; background-color: #f1f3f5;">
+                                <td colspan="4" style="text-align: right; padding: 4px;">Subtotal Otros Gastos Unidad:</td>
+                                <td style="padding: 4px; text-align: right; color: #dc3545;">$ {{ number_format($otrosGastosUnidad, 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                @endif
+
+                {{-- TARJETA RESUMEN FINANCIERO DE LA UNIDAD (BRUTO, OTROS GASTOS Y NETO) --}}
+                <table style="width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 12px; border: 1px solid #2c3e50; background-color: #fdfdfe;">
+                    <tr style="font-size: 11px; font-weight: bold; text-align: center;">
+                        <td style="padding: 6px; width: 33.33%; border-right: 1px solid #dee2e6;">
+                            Utilidad Bruta Unidad: <span style="color: #17a2b8;">${{ number_format($brutoUnidad, 2) }}</span>
+                        </td>
+                        <td style="padding: 6px; width: 33.33%; border-right: 1px solid #dee2e6;">
+                            Otros Gastos Unidad: <span style="color: #dc3545;">${{ number_format($otrosGastosUnidad, 2) }}</span>
+                        </td>
+                        <td style="padding: 6px; width: 33.34%; background-color: {{ $netoUnidad < 0 ? '#fff3cd' : '#e8f5e9' }};">
+                            Utilidad Neta Unidad: <span style="color: {{ $netoUnidad < 0 ? '#856404' : '#28a745' }}; font-weight: bold;">${{ number_format($netoUnidad, 2) }}</span>
+                        </td>
+                    </tr>
                 </table>
             @endforeach
 
-            @if ($cotizacionesPorUnidad->count() > 1)
-                <table
-                    class="table text-white tabla-completa"
-                    style="
-                        color: #000;
-                        width: 100%;
-                        padding: 5px;
-                        margin: 10px 0px;
-                        border-collapse: collapse;
-                        border: 2px solid #344767;
-                    "
-                >
-                    <tfoot style="text-align: center; font-size: 13px; font-weight: bold">
-                        <tr style="background-color: #344767; color: #ffffff;">
-                            <td colspan="2" style="color: #ffffff; padding: 6px;">GRAN TOTAL CONSOLIDADO (TODAS LAS UNIDADES)</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('precioViaje')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('pagoOperacion')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosExtra')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('dineroViajeSinJustificar')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosViaje')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">$ {{ number_format(floatval($cotizaciones->sum('gastosDiferidos')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;">${{ number_format(floatval($cotizaciones->sum('utilidad')), 2) }}</td>
-                            <td style="color: #ffffff; padding: 6px;"></td>
-                        </tr>
-                    </tfoot>
-                </table>
+            {{-- SECCIÓN PARA MOVIMIENTOS / GASTOS SIN UNIDAD ASIGNADA (SI EXISTIEREN) --}}
+            @php
+                $gastosHuerfanos = $gastosPorUnidad->get('SIN UNIDAD ASIGNADA', collect([]));
+                $viajesHuerfanos = $cotizacionesPorUnidad->get('SIN UNIDAD ASIGNADA', collect([]));
+            @endphp
+
+            @if ($viajesHuerfanos->isNotEmpty() || $gastosHuerfanos->isNotEmpty())
+                <div style="background-color: #e74c3c; color: #ffffff; padding: 5px 10px; font-size: 11px; font-weight: bold; margin-top: 15px; margin-bottom: 5px; border-radius: 3px;">
+                    MOVIMIENTOS / GASTOS SIN UNIDAD ASIGNADA
+                </div>
+
+                @if ($viajesHuerfanos->isNotEmpty())
+                    <table
+                        class="table text-white tabla-completa"
+                        style="color: #000; width: 100%; padding: 5px; margin: 0px 0px 5px 0px; border-collapse: collapse; border: 1px solid #000;"
+                    >
+                        <thead>
+                            <tr style="background-color: #f2f2f2;">
+                                <th>Núm Contenedor</th>
+                                <th>Cliente</th>
+                                <th>Precio Viaje</th>
+                                <th>Pago Operación</th>
+                                <th>Gastos Extra</th>
+                                <th>Dinero Viaje S/Justificar</th>
+                                <th>Gastos Viaje</th>
+                                <th>Gastos Diferidos</th>
+                                <th>Utilidad</th>
+                                <th>Transportado Por</th>
+                            </tr>
+                        </thead>
+                        <tbody style="text-align: center; font-size: 100%">
+                            @foreach ($viajesHuerfanos as $cotizacion)
+                                <tr>
+                                    <td>{{ $cotizacion['numContenedor'] }}</td>
+                                    <td>{{ $cotizacion['cliente'] }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['precioViaje'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['pagoOperacion'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosExtra'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['dineroViajeSinJustificar'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosViaje'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['gastosDiferidos'] ?? 0), 2) }}</td>
+                                    <td>$ {{ number_format(floatval($cotizacion['utilidad'] ?? 0), 2) }}</td>
+                                    <td>{{ $cotizacion['transportadoPor'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot style="text-align: center; font-size: 12px; font-weight: bold">
+                            <tr style="background-color: #e9ecef;">
+                                <td colspan="2">SUBTOTAL VIAJES SIN UNIDAD</td>
+                                <td colspan="6"></td>
+                                <td>${{ number_format(floatval(collect($viajesHuerfanos)->sum('utilidad')), 2) }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                @endif
+
+                @if ($gastosHuerfanos->isNotEmpty())
+                    <table style="width: 100%; font-size: 9px; border-collapse: collapse; margin-bottom: 5px;" border="1">
+                        <thead style="background-color: #f7f9fa">
+                            <tr>
+                                <th style="padding: 4px; width: 12%">Fecha</th>
+                                <th style="padding: 4px; width: 38%">Motivo / Concepto</th>
+                                <th style="padding: 4px; width: 22%">Categoría</th>
+                                <th style="padding: 4px; width: 15%">Método de Pago</th>
+                                <th style="padding: 4px; width: 13%">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($gastosHuerfanos as $gastoH)
+                                <tr>
+                                    <td style="padding: 3px; text-align: center;">{{ \Carbon\Carbon::parse($gastoH->fecha_aplicada)->format('d-m-Y') }}</td>
+                                    <td style="padding: 3px;">{{ $gastoH->concepto }}</td>
+                                    <td style="padding: 3px; text-align: center;">{{ $gastoH->categoria->categoria ?? 'N/A' }}</td>
+                                    <td style="padding: 3px; text-align: center;">{{ $gastoH->pagos->first()->metodo_pago ?? 'N/A' }}</td>
+                                    <td style="padding: 3px; text-align: right;">$ {{ number_format($gastoH->monto_aplicado, 2) }}</td>
+                                </tr>
+                            @endforeach
+                            <tr style="font-weight: bold; background-color: #f1f3f5;">
+                                <td colspan="4" style="text-align: right; padding: 4px;">Total Gastos Sin Unidad Asignada:</td>
+                                <td style="padding: 4px; text-align: right; color: #dc3545;">$ {{ number_format(floatval(collect($gastosHuerfanos)->sum('monto_aplicado')), 2) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                @endif
             @endif
+
+            {{-- GRAN TOTAL CONSOLIDADO --}}
+            @php
+                $granTotalBruto = floatval($cotizaciones->sum('utilidad'));
+                $granTotalGastos = floatval($gastosGenerales->sum('monto_aplicado'));
+                $granTotalNeto = $granTotalBruto - $granTotalGastos;
+            @endphp
+            <table
+                class="table text-white tabla-completa"
+                style="
+                    color: #000;
+                    width: 100%;
+                    padding: 5px;
+                    margin: 15px 0px 5px 0px;
+                    border-collapse: collapse;
+                    border: 2px solid #344767;
+                "
+            >
+                <tfoot style="text-align: center; font-size: 12px; font-weight: bold">
+                    <tr style="background-color: #344767; color: #ffffff;">
+                        <td colspan="4" style="color: #ffffff; padding: 7px; text-align: left;">
+                            GRAN TOTAL CONSOLIDADO (TODAS LAS UNIDADES)
+                        </td>
+                        <td style="color: #ffffff; padding: 7px;">
+                            Utilidad Bruta: ${{ number_format($granTotalBruto, 2) }}
+                        </td>
+                        <td style="color: #ffffff; padding: 7px;">
+                            Otros Gastos: ${{ number_format($granTotalGastos, 2) }}
+                        </td>
+                        <td style="color: #ffffff; padding: 7px;">
+                            Utilidad Neta: ${{ number_format($granTotalNeto, 2) }}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
         @endif
 
-        <h4 style="margin-top: 20px">Desglose de Otros Gastos</h4>
-        <table style="width: 100%; font-size: 10px; border-collapse: collapse" border="1">
-            <thead style="background-color: #f0f0f0">
-                <tr>
-                    <th style="padding: 5px">Fecha</th>
-                    <th style="padding: 5px">Motivo</th>
-                    <th style="padding: 5px">Categoría</th>
-                    <th style="padding: 5px">Método de Pago</th>
-                    <th style="padding: 5px">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($gastosGenerales as $gasto)
+        {{-- DESGLOSE DE OTROS GASTOS TRADICIONAL (SÓLO CUANDO NO SE SEPARA POR UNIDAD) --}}
+        @if (!$esEmpresaGlobal)
+            <h4 style="margin-top: 20px">Desglose de Otros Gastos</h4>
+            <table style="width: 100%; font-size: 10px; border-collapse: collapse" border="1">
+                <thead style="background-color: #f0f0f0">
                     <tr>
-                        <td style="padding: 5px">{{ \Carbon\Carbon::parse($gasto->fecha_aplicada)->format('d-m-Y') }}</td>
-                        <td style="padding: 5px">{{ $gasto->concepto }}</td>
-                        <td style="padding: 5px">{{ $gasto->categoria->categoria ?? 'N/A' }}</td>
-                        <td style="padding: 5px">{{ $gasto->pagos->first()->metodo_pago ?? 'N/A' }}</td>
-                        <td style="padding: 5px">$ {{ number_format($gasto->monto_aplicado, 2) }}</td>
+                        <th style="padding: 5px">Fecha</th>
+                        <th style="padding: 5px">Motivo</th>
+                        <th style="padding: 5px">Categoría</th>
+                        <th style="padding: 5px">Método de Pago</th>
+                        <th style="padding: 5px">Monto</th>
                     </tr>
-                @endforeach
+                </thead>
+                <tbody>
+                    @foreach ($gastosGenerales as $gasto)
+                        <tr>
+                            <td style="padding: 5px">{{ \Carbon\Carbon::parse($gasto->fecha_aplicada)->format('d-m-Y') }}</td>
+                            <td style="padding: 5px">{{ $gasto->concepto }}</td>
+                            <td style="padding: 5px">{{ $gasto->categoria->categoria ?? 'N/A' }}</td>
+                            <td style="padding: 5px">{{ $gasto->pagos->first()->metodo_pago ?? 'N/A' }}</td>
+                            <td style="padding: 5px">$ {{ number_format($gasto->monto_aplicado, 2) }}</td>
+                        </tr>
+                    @endforeach
 
-                <tr style="font-weight: bold">
-                    <td colspan="4" style="text-align: right; padding: 5px">Total:</td>
-                    <td style="padding: 5px">$ {{ number_format($gastos, 2) }}</td>
-                </tr>
-            </tbody>
-        </table>
+                    <tr style="font-weight: bold">
+                        <td colspan="4" style="text-align: right; padding: 5px">Total:</td>
+                        <td style="padding: 5px">$ {{ number_format($gastos, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        @endif
     </body>
 </html>
