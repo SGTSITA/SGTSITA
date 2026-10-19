@@ -349,6 +349,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
         Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
         Route::get('/cotizaciones/by-status', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesByStatus'])->name('cotizaciones.byStatus');
+        Route::get('/sgt/fechas/periodos-cotizaciones', [App\Http\Controllers\CotizacionesController::class, 'getPeriodosCotizaciones'])->name('sgt.fechas.periodos_cotizaciones');
 
 
         Route::get('/cotizaciones/finalizadas', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesFinalizadas']);

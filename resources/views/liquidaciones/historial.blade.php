@@ -53,47 +53,10 @@
 <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
 <script src="{{ asset('js/sgt/liquidaciones/historial.js') }}?v={{ filemtime(public_path('js/sgt/liquidaciones/historial.js')) }}"></script>
 
-<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-<!-- Moment.js -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-<!-- JS de Date Range Picker -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('#daterange').daterangepicker({
-        opens: 'right',
-        locale: {
-            format: 'YYYY-MM-DD', // Formato de fecha
-            separator: " AL ", // Separador entre la fecha inicial y final
-            applyLabel: "Aplicar",
-            cancelLabel: "Cancelar",
-            fromLabel: "Desde",
-            toLabel: "Hasta",
-            customRangeLabel: "Personalizado",
-            daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-            monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
-            firstDay: 1
-        },
-        // maxDate: moment()
-        ranges: {
-            'Hoy': [moment(), moment()],
-            'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-            'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-            'Este mes': [moment().startOf('month'), moment().endOf('month')],
-            'Mes anterior': [
-                moment().subtract(1, 'month').startOf('month'),
-                moment().subtract(1, 'month').endOf('month')
-            ]
-        }
-    }, 
-        function(start, end, label) {
-        // Callback para el botón "Aplicar"
-      //  $("#fecha_de").val(start.format('YYYY-MM-DD'));
-      //  $("#fecha_hasta").val(end.format('YYYY-MM-DD'));
-       // document.getElementById("form-buscar").submit();
-        getHistorial(start.format('YYYY-MM-DD'),end.format('YYYY-MM-DD'));
-
-  
+    initSgtDateRange('#daterange', {}, function(start, end, label) {
+        getHistorial(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
     });
 
     const today = new Date();

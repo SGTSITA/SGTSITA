@@ -624,33 +624,11 @@
             const start = moment().startOf('month');
             const end = moment().endOf('month');
 
-            $('#utilidadDaterange').daterangepicker({
+            initSgtDateRange('#utilidadDaterange', {
                 startDate: start,
                 endDate: end,
-                showDropdowns: true,
-                linkedCalendars: false,
-                minYear: 2022,
-                maxYear: moment().year() + 2,
-                ranges: {
-                    'Este Mes': [moment().startOf('month'), moment().endOf('month')],
-                    'Mes Anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                    ['Año Actual (' + moment().year() + ')']: [moment().startOf('year'), moment().endOf('year')],
-                    ['Año Anterior (' + (moment().year() - 1) + ')']: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
-                    'Últimos 12 Meses': [moment().subtract(11, 'months').startOf('month'), moment().endOf('month')]
-                },
                 locale: {
-                    format: 'YYYY-MM-DD',
-                    separator: ' - ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                    ],
-                    firstDay: 1
+                    separator: ' - '
                 }
             });
 
@@ -1247,33 +1225,11 @@
                 gridHistorialCortesOptions);
 
             // Date picker for payments history filter
-            $('#historialDaterange').daterangepicker({
+            initSgtDateRange('#historialDaterange', {
                 startDate: moment().startOf('year'),
                 endDate: end,
-                showDropdowns: true,
-                linkedCalendars: false,
-                minYear: 2022,
-                maxYear: moment().year() + 2,
-                ranges: {
-                    'Este Mes': [moment().startOf('month'), moment().endOf('month')],
-                    'Mes Anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-                    ['Año Actual (' + moment().year() + ')']: [moment().startOf('year'), moment().endOf('year')],
-                    ['Año Anterior (' + (moment().year() - 1) + ')']: [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
-                    'Últimos 12 Meses': [moment().subtract(11, 'months').startOf('month'), moment().endOf('month')]
-                },
                 locale: {
-                    format: 'YYYY-MM-DD',
-                    separator: ' - ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                        'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-                    ],
-                    firstDay: 1
+                    separator: ' - '
                 }
             });
 

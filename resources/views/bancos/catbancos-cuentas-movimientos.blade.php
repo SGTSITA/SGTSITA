@@ -761,49 +761,16 @@
         const startDate = moment().subtract(7, 'days');
         const endDate = moment();
 
-        $('#daterange').daterangepicker({
+        initSgtDateRange(
+            '#daterange',
+            {
                 startDate,
                 endDate,
-                // maxDate: moment().endOf('month'),
-                opens: 'right',
                 locale: {
-                    format: 'YYYY-MM-DD',
                     separator: ' al ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: [
-                        'Enero',
-                        'Febrero',
-                        'Marzo',
-                        'Abril',
-                        'Mayo',
-                        'Junio',
-                        'Julio',
-                        'Agosto',
-                        'Septiembre',
-                        'Octubre',
-                        'Noviembre',
-                        'Diciembre',
-                    ],
-                    firstDay: 1,
-                },
-                ranges: {
-                    Hoy: [moment(), moment()],
-                    'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-                    'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-                    'Este mes': [moment().startOf('month'), moment().endOf('month')],
-                    'Mes anterior': [
-                        moment().subtract(1, 'month').startOf('month'),
-                        moment().subtract(1, 'month').endOf('month'),
-                    ],
                 },
             },
             function(start, end) {
-
                 fechaInicioGlobal = start.format('YYYY-MM-DD HH:mm:ss');
                 fechaFinGlobal = end.format('YYYY-MM-DD HH:mm:ss');
 

@@ -4728,4 +4728,12 @@ require_once app_path('Http/Controllers/Fileuploader/class.fileuploader.php');
 
     return $upload;
 }
+
+    /**
+     * Endpoint AJAX global que retorna los ejercicios dinámicos en base a cotizaciones.
+     */
+    public function getPeriodosCotizaciones(\App\Services\CotizacionesService $cotizacionesService)
+    {
+        return response()->json($cotizacionesService->getPeriodosCotizaciones());
+    }
 }

@@ -179,6 +179,9 @@ $(document).ready(function () {
     let start = moment().subtract(3, "months");
     let end = moment().add(20, "days");
 
+    fechaInicioViajes = start.format("YYYY-MM-DD");
+    fechaFinViajes = end.format("YYYY-MM-DD");
+
     function setFechas(start, end) {
         fechaInicioViajes = start.format("YYYY-MM-DD");
         fechaFinViajes = end.format("YYYY-MM-DD");
@@ -190,52 +193,41 @@ $(document).ready(function () {
         getContenedoresPendientes(estatusSearch);
     }
 
-    $("#rangoFechasViajes").daterangepicker(
-        {
-            startDate: start,
-            endDate: end,
-            autoApply: true,
-            opens: "right",
-            locale: {
-                format: "DD/MM/YYYY",
-                applyLabel: "Aplicar",
-                cancelLabel: "Cancelar",
-                fromLabel: "Desde",
-                toLabel: "Hasta",
-                customRangeLabel: "Personalizado",
-                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                monthNames: [
-                    "Enero",
-                    "Febrero",
-                    "Marzo",
-                    "Abril",
-                    "Mayo",
-                    "Junio",
-                    "Julio",
-                    "Agosto",
-                    "Septiembre",
-                    "Octubre",
-                    "Noviembre",
-                    "Diciembre",
-                ],
-                firstDay: 1,
-            },
-            ranges: {
-                Hoy: [moment(), moment()],
-                "Últimos 7 días": [moment().subtract(6, "days"), moment()],
-                "Últimos 30 días": [moment().subtract(29, "days"), moment()],
-                "Este mes": [
-                    moment().startOf("month"),
-                    moment().endOf("month"),
-                ],
-                "Mes anterior": [
-                    moment().subtract(1, "month").startOf("month"),
-                    moment().subtract(1, "month").endOf("month"),
-                ],
-            },
-        },
-        setFechas,
+    $("#rangoFechasViajes").val(
+        start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"),
     );
+
+    if (typeof initSgtDateRange === "function") {
+        initSgtDateRange(
+            "#rangoFechasViajes",
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+        $("#rangoFechasViajes").on("apply.daterangepicker", function (ev, picker) {
+            setFechas(picker.startDate, picker.endDate);
+        });
+    } else if ($.fn.daterangepicker) {
+        $("#rangoFechasViajes").daterangepicker(
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+    }
 
     // Event listeners para pestañas de estatus
     $(".status-tab-btn").on("click", function () {

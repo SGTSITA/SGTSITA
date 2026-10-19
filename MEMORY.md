@@ -12,6 +12,9 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Spec 011 (CONAC Pólizas & Verdad Operativa): Bancos en Balance General CONAC sincronizados directamente de `cat_banco_cuentas_movimientos` (/bancos/bancosv2) alcanzando exactamente $721,400.25 (Azteca $119,175.96 + Banorte $602,224.29). Subcuenta Banorte `1.1.1.2.005` agregada. Préstamos a operadores (`1.1.2.3.001`) conciliados en exactamente $36,000.00 (saldo insoluto real de Oscar de Jesús Moreno) tras incorporar amortizaciones de liquidaciones (`PagoPrestamo`) y contrapartida en `1.1.2.3.004` (Otros Deudores Diversos). Subcuenta `1.1.2.3.004` evita sobregiro en Gastos por Comprobar y corrige duplicidad en el Activo. Balance General perfectamente cuadrado a 0.00.
 - Balance General Drill-down: Modal interactivo auxiliar por concepto (`balance-general/detalle-concepto`) con resolución automática y masiva del número de contenedor (`DocumCotizacion` -> `num_contenedor`) cruzando cotizaciones, asignaciones, gastos operativos y amortizaciones; badge visual distintivo y búsqueda por contenedor en tiempo real.
 - Formatos Oficiales CONAC & Exportación: Vistas previas dinámicas en `/contabilidad/balance-general` para Balance General (ESF-01), Estado de Resultados (ERA-02) y Balanza de Comprobación (BC-03). Botón "Imprimir" eliminado; incorporadas exportaciones nativas en PDF (DomPDF institucional con CSS2.1, orientación automática, 3 firmas y protesta de ley) y Excel (Maatwebsite\Excel con estilos y auto-ajuste). Balanza de comprobación en estricto equilibrio en Sumas Iguales con filtro reactivo de cuentas.
+- Spec 006: Resumen mensual de utilidades, desglose drill-down y selector rápido en `/socios`.
+- Spec 007: Visualización de gastos indirectos de periodo sin contenedor en `/reporteria/utilidad`.
+- Spec 010: Control universal de calendario DateRangePicker dinámico en módulo central SGT (`window.initSgtDateRange`, años delimitados por BD de cotizaciones y año actual + 1).
 - API REST activa para Flutter `operador_appsgt` y microservicio WhatsApp (`whatsapp-bot/`).
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
 ## Decisiones (y por qué)
@@ -22,11 +25,9 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Consulta masiva por lote (`ObtenerPosicionActualGeneral`): reduce latencia de sincronización de ~40s a < 1s.
 - `sincronizarGastoConBancos()` en `GastosService`: unifica propagación en cascada de importes hacia `gasto_pagos`, `cat_bancos_cuentas_movimientos` y saldo en `bancos`.
 - `meses_resumen` en `SociosService`: agrupa viajes (bruta) y gastos indirectos imputados por mes, cuadrando Utilidad Mensual.
-- `linkedCalendars: false` en `daterangepicker`: desacopla el calendario izquierdo del derecho al cambiar de año/mes.
+- `linkedCalendars: false` y `showDropdowns: true` en `daterangepicker`: desacopla calendarios y permite seleccionar mes/año sin desbordar.
+- `window.initSgtDateRange()` y `/sgt/fechas/periodos-cotizaciones`: calcula dinámicamente `ejercicio_ini_bd` (BD `cotizaciones`) y `ejercicio_fin_bd` (`max(max_bd, anio_actual + 1)`). Elimina años inválidos (2001) y previene mantenimiento anual. En acciones rápidas solo muestra: Últimos 7 días, Últimos 30 días, Este mes, Mes anterior y Personalizado (excluyendo Hoy, Ayer y años estáticos del menú rápido). Soportado tanto en `layouts.app` como en `layouts.usuario_externo` para vistas de clientes (`/viajes/mis-viajes`, `/viajes/documents`, reportería externa).
 - `/reporteria/utilidad`: botón "Ver Gastos" muestra gastos indirectos del periodo si no hay viajes o contenedor seleccionado.
-- `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
-- Naanix GPS: trait independiente, consulta masiva (`ObtenerPosicionActualGeneral`) y caché de token (50 min).
-- `sincronizarGastoConBancos()` en `GastosService`: unifica cascada a pagos, movimientos y saldos bancarios.
 - `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
 
 ## Aprendizajes y errores a evitar
@@ -37,6 +38,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - En catálogos y reportes de imputación a tracto, filtrar siempre `where('tipo', 'Tractos / Camiones')` en `Equipo`.
 - Si un gasto previo estaba en papelera, `GastosService::registrar()` debe invocar obligatoriamente `$gasto->restore()`.
 - En `ranges` de daterangepicker, claves con expresiones dinámicas requieren corchetes `[expr]: [...]`.
+- Si scripts compartidos (como `cotizacion-documentacion.js`) se usan en `layouts.usuario_externo`, asegurarse de que las dependencias (`sgt-daterange.js`, `moment`, `daterangepicker`) estén inyectadas en ese layout.
 ## Próximos pasos
 - [ ] Validar en producción telemetría continua de Naanix y retirar `SISGPSTrait.php`.
 - [ ] Spec 001: Módulo de control y reportes de combustible por unidad de transporte.
