@@ -85,7 +85,7 @@ class BalanceGeneralConceptosSeeder extends Seeder
             [
                 'seccion' => 'activo',
                 'concepto' => 'DEUDORES DIVERSOS',
-                'cuenta_codigo_prefijo' => '1.1.2.3%',
+                'cuenta_codigo_prefijo' => '1.1.2.3.004%',
                 'columna' => 1,
                 'orden' => 80,
                 'es_calculado' => false,
