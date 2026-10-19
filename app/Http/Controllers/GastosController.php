@@ -350,6 +350,25 @@ class GastosController extends Controller
 
             $selectedEquipoId = $request->id_equipo ?: ($request->equipo_id ?: (is_array($request->unidades) && count($request->unidades) === 1 ? $request->unidades[0] : null));
 
+            if (!$selectedEquipoId && $request->filled('viajes')) {
+                $primerViajeId = is_array($request->viajes) ? ($request->viajes[0] ?? null) : $request->viajes;
+                if ($primerViajeId) {
+                    $selectedEquipoId = Asignaciones::where('id', $primerViajeId)->value('id_camion');
+                }
+            } elseif (!$selectedEquipoId && $request->filled('asignacion_id')) {
+                $selectedEquipoId = Asignaciones::where('id', $request->asignacion_id)->value('id_camion');
+            } elseif (!$selectedEquipoId && !empty($vinculos)) {
+                foreach ($vinculos as $v) {
+                    if (($v['tipo_vinculo'] ?? '') === 'asignacion' && !empty($v['vinculable_id'])) {
+                        $camionId = Asignaciones::where('id', $v['vinculable_id'])->value('id_camion');
+                        if ($camionId) {
+                            $selectedEquipoId = $camionId;
+                            break;
+                        }
+                    }
+                }
+            }
+
             // Preparar datos para registrar
             $storeData = array_merge($validated, [
                 'id_empresa' => auth()->user()->id_empresa,

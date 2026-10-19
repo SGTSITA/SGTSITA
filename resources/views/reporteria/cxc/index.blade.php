@@ -73,6 +73,14 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @php
+                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                @endphp
+                                @if ($esEmpresaGlobal)
+                                @php
+                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                @endphp
+                                @if ($esEmpresaGlobal)
                                 <div class="col-md-2">
                                     <label for="id_equipo">Unidad / Equipo</label>
                                     <select name="id_equipo" id="id_equipo" class="form-control">
@@ -87,6 +95,8 @@
                                         @endif
                                     </select>
                                 </div>
+                                @endif
+                                @endif
                                 <div class="col-md-2">
                                     <label for="numero_edo_cuenta">Num. Edo. Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
@@ -124,12 +134,16 @@
                                 </label>
                             </div>
 
+                            @if ($esEmpresaGlobal ?? false)
+                            @if ($esEmpresaGlobal ?? false)
                             <div class="form-check form-switch m-0 d-flex align-items-center">
                                 <input class="form-check-input" type="checkbox" id="checkSepararUnidadesCxc" name="separar_unidades" value="1">
                                 <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesCxc">
                                     Separar por unidades
                                 </label>
                             </div>
+                            @endif
+                            @endif
 
 
                             <div id="contenedorDocumentos" style="display:none; min-width: 300px;">

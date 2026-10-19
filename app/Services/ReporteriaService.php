@@ -205,15 +205,58 @@ class ReporteriaService
 
         return $Info;
     }
-    public function getGastosGeneralesPeriodo(string $startDate, string $endDate, int $idEmpresa)
+    public function getGastosGeneralesPeriodo(string $startDate, string $endDate, int $idEmpresa, ?int $idEquipo = null)
     {
-        return Gasto::with(['categoria', 'pagos'])
+        $query = Gasto::with(['categoria', 'pagos', 'equipo', 'vinculos.vinculable'])
             ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
             ->where('gastos.id_empresa', $idEmpresa)
-            ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa'])
+            ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa', 'unidad'])
             ->whereBetween('gi.fecha_imputacion', [$startDate, $endDate])
-            ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
-            ->get();
+            ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada');
+
+        if (!empty($idEquipo)) {
+            $query->where(function ($q) use ($idEquipo) {
+                $q->where('gastos.id_equipo', $idEquipo)
+                  ->orWhereHas('vinculos', function ($sub) use ($idEquipo) {
+                      $sub->where('tipo_vinculo', 'unidad')
+                          ->where('vinculable_id', $idEquipo);
+                  })
+                  ->orWhere(function ($sub) use ($idEquipo) {
+                      $sub->where('gi.imputable_type', \App\Models\Equipo::class)
+                          ->where('gi.imputable_id', $idEquipo);
+                  });
+            });
+        }
+
+        $gastos = $query->get();
+
+        foreach ($gastos as $gasto) {
+            $eq = $gasto->equipo;
+            if (!$eq && $gasto->id_equipo) {
+                $eq = \App\Models\Equipo::find($gasto->id_equipo);
+            }
+            if (!$eq && $gasto->relationLoaded('vinculos')) {
+                $vUnidad = $gasto->vinculos->firstWhere('tipo_vinculo', 'unidad');
+                if ($vUnidad && $vUnidad->vinculable instanceof \App\Models\Equipo) {
+                    $eq = $vUnidad->vinculable;
+                } elseif ($vUnidad && !empty($vUnidad->vinculable_id)) {
+                    $eq = \App\Models\Equipo::find($vUnidad->vinculable_id);
+                }
+            }
+
+            if ($eq) {
+                $codigo = $eq->id_equipo ?: ($eq->placas ?: 'UNIDAD #' . $eq->id);
+                $marca = $eq->marca ?: 'TRACTO';
+                $placas = $eq->placas ?: 'S/P';
+                $gasto->unidad_texto = trim("{$codigo} - {$marca} [{$placas}]");
+                $gasto->equipo_id_resuelto = $eq->id;
+            } else {
+                $gasto->unidad_texto = 'SIN UNIDAD ASIGNADA';
+                $gasto->equipo_id_resuelto = null;
+            }
+        }
+
+        return $gastos;
     }
 
     /**

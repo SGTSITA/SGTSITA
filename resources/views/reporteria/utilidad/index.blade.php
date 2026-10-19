@@ -79,6 +79,14 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                    @php
+                                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                    @endphp
+                                    @if ($esEmpresaGlobal)
+                                    @php
+                                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                    @endphp
+                                    @if ($esEmpresaGlobal)
                                     <div class="d-flex flex-column" style="min-width: 220px;">
                                         <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Unidad / Equipo</label>
                                         <select id="selEquipoUtilidad" class="form-select form-select-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;">
@@ -90,16 +98,22 @@
                                             @endif
                                         </select>
                                     </div>
+                                    @endif
+                                    @endif
                                 </div>
                             </h5>
 
                             <div class="float-right d-flex align-items-center gap-2 flex-wrap">
+                                @if ($esEmpresaGlobal ?? false)
+                                @if ($esEmpresaGlobal ?? false)
                                 <div class="form-check form-switch d-inline-flex align-items-center me-2">
                                     <input class="form-check-input" type="checkbox" id="checkSepararUnidadesUtilidad" name="separar_unidades" value="1">
                                     <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesUtilidad">
                                         Separar por unidades
                                     </label>
                                 </div>
+                                @endif
+                                @endif
                                 <button class="btn btn-sm bg-gradient-info text-white d-none" id="btnVistaPreliminar">
                                     <i class="fa fa-fw fa-eye"></i> Vista Preliminar
                                 </button>

@@ -1323,7 +1323,12 @@ class ReporteriaController extends Controller
         $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor, $idEquipo);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
 
-        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($r->startDate, $r->endDate, auth()->user()->id_empresa);
+        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo(
+            $r->startDate,
+            $r->endDate,
+            auth()->user()->id_empresa,
+            $idEquipo ? (int) $idEquipo : null
+        );
 
         return json_encode([
             "Info" => $info,
@@ -1359,7 +1364,12 @@ class ReporteriaController extends Controller
         $cotizacion = [];
         $user = User::where('id', '=', auth()->user()->id)->first();
 
-        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($fechaInicio, $fechaFin, auth()->user()->id_empresa);
+        $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo(
+            $fechaInicio,
+            $fechaFin,
+            auth()->user()->id_empresa,
+            $idEquipo ? (int) $idEquipo : null
+        );
 
         $gastos = $gastosGenerales->sum('monto_aplicado');
         $utilidad = $cotizaciones->sum('utilidad');
@@ -2824,7 +2834,11 @@ public function indexRendimiento()
         if (!auth()->user()->can('reporte-complemento-pago')) {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
-        return view('reporteria.complementos_pago.index');
+        $empresa = auth()->user()->Empresa;
+        $esEmpresaGlobal = (bool) ($empresa?->requiere_unidad_gasto ?? false);
+        $equipos = $esEmpresaGlobal ? app(\App\Services\EquipoService::class)->getTractocamiones(auth()->user()->id_empresa) : collect([]);
+
+        return view('reporteria.complementos_pago.index', compact('equipos', 'esEmpresaGlobal'));
     }
 
     public function getComplementosPagoReporte(Request $request)
@@ -2835,17 +2849,25 @@ public function indexRendimiento()
 
         $num_estado_cuenta = $request->input('num_estado_cuenta');
         $num_contenedor = $request->input('num_contenedor');
+        $idEquipo = $request->input('id_equipo');
 
         // Obtener los IDs de estados de cuenta que tienen por lo menos 1 contenedor con complemento de pago
-        $estadosConComplemento = \DB::table('estado_cuenta as ec')
+        $estadosQuery = \DB::table('estado_cuenta as ec')
             ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
             ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
             ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+            ->leftJoin('asignaciones as a', 'dc.id', '=', 'a.id_contenedor')
             ->where('c.id_empresa', auth()->user()->id_empresa)
             ->where(function($q) {
                 $q->whereNotNull('dc.comprobante_pago_pdf')
                   ->orWhereNotNull('dc.comprobante_pago_xml');
-            })
+            });
+
+        if (!empty($idEquipo)) {
+            $estadosQuery->where('a.id_camion', $idEquipo);
+        }
+
+        $estadosConComplemento = $estadosQuery
             ->pluck('ec.id')
             ->unique()
             ->toArray();
@@ -2861,13 +2883,20 @@ public function indexRendimiento()
 
         // Si se busca por número de contenedor, encontrar los estados de cuenta (que tengan complementos) que contengan ese contenedor
         if (!empty($num_contenedor)) {
-            $matchingEstados = \DB::table('estado_cuenta as ec')
+            $matchingQuery = \DB::table('estado_cuenta as ec')
                 ->join('estado_cuenta_cotizaciones as ecc', 'ec.id', '=', 'ecc.estado_cuenta_id')
                 ->join('cotizaciones as c', 'ecc.cotizacion_id', '=', 'c.id')
                 ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
+                ->leftJoin('asignaciones as a', 'dc.id', '=', 'a.id_contenedor')
                 ->where('c.id_empresa', auth()->user()->id_empresa)
                 ->where('dc.num_contenedor', 'like', '%' . $num_contenedor . '%')
-                ->whereIn('ec.id', $estadosConComplemento)
+                ->whereIn('ec.id', $estadosConComplemento);
+
+            if (!empty($idEquipo)) {
+                $matchingQuery->where('a.id_camion', $idEquipo);
+            }
+
+            $matchingEstados = $matchingQuery
                 ->pluck('ec.id')
                 ->unique()
                 ->toArray();
@@ -2888,11 +2917,17 @@ public function indexRendimiento()
             ->join('docum_cotizacion as dc', 'c.id', '=', 'dc.id_cotizacion')
             ->join('empresas as emp', 'c.id_empresa', '=', 'emp.id')
             ->leftJoin('subclientes as sub', 'c.id_subcliente', '=', 'sub.id')
+            ->leftJoin('asignaciones as a', 'dc.id', '=', 'a.id_contenedor')
+            ->leftJoin('equipos as eq', 'a.id_camion', '=', 'eq.id')
             ->where('emp.id', auth()->user()->id_empresa)
             ->whereIn('ec.id', $targetEstadosIds);
 
         if (!empty($num_estado_cuenta)) {
             $query->where('ec.numero', 'like', '%' . $num_estado_cuenta . '%');
+        }
+
+        if (!empty($idEquipo)) {
+            $query->where('a.id_camion', $idEquipo);
         }
 
         $data = $query->select([
@@ -2903,7 +2938,11 @@ public function indexRendimiento()
             'dc.num_contenedor',
             'dc.comprobante_pago_pdf',
             'dc.comprobante_pago_xml',
-            'sub.nombre as subcliente_nombre'
+            'sub.nombre as subcliente_nombre',
+            'a.id_camion',
+            'eq.id_equipo as camion_codigo',
+            'eq.marca as camion_marca',
+            'eq.placas as camion_placas',
         ])
         ->orderBy('ec.numero', 'desc')
         ->orderBy('dc.num_contenedor', 'asc')
@@ -2941,9 +2980,18 @@ public function indexRendimiento()
                 $grouped[$groupKey] = [];
             }
 
+            $textoUnidad = 'SIN UNIDAD ASIGNADA';
+            if ($item->id_camion) {
+                $codigo = $item->camion_codigo ?: ($item->camion_placas ?: 'UNIDAD #' . $item->id_camion);
+                $marca = $item->camion_marca ?: 'TRACTO';
+                $placas = $item->camion_placas ?: 'S/P';
+                $textoUnidad = trim("{$codigo} - {$marca} [{$placas}]");
+            }
+
             $grouped[$groupKey][] = [
                 'num_contenedor' => $item->num_contenedor,
                 'subcliente' => $item->subcliente_nombre ?? 'Sin subcliente',
+                'unidad' => $textoUnidad,
                 'files' => $files
             ];
         }
