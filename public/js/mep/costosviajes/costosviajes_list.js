@@ -27,36 +27,14 @@ function recalcularTotales(row) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    $('#daterange').daterangepicker(
+    initSgtDateRange(
+        '#daterange',
         {
-            opens: 'right',
-            locale: {
-                format: 'YYYY-MM-DD',
-                separator: ' - ',
-                applyLabel: 'Aplicar',
-                cancelLabel: 'Cancelar',
-                fromLabel: 'Desde',
-                toLabel: 'Hasta',
-                customRangeLabel: 'Personalizado',
-                weekLabel: 'S',
-                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                monthNames: [
-                    'Enero',
-                    'Febrero',
-                    'Marzo',
-                    'Abril',
-                    'Mayo',
-                    'Junio',
-                    'Julio',
-                    'Agosto',
-                    'Septiembre',
-                    'Octubre',
-                    'Noviembre',
-                    'Diciembre',
-                ],
-            },
             startDate: moment().subtract(7, 'days'),
             endDate: moment(),
+            locale: {
+                separator: ' - ',
+            },
         },
         function (start, end) {
             cargarDatos(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));

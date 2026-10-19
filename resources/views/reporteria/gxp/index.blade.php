@@ -43,7 +43,13 @@
                     </div>
 
                     <div class="card-body">
-                        <div class="d-flex justify-content-start my-2 gap-2">
+                        <div class="d-flex justify-content-start my-2 gap-2 align-items-center flex-wrap">
+                            <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                <input class="form-check-input" type="checkbox" id="checkSepararUnidadesGxp" name="separar_unidades" value="1">
+                                <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesGxp">
+                                    Separar por unidades
+                                </label>
+                            </div>
                             <button
                                 type="button"
                                 id="exportButtonExcel"
@@ -75,13 +81,6 @@
 @endsection
 
 @section('datatable')
-    {{-- Moment.js (para fechas) --}}
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
-    {{-- Daterangepicker (para seleccionar periodo) --}}
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
     {{-- AG Grid --}}
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 

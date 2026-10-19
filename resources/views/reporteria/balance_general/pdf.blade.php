@@ -160,7 +160,9 @@
                     @foreach($capital as $row)
                         <tr>
                             <td>{{ $row['concepto'] }}</td>
-                            <td class="text-right">${{ number_format($row['valor'], 2) }}</td>
+                            <td class="text-right" @if($row['valor'] < 0) style="color: #c0392b;" @endif>
+                                {{ $row['valor'] < 0 ? '-$' . number_format(abs($row['valor']), 2) : '$' . number_format($row['valor'], 2) }}
+                            </td>
                         </tr>
                     @endforeach
                     <tr class="total-row">

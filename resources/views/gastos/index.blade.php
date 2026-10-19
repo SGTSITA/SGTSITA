@@ -553,6 +553,23 @@
                                     Opcional para asociar este gasto general a una unidad.
                                 @endif
                             </small>
+
+                            @if ($requiereUnidadGasto ?? false)
+                                <div class="mt-3" id="divPeriodoUnidadConfirmNew">
+                                    <label class="form-label fw-bold text-info">
+                                        Confirmar Unidad / Equipo <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select" name="id_equipo_confirmacion" id="selectPeriodoUnidadConfirmNew">
+                                        <option value="">-- Confirmar Seleccionando la Misma Unidad / Equipo --</option>
+                                        @foreach ($equipos as $e)
+                                            <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted">
+                                        Seleccione nuevamente la misma unidad para confirmar que esté bien elegida.
+                                    </small>
+                                </div>
+                            @endif
                         </div>
 
                         {{-- UNIDADES --}}
@@ -1641,6 +1658,7 @@
 
             const tipoGastoInput = document.getElementById('tipo_gasto');
             const selectPUnidad = document.getElementById('selectPeriodoUnidadNew');
+            const selectPUnidadConfirm = document.getElementById('selectPeriodoUnidadConfirmNew');
 
             if (input.value === 'Equipo') {
                 document.getElementById('aplicacion-equipoNew').classList.remove('d-none');
@@ -1650,6 +1668,10 @@
                     selectPUnidad.value = '';
                     selectPUnidad.required = false;
                 }
+                if (selectPUnidadConfirm) {
+                    selectPUnidadConfirm.value = '';
+                    selectPUnidadConfirm.required = false;
+                }
             } else if (input.value === 'Viaje') {
                 document.getElementById('aplicacion-viajeNew').classList.remove('d-none');
                 tipoGastoInput.value = 'viaje';
@@ -1658,6 +1680,10 @@
                     selectPUnidad.value = '';
                     selectPUnidad.required = false;
                 }
+                if (selectPUnidadConfirm) {
+                    selectPUnidadConfirm.value = '';
+                    selectPUnidadConfirm.required = false;
+                }
             } else {
                 tipoGastoInput.value = 'periodo';
                 document.getElementById('impacto').value = 'periodo';
@@ -1665,6 +1691,7 @@
                     const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
                     if (pDiv) pDiv.classList.remove('d-none');
                     if (selectPUnidad) selectPUnidad.required = true;
+                    if (selectPUnidadConfirm) selectPUnidadConfirm.required = true;
                 }
             }
         }
@@ -1750,6 +1777,19 @@
                     if (!selectPeriodoUnidad || !selectPeriodoUnidad.value) {
                         Swal.fire('Unidad Requerida',
                             'Debe seleccionar la Unidad / Equipo correspondiente a este gasto.', 'warning');
+                        return;
+                    }
+
+                    const selectPeriodoUnidadConfirm = document.getElementById('selectPeriodoUnidadConfirmNew');
+                    if (!selectPeriodoUnidadConfirm || !selectPeriodoUnidadConfirm.value) {
+                        Swal.fire('Confirmación Requerida',
+                            'Debe confirmar la Unidad / Equipo seleccionándola nuevamente en el segundo selector.', 'warning');
+                        return;
+                    }
+
+                    if (selectPeriodoUnidad.value !== selectPeriodoUnidadConfirm.value) {
+                        Swal.fire('Las Unidades no coinciden',
+                            'La unidad de confirmación no coincide con la primera unidad seleccionada. Verifique que ambas sean exactamente la misma.', 'warning');
                         return;
                     }
                 }
@@ -1858,6 +1898,10 @@
                         if (pUnidad) {
                             pUnidad.value = '';
                         }
+                        const pUnidadConfirm = document.getElementById('selectPeriodoUnidadConfirmNew');
+                        if (pUnidadConfirm) {
+                            pUnidadConfirm.value = '';
+                        }
                         const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
                         if (pDiv && window.requiereUnidadGasto) {
                             pDiv.classList.remove('d-none');
@@ -1912,8 +1956,12 @@
             if (formasAplicarVal === 'Periodo') {
                 const unidadPeriodoVal = gasto.id_equipo || (gasto.unidades_ids && gasto.unidades_ids.length > 0 ? gasto.unidades_ids[0] : '');
                 const selectP = document.getElementById('selectPeriodoUnidadNew');
+                const selectPConfirm = document.getElementById('selectPeriodoUnidadConfirmNew');
                 if (selectP && unidadPeriodoVal) {
                     selectP.value = String(unidadPeriodoVal);
+                }
+                if (selectPConfirm && unidadPeriodoVal) {
+                    selectPConfirm.value = String(unidadPeriodoVal);
                 }
                 const pDiv = document.getElementById('aplicacion-periodoUnidadNew');
                 if (pDiv && (window.requiereUnidadGasto || unidadPeriodoVal)) {
@@ -2065,6 +2113,9 @@
                 // 1.1 Si es Periodo y tiene id_equipo
                 if (draft.id_equipo && document.getElementById('selectPeriodoUnidadNew')) {
                     document.getElementById('selectPeriodoUnidadNew').value = draft.id_equipo;
+                    if (document.getElementById('selectPeriodoUnidadConfirmNew')) {
+                        document.getElementById('selectPeriodoUnidadConfirmNew').value = draft.id_equipo;
+                    }
                 }
 
                 // 2. Choices.js unidades / viajes
@@ -2339,6 +2390,10 @@
             const pUnidad = document.getElementById('selectPeriodoUnidadNew');
             if (pUnidad) {
                 pUnidad.value = '';
+            }
+            const pUnidadConfirm = document.getElementById('selectPeriodoUnidadConfirmNew');
+            if (pUnidadConfirm) {
+                pUnidadConfirm.value = '';
             }
             if (choicesUnidades) choicesUnidades.removeActiveItems();
             if (choicesViajes) choicesViajes.removeActiveItems();
@@ -2796,60 +2851,21 @@
                 "day"); // desde hace 6 días (7 en total)
 
             // Inicializar daterangepicker
-            $("#daterange").daterangepicker({
+            initSgtDateRange(
+                "#daterange",
+                {
                     startDate: hace7Dias,
                     endDate: hoy,
-                    //  maxDate: hoy, //  bloquear fechas futuras
                     locale: {
-                        format: "YYYY-MM-DD",
                         separator: " - ",
-                        applyLabel: "Aplicar",
-                        cancelLabel: "Cancelar",
-                        fromLabel: "Desde",
-                        toLabel: "Hasta",
-                        customRangeLabel: "Personalizado",
-                        weekLabel: "S",
-                        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                        monthNames: [
-                            "Enero",
-                            "Febrero",
-                            "Marzo",
-                            "Abril",
-                            "Mayo",
-                            "Junio",
-                            "Julio",
-                            "Agosto",
-                            "Septiembre",
-                            "Octubre",
-                            "Noviembre",
-                            "Diciembre",
-                        ],
-                        firstDay: 1,
-                    },
-                    ranges: {
-                        Hoy: [moment(), moment()],
-                        "Últimos 7 días": [moment().subtract(6, "days"), moment()],
-                        "Últimos 30 días": [moment().subtract(29, "days"), moment()],
-                        "Este mes": [
-                            moment().startOf("month"),
-                            moment().endOf("month"),
-                        ],
-                        "Mes anterior": [
-                            moment().subtract(1, "month").startOf("month"),
-                            moment().subtract(1, "month").endOf("month"),
-                        ],
                     },
                 },
                 function(start, end) {
-
-
-
                     window.mesinicio = moment(start).format("YYYY-MM-DD");
                     window.mesfin = moment(end).format("YYYY-MM-DD");
 
                     actualizarTextoPeriodo();
                     cargarGastosNew();
-
                 },
             );
 

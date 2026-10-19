@@ -124,6 +124,13 @@
                                 </label>
                             </div>
 
+                            <div class="form-check form-switch m-0 d-flex align-items-center">
+                                <input class="form-check-input" type="checkbox" id="checkSepararUnidadesCxc" name="separar_unidades" value="1">
+                                <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesCxc">
+                                    Separar por unidades
+                                </label>
+                            </div>
+
 
                             <div id="contenedorDocumentos" style="display:none; min-width: 300px;">
                                 <select name="documentos[]" id="documentos" class="form-control" multiple>
@@ -525,6 +532,7 @@
                         adjuntar_docs: adjuntarDocs,
                         documentos: documentosSeleccionados,
                         modo: modo,
+                        separar_unidades: $('#checkSepararUnidadesCxc').is(':checked') ? 1 : 0,
                     },
                     xhrFields: {
                         responseType: 'blob', // Indicar que esperamos una respuesta tipo blob (archivo)

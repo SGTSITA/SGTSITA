@@ -119,11 +119,6 @@
 @endsection
 
 @section('datatable')
-    <!-- Moment.js y DateRangePicker -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
     <script>
         $(function() {
             // Inicializar DateRangePicker
@@ -142,18 +137,11 @@
                 }
             }
 
-            $('#daterange').daterangepicker({
+            initSgtDateRange('#daterange', {
                 autoUpdateInput: false,
                 locale: {
                     format: 'DD/MM/YYYY',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Limpiar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-                    firstDay: 1
+                    cancelLabel: 'Limpiar'
                 }
             });
 

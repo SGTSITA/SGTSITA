@@ -214,7 +214,7 @@
 
     @php
         $empresaActualModel = $user?->Empresa ?? ($cotizacion?->Empresa ?? null);
-        $esEmpresaGlobal = $empresaActualModel ? $empresaActualModel->esGlobalMultiEquipo() : false;
+        $esEmpresaGlobal = !empty($separarUnidades);
     @endphp
 
     @if (!$esEmpresaGlobal)

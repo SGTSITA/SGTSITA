@@ -82,7 +82,7 @@ class ContabilidadController extends Controller
                 'nombre'      => 'Balanza de Comprobación',
                 'codigo_conac'=> 'BC-03',
                 'icono'       => 'fas fa-list-alt',
-                'disponible'  => false,
+                'disponible'  => true,
                 'descripcion' => 'Listado de todas las cuentas CONAC de mayor y detalle con movimientos Debe, Haber y Saldos.',
             ],
             'variacion_hacienda' => [
@@ -110,16 +110,21 @@ class ContabilidadController extends Controller
 
         // 5. Calcular balance y estado de resultados
         $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+        $balanza = null;
+        if ($tipoReporte === 'balanza_comprobacion') {
+            $balanza = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte);
+        }
 
         if ($request->ajax() || $request->wantsJson() || $request->has('json')) {
             return response()->json([
                 'success' => true,
-                'data'    => $balance,
+                'data'    => ($tipoReporte === 'balanza_comprobacion') ? $balanza : $balance,
             ]);
         }
 
         return view('contabilidad.balance-general', [
             'balance'            => $balance,
+            'balanza'            => $balanza,
             'todasEmpresas'      => $todasEmpresas,
             'seleccionEmpresas'  => $seleccionEmpresas,
             'esAdmin'            => $esAdmin,
@@ -133,7 +138,59 @@ class ContabilidadController extends Controller
     }
 
     /**
-     * Vista de impresión limpia y exportación para Balance General y Estado de Resultados.
+     * Retorna el detalle/auxiliar de movimientos contables que integran un concepto del Balance o Resultados.
+     */
+    public function detalleConcepto(Request $request)
+    {
+        $request->validate([
+            'concepto_id' => 'required|integer|exists:balance_general_conceptos_cuentas,id',
+            'fecha_corte' => 'nullable|date',
+            'id_equipo'   => 'nullable|integer',
+        ]);
+
+        $user = Auth::user();
+        $esAdmin = (bool) ($user->es_admin ?? false);
+        $todasEmpresas = Empresas::select('id', 'nombre')->orderBy('nombre')->get();
+
+        if ($esAdmin || !$user) {
+            $inputEmpresas = $request->input('empresas');
+            if (empty($inputEmpresas) || $inputEmpresas === 'todas' || in_array('todas', (array) $inputEmpresas)) {
+                $empresasIds = $todasEmpresas->pluck('id')->toArray();
+            } else {
+                $empresasIds = is_array($inputEmpresas) ? array_map('intval', $inputEmpresas) : [intval($inputEmpresas)];
+            }
+        } else {
+            $empresasIds = [$user->id_empresa];
+        }
+
+        $fechaCorte = $request->filled('fecha_corte')
+            ? Carbon::parse($request->input('fecha_corte'))->format('Y-m-d')
+            : now()->format('Y-m-d');
+
+        $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
+
+        try {
+            $detalle = $this->contabilidadService->obtenerDetalleConcepto(
+                (int) $request->input('concepto_id'),
+                $empresasIds,
+                $idEquipo,
+                $fechaCorte
+            );
+
+            return response()->json([
+                'success' => true,
+                'data'    => $detalle,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el detalle del concepto: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Exportación formal institucional de reportes contables CONAC a PDF y Excel.
      */
     public function imprimirBalance(Request $request)
     {
@@ -160,31 +217,68 @@ class ContabilidadController extends Controller
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
         $equipoSeleccionado = $idEquipo ? Equipo::find($idEquipo) : null;
         $tipoReporte = $request->input('tipo_reporte', 'balance_general');
-        $descargarPdf = (bool) $request->input('download', false);
-
-        $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+        $formato = $request->input('formato') ?: ($request->input('download') === 'excel' ? 'excel' : ($request->input('download') ? 'pdf' : null));
 
         $nombresEmpresas = Empresas::whereIn('id', $empresasIds)->pluck('nombre')->implode(', ');
         if (count($empresasIds) === $todasEmpresas->count() && $esAdmin) {
             $nombresEmpresas = 'CONSOLIDADO GENERAL';
         }
 
-        $dataView = [
-            'balance'            => $balance,
-            'nombresEmpresas'    => $nombresEmpresas,
-            'equipoSeleccionado' => $equipoSeleccionado,
-            'fechaCorte'         => $fechaCorte,
-            'tipoReporte'        => $tipoReporte,
-        ];
-
-        if ($descargarPdf && class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('contabilidad.balance-general-print', $dataView);
-            $pdf->setPaper('letter', 'portrait');
-            $fileName = 'Reporte_Contable_' . ($tipoReporte === 'estado_resultados' ? 'Resultados' : 'Balance') . '_' . $fechaCorte . '.pdf';
-            return $pdf->download($fileName);
+        // Obtener datos del reporte solicitado
+        if ($tipoReporte === 'balanza_comprobacion') {
+            $reportData = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte);
+            $tituloReporte = 'BALANZA DE COMPROBACIÓN CONAC • CÓDIGO BC-03';
+            $filePrefix = 'Balanza_Comprobacion';
+        } elseif ($tipoReporte === 'estado_resultados') {
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $tituloReporte = 'ESTADO DE ACTIVIDADES / RESULTADOS • CONAC ERA-02';
+            $filePrefix = 'Estado_Resultados';
+        } else {
+            $tipoReporte = 'balance_general';
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $tituloReporte = 'BALANCE GENERAL (ESTADO DE SITUACIÓN FINANCIERA) • CONAC ESF-01';
+            $filePrefix = 'Balance_General';
         }
 
-        return view('contabilidad.balance-general-print', $dataView);
+        // 1. Exportación a Excel
+        if ($formato === 'excel') {
+            $export = new \App\Exports\ContabilidadReporteExport(
+                $tipoReporte,
+                $reportData,
+                $nombresEmpresas,
+                $equipoSeleccionado?->texto_select,
+                $fechaCorte,
+                $reportData['fecha_inicio'] ?? ($reportData['fecha_inicio_ejercicio'] ?? null)
+            );
+            $fileName = $filePrefix . '_' . $fechaCorte . '.xlsx';
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+        }
+
+        // 2. Exportación a PDF (Descarga directa o visualización en navegador)
+        $dataView = [
+            'tipoReporte'     => $tipoReporte,
+            'tituloReporte'   => $tituloReporte,
+            'data'            => $reportData,
+            'nombresEmpresas' => $nombresEmpresas,
+            'equipoNombre'    => $equipoSeleccionado?->texto_select,
+            'fechaCorte'      => $fechaCorte,
+            'fechaInicio'     => $reportData['fecha_inicio'] ?? ($reportData['fecha_inicio_ejercicio'] ?? null),
+        ];
+
+        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('contabilidad.pdf.reporte-conac', $dataView);
+            $orientation = ($tipoReporte === 'balanza_comprobacion') ? 'landscape' : 'portrait';
+            $pdf->setPaper('letter', $orientation);
+            $fileName = $filePrefix . '_' . $fechaCorte . '.pdf';
+
+            if ($request->input('download') == '1') {
+                return $pdf->download($fileName);
+            }
+            return $pdf->stream($fileName);
+        }
+
+        // Fallback HTML si DomPDF no estuviese disponible
+        return view('contabilidad.pdf.reporte-conac', $dataView);
     }
 
     /**

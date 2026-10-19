@@ -48,7 +48,13 @@
                     </div>
 
                     <div class="card-body">
-                        <div class="d-flex justify-content-start my-2 gap-2">
+                        <div class="d-flex justify-content-start my-2 gap-2 align-items-center flex-wrap">
+                            <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                <input class="form-check-input" type="checkbox" id="checkSepararUnidadesDocs" name="separar_unidades" value="1">
+                                <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesDocs">
+                                    Separar por unidades
+                                </label>
+                            </div>
                             <button
                                 type="button"
                                 id="exportButtonExcel"
@@ -86,12 +92,4 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('js/sgt/reporteria/documento.js') }}"></script>
-    <!-- Date Range Picker CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-    <!-- Moment.js -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-
-    <!-- Date Range Picker JS -->
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 @endsection

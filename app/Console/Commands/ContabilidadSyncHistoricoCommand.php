@@ -12,6 +12,7 @@ use App\Models\Gasto;
 use App\Models\GastoPago;
 use App\Models\Prestamo;
 use App\Models\Poliza;
+use App\Models\SocioPago;
 use App\Services\CotizacionesService;
 use App\Services\PolizaService;
 use Carbon\Carbon;
@@ -80,6 +81,7 @@ class ContabilidadSyncHistoricoCommand extends Command
             'gastos_deveng'    => 0,
             'gastos_pagos'     => 0,
             'prestamos'        => 0,
+            'socios_pagos'     => 0,
             'omitidos'         => 0,
             'errores'          => 0,
         ];
@@ -88,14 +90,24 @@ class ContabilidadSyncHistoricoCommand extends Command
             $this->line("");
             $this->info("Procesando Empresa: [ID: {$empresa->id}] {$empresa->nombre}");
 
+            if ($force) {
+                Poliza::where('id_empresa', $empresa->id)->delete();
+                $this->line("  ✓ Pólizas previas de la empresa eliminadas por --force.");
+            }
+
             // 1. Pólizas de Apertura por Saldos Iniciales de Bancos
             $this->syncAperturaBancos($empresa->id, $force, $resumen);
 
             // 2. Cotizaciones (Provisión de Viajes CxC)
             $this->syncCotizaciones($empresa->id, $force, $resumen);
 
-            // 3. Cobros de Clientes (CxC Recaudado a Bancos)
-            $this->syncCobrosClientes($empresa->id, $force, $resumen);
+            if ((int)$empresa->id === 8) {
+                // En Empresa 8 (Oliva), los bancos se alimentan de la verdad operativa (/bancos/bancosv2)
+                $this->syncMovimientosBancarios($empresa->id, $force, $resumen);
+            } else {
+                // 3. Cobros de Clientes (CxC Recaudado a Bancos)
+                $this->syncCobrosClientes($empresa->id, $force, $resumen);
+            }
 
             // 4. CxP Proveedores Subcontratados (Únicamente GC - ID 7)
             if ((int)$empresa->id === 7) {
@@ -106,11 +118,21 @@ class ContabilidadSyncHistoricoCommand extends Command
             // 5. Gastos Devengados
             $this->syncGastosDevengados($empresa->id, $force, $resumen);
 
-            // 6. Gastos Pagados
-            $this->syncGastosPagados($empresa->id, $force, $resumen);
+            if ((int)$empresa->id !== 8) {
+                // 6. Gastos Pagados (en Oliva ya cubiertos por movimientos bancarios)
+                $this->syncGastosPagados($empresa->id, $force, $resumen);
+            }
 
             // 7. Préstamos a Operadores
             $this->syncPrestamosOperadores($empresa->id, $force, $resumen);
+
+            // 8. Amortizaciones / Pagos de Préstamos
+            $this->syncPagosPrestamos($empresa->id, $force, $resumen);
+
+            // 9. Anticipos y Retiros a Socios (si no fueron por banco)
+            if ((int)$empresa->id !== 8) {
+                $this->syncSociosPagos($empresa->id, $force, $resumen);
+            }
         }
 
         $this->line("");
@@ -128,6 +150,7 @@ class ContabilidadSyncHistoricoCommand extends Command
                 ['Gastos Devengados (Gasto vs Proveedores CXP)', $resumen['gastos_deveng']],
                 ['Pagos de Gastos a Proveedores (CXP vs Bancos)', $resumen['gastos_pagos']],
                 ['Préstamos / Adelantos Otorgados a Operadores', $resumen['prestamos']],
+                ['Anticipos y Retiros a Socios (SocioPagos)', $resumen['socios_pagos']],
                 ['Registros Previamente Pólizados (Omitidos)', $resumen['omitidos']],
                 ['Errores o Advertencias', $resumen['errores']],
             ]
@@ -376,9 +399,11 @@ class ContabilidadSyncHistoricoCommand extends Command
      */
     protected function syncPrestamosOperadores(int $idEmpresa, bool $force, array &$resumen): void
     {
+        $prestamosConBanco = \App\Models\CatBancoCuentasMovimientos::where('referenciaable_type', Prestamo::class)->pluck('referenciaable_id');
         $prestamos = Prestamo::whereHas('operador', function ($q) use ($idEmpresa) {
                 $q->where('id_empresa', $idEmpresa);
             })
+            ->whereNotIn('id', $prestamosConBanco)
             ->where('cantidad', '>', 0)
             ->get();
 
@@ -488,5 +513,119 @@ class ContabilidadSyncHistoricoCommand extends Command
             $this->line("  ✓ {$count} pagos de CXP a proveedores de flete contabilizados.");
         }
     }
+
+    /**
+     * Sincroniza retiros y anticipos de utilidades pagados a socios.
+     */
+    protected function syncSociosPagos(int $idEmpresa, bool $force, array &$resumen): void
+    {
+        $pagos = SocioPago::where(function ($q) use ($idEmpresa) {
+                $q->where('id_empresa', $idEmpresa)
+                  ->orWhereHas('socio', fn($sq) => $sq->where('id_empresa', $idEmpresa));
+            })
+            ->where('monto', '>', 0)
+            ->with('socio')
+            ->get();
+
+        $count = 0;
+        foreach ($pagos as $pago) {
+            if (!$force) {
+                $existe = Poliza::where('origen_tipo', 'socio_pago')->where('origen_id', $pago->id)->exists();
+                if ($existe) {
+                    $resumen['omitidos']++;
+                    continue;
+                }
+            }
+
+            try {
+                $pol = $this->polizaService->contabilizarSocioPago($pago);
+                if ($pol) {
+                    $count++;
+                    $resumen['socios_pagos']++;
+                }
+            } catch (\Throwable $e) {
+                $resumen['errores']++;
+            }
+        }
+
+        if ($count > 0) {
+            $this->line("  ✓ {$count} anticipos/retiros a socios contabilizados (Anticipos vs Bancos).");
+        }
+    }
+
+    /**
+     * Sincroniza movimientos bancarios reales de CatBancoCuentasMovimientos (/bancos/bancosv2).
+     */
+    protected function syncMovimientosBancarios(int $idEmpresa, bool $force, array &$resumen): void
+    {
+        $cuentasIds = Bancos::where('id_empresa', $idEmpresa)->pluck('id');
+        $movimientos = \App\Models\CatBancoCuentasMovimientos::whereIn('cuenta_bancaria_id', $cuentasIds)
+            ->orderBy('fecha_movimiento')
+            ->orderBy('id')
+            ->get();
+
+        $count = 0;
+        foreach ($movimientos as $mov) {
+            if (!$force) {
+                $existe = Poliza::where('origen_tipo', 'banco_movimiento')->where('origen_id', $mov->id)->exists();
+                if ($existe) {
+                    $resumen['omitidos']++;
+                    continue;
+                }
+            }
+
+            try {
+                $pol = $this->polizaService->contabilizarMovimientoBancario($mov);
+                if ($pol) {
+                    $count++;
+                    $resumen['bancos_movs'] = ($resumen['bancos_movs'] ?? 0) + 1;
+                }
+            } catch (\Throwable $e) {
+                $resumen['errores']++;
+            }
+        }
+
+        if ($count > 0) {
+            $this->line("  ✓ {$count} movimientos bancarios reales (/bancos/bancosv2) contabilizados.");
+        }
+    }
+
+    /**
+     * Sincroniza amortizaciones / pagos de préstamos de operadores.
+     */
+    protected function syncPagosPrestamos(int $idEmpresa, bool $force, array &$resumen): void
+    {
+        $pagos = \App\Models\PagoPrestamo::whereHas('prestamo.operador', function ($q) use ($idEmpresa) {
+                $q->where('id_empresa', $idEmpresa);
+            })
+            ->where('monto_pago', '>', 0)
+            ->get();
+
+        $count = 0;
+        foreach ($pagos as $pago) {
+            if (!$force) {
+                $existe = Poliza::where('origen_tipo', 'pago_prestamo_operador')->where('origen_id', $pago->id)->exists();
+                if ($existe) {
+                    $resumen['omitidos']++;
+                    continue;
+                }
+            }
+
+            try {
+                $pol = $this->polizaService->contabilizarPagoPrestamoOperador($pago);
+                if ($pol) {
+                    $count++;
+                    $resumen['pagos_prestamos'] = ($resumen['pagos_prestamos'] ?? 0) + 1;
+                }
+            } catch (\Throwable $e) {
+                $resumen['errores']++;
+            }
+        }
+
+        if ($count > 0) {
+            $this->line("  ✓ {$count} amortizaciones de préstamos contabilizadas.");
+        }
+    }
 }
+
 

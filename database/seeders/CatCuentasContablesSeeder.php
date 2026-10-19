@@ -85,6 +85,7 @@ class CatCuentasContablesSeeder extends Seeder
             ['codigo' => '1.1.1.2.002', 'nombre' => 'Banco Azteca', 'nivel' => 5, 'padre' => '1.1.1.2', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '1.1.1.2.003', 'nombre' => 'Banamex', 'nivel' => 5, 'padre' => '1.1.1.2', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '1.1.1.2.004', 'nombre' => 'Santander', 'nivel' => 5, 'padre' => '1.1.1.2', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
+            ['codigo' => '1.1.1.2.005', 'nombre' => 'Banorte', 'nivel' => 5, 'padre' => '1.1.1.2', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
 
             // CXC
             ['codigo' => '1.1.2.1', 'nombre' => 'Clientes CXC', 'nivel' => 4, 'padre' => '1.1.2', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => false],

@@ -260,52 +260,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    $('#daterange').daterangepicker(
-        {
-            startDate: moment(fechaInicioUrl),
-            endDate: moment(fechaFinUrl),
-            // maxDate: moment(),
-            opens: 'right',
-            locale: {
-                format: 'YYYY-MM-DD',
-                separator: ' AL ',
-                applyLabel: 'Aplicar',
-                cancelLabel: 'Cancelar',
-                fromLabel: 'Desde',
-                toLabel: 'Hasta',
-                customRangeLabel: 'Personalizado',
-                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                monthNames: [
-                    'Enero',
-                    'Febrero',
-                    'Marzo',
-                    'Abril',
-                    'Mayo',
-                    'Junio',
-                    'Julio',
-                    'Agosto',
-                    'Septiembre',
-                    'Octubre',
-                    'Noviembre',
-                    'Diciembre',
-                ],
-                firstDay: 1,
+    if (typeof initSgtDateRange === 'function') {
+        initSgtDateRange(
+            '#daterange',
+            {
+                startDate: moment(fechaInicioUrl),
+                endDate: moment(fechaFinUrl),
+                opens: 'right',
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    separator: ' AL ',
+                },
             },
-            ranges: {
-                Hoy: [moment(), moment()],
-                'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-                'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-                'Este mes': [moment().startOf('month'), moment().endOf('month')],
-                'Mes anterior': [
-                    moment().subtract(1, 'month').startOf('month'),
-                    moment().subtract(1, 'month').endOf('month'),
-                ],
+            function (start, end) {
+                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
             },
-        },
-        function (start, end) {
-            getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-        },
-    );
+        );
+    } else if ($.fn.daterangepicker) {
+        $('#daterange').daterangepicker(
+            {
+                startDate: moment(fechaInicioUrl),
+                endDate: moment(fechaFinUrl),
+                opens: 'right',
+                locale: {
+                    format: 'YYYY-MM-DD',
+                    separator: ' AL ',
+                    applyLabel: 'Aplicar',
+                    cancelLabel: 'Cancelar',
+                    fromLabel: 'Desde',
+                    toLabel: 'Hasta',
+                    customRangeLabel: 'Personalizado',
+                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                    monthNames: [
+                        'Enero',
+                        'Febrero',
+                        'Marzo',
+                        'Abril',
+                        'Mayo',
+                        'Junio',
+                        'Julio',
+                        'Agosto',
+                        'Septiembre',
+                        'Octubre',
+                        'Noviembre',
+                        'Diciembre',
+                    ],
+                    firstDay: 1,
+                },
+                ranges: {
+                    'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+                    'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+                    'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                    'Mes anterior': [
+                        moment().subtract(1, 'month').startOf('month'),
+                        moment().subtract(1, 'month').endOf('month'),
+                    ],
+                },
+            },
+            function (start, end) {
+                getDatosFiltradosPorFecha(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+            },
+        );
+    }
 
     function getUrlParam(name) {
         const params = new URLSearchParams(window.location.search);

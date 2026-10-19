@@ -43,9 +43,15 @@
                     </div>
 
                     <div class="card-body">
-                        <div class="d-flex justify-content-start my-2 gap-2">
-                            <form id="exportForm" action="{{ route('export_viajes.viajes') }}" method="POST">
+                            <form id="exportForm" action="{{ route('export_viajes.viajes') }}" method="POST" class="d-flex align-items-center gap-2 flex-wrap">
                                 @csrf
+
+                                <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                    <input class="form-check-input" type="checkbox" id="checkSepararUnidades" name="separar_unidades" value="1">
+                                    <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidades">
+                                        Separar por unidades
+                                    </label>
+                                </div>
 
                                 <button type="button" id="exportButtonGenericExcel" class="btn btn-outline-info btn-xs">
                                     Exportar Tablero
@@ -81,9 +87,6 @@
 @section('datatable')
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     <script
         src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}">

@@ -92,7 +92,7 @@
 
     {{-- ENCABEZADO FORMAL --}}
     <div class="header-title">
-        <p style="font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #777;">SISTEMA CONTABLE CONAC • PARTIDA DOBLE</p>
+        <p style="font-size: 8px; text-transform: uppercase; letter-spacing: 0.5px; color: #777;">SISTEMA GESTIÓN TRANSPORTE CONTABLE • PARTIDA DOBLE</p>
         <h4>{{ $nombresEmpresas }}</h4>
         <h5>{{ ($tipoReporte ?? '') === 'estado_resultados' ? 'ESTADO DE ACTIVIDADES / RESULTADOS' : 'BALANCE GENERAL (ESTADO DE SITUACIÓN FINANCIERA)' }}</h5>
         <p>

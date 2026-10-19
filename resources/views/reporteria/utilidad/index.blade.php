@@ -93,7 +93,13 @@
                                 </div>
                             </h5>
 
-                            <div class="float-right">
+                            <div class="float-right d-flex align-items-center gap-2 flex-wrap">
+                                <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                    <input class="form-check-input" type="checkbox" id="checkSepararUnidadesUtilidad" name="separar_unidades" value="1">
+                                    <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesUtilidad">
+                                        Separar por unidades
+                                    </label>
+                                </div>
                                 <button class="btn btn-sm bg-gradient-info text-white d-none" id="btnVistaPreliminar">
                                     <i class="fa fa-fw fa-eye"></i> Vista Preliminar
                                 </button>
@@ -103,6 +109,7 @@
                                     <i class="fa fa-fw fa-money-bill"></i> Exportar Reporte
                                 </button>
                             </div>
+
                         </div>
                     </div>
 
@@ -197,59 +204,13 @@
     </script>
     <script src="{{ asset('js/reporteria/genericExcel.js') }}"></script>
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <!-- Moment.js -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <!-- JS de Date Range Picker -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-
     <script>
         $(document).ready(function() {
-            $('#daterange').daterangepicker({
-                    opens: 'right',
-                    showDropdowns: true,
-                    linkedCalendars: false,
-                    locale: {
-                        format: 'YYYY-MM-DD', // Formato de fecha
-                        separator: " AL ", // Separador entre la fecha inicial y final
-                        applyLabel: "Aplicar",
-                        cancelLabel: "Cancelar",
-                        fromLabel: "Desde",
-                        toLabel: "Hasta",
-                        customRangeLabel: "Personalizado",
-                        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                        monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
-                            "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                        ],
-                        firstDay: 1
-                    },
-                    ranges: {
-                        Hoy: [moment(), moment()],
-                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
-                        'Mes anterior': [
-                            moment().subtract(1, 'month').startOf('month'),
-                            moment().subtract(1, 'month').endOf('month'),
-                        ],
-                        'Año Actual ({{ date("Y") }})': [
-                            moment().startOf('year'),
-                            moment().endOf('year')
-                        ],
-                        'Año Anterior ({{ date("Y") - 1 }})': [
-                            moment().subtract(1, 'year').startOf('year'),
-                            moment().subtract(1, 'year').endOf('year')
-                        ],
-                    },
-                    // maxDate: moment()
-                },
-                function(start, end, label) {
-                    getUtilidadesViajes(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-                    $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
-                    $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
-
-
-                });
+            initSgtDateRange('#daterange', {}, function(start, end, label) {
+                getUtilidadesViajes(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+                $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
+                $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
+            });
 
             const today = new Date();
             const sevenDaysAgo = new Date();
