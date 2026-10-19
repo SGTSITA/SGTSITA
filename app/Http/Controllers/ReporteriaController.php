@@ -204,6 +204,7 @@ class ReporteriaController extends Controller
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
         $modo = $request->input('modo');
+        $separarUnidades = $request->boolean('separar_unidades', false);
         $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
         $documentos = $request->input('documentos', []);
 
@@ -243,7 +244,7 @@ class ReporteriaController extends Controller
             if ($request->fileType == "xlsx") {
 
                 Excel::store(
-                    new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user),
+                    new CxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $cotizacion, $user, $separarUnidades),
                     'cxc.xlsx',
                     'public'
                 );
@@ -258,7 +259,8 @@ class ReporteriaController extends Controller
                 'bancos_no_oficiales',
                 'cotizacion',
                 'user',
-                'cuentaGlobal'
+                'cuentaGlobal',
+                'separarUnidades'
             ))->setPaper([0, 0, 595, 1200], 'landscape');
 
             $fileName = 'cxc.pdf';
@@ -267,6 +269,7 @@ class ReporteriaController extends Controller
 
             return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
         }
+
 
 
         $columns = collect($documentos)
@@ -300,7 +303,7 @@ class ReporteriaController extends Controller
                     $excelName = "cxc_{$nombreGrupo}.xlsx";
                     // dd($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user);
                     Excel::store(
-                        new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                        new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user, $separarUnidades),
                         $excelName,
                         'public'
                     );
@@ -319,7 +322,8 @@ class ReporteriaController extends Controller
                         'bancos_no_oficiales' => $bancos_no_oficiales,
                         'cotizacion' => $items->first(),
                         'user' => $user,
-                        'cuentaGlobal' => $cuentaGlobal
+                        'cuentaGlobal' => $cuentaGlobal,
+                        'separarUnidades' => $separarUnidades
                     ])->setPaper([0, 0, 595, 1200], 'landscape');
 
                     $pdf->save($pdfPath);
@@ -395,7 +399,7 @@ class ReporteriaController extends Controller
                         $excelName = "cxc_{$nombreGrupo}.xlsx";
 
                         Excel::store(
-                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user, $separarUnidades),
                             $excelName,
                             'public'
                         );
@@ -421,7 +425,8 @@ class ReporteriaController extends Controller
                             'bancos_no_oficiales' => $bancos_no_oficiales,
                             'cotizacion' => $items->first(),
                             'user' => $user,
-                            'cuentaGlobal' => $cuentaGlobal
+                            'cuentaGlobal' => $cuentaGlobal,
+                            'separarUnidades' => $separarUnidades
                         ]);
 
                         $pdf->save($pdfPath);
@@ -1215,6 +1220,8 @@ class ReporteriaController extends Controller
         $cotizacion = $cotizaciones->first();
         $user = User::find(auth()->id());
 
+        $separarUnidades = $request->boolean('separar_unidades', false);
+
         if ($fileType === "xlsx") {
             Excel::store(
                 new \App\Exports\AsignacionesExport(
@@ -1223,7 +1230,8 @@ class ReporteriaController extends Controller
                     $bancos_oficiales,
                     $bancos_no_oficiales,
                     $cotizacion,
-                    $user
+                    $user,
+                    $separarUnidades
                 ),
                 'viajes_' . $fecha . '.xlsx',
                 'public'
@@ -1243,13 +1251,15 @@ class ReporteriaController extends Controller
                 'bancos_oficiales' => $bancos_oficiales,
                 'bancos_no_oficiales' => $bancos_no_oficiales,
                 'cotizacion' => $cotizacion,
-                'user' => $user
+                'user' => $user,
+                'separarUnidades' => $separarUnidades,
             ])->setPaper('a4', 'landscape');
             set_time_limit(120); // 2 minutos
             ini_set('memory_limit', '512M');
 
             return $pdf->download('viajes_' . $fecha . '.pdf');
         }
+
 
         return back()->with('error', 'Formato no soportado.');
     }
@@ -1356,6 +1366,7 @@ class ReporteriaController extends Controller
 
         $totalRows = count($info);
         $selectedRows = $cotizaciones->count();
+        $separarUnidades = $request->boolean('separar_unidades', false);
 
         if ($fileType == "xlsx") {
             return Excel::download(
@@ -1370,7 +1381,8 @@ class ReporteriaController extends Controller
                     $fechaInicio,
                     $fechaFin,
                     $totalRows,
-                    $selectedRows
+                    $selectedRows,
+                    $separarUnidades
                 ),
                 'Resultados_' . now()->format('d-m-Y') . '.xlsx'
             );
@@ -1385,7 +1397,8 @@ class ReporteriaController extends Controller
                 'gastos',
                 'gastosGenerales',
                 'totalRows',
-                'selectedRows'
+                'selectedRows',
+                'separarUnidades'
             ))->setPaper('a4', 'landscape');
 
             return $pdf->stream('Resultados_rpt.pdf');
@@ -1911,19 +1924,21 @@ class ReporteriaController extends Controller
 
 
         $user = auth()->user();
+        $separarUnidades = $request->boolean('separar_unidades', false);
 
         if ($request->fileType === 'xlsx') {
             return Excel::download(
-                new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user),
+                new \App\Exports\DocumentosExport($cotizaciones, $fechaCarbon, $cotizacion, $user, $separarUnidades),
                 'documentos.xlsx'
             );
         }
 
         if ($request->fileType === 'pdf') {
-            $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user'))
+            $pdf = PDF::loadView('reporteria.documentos.pdf', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user', 'separarUnidades'))
                 ->setPaper('a4', 'landscape');
             return $pdf->download('documentos.pdf');
         }
+
 
         return response()->json([
             'success' => false,
@@ -1970,8 +1985,11 @@ class ReporteriaController extends Controller
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        return $this->reporteriaService->exportLiquidadosCxc($cotizacionIds, $request->input('fileType', 'pdf'));
+        $separarUnidades = $request->boolean('separar_unidades', false);
+
+        return $this->reporteriaService->exportLiquidadosCxc($cotizacionIds, $request->input('fileType', 'pdf'), $separarUnidades);
     }
+
 
     // ==================== L I Q U I D A D O S CXP ====================
 
@@ -2147,8 +2165,9 @@ class ReporteriaController extends Controller
             $ids = $request->input('selected_ids', []);
             $status = $request->input('status', 'por_pagar');
             $fileType = $request->input('fileType');
+            $separarUnidades = $request->boolean('separar_unidades', false);
 
-            $export = new \App\Exports\GastosPorPagarExport($ids, $status);
+            $export = new \App\Exports\GastosPorPagarExport($ids, $status, $separarUnidades);
 
             if ($fileType === 'xlsx') {
                 return \Maatwebsite\Excel\Facades\Excel::download($export, 'gastos_por_pagar.xlsx');
@@ -2160,9 +2179,11 @@ class ReporteriaController extends Controller
                 return PDF::loadView('reporteria.gxp.pdf', [
                     'gastos' => $data['gastos'],
                     'status' => $data['status'],
-                    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa'
+                    'empresa' => auth()->user()->Empresa->nombre ?? 'Sin Empresa',
+                    'separarUnidades' => $separarUnidades
                 ])->setPaper('a4', 'landscape')->download('gastos_por_pagar.pdf');
             }
+
 
             return response()->json(['error' => 'Tipo de archivo no válido'], 400);
 

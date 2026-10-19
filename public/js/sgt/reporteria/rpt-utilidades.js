@@ -256,6 +256,7 @@ function ejecutarExportacion(fileType) {
             fileType: fileType,
             id_proveedor: idProveedor,
             id_equipo: idEquipo,
+            separar_unidades: $("#checkSepararUnidadesUtilidad").is(":checked") ? 1 : 0,
         },
         xhrFields: {
             responseType: "blob",
@@ -403,7 +404,8 @@ function cargarPdfVistaPreliminar() {
             fechaFin: fechaFin,
             fileType: 'pdf',
             id_proveedor: idProveedor,
-            id_equipo: idEquipo
+            id_equipo: idEquipo,
+            separar_unidades: $("#checkSepararUnidadesUtilidad").is(":checked") ? 1 : 0
         };
 
         for (const [key, value] of Object.entries(inputs)) {

@@ -92,7 +92,7 @@
 
     @php
         $empresaActual = auth()->user()?->Empresa ?? null;
-        $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
+        $esEmpresaGlobal = !empty($separarUnidades);
     @endphp
 
     @if ($status === 'por_pagar')

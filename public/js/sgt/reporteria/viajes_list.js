@@ -177,6 +177,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     .getAttribute("content"),
             );
             formData.append("fileType", fileType);
+            const checkSeparar = document.getElementById("checkSepararUnidades");
+            formData.append("separar_unidades", checkSeparar && checkSeparar.checked ? "1" : "0");
             selectedIds.forEach((id) =>
                 formData.append("cotizacion_ids[]", id),
             );

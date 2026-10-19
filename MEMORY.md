@@ -12,10 +12,13 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Spec 006: Resumen mensual de utilidades, desglose drill-down y selector rápido en `/socios`.
 - Spec 007: Visualización de gastos indirectos de periodo sin contenedor en `/reporteria/utilidad`.
 - Spec 010: Control universal de calendario DateRangePicker dinámico en módulo central SGT (`window.initSgtDateRange`, años delimitados por BD de cotizaciones y año actual + 1).
+- Spec 012: Separación opcional por unidades en reportería vía checkbox (`separar_unidades` default false) para empresas globales y normales; confirmador de unidad en `/gastos` para empresas con `requiere_unidad_gasto == 1`.
 - API REST activa para Flutter `operador_appsgt` y microservicio WhatsApp (`whatsapp-bot/`).
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
 ## Decisiones (y por qué)
-- Multi-equipo H00 Global (`id_empresa=28`): coexisten tractocamiones activos (AB-100, AP-002, etc.). Cada movimiento se imputa a su unidad y los reportes filtran por `asignaciones.id_camion` o `gastos.id_equipo`.
+- Multi-equipo H00 Global: activado estrictamente con `requiere_unidad_gasto == 1` (sin hardcodear IDs como 28). Cada movimiento se imputa a su unidad.
+- Spec 012 (Reportería dinámica): Checkbox `#checkSepararUnidades` (default `false`) en Asignaciones, CXC, Documentos, GXP, Utilidad y Liquidados CXC para alternar entre formato tradicional y desglose por unidad. Socios y Balance General estrictamente excluidos.
+- Spec 012 (Confirmación en Gastos): En empresas con `requiere_unidad_gasto == 1`, se exige confirmar la unidad en un segundo selector `#selectPeriodoUnidadConfirmNew` al registrar gastos para prevenir errores de captura.
 - Transacciones `DB::transaction`: obligatorias en cotizaciones, viajes, gastos y movimientos bancarios para evitar inconsistencias.
 - Trait Naanix independiente (`app/Traits/NaanixGPSTrait.php`): preserva `SISGPSTrait.php` intacto como respaldo/fallback.
 - Caché de Tokens Naanix (50 min) y Llave UTC dinámica: previene saturación de peticiones de autenticación en el cron `rastreo:intervalConfig`.

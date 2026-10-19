@@ -93,7 +93,13 @@
                                 </div>
                             </h5>
 
-                            <div class="float-right">
+                            <div class="float-right d-flex align-items-center gap-2 flex-wrap">
+                                <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                    <input class="form-check-input" type="checkbox" id="checkSepararUnidadesUtilidad" name="separar_unidades" value="1">
+                                    <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesUtilidad">
+                                        Separar por unidades
+                                    </label>
+                                </div>
                                 <button class="btn btn-sm bg-gradient-info text-white d-none" id="btnVistaPreliminar">
                                     <i class="fa fa-fw fa-eye"></i> Vista Preliminar
                                 </button>
@@ -103,6 +109,7 @@
                                     <i class="fa fa-fw fa-money-bill"></i> Exportar Reporte
                                 </button>
                             </div>
+
                         </div>
                     </div>
 

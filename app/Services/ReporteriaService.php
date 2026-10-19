@@ -405,7 +405,7 @@ class ReporteriaService
     /**
      * Exportar Liquidados CXC a Excel o PDF
      */
-    public function exportLiquidadosCxc(array $cotizacionIds, string $fileType)
+    public function exportLiquidadosCxc(array $cotizacionIds, string $fileType, bool $separarUnidades = false)
     {
         $fechaCarbon = Carbon::now();
 
@@ -425,10 +425,10 @@ class ReporteriaService
         $fileName = "cxc_{$idCliente}_{$timestamp}.{$fileType}";
 
         if ($fileType == "xlsx") {
-            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion_first), $fileName, 'public');
+            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion_first, $separarUnidades), $fileName, 'public');
             return Response::download(storage_path('app/public/' . $fileName), $fileName)->deleteFileAfterSend(true);
         } else {
-            $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first'))
+            $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first', 'separarUnidades'))
                 ->setPaper([0, 0, 595, 1200], 'landscape');
 
             $pdf->save(storage_path('app/public/' . $fileName));
@@ -437,6 +437,7 @@ class ReporteriaService
             return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
         }
     }
+
 
     /**
      * Exportar Liquidados CXP a Excel o PDF

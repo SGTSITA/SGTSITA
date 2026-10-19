@@ -194,6 +194,12 @@
                                         id="txtDataGenericExcel"
                                         value="{{ json_encode($cotizaciones) }}"
                                     />
+                                    <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                        <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxc" name="separar_unidades" value="1">
+                                        <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxc">
+                                            Separar por unidades
+                                        </label>
+                                    </div>
                                     <button
                                         type="button"
                                         id="exportButtonExcel"
@@ -313,6 +319,7 @@
                         _token: '{{ csrf_token() }}',
                         selected_ids: selectedIds,
                         fileType: fileType,
+                        separar_unidades: $('#checkSepararUnidadesLiqCxc').is(':checked') ? 1 : 0,
                     },
                     xhrFields: {
                         responseType: 'blob',
