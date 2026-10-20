@@ -1,7 +1,7 @@
 ---
 title: Tropical storm
 categories:
-  - Weather
+    - Weather
 tags:
-  - hurricane
+    - hurricane
 ---

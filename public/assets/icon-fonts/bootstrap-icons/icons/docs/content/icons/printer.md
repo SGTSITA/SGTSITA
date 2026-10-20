@@ -1,7 +1,7 @@
 ---
 title: Printer
 categories:
-  - Devices
+    - Devices
 tags:
-  - print
+    - print
 ---

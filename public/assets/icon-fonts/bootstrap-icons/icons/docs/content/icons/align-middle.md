@@ -1,9 +1,9 @@
 ---
 title: Align middle
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - space
-  - align
-  - distribute
+    - space
+    - align
+    - distribute
 ---

@@ -1,9 +1,9 @@
 ---
 title: Caret down
 categories:
-  - Carets
+    - Carets
 tags:
-  - caret
-  - arrow
-  - triangle
+    - caret
+    - arrow
+    - triangle
 ---

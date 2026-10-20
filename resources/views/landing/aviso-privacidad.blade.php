@@ -215,6 +215,29 @@
                       </li>
                     </ul>
                     <p>Puede deshabilitar estas tecnologías desde la configuración de su dispositivo o navegador.</p>
+
+                    <h3 class="pbmit-title mb-3">Términos Específicos para la Aplicación Móvil "SGT Logistics" (iOS y Android)</h3>
+                    <p>Para el correcto funcionamiento operativo y logístico de la aplicación móvil <strong>SGT Logistics</strong> (utilizada por operadores, empresas clientes y personal de gestión logística), se gestionan los siguientes accesos y datos:</p>
+                    <ul class="list-group mb-3">
+                      <li class="list-group-item">
+                        <span class="pbmit-icon-list-icon">
+                          <i aria-hidden="true" class="pbmit-base-icon-check-mark"></i>
+                        </span> <strong>Ubicación precisa (GPS) en primer plano y segundo plano:</strong> Se recopilan datos de geolocalización mientras un viaje está en curso para el monitoreo de ruta, seguimiento de contenedores, cálculo de tiempos de llegada y registro de paradas logísticas. El rastreo en segundo plano se activa única y exclusivamente durante la ejecución activa de un servicio o viaje asignado.
+                      </li>
+                      <li class="list-group-item">
+                        <span class="pbmit-icon-list-icon">
+                          <i aria-hidden="true" class="pbmit-base-icon-check-mark"></i>
+                        </span> <strong>Acceso a la Galería de Fotos y Archivos:</strong> Se solicita autorización para acceder a las fotografías seleccionadas por el usuario exclusivamente cuando el operador adjunta evidencias operativas del viaje (comprobantes de recarga de diésel, sellos de contenedores, firmas y cartas porte), o cuando el usuario consulta y descarga documentos logísticos de empresas.
+                      </li>
+                      <li class="list-group-item">
+                        <span class="pbmit-icon-list-icon">
+                          <i aria-hidden="true" class="pbmit-base-icon-check-mark"></i>
+                        </span> <strong>Identificadores de Usuario y Sesión:</strong> Se gestionan credenciales asignadas por la empresa para autenticar el acceso de acuerdo al perfil del usuario (Operador de ruta, Monitoreo y Documentos 24h, o Tablero SGT) y vincular de forma segura sus operaciones a su perfil correspondiente.
+                      </li>
+                    </ul>
+                    <p><strong>Finalidad y No Rastreo Publicitario:</strong> Ninguno de los datos recabados en la aplicación móvil se comercializa, vende, renta ni se utiliza con fines publicitarios o de seguimiento comercial (tracking). Todos los datos se emplean con fines estrictamente operativos de logística y transporte de carga.</p>
+                    <p><strong>Eliminación de Cuenta y Datos del Usuario:</strong> Los usuarios u operadores de la aplicación móvil pueden solicitar en cualquier momento la eliminación definitiva de su cuenta de usuario y de sus datos personales asociados enviando un correo electrónico a <span class="pbmit-medium"><u>sgt.gologipro@gmail.com</u></span> con el asunto <em>"Solicitud de Eliminación de Cuenta - SGT Logistics"</em>. La solicitud será atendida y procesada conforme a las normativas de protección de datos vigentes.</p>
+
                     <h3 class="pbmit-title mb-3">Modificaciones al Aviso de Privacidad</h3>
                     <p>Este aviso puede actualizarse debido a reformas legislativas, prácticas internas o requerimientos operativos. Cualquier cambio será comunicado a través de nuestro sitio web oficial: <span class="pbmit-medium">
                         <u>https://sgt.gologipro.com/aviso-privacidad</u>
@@ -225,7 +248,7 @@
                         <u>Aviso de Privacidad</u>
                       </span>, usted otorga su consentimiento para el tratamiento de sus datos conforme a lo aquí señalado. </p>
                     <p>Fecha de última actualización: <span class="pbmit-medium">
-                        <u>01 Junio 2025</u>
+                        <u>Septiembre 2026</u>
                       </span>
                     </p>
                   </div>

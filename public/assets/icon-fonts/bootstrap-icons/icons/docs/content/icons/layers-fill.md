@@ -1,8 +1,8 @@
 ---
 title: Layers fill
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - perspective
-  - stacked
+    - perspective
+    - stacked
 ---

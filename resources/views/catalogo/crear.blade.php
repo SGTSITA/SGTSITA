@@ -1,18 +1,18 @@
 @extends('layouts.app')
 
 @section('template_title')
-   Crear
+    Crear
 @endsection
 
 @section('content')
-
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12">
                 <div class="card">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <a class="btn"  href="{{ route('store.catalogo') }}" style="background: {{$configuracion->color_boton_close}}; color: #ffff;margin-right: 3rem;">
+                            <a class="btn" href="{{ route('index.catalogo') }}"
+                                style="background: {{ $configuracion->color_boton_close }}; color: #ffff;margin-right: 3rem;">
                                 Regresar
                             </a>
                             <h3 class="mb-3">Crear Catalogo</h3>
@@ -20,7 +20,8 @@
                     </div>
 
                     <div class="card-body">
-                        <form method="POST" action="{{ route('store.catalogo') }}" id="" enctype="multipart/form-data" role="form">
+                        <form method="POST" action="{{ route('store.catalogo') }}" id=""
+                            enctype="multipart/form-data" role="form">
                             @csrf
 
                             <div class="modal-body">
@@ -29,17 +30,22 @@
                                         <div class="row">
                                             <div class="col-3">
                                                 <label for="precio">Nuevo cliente</label><br>
-                                                <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                                                    Agregar <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="25px">
+                                                <button class="btn btn-success btn-sm" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#collapseExample"
+                                                    aria-expanded="false" aria-controls="collapseExample">
+                                                    Agregar <img src="{{ asset('assets/icons/cliente.png') }}"
+                                                        alt="" width="25px">
                                                 </button>
                                             </div>
                                             <div class="col-4">
                                                 <div class="form-group">
                                                     <label for="name">Cliente *</label>
-                                                    <select class="form-select cliente d-inline-block"  data-toggle="select" id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
+                                                    <select class="form-select cliente d-inline-block" data-toggle="select"
+                                                        id="id_cliente" name="id_cliente" value="{{ old('id_cliente') }}">
                                                         <option value="">Seleccionar cliente</option>
                                                         @foreach ($clientes as $item)
-                                                            <option value="{{ $item->id }}">{{ $item->nombre }} / {{ $item->telefono }}</option>
+                                                            <option value="{{ $item->id }}">{{ $item->nombre }} /
+                                                                {{ $item->telefono }}</option>
                                                         @endforeach
                                                     </select>
                                                 </div>
@@ -48,7 +54,8 @@
                                             <div class="col-4">
                                                 <div class="form-group">
                                                     <label for="name">Subcliente *</label>
-                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
+                                                    <select class="form-select subcliente d-inline-block" id="id_subcliente"
+                                                        name="id_subcliente">
                                                         <option value="">Seleccionar subcliente</option>
                                                     </select>
                                                 </div>
@@ -64,9 +71,11 @@
                                                         <label for="name">Nombre completo *</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img src="{{ asset('assets/icons/cliente.png') }}" alt="" width="29px">
+                                                                <img src="{{ asset('assets/icons/cliente.png') }}"
+                                                                    alt="" width="29px">
                                                             </span>
-                                                            <input  id="nombre_cliente" name="nombre_cliente" type="text" class="form-control" placeholder="Nombre(s) y Apellidos">
+                                                            <input id="nombre_cliente" name="nombre_cliente" type="text"
+                                                                class="form-control" placeholder="Nombre(s) y Apellidos">
                                                         </div>
                                                     </div>
 
@@ -74,9 +83,12 @@
                                                         <label for="name">Telefono *</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img src="{{ asset('assets/icons/phone.png') }}" alt="" width="29px">
+                                                                <img src="{{ asset('assets/icons/phone.png') }}"
+                                                                    alt="" width="29px">
                                                             </span>
-                                                            <input  id="telefono_cliente" name="telefono_cliente" class="form-control" type="tel" minlength="10" maxlength="10" placeholder="555555555">
+                                                            <input id="telefono_cliente" name="telefono_cliente"
+                                                                class="form-control" type="tel" minlength="10"
+                                                                maxlength="10" placeholder="555555555">
                                                         </div>
                                                     </div>
 
@@ -84,9 +96,11 @@
                                                         <label for="name">Correo</label>
                                                         <div class="input-group mb-3">
                                                             <span class="input-group-text" id="basic-addon1">
-                                                                <img src="{{ asset('assets/icons/correo-electronico.png') }}" alt="" width="29px">
+                                                                <img src="{{ asset('assets/icons/correo-electronico.png') }}"
+                                                                    alt="" width="29px">
                                                             </span>
-                                                            <input  id="correo_cliente" name="correo_cliente" type="email" class="form-control" placeholder="correo@correo.com">
+                                                            <input id="correo_cliente" name="correo_cliente" type="email"
+                                                                class="form-control" placeholder="correo@correo.com">
                                                         </div>
                                                     </div>
 
@@ -99,9 +113,14 @@
                                         <label for="name">Destino</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/origen.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/origen.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="destino" id="destino" type="text" class="form-control" value="APARTADO">@error('destino') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="destino" id="destino" type="text" class="form-control"
+                                                value="APARTADO">
+                                            @error('destino')
+                                                <span class="error text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
 
@@ -109,9 +128,14 @@
                                         <label for="name">Num. Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/contenedor.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="num_contenedor" id="num_contenedor" type="text" class="form-control" value="{{old('num_contenedor')}}">@error('num_contenedor') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="num_contenedor" id="num_contenedor" type="text"
+                                                class="form-control" value="{{ old('num_contenedor') }}">
+                                            @error('num_contenedor')
+                                                <span class="error text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
 
@@ -119,9 +143,14 @@
                                         <label for="name">Tamaño Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/escala.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/escala.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="tamano" id="tamano" type="text" class="form-control"value="{{old('tamano')}}">@error('tamano') <span class="error text-danger">{{ $message }}</span> @enderror
+                                            <input name="tamano" id="tamano" type="text"
+                                                class="form-control"value="{{ old('tamano') }}">
+                                            @error('tamano')
+                                                <span class="error text-danger">{{ $message }}</span>
+                                            @enderror
                                         </div>
                                     </div>
 
@@ -129,9 +158,11 @@
                                         <label for="name">Peso Reglamentario</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/perdida-de-peso.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="peso_reglamentario" id="peso_reglamentario" type="number" class="form-control" value="22">
+                                            <input name="peso_reglamentario" id="peso_reglamentario" type="number"
+                                                class="form-control" value="22">
                                         </div>
                                     </div>
 
@@ -139,9 +170,11 @@
                                         <label for="name">Peso Contenedor</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/peso.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/peso.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="peso_contenedor" id="peso_contenedor" type="text" class="form-control">
+                                            <input name="peso_contenedor" id="peso_contenedor" type="text"
+                                                class="form-control">
                                         </div>
                                     </div>
 
@@ -149,9 +182,11 @@
                                         <label for="name">Sobrepeso</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/pesa-rusa.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="sobrepeso" id="sobrepeso" type="text" class="form-control" readonly>
+                                            <input name="sobrepeso" id="sobrepeso" type="text" class="form-control"
+                                                readonly>
                                         </div>
                                     </div>
 
@@ -159,9 +194,11 @@
                                         <label for="name">Precio Sobre Peso</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text" class="form-control">
+                                            <input name="precio_sobre_peso" id="precio_sobre_peso" type="text"
+                                                class="form-control">
                                         </div>
                                     </div>
 
@@ -169,9 +206,11 @@
                                         <label for="name">Precio Tonelada</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/tonelada.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="precio_tonelada" id="precio_tonelada" type="text" class="form-control" value="0" readonly>
+                                            <input name="precio_tonelada" id="precio_tonelada" type="text"
+                                                class="form-control" value="0" readonly>
                                         </div>
                                     </div>
 
@@ -181,9 +220,13 @@
                                         <label for="name">Precio Viaje</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="precio_viaje" id="precio_viaje" type="text" class="form-control" onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="precio_viaje" id="precio_viaje" type="text"
+                                                class="form-control"
+                                                onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -191,9 +234,12 @@
                                         <label for="name">Burreo</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/burro.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/burro.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="burreo" id="burreo" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="burreo" id="burreo" type="float"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -201,9 +247,12 @@
                                         <label for="name">Maniobra</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/logistica.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/logistica.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="maniobra" id="maniobra" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="maniobra" id="maniobra" type="float"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -211,9 +260,12 @@
                                         <label for="name">Estadia</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/servidor-en-la-nube.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="estadia" id="estadia" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="estadia" id="estadia" type="float"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -221,9 +273,12 @@
                                         <label for="name">Otros</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/inventario.png.webp') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="otro" id="otro" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="otro" id="otro" type="float"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -231,9 +286,12 @@
                                         <label for="name">IVA</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/impuesto.png') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/impuesto.png') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="iva" id="iva" type="number" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="iva" id="iva" type="number"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -241,9 +299,12 @@
                                         <label for="name">Retención</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
+                                                    width="25px">
                                             </span>
-                                            <input name="retencion" id="retencion" type="float" class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46" oninput="calcularTotal()">
+                                            <input name="retencion" id="retencion" type="float"
+                                                class="form-control"onkeypress="return event.charCode >= 48 && event.charCode <= 57 || event.charCode === 46"
+                                                oninput="calcularTotal()">
                                         </div>
                                     </div>
 
@@ -251,16 +312,17 @@
                                         <label for="name">Total</label>
                                         <div class="input-group mb-3">
                                             <span class="input-group-text" id="basic-addon1">
-                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt="" width="25px">
+                                                <img src="{{ asset('img/icon/monedas.webp') }}" alt=""
+                                                    width="25px">
                                             </span>
                                             <input name="total" id="total" type="float" class="form-control">
                                         </div>
                                     </div>
-                            </div>
+                                </div>
 
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Guardar</button>
-                            </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Guardar</button>
+                                </div>
 
                         </form>
                     </div>
@@ -271,8 +333,8 @@
 @endsection
 
 @section('select2')
-    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js')}}"></script>
-    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js')}}"></script>
+    <script src="{{ asset('assets/vendor/jquery/dist/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
 
     <script type="text/javascript">
         $(document).ready(function() {
@@ -304,7 +366,7 @@
             document.getElementById('total').value = totalFormateado;
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // Obtener elementos del DOM
             var pesoReglamentarioInput = document.getElementById('peso_reglamentario');
             var pesoContenedorInput = document.getElementById('peso_contenedor');
@@ -330,7 +392,7 @@
             }
 
             // Agregar evento de entrada al campo "Precio Sobre Peso"
-            precioSobrePesoInput.addEventListener('input', function () {
+            precioSobrePesoInput.addEventListener('input', function() {
                 // Obtener el valor de Sobrepeso
                 var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, '')) || 0;
 
@@ -360,9 +422,12 @@
                         url: '/subclientes/' + clienteId,
                         success: function(data) {
                             $('#id_subcliente').empty();
-                            $('#id_subcliente').append('<option value="">Seleccionar subcliente</option>');
+                            $('#id_subcliente').append(
+                                '<option value="">Seleccionar subcliente</option>');
                             $.each(data, function(key, subcliente) {
-                                $('#id_subcliente').append('<option value="' + subcliente.id + '">' + subcliente.nombre + '</option>');
+                                $('#id_subcliente').append('<option value="' +
+                                    subcliente.id + '">' + subcliente.nombre +
+                                    '</option>');
                             });
                         }
                     });
@@ -373,6 +438,4 @@
             });
         });
     </script>
-
-
 @endsection

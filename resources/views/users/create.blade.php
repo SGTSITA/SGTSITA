@@ -118,31 +118,41 @@
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Contraseña</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" id="password" name="password" class="form-control"
-                                    placeholder="Password" required>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    class="form-control"
+                                    placeholder="Password"
+                                    required
+                                />
                             </div>
 
                             <div class="col-md-12 form-group-ios">
                                 <label class="form-label">Confirmar Contraseña</label>
                                 <i class="fas fa-lock"></i>
-                                <input type="password" name="confirm-password" id="confirm-password" class="form-control"
-                                    placeholder="Confirm Password" required>
+                                <input
+                                    type="password"
+                                    name="confirm-password"
+                                    id="confirm-password"
+                                    class="form-control"
+                                    placeholder="Confirm Password"
+                                    required
+                                />
                             </div>
 
-                            <div class="col-md-12">
-                                <label class="form-label d-block">Roles</label>
-                                <div class="radio-group-ios">
+                            <div class="col-md-12 form-group-ios">
+                                <label class="form-label">Rol</label>
+                                <i class="fas fa-user-tag"></i>
+                                <select name="roles[]" id="roleSelect" class="form-select" required>
+                                    <option value="">Selecciona un rol</option>
                                     @foreach ($roles as $key => $rol)
-                                        <label>
-                                            <input type="radio" name="roles[]" value="{{ $key }}"
-                                                class="radio-ios" required>
-                                            {{ $rol }}
-                                        </label>
+                                        <option value="{{ $key }}">{{ $rol }}</option>
                                     @endforeach
-                                </div>
+                                </select>
                             </div>
 
-                            <div class="col-md-6" id="clienteGroup" style="display: none;">
+                            <div class="col-md-6" id="clienteGroup" style="display: none">
                                 <label class="form-label">Selecciona el Cliente</label>
                                 <select name="id_cliente" id="id_cliente" class="form-select">
                                     <option value="0">Sin cliente</option>
@@ -169,11 +179,11 @@
 
     <script>
         function toggleClienteField() {
-            const selected = document.querySelector('input[name="roles[]"]:checked');
+            const roleSelect = document.getElementById('roleSelect');
             const clienteGroup = document.getElementById('clienteGroup');
             const clienteSelect = document.getElementById('id_cliente');
 
-            const selectedValue = selected?.value;
+            const selectedValue = roleSelect?.value;
             if (selectedValue === "CLIENTE") {
                 clienteGroup.style.display = 'block';
             } else {
@@ -183,15 +193,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const radios = document.querySelectorAll('input[name="roles[]"]');
+            const roleSelect = document.getElementById('roleSelect');
             toggleClienteField();
 
-            radios.forEach(radio => {
-                radio.addEventListener('change', toggleClienteField);
-            });
+            if (roleSelect) {
+                roleSelect.addEventListener('change', toggleClienteField);
+            }
 
             document.getElementById('formCrearUsuario').addEventListener('submit', function(e) {
-                const selectedRole = document.querySelector('input[name="roles[]"]:checked')?.value;
+                const selectedRole = document.getElementById('roleSelect')?.value;
                 const clienteSelect = document.getElementById('id_cliente');
 
                 if (!selectedRole) {
@@ -205,9 +215,7 @@
                     return;
                 }
 
-                const selectedLabel = document.querySelector('input[name="roles[]"]:checked')?.parentElement
-                    ?.innerText?.trim().toUpperCase();
-                if (selectedLabel === "CLIENTE" && clienteSelect?.value === "0") {
+                if (selectedRole === "CLIENTE" && clienteSelect?.value === "0") {
                     e.preventDefault();
                     Swal.fire({
                         icon: 'warning',

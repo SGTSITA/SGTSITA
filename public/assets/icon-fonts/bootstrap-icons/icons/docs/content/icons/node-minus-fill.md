@@ -1,10 +1,10 @@
 ---
 title: Node minus fill
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - add
-  - new
-  - node
-  - diagram
+    - add
+    - new
+    - node
+    - diagram
 ---

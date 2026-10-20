@@ -1,9 +1,9 @@
 ---
 title: Briefcase
 categories:
-  - Real world
+    - Real world
 tags:
-  - business
-  - bag
-  - baggage
+    - business
+    - bag
+    - baggage
 ---

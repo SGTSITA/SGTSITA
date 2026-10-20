@@ -1,9 +1,9 @@
 ---
 title: Cup straw
 categories:
-  - Real world
+    - Real world
 tags:
-  - mug
-  - glass
-  - drink
+    - mug
+    - glass
+    - drink
 ---

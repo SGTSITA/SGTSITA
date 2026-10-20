@@ -1,7 +1,7 @@
 ---
 title: Table
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - spreadsheet
+    - spreadsheet
 ---

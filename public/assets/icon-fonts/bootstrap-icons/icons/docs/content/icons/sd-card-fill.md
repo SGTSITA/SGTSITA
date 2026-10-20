@@ -1,10 +1,10 @@
 ---
 title: SD card fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - storage
-  - microsd
-  - chip
-  - memory
+    - storage
+    - microsd
+    - chip
+    - memory
 ---

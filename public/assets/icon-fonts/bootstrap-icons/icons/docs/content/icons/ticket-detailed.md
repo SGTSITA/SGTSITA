@@ -1,8 +1,8 @@
 ---
 title: Ticket detailed
 categories:
-  - Real World
+    - Real World
 tags:
-  - tickets
-  - admission
+    - tickets
+    - admission
 ---

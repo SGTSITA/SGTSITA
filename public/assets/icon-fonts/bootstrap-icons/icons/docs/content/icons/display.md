@@ -1,8 +1,8 @@
 ---
 title: Display
 categories:
-  - Devices
+    - Devices
 tags:
-  - monitor
-  - external
+    - monitor
+    - external
 ---

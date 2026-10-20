@@ -1,10 +1,10 @@
 ---
 title: Filetype php
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
+    - file
+    - 'file type'
+    - extension
+    - code
 ---

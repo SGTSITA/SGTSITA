@@ -1,7 +1,7 @@
 ---
 title: Bootstrap
 categories:
-  - Bootstrap
+    - Bootstrap
 tags:
-  - bootstrap
+    - bootstrap
 ---

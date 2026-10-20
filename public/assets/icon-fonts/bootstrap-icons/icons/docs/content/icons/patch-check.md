@@ -1,9 +1,9 @@
 ---
 title: Patch check
 categories:
-  - Badges
+    - Badges
 tags:
-  - verified
-  - checkmark
-  - certified
+    - verified
+    - checkmark
+    - certified
 ---

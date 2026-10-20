@@ -1,8 +1,8 @@
 ---
 title: Postcard
 categories:
-  - Real World
+    - Real World
 tags:
-  - mail
-  - letter
+    - mail
+    - letter
 ---

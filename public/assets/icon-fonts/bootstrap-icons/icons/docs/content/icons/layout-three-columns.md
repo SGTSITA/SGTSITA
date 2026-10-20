@@ -1,8 +1,8 @@
 ---
 title: Layout three columns
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---

@@ -1,8 +1,8 @@
 ---
 title: Water
 categories:
-  - Weather
+    - Weather
 tags:
-  - waves
-  - levels
+    - waves
+    - levels
 ---

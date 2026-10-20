@@ -1,8 +1,8 @@
 ---
 title: Battery half
 categories:
-  - Devices
+    - Devices
 tags:
-  - power
-  - charge
+    - power
+    - charge
 ---

@@ -1,8 +1,8 @@
 ---
 title: Google
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
-  - search
+    - social
+    - search
 ---

@@ -1,10 +1,10 @@
 ---
 title: Bag
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - shopping
-  - cart
-  - purchase
-  - buy
+    - shopping
+    - cart
+    - purchase
+    - buy
 ---

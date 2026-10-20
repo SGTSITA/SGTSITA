@@ -1,11 +1,11 @@
 ---
 title: List UL
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
-  - unordered-list
+    - text
+    - type
+    - justify
+    - alignment
+    - unordered-list
 ---
