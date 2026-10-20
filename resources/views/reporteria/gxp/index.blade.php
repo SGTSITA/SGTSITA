@@ -23,6 +23,23 @@
                             class="form-control form-control-sm"
                             style="width: auto; min-width: 200px; box-shadow: none"
                         />
+                        
+                        <label class="mb-0 fw-semibold text-sm ms-3">Estatus:</label>
+                        <select id="statusFilter" class="form-select form-select-sm" style="width: auto; min-width: 150px; box-shadow: none">
+                            <option value="por_pagar">Por pagar</option>
+                            <option value="pagados">Pagados</option>
+                            <option value="todos">Todos</option>
+                        </select>
+
+                        <label class="mb-0 fw-semibold text-sm ms-3">Unidad / Equipo:</label>
+                        <select id="selEquipoGxp" class="form-select form-select-sm" style="width: auto; min-width: 180px; box-shadow: none">
+                            <option value="">-- Todas las Unidades --</option>
+                            @if(isset($equipos))
+                                @foreach ($equipos as $eq)
+                                    <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
+                                @endforeach
+                            @endif
+                        </select>
                     </div>
 
                     <div class="card-body">
@@ -53,19 +70,11 @@
     </div>
 
     <script>
-        window.cotizacionesData = @json($gastos ?? []);
         const exportUrl = '{{ route('gxp.export') }}';
     </script>
 @endsection
 
 @section('datatable')
-    {{-- Moment.js (para fechas) --}}
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
-    {{-- Daterangepicker (para seleccionar periodo) --}}
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
     {{-- AG Grid --}}
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 

@@ -47,6 +47,11 @@ class Operador extends Model
          ->withTimestamps();
     }
 
+
+    public function prestamos(){
+         return $this->hasMany(Prestamo::class, 'id_operador', 'id');
+    }
+
     protected static function boot()
     {
         parent::boot();

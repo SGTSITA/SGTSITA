@@ -118,6 +118,26 @@
 
                                 <div class="col-8"></div>
 
+                                <div class="col-12 mb-3">
+                                    <div class="alert bg-gradient-light border p-3">
+                                        <h6 class="mb-1 text-sm"><i class="fa fa-mobile-alt me-2 text-info"></i> Administración de App Móvil</h6>
+                                        <p class="text-xs text-muted mb-2">Desde aquí puedes ingresar al panel para modificar coordenadas, fotos y consumos de combustible/urea de este viaje.</p>
+                                        @if($item->bitacoraViaje)
+                                            <a href="{{ route('app-movil-admin.edit', $item->bitacoraViaje->id) }}" target="_blank" class="btn btn-xs btn-info text-white mb-0">
+                                                <i class="fa fa-edit"></i> Administrar Bitácora y Coordenadas
+                                            </a>
+                                        @else
+                                            <form action="{{ route('app-movil-admin.store') }}" method="POST" target="_blank" class="d-inline">
+                                                @csrf
+                                                <input type="hidden" name="id_asignacion" value="{{ $item->id }}">
+                                                <button type="submit" class="btn btn-xs btn-outline-info mb-0">
+                                                    <i class="fa fa-plus"></i> Crear y Administrar Bitácora
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                </div>
+
                                 <div class="col-12">
                                     <h5 class="titulos_bitacora mb-4">
                                         <img

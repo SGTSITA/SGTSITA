@@ -172,7 +172,7 @@
     <style>
         #dp {
             flex: 1;
-            min-height: 0;
+            min-height: 200px;
         }
 
         .search-container {
@@ -247,46 +247,25 @@
         src="{{ asset('DayPilot/js/boardCarpos.js') }}?v={{ filemtime(public_path('DayPilot/js/boardCarpos.js')) }}">
     </script>
 
-    <!-- Date Range Picker CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-
-    <!-- Moment.js -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-
-    <!-- Date Range Picker JS -->
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script>
         $(document).ready(function() {
 
-
-            $('#daterange').daterangepicker({
-                    opens: 'right',
-                    locale: {
-                        format: 'YYYY-MM-DD', // Formato de fecha
-                        separator: " AL ", // Separador entre la fecha inicial y final
-                        applyLabel: "Aplicar",
-                        cancelLabel: "Cancelar",
-                        fromLabel: "Desde",
-                        toLabel: "Hasta",
-                        customRangeLabel: "Personalizado",
-                        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                        monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
-                            "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                        ],
-                        firstDay: 1
-                    },
-                    maxDate: moment()
-                },
-                function(start, end, label) {
-                    initBoard(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-                    $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
-                    $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
-
-
-                });
+            const startDate = moment().subtract(7, 'days');
+            const endDate = moment();
+            initSgtDateRange('#daterange', {
+                startDate,
+                endDate,
+                locale: {
+                    separator: ' al '
+                }
+            }, function(start, end, label) {
+                initBoard(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+                $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
+                $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
+            });
 
             const today = new Date();
 
