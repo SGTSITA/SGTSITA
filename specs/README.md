@@ -14,5 +14,7 @@ En este directorio residen las especificaciones funcionales y técnicas del sist
 | [006](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/006-resumen-mensual-socios) | Resumen Mensual de Utilidades y Drill-Down | Completado | Socios |
 | [007](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/007-gastos-indirectos-periodo-reporteria-utilidad) | Gastos Indirectos del Periodo sin Contenedor | Completado | Reportería / Utilidad |
 | [008](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/008-sistema-contable-polizas-conac) | Sistema Contable, Motor de Pólizas CONAC y Balance por Unidad | Completado | Contabilidad / Finanzas |
-| [009](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/009-polizas-apertura-anticipos-socios) | Pólizas de Apertura (Saldos Iniciales) y Flujo de Adelanto/Compensación de Anticipos a Socios | Completado | Contabilidad / Socios / Bancos |
-
+| [010](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/010-control-calendario-daterange-sgt) | Control Universal de Calendario DateRangePicker Dinámico | Completado | Global / Reportería |
+| [011](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/011-ajustes-contabilidad-balance-socios) | Ajustes Contabilidad, Balance General y Saldos | Completado | Contabilidad / Finanzas |
+| [012](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/012-opcion-separacion-unidades-reportes) | Opción Dinámica de Separación por Unidades en Reportería | Completado | Reportería |
+| [013](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/013-separacion-otros-gastos-utilidad-unidades) | Separación de Otros Gastos por Unidad y Cuadre de Utilidad Neta | Propuesta | Reportería / Gastos |

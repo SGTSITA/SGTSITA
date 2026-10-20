@@ -15,10 +15,17 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Spec 006: Resumen mensual de utilidades, desglose drill-down y selector rápido en `/socios`.
 - Spec 007: Visualización de gastos indirectos de periodo sin contenedor en `/reporteria/utilidad`.
 - Spec 010: Control universal de calendario DateRangePicker dinámico en módulo central SGT (`window.initSgtDateRange`, años delimitados por BD de cotizaciones y año actual + 1).
+- Spec 012: Separación opcional por unidades en reportería vía checkbox (`separar_unidades` default false) y filtro de unidad condicionados estrictamente a empresas con Configuración Global = 1 (`requiere_unidad_gasto == 1`); para empresas normales (0) la pantalla queda limpia sin esos controles; confirmador de unidad en `/gastos` para empresas con `requiere_unidad_gasto == 1`.
+- Spec 013: Agrupación de otros gastos por unidad en `/reporteria/utilidad`, resumen con Bruto, Gastos y Neto por unidad; cuadre estricto del encabezado superior al filtrar una sola unidad; asignación automática de `id_equipo` desde asignaciones de viaje.
+- Módulo `reporteria/complementos-pago` (interno SGT): filtro por unidad y columna Tractocamión condicionados a empresas globales (`requiere_unidad_gasto == 1`). Vistas de clientes intactas.
 - API REST activa para Flutter `operador_appsgt` y microservicio WhatsApp (`whatsapp-bot/`).
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
 ## Decisiones (y por qué)
-- Multi-equipo H00 Global (`id_empresa=28`): coexisten tractocamiones activos (AB-100, AP-002, etc.). Cada movimiento se imputa a su unidad y los reportes filtran por `asignaciones.id_camion` o `gastos.id_equipo`.
+- Multi-equipo H00 Global: activado estrictamente con `requiere_unidad_gasto == 1` (sin hardcodear IDs como 28). Cada movimiento se imputa a su unidad.
+- Visibilidad condicional de Controles de Unidad en Reportería: El switch de `#checkSepararUnidades` y el selector de unidad (`id_equipo`) solo se muestran en las vistas si `$esEmpresaGlobal` (`requiere_unidad_gasto == 1`). Para empresas normales (0) la UI queda limpia. El JS valida con optional chaining o fallbacks (`val() || ''`, `is(':checked') ? 1 : 0`) para no romper llamadas AJAX ni parámetros al backend.
+- `reporteria/complementos-pago`: Solo modificado en la vista interna del SGT; la vista del portal cliente se mantiene intacta.
+- Spec 012 & 013 (Utilidad por Unidad): En `/reporteria/utilidad`, al activar separación, cada tracto muestra sus viajes (Bruto), sus otros gastos detallados y su Utilidad Neta (`Bruto - Gastos`). Gastos sin unidad van a sección huérfana. Al filtrar una unidad (`id_equipo`), `getGastosGeneralesPeriodo` filtra fielmente por dicho equipo para que el Gran Total superior cuadre al centavo con el desglose de la unidad.
+- Spec 012 & 013 (Integridad en Gastos): En empresas con `requiere_unidad_gasto == 1`, se exige unidad en todo tipo de gasto (con segundo selector de confirmación en periodo/general y extracción automática de `id_camion` en viajes).
 - Transacciones `DB::transaction`: obligatorias en cotizaciones, viajes, gastos y movimientos bancarios para evitar inconsistencias.
 - Trait Naanix independiente (`app/Traits/NaanixGPSTrait.php`): preserva `SISGPSTrait.php` intacto como respaldo/fallback.
 - Caché de Tokens Naanix (50 min) y Llave UTC dinámica: previene saturación de peticiones de autenticación en el cron `rastreo:intervalConfig`.

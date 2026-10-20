@@ -116,10 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const statusVal = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'por_pagar';
+            const checkSeparar = document.getElementById('checkSepararUnidadesGxp');
             const formData = new FormData();
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             formData.append('fileType', fileType);
             formData.append('status', statusVal);
+            formData.append('separar_unidades', checkSeparar && checkSeparar.checked ? '1' : '0');
             selectedIds.forEach((id) => formData.append('selected_ids[]', id));
 
             try {
