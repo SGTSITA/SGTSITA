@@ -225,24 +225,7 @@ class PlaneacionController extends Controller
                     $erroresElemental[] = "Gasto Diésel (GDI02)";
                 }
 
-                // Validación específica de Burrero Vacío (GBV01)
-                $tieneBurreroUnified = \App\Models\Gasto::where('origen_legacy_id', $asignacion->id)
-                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-                    ->where(function($q) {
-                        $q->where('concepto', 'like', '%GBV01%')
-                          ->orWhere('tipo_gasto', 'like', '%GBV01%');
-                    })
-                    ->exists();
-                $tieneBurreroVinculo = \App\Models\GastoVinculo::where('vinculable_id', $asignacion->id)
-                    ->where('vinculable_type', '=', 'App\\Models\\Asignaciones')
-                    ->whereHas('gasto', function($q) {
-                        $q->where('concepto', 'like', '%GBV01%');
-                    })
-                    ->exists();
-
-                if (!($tieneBurreroUnified || $tieneBurreroVinculo)) {
-                    $erroresElemental[] = "Gasto Burrero Vacío (GBV01)";
-                }
+                // SDD-015: Burrero Vacío (GBV01) es opcional; viajes cancelados o finalizados tempranamente por daños físicos no incurren en burrero.
             }
 
             if (!empty($erroresElemental)) {
