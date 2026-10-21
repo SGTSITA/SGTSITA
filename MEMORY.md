@@ -15,9 +15,14 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Spec 006: Resumen mensual de utilidades, desglose drill-down y selector rápido en `/socios`.
 - Spec 007: Visualización de gastos indirectos de periodo sin contenedor en `/reporteria/utilidad`.
 - Spec 010: Control universal de calendario DateRangePicker dinámico en módulo central SGT (`window.initSgtDateRange`, años delimitados por BD de cotizaciones y año actual + 1).
+- Spec 015: Gasto Burrero Vacío (GBV01) opcional al finalizar viaje (`PlaneacionController::finalizarViaje`) para evitar bloqueos por viajes cancelados o truncados tempranamente por daños físicos.
+- Fallback Fecha Aplicación Dinero Viaje: En `/planeaciones/viajes/editar/{idCotizacion}`, si `dinero_contenedor` no tiene registro previo, precarga automáticamente `$asignacion->fecha_pago_salida` o `$asignacion->fecha_inicio`.
 - API REST activa para Flutter `operador_appsgt` y microservicio WhatsApp (`whatsapp-bot/`).
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
+
 ## Decisiones (y por qué)
+- Burrero Vacío (GBV01) opcional en Planeación Elemental: Se retiró la validación obligatoria de `GBV01` en `PlaneacionController::finalizarViaje` para permitir finalizar viajes propios interrumpidos por siniestros, fallas o daños físicos antes de llegar a destino. La opción permanece en catálogos y formularios de gastos para viajes que sí incurran en ella.
+- Fallback en `FechaAplicacionDinero` de `edit.blade.php`: Viajes creados por planeación elemental o app móvil no insertan registro en la tabla auxiliar `dinero_contenedor`. Al editar, el formulario precarga `$asignacion->fecha_pago_salida` o `$asignacion->fecha_inicio` en lugar de dejar el campo en blanco y bloquear el guardado.
 - Multi-equipo H00 Global (`id_empresa=28`): coexisten tractocamiones activos (AB-100, AP-002, etc.). Cada movimiento se imputa a su unidad y los reportes filtran por `asignaciones.id_camion` o `gastos.id_equipo`.
 - Transacciones `DB::transaction`: obligatorias en cotizaciones, viajes, gastos y movimientos bancarios para evitar inconsistencias.
 - Trait Naanix independiente (`app/Traits/NaanixGPSTrait.php`): preserva `SISGPSTrait.php` intacto como respaldo/fallback.
@@ -39,6 +44,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Si un gasto previo estaba en papelera, `GastosService::registrar()` debe invocar obligatoriamente `$gasto->restore()`.
 - En `ranges` de daterangepicker, claves con expresiones dinámicas requieren corchetes `[expr]: [...]`.
 - Si scripts compartidos (como `cotizacion-documentacion.js`) se usan en `layouts.usuario_externo`, asegurarse de que las dependencias (`sgt-daterange.js`, `moment`, `daterangepicker`) estén inyectadas en ese layout.
+
 ## Próximos pasos
 - [ ] Validar en producción telemetría continua de Naanix y retirar `SISGPSTrait.php`.
 - [ ] Spec 001: Módulo de control y reportes de combustible por unidad de transporte.
