@@ -14,10 +14,13 @@
         $asignacion = $cotizacion->DocCotizacion->Asignaciones;
         $fechaInicioVal = $asignacion ? date('d/m/Y', strtotime($asignacion->fecha_inicio)) : date('d/m/Y');
         $fechaFinVal = $asignacion ? date('d/m/Y', strtotime($asignacion->fecha_fin)) : date('d/m/Y');
-        $fechaAppVal =
-            $dineroViaje && $dineroViaje->fecha_entrega_monto
-                ? date('d/m/Y', strtotime($dineroViaje->fecha_entrega_monto))
-                : '';
+        $fechaAppRaw = null;
+        if ($dineroViaje && $dineroViaje->fecha_entrega_monto) {
+            $fechaAppRaw = $dineroViaje->fecha_entrega_monto;
+        } elseif ($asignacion) {
+            $fechaAppRaw = $asignacion->fecha_pago_salida ?: $asignacion->fecha_inicio;
+        }
+        $fechaAppVal = $fechaAppRaw ? date('d/m/Y', strtotime($fechaAppRaw)) : date('d/m/Y');
     @endphp
 
     <div class="container-fluid py-4">
