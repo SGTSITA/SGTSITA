@@ -59,9 +59,29 @@ document.addEventListener("DOMContentLoaded", () => {
         {
             headerName: "Peso Contenedor",
             field: "peso_contenedor",
-            filter: "agTextColumnFilter",
+            filter: "agNumberColumnFilter",
             floatingFilter: true,
-            width: 150,
+            filterParams: {
+                buttons: ["reset", "apply"],
+                debounceMs: 300,
+                allowedCharPattern: "\\d\\-\\.,",
+            },
+            filterValueGetter: (params) => {
+                const val = params.data?.peso_contenedor;
+                if (!val || val === "-" || val === "") return null;
+                const num = parseFloat(String(val).replace(",", ".").split("/")[0].trim());
+                return isNaN(num) ? null : num;
+            },
+            comparator: (valueA, valueB) => {
+                const numA = (!valueA || valueA === "-" || valueA === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueA).replace(",", ".").split("/")[0].trim()) || 0);
+                const numB = (!valueB || valueB === "-" || valueB === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueB).replace(",", ".").split("/")[0].trim()) || 0);
+                return numA - numB;
+            },
+            width: 160,
             cellClass: "text-center",
         },
         {
@@ -153,6 +173,27 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         onFilterChanged: () => {
             gridApi.deselectAll();
+        },
+        localeText: {
+            equals: "Igual a",
+            notEqual: "Diferente de",
+            lessThan: "Menor que",
+            lessThanOrEqual: "Menor o igual que",
+            greaterThan: "Mayor que",
+            greaterThanOrEqual: "Mayor o igual que",
+            inRange: "En rango",
+            inRangeStart: "Desde",
+            inRangeEnd: "Hasta",
+            filterOoo: "Filtrar...",
+            applyFilter: "Aplicar",
+            resetFilter: "Limpiar",
+            clearFilter: "Borrar",
+            contains: "Contiene",
+            notContains: "No contiene",
+            startsWith: "Empieza con",
+            endsWith: "Termina con",
+            blank: "En blanco",
+            notBlank: "No en blanco",
         },
     };
 
