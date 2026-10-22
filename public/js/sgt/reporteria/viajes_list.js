@@ -57,6 +57,14 @@ document.addEventListener("DOMContentLoaded", () => {
             flex: 1,
         },
         {
+            headerName: "Peso Contenedor",
+            field: "peso_contenedor",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 150,
+            cellClass: "text-center",
+        },
+        {
             headerName: "Unidad",
             field: "camion",
             filter: "agTextColumnFilter",

@@ -82,6 +82,7 @@ class ContabilidadSyncHistoricoCommand extends Command
             'gastos_pagos'     => 0,
             'prestamos'        => 0,
             'socios_pagos'     => 0,
+            'ajustes_hist'     => 0,
             'omitidos'         => 0,
             'errores'          => 0,
         ];
@@ -133,6 +134,11 @@ class ContabilidadSyncHistoricoCommand extends Command
             if ((int)$empresa->id !== 8) {
                 $this->syncSociosPagos($empresa->id, $force, $resumen);
             }
+
+            // 10. Ajustes Históricos Pre-Bancarios (Amortización CxC y CxP pre-bancos)
+            if ((int)$empresa->id === 8) {
+                $this->syncOperacionesHistoricasPreBanco($empresa->id, $force, $resumen);
+            }
         }
 
         $this->line("");
@@ -151,6 +157,7 @@ class ContabilidadSyncHistoricoCommand extends Command
                 ['Pagos de Gastos a Proveedores (CXP vs Bancos)', $resumen['gastos_pagos']],
                 ['Préstamos / Adelantos Otorgados a Operadores', $resumen['prestamos']],
                 ['Anticipos y Retiros a Socios (SocioPagos)', $resumen['socios_pagos']],
+                ['Ajustes Históricos Pre-Bancos (CxC / CxP Pre-Banco)', $resumen['ajustes_hist']],
                 ['Registros Previamente Pólizados (Omitidos)', $resumen['omitidos']],
                 ['Errores o Advertencias', $resumen['errores']],
             ]
@@ -626,6 +633,112 @@ class ContabilidadSyncHistoricoCommand extends Command
             $this->line("  ✓ {$count} amortizaciones de préstamos contabilizadas.");
         }
     }
+
+    /**
+     * Sincroniza ajustes históricos pre-bancarios para amortizar CxC y CxP concluidas
+     * antes de la habilitación del módulo de bancos en la empresa.
+     */
+    protected function syncOperacionesHistoricasPreBanco(int $idEmpresa, bool $force, array &$resumen): void
+    {
+        if (!$force) {
+            $existe = Poliza::where('id_empresa', $idEmpresa)
+                ->where('origen_tipo', 'ajuste_historico_prebanco')
+                ->exists();
+            if ($existe) {
+                $resumen['omitidos']++;
+                return;
+            }
+        }
+
+        try {
+            $contabilidadService = app(\App\Services\ContabilidadService::class);
+            $arbol = $contabilidadService->obtenerArbolSaldos([$idEmpresa], null, '2026-09-30');
+            $cxcActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '1.1.2.1');
+            $cxpActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '2.1.1');
+
+            $usuario = \App\Models\User::where('id_empresa', $idEmpresa)->first();
+            if ($usuario) {
+                auth()->login($usuario);
+            }
+            $cxcService = app(\App\Services\CuentasCobrarService::class);
+            $cxcPendiente = (float) $cxcService->obtenerporCliente()->sum('total_restante');
+
+            $gastosEmpresa = Gasto::where('id_empresa', $idEmpresa)
+                ->where('estatus', '!=', 'cancelado')
+                ->get();
+            $cxpPendiente = (float) $gastosEmpresa->sum('saldo_pendiente');
+
+            $cxcAmortizar = round($cxcActual - $cxcPendiente, 2);
+            $cxpAmortizar = round($cxpActual - $cxpPendiente, 2);
+
+            if ($cxcAmortizar <= 0 && $cxpAmortizar <= 0) {
+                return;
+            }
+
+            $cxcCuenta = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+            $cxpCuenta = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $patrimonioCuenta = CatCuentaContable::where('codigo', '3.2.2.001')->first()
+                ?: CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first();
+
+            $movimientos = [];
+            if ($cxcAmortizar > 0 && $cxcCuenta) {
+                $movimientos[] = [
+                    'cuenta_contable_id' => $cxcCuenta->id,
+                    'debe'               => 0.00,
+                    'haber'              => $cxcAmortizar,
+                    'referencia'         => 'AJUSTE_CXC_PREBANCO',
+                    'concepto_detalle'   => 'Cobros históricos fletes pre-bancarios',
+                ];
+            }
+
+            if ($cxpAmortizar > 0 && $cxpCuenta) {
+                $movimientos[] = [
+                    'cuenta_contable_id' => $cxpCuenta->id,
+                    'debe'               => $cxpAmortizar,
+                    'haber'              => 0.00,
+                    'referencia'         => 'AJUSTE_CXP_PREBANCO',
+                    'concepto_detalle'   => 'Pagos históricos gastos pre-bancarios',
+                ];
+            }
+
+            $difPatrimonio = round($cxcAmortizar - $cxpAmortizar, 2);
+            if ($difPatrimonio > 0 && $patrimonioCuenta) {
+                $movimientos[] = [
+                    'cuenta_contable_id' => $patrimonioCuenta->id,
+                    'debe'               => $difPatrimonio,
+                    'haber'              => 0.00,
+                    'referencia'         => 'PATRIMONIO_HIST',
+                    'concepto_detalle'   => 'Contrapartida operativa neta histórica pre-bancos',
+                ];
+            } elseif ($difPatrimonio < 0 && $patrimonioCuenta) {
+                $movimientos[] = [
+                    'cuenta_contable_id' => $patrimonioCuenta->id,
+                    'debe'               => 0.00,
+                    'haber'              => abs($difPatrimonio),
+                    'referencia'         => 'PATRIMONIO_HIST',
+                    'concepto_detalle'   => 'Contrapartida operativa neta histórica pre-bancos',
+                ];
+            }
+
+            $pol = $this->polizaService->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'tipo'         => 'diario',
+                'fecha'        => '2025-12-31',
+                'concepto'     => 'Ajuste Histórico de Amortización Operativa Pre-Bancaria (CxC y CxP 2025)',
+                'origen_tipo'  => 'ajuste_historico_prebanco',
+                'origen_id'    => $idEmpresa,
+                'movimientos'  => $movimientos,
+            ]);
+
+            if ($pol) {
+                $resumen['ajustes_hist'] = ($resumen['ajustes_hist'] ?? 0) + 1;
+                $this->line("  ✓ Póliza de ajuste operativo pre-bancario aplicada (CxC amortizada: \${$cxcAmortizar}, CxP amortizada: \${$cxpAmortizar}).");
+            }
+        } catch (\Throwable $e) {
+            $this->warn("  ✗ Error al generar ajuste operativo pre-bancario: " . $e->getMessage());
+            $resumen['errores']++;
+        }
+    }
 }
-
-

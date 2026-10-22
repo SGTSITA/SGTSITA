@@ -1,6 +1,7 @@
 @php 
  use Carbon\Carbon; 
  use App\Http\Controllers\ReporteriaController;
+ $mostrarPesoContenedor = $mostrarPesoContenedor ?? request()->boolean('mostrar_peso', true);
 @endphp
 
 @if (!isset($isExcel))
@@ -69,6 +70,9 @@
         <thead>
             <tr>
                 <th>Contenedor</th>
+                @if(!empty($mostrarPesoContenedor))
+                    <th>Peso contenedor</th>
+                @endif
                 <th>Cliente</th>
                 <th>Subcliente</th>
                 <th>Origen</th>
@@ -86,10 +90,16 @@
                 $contenedor2 = $refFull ? ReporteriaController::getContenedorSecundario($refFull) : '';
                 $numContenedor .= $contenedor2;
                 $cotRef = optional(optional($cotizacionItem->Contenedor)->Cotizacion);
+                $pesoContenedor = $cotRef->peso_contenedor ?? '-';
+                $pesoSec = $refFull ? ReporteriaController::getPesoContenedorSecundario($refFull) : '';
+                $pesoContenedor .= $pesoSec;
               @endphp
               
                 <tr>
                     <td>{{ $numContenedor ?? '-' }}</td>
+                    @if(!empty($mostrarPesoContenedor))
+                        <td>{{ $pesoContenedor ?: '-' }}</td>
+                    @endif
                     <td>{{ optional($cotRef->Cliente)->nombre ?? '-' }}</td>
                     <td>
                         @if ($cotRef->id_subcliente)
@@ -136,7 +146,7 @@
             @if (isset($isExcel))
                 <thead>
                     <tr>
-                        <th colspan="8" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-size: 11pt; font-weight: bold;">
+                        <th colspan="{{ !empty($mostrarPesoContenedor) ? 9 : 8 }}" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-size: 11pt; font-weight: bold;">
                             UNIDAD / TRACTOCAMION: {{ $unidadTexto }} (Total viajes: {{ $itemsUnidad->count() }})
                         </th>
                     </tr>
@@ -145,6 +155,9 @@
             <thead>
                 <tr style="{{ isset($isExcel) ? 'background-color: #f2f2f2;' : '' }}">
                     <th>Contenedor</th>
+                    @if(!empty($mostrarPesoContenedor))
+                        <th>Peso contenedor</th>
+                    @endif
                     <th>Cliente</th>
                     <th>Subcliente</th>
                     <th>Origen</th>
@@ -162,9 +175,15 @@
                         $contenedor2 = $refFull ? ReporteriaController::getContenedorSecundario($refFull) : '';
                         $numContenedor .= $contenedor2;
                         $cotRef = optional(optional($cotizacionItem->Contenedor)->Cotizacion);
+                        $pesoContenedor = $cotRef->peso_contenedor ?? '-';
+                        $pesoSec = $refFull ? ReporteriaController::getPesoContenedorSecundario($refFull) : '';
+                        $pesoContenedor .= $pesoSec;
                     @endphp
                     <tr>
                         <td>{{ $numContenedor ?? '-' }}</td>
+                        @if(!empty($mostrarPesoContenedor))
+                            <td>{{ $pesoContenedor ?: '-' }}</td>
+                        @endif
                         <td>{{ optional($cotRef->Cliente)->nombre ?? '-' }}</td>
                         <td>
                             @if ($cotRef->id_subcliente)
@@ -184,7 +203,7 @@
             </tbody>
             <tfoot>
                 <tr style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="7" style="text-align: right; padding: 6px;">SUBTOTAL VIAJES UNIDAD ({{ $unidadTexto }}):</td>
+                    <td colspan="{{ !empty($mostrarPesoContenedor) ? 8 : 7 }}" style="text-align: right; padding: 6px;">SUBTOTAL VIAJES UNIDAD ({{ $unidadTexto }}):</td>
                     <td style="text-align: center; padding: 6px;">{{ $itemsUnidad->count() }}</td>
                 </tr>
             </tfoot>
@@ -195,7 +214,7 @@
         <table class="{{ !isset($isExcel) ? 'tabla-viajes' : '' }}" style="margin-top: 15px; border-collapse: collapse;" border="{{ isset($isExcel) ? '1' : '0' }}">
             <tfoot>
                 <tr style="background-color: #344767; color: #ffffff; font-weight: bold; font-size: 11px;">
-                    <td colspan="7" style="text-align: right; color: #ffffff; padding: 8px;">GRAN TOTAL CONSOLIDADO VIAJES (TODAS LAS UNIDADES):</td>
+                    <td colspan="{{ !empty($mostrarPesoContenedor) ? 8 : 7 }}" style="text-align: right; color: #ffffff; padding: 8px;">GRAN TOTAL CONSOLIDADO VIAJES (TODAS LAS UNIDADES):</td>
                     <td style="text-align: center; color: #ffffff; padding: 8px;">{{ $grandTotalViajes }}</td>
                 </tr>
             </tfoot>

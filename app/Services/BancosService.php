@@ -237,10 +237,10 @@ class BancosService
                     $banco->decrement('saldo', $data['monto']);
                 }
 
-                // Generar póliza automática si es interés bancario
-                if ($tipoConcepto === 'interes' && $data['tipo'] === 'abono') {
-                    try {
-                        $polizaService = app(\App\Services\PolizaService::class);
+                // Generar póliza contable automática del movimiento bancario
+                try {
+                    $polizaService = app(\App\Services\PolizaService::class);
+                    if ($tipoConcepto === 'interes' && $data['tipo'] === 'abono') {
                         $asientoData = $polizaService->resolverAsientoPorEvento('INTERES_BANCARIO', null, $banco->id_empresa, [
                             'cuenta_bancaria_id' => $banco->id,
                             'banco'              => $banco->nombre_banco,
@@ -257,9 +257,15 @@ class BancosService
                             $mov->update(['poliza_id' => $poliza->id]);
                             $mov->poliza_id = $poliza->id;
                         }
-                    } catch (\Throwable $e) {
-                        \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable para interés bancario {$mov->id}: " . $e->getMessage());
+                    } else {
+                        $poliza = $polizaService->contabilizarMovimientoBancario($mov);
+                        if ($poliza) {
+                            $mov->update(['poliza_id' => $poliza->id]);
+                            $mov->poliza_id = $poliza->id;
+                        }
                     }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("No se pudo generar póliza contable para movimiento bancario {$mov->id}: " . $e->getMessage());
                 }
             }
 

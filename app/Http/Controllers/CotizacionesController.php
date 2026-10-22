@@ -540,9 +540,16 @@ foreach ($cotizacionesCreadas as $cotizacion) {
 
 }
 
- $this->CostosService->syncDesdeRequest($viaje, $request);
+        $this->CostosService->syncDesdeRequest($viaje, $request);
 
-
+        // Contabilizar provisión contable automática del viaje (CxC vs Ingresos por fletes)
+        try {
+            foreach ($cotizacionesCreadas as $cotCreada) {
+                $this->CotizacionesService->contabilizarProvisionViaje($cotCreada);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("Error contabilizando provisión viaje storeV2: " . $e->getMessage());
+        }
 
             DB::commit();
             return response()->json(["TMensaje" => "success", "Mensaje" =>  "Creado Correctamente","datos" => $request->all()]);

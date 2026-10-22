@@ -4,6 +4,16 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 ## Estado actual
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.
 - Módulos activos: Cotizaciones, Viajes, Contenedores, Planeación, Monitoreo, Gastos y Liquidaciones.
+- Spec 011 (CONAC Pólizas & Verdad Operativa): Balance General al corte 2026-09-30 conciliado y cuadrado con Diferencia $0.00:
+  - Cuentas por Cobrar (CXC `1.1.2.1%`): $0.00 exactos (reflejo de `/cuentas/cobrar` donde no existen cobros pendientes).
+  - Cuentas por Pagar (CXP `2.1.1%`): $288,857.96 exactos (reflejo fiel de los 71 gastos operativos pendientes de pago).
+  - Bancos (`1.1.1.2%`): $432,750.25 (Azteca $12,775.96 + Banorte $419,974.29).
+  - Activo ($1,030,545.92) = Pasivo ($288,857.96) + Patrimonio ($741,687.96). Cuadrado: SI.
+- Provisión y Cobro Operativo en tiempo real:
+  - Al capturar costos y crear viaje (`CotizacionesController::storeV2` y `update`): provisión automática `PROVISION_VIAJE` (Cargo CXC `1.1.2.1.001`, Abono Ingresos `4.1.1.1`).
+  - Al cobrar en CXC (`CuentasCobrarController::aplicar_pagos` -> `BancosService::registrarMovimiento`): generación automática de póliza bancaria (Cargo Bancos `1.1.1.2.xxx`, Abono CXC `1.1.2.1.001`), cancelando de inmediato la provisión.
+- `/reporteria/viajes`: columna `peso_contenedor` habilitada y visible en AG Grid (con filtro de texto flotante y alineación centrada), y también habilitada en las exportaciones de Excel y PDF (con compatibilidad para viajes Full).
+- Formatos Oficiales CONAC & Exportación: Vistas previas dinámicas en `/contabilidad/balance-general` para Balance General (ESF-01), Estado de Resultados (ERA-02) y Balanza de Comprobación (BC-03) con exportaciones PDF y Excel.
 - Spec 002: Integración de movimientos y transferencias bancarias en gastos (Draft Autosave).
 - Spec 003: Refactorización GPS SIS hacia API REST Naanix (`MClientesExternosJSPY`).
 - Spec 004: Sincronización integral Gastos de viaje, Pagos bancarios y App Móvil Admin.
@@ -21,6 +31,11 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
 
 ## Decisiones (y por qué)
+- Empresa 8 (H10-OLIVA): egresos operativos bancarios cancelan pasivo en `2.1.1.2.001` (Proveedores CXP) y cobros acreditan `1.1.2.1.001` (Clientes CXC), eliminando duplicidades contra cuentas de resultados (5.1.x) o deudores diversos.
+- Póliza de Ajuste Histórico Pre-Bancario (`syncOperacionesHistoricasPreBanco`): amortiza los saldos devengados en 2025 concluidos antes de la entrada en vigor del registro bancario (/bancos/bancosv2), equilibrando contra Patrimonio / Resultados de Ejercicios Anteriores (`3.2.2.001`).
+- `ContabilidadService`: el concepto `3.2.2` suma acumulativamente los resultados netos de ejercicios previos (`ingresosPrevios - gastosPrevios`) sin condicionarse a saldo cero, garantizando que el patrimonio refleje la utilidad histórica no cerrada.
+- `BancosService::registrarMovimiento`: genera póliza contable automática para cualquier movimiento operativo bancario en tiempo real.
+- `/reporteria/viajes`: `peso_contenedor` concatena el peso del secundario en viajes tipo Full (`27.23 / 25.10`) para mantener la misma convención de visualización que `num_contenedor`.
 - Burrero Vacío (GBV01) opcional en Planeación Elemental: Se retiró la validación obligatoria de `GBV01` en `PlaneacionController::finalizarViaje` para permitir finalizar viajes propios interrumpidos por siniestros, fallas o daños físicos antes de llegar a destino. La opción permanece en catálogos y formularios de gastos para viajes que sí incurran en ella.
 - Fallback en `FechaAplicacionDinero` de `edit.blade.php`: Viajes creados por planeación elemental o app móvil no insertan registro en la tabla auxiliar `dinero_contenedor`. Al editar, el formulario precarga `$asignacion->fecha_pago_salida` o `$asignacion->fecha_inicio` en lugar de dejar el campo en blanco y bloquear el guardado.
 - Multi-equipo H00 Global (`id_empresa=28`): coexisten tractocamiones activos (AB-100, AP-002, etc.). Cada movimiento se imputa a su unidad y los reportes filtran por `asignaciones.id_camion` o `gastos.id_equipo`.
@@ -38,6 +53,8 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 ## Aprendizajes y errores a evitar
 - NUNCA modificar la respuesta JSON de endpoints en `routes/api.php` sin verificar el impacto en Flutter (`operador_appsgt`).
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
+- En `gastos`, `saldo_pendiente` es un accesor Eloquent (`monto_total - monto_pagado`); no debe llamarse como columna directa en SQL `sum('saldo_pendiente')`.
+- En CLI Artisan, `auth()->user()` es nulo; autenticar explícitamente al usuario de la empresa correspondiente si el servicio filtra por `auth()->user()->id_empresa`.
 - En selectores de unidad/equipo, mostrar siempre `id_equipo - marca` (vía `$equipo->texto_select`) para consistencia en todo el sistema.
 - En Naanix REST, la llave debe calcularse estrictamente en UTC (`UtcNow.Hour + UtcNow.Day + IdCliente`).
 - En catálogos y reportes de imputación a tracto, filtrar siempre `where('tipo', 'Tractos / Camiones')` en `Equipo`.
