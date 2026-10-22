@@ -1042,15 +1042,21 @@ class ReporteriaController extends Controller
         //  dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
 
         $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+            $numContenedor = $a->Contenedor->num_contenedor ?? '';
+            $pesoContenedor = $a->Contenedor?->Cotizacion?->peso_contenedor ?? '';
+            if (!is_null($a->Contenedor?->Cotizacion?->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
                 ->where('jerarquia', 'Secundario')
                 ->with('DocCotizacion.Asignaciones')
                 ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                if ($secundaria) {
+                    if ($secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor = ($pesoContenedor ?: '-') . ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
             }
             return [
@@ -1060,6 +1066,7 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'peso_contenedor' => $pesoContenedor ?: '-',
                 'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => optional($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
@@ -1087,6 +1094,20 @@ class ReporteriaController extends Controller
 
         }
 
+    }
+
+    public static function getPesoContenedorSecundario($referencia_full)
+    {
+        if (!is_null($referencia_full)) {
+            $secundaria = Cotizaciones::where('referencia_full', $referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->first();
+
+            if ($secundaria && !empty($secundaria->peso_contenedor)) {
+                return ' / ' . $secundaria->peso_contenedor;
+            }
+        }
+        return '';
     }
 
     public function advance_viajes(Request $request)
@@ -1145,15 +1166,21 @@ class ReporteriaController extends Controller
         $asignaciones = $asignaciones->get();
 
         $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+            $numContenedor = $a->Contenedor->num_contenedor ?? '';
+            $pesoContenedor = $a->Contenedor?->Cotizacion?->peso_contenedor ?? '';
+            if (!is_null($a->Contenedor?->Cotizacion?->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
                 ->where('jerarquia', 'Secundario')
                 ->with('DocCotizacion.Asignaciones')
                 ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                if ($secundaria) {
+                    if ($secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor = ($pesoContenedor ?: '-') . ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
             }
             return [
@@ -1163,6 +1190,7 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'peso_contenedor' => $pesoContenedor ?: '-',
                 'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),

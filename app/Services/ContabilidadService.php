@@ -268,12 +268,12 @@ class ContabilidadService
                 $monto = $this->sumarSaldoPorPrefijo($arbolAcumulado, $prefijoLimpio);
 
                 // Si es el concepto de Resultado de Ejercicios Anteriores (3.2.2) y no hay póliza explícita de cierre acumulada
-                if (str_starts_with($prefijoLimpio, '3.2.2') && abs($monto) < 0.01) {
+                if (str_starts_with($prefijoLimpio, '3.2.2')) {
                     $fechaFinPrevio = Carbon::parse($fechaInicioEjercicio)->subDay()->format('Y-m-d');
                     $arbolPrevio = $this->obtenerArbolSaldos($empresasIds, $idEquipo, $fechaFinPrevio);
                     $ingresosPrevios = $this->sumarSaldoPorPrefijo($arbolPrevio, '4.1.1') + $this->sumarSaldoPorPrefijo($arbolPrevio, '4.3.1');
                     $gastosPrevios = $this->sumarSaldoPorPrefijo($arbolPrevio, '5.1');
-                    $monto = round($ingresosPrevios - $gastosPrevios, 2);
+                    $monto = round($monto + ($ingresosPrevios - $gastosPrevios), 2);
                 }
             }
 
@@ -479,7 +479,7 @@ class ContabilidadService
      * Suma los saldos netos de las cuentas que comienzan con el prefijo dado.
      * Toma el saldo de la cuenta de mayor más alta que coincida para no duplicar sumas.
      */
-    protected function sumarSaldoPorPrefijo(Collection $arbol, string $prefijo): float
+    public function sumarSaldoPorPrefijo(Collection $arbol, string $prefijo): float
     {
         // 1. Si existe una cuenta exacta con ese código, usamos su saldo neto consolidado
         $cuentaExacta = $arbol->firstWhere('codigo', $prefijo);

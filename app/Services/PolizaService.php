@@ -712,8 +712,9 @@ class PolizaService
             $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
                 ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
 
-            $cuentaContraObj = CatCuentaContable::where('codigo', '1.1.2.3.004')->first()
-                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos);
+            $cuentaContraObj = CatCuentaContable::where('codigo', '3.2.2.001')->first()
+                ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
+                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
             $cuentaContra = $cuentaContraObj->id;
 
             if (!$cuentaPrestamos) {
@@ -851,21 +852,29 @@ class PolizaService
             $cuentaContraId = null;
             $refContra = 'MOV_BANCO';
             $conceptoContra = $mov->concepto ?? 'Movimiento Bancario';
+            $conceptoUpper = strtoupper(trim($mov->concepto ?? ''));
 
             if ($mov->tipo === 'abono') {
-                if (in_array($mov->referenciaable_type, ['App\Models\CobroPago', 'App\Models\Cotizaciones'])) {
-                    $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaClientes?->id;
-                    $refContra = 'COBRO_CXC';
+                if (str_contains($conceptoUpper, 'SALDO INICIAL')) {
+                    $cuentaPatrimonio = CatCuentaContable::where('codigo', '3.2.2.001')->first()
+                        ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '3.1%')->where('es_afectable', true)->first());
+                    $cuentaContraId = $cuentaPatrimonio?->id;
+                    $refContra = 'APERTURA_BANCO';
+                } elseif (in_array($mov->referenciaable_type, ['App\Models\Asignaciones', 'App\Models\GastosOperadores', 'App\Models\GastosGenerales', 'App\Models\Gasto'])
+                    || str_contains($conceptoUpper, 'DEVOLUCIÓN') || str_contains($conceptoUpper, 'DEV GASTOS') || str_contains($conceptoUpper, 'DEV.')) {
+                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaProveedores?->id;
+                    $refContra = 'DEV_GASTO_CXP';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
-                    $cuentaOtros = CatCuentaContable::where('codigo', '1.1.2.3.004')->first()
-                        ?: (CatCuentaContable::where('codigo', '1.1.2.3.002')->first() ?: $cuentaBancoContableId);
-                    $cuentaContraId = $cuentaOtros?->id;
-                    $refContra = 'OTROS_INGRESOS';
+                    $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaClientes?->id;
+                    $refContra = 'COBRO_CXC';
                 }
 
                 $movimientos = [
@@ -885,12 +894,8 @@ class PolizaService
                     ],
                 ];
             } else {
-                if (in_array($mov->referenciaable_type, ['App\Models\Gasto', 'App\Models\GastosGenerales'])) {
-                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaProveedores?->id;
-                    $refContra = 'PAGO_CXP';
-                } elseif ($mov->referenciaable_type === 'App\Models\SocioPago') {
+                if ($mov->referenciaable_type === 'App\Models\SocioPago'
+                    || str_contains($conceptoUpper, 'UTILIDADES GABRIEL') || str_contains($conceptoUpper, 'SOCIO')) {
                     $cuentaSocios = CatCuentaContable::where('codigo', '1.1.2.3.003')->first();
                     $cuentaContraId = $cuentaSocios?->id;
                     $refContra = 'ANTICIPO_SOCIO';
@@ -898,19 +903,15 @@ class PolizaService
                     $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first();
                     $cuentaContraId = $cuentaPrestamos?->id;
                     $refContra = 'PRESTAMO_OPE';
-                } elseif (in_array($mov->referenciaable_type, ['App\Models\Liquidaciones', 'App\Models\GastosOperadores', 'App\Models\Asignaciones'])) {
-                    $cuentaGastosOp = CatCuentaContable::where('codigo', '5.1.1.2')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '5.1.1%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaGastosOp?->id;
-                    $refContra = 'GASTO_OPERATIVO';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
-                    $cuentaGastosGen = CatCuentaContable::where('codigo', '5.1.1.9')->first()
-                        ?: (CatCuentaContable::where('codigo', '2.1.1.2.001')->first() ?: $cuentaBancoContableId);
-                    $cuentaContraId = $cuentaGastosGen?->id;
-                    $refContra = 'EGRESO_BANCO';
+                    // Todos los pagos operativos cancelan el pasivo devengado en Proveedores CXP
+                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
+                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+                    $cuentaContraId = $cuentaProveedores?->id;
+                    $refContra = 'PAGO_CXP';
                 }
 
                 $movimientos = [
