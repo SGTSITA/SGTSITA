@@ -12,7 +12,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Provisión y Cobro Operativo en tiempo real:
   - Al capturar costos y crear viaje (`CotizacionesController::storeV2` y `update`): provisión automática `PROVISION_VIAJE` (Cargo CXC `1.1.2.1.001`, Abono Ingresos `4.1.1.1`).
   - Al cobrar en CXC (`CuentasCobrarController::aplicar_pagos` -> `BancosService::registrarMovimiento`): generación automática de póliza bancaria (Cargo Bancos `1.1.1.2.xxx`, Abono CXC `1.1.2.1.001`), cancelando de inmediato la provisión.
-- `/reporteria/viajes`: columna `peso_contenedor` habilitada y visible en AG Grid (con filtro de texto flotante y alineación centrada), y también habilitada en las exportaciones de Excel y PDF (con compatibilidad para viajes Full).
+- `/reporteria/viajes`: columna `peso_contenedor` configurada con `agNumberColumnFilter` y `comparator` numérico (filtros de Mayor que, Menor que, Igual a, En rango en español) y habilitada en exportaciones de Excel y PDF.
 - Formatos Oficiales CONAC & Exportación: Vistas previas dinámicas en `/contabilidad/balance-general` para Balance General (ESF-01), Estado de Resultados (ERA-02) y Balanza de Comprobación (BC-03) con exportaciones PDF y Excel.
 - Spec 002: Integración de movimientos y transferencias bancarias en gastos (Draft Autosave).
 - Spec 003: Refactorización GPS SIS hacia API REST Naanix (`MClientesExternosJSPY`).
