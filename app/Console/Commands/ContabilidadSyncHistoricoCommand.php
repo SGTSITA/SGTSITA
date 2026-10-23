@@ -26,6 +26,7 @@ class ContabilidadSyncHistoricoCommand extends Command
      * @var string
      */
     protected $signature = 'contabilidad:sync-historico 
+                            {empresa? : ID de la empresa a procesar (opcional)}
                             {--empresa= : ID de la empresa a procesar (opcional, por defecto todas)}
                             {--force : Forzar regeneración de pólizas que ya existen}';
 
@@ -56,7 +57,7 @@ class ContabilidadSyncHistoricoCommand extends Command
         $this->info("   SGTSITA - SINCRONIZADOR HISTÓRICO DE CONTABILIDAD Y PÓLIZAS AUTOMÁTICAS      ");
         $this->info("================================================================================");
 
-        $empresaFiltro = $this->option('empresa');
+        $empresaFiltro = $this->argument('empresa') ?: $this->option('empresa');
         $force = (bool) $this->option('force');
 
         $empresasQuery = Empresas::query();
@@ -651,8 +652,9 @@ class ContabilidadSyncHistoricoCommand extends Command
         }
 
         try {
+            $fechaCorte = '2026-09-30';
             $contabilidadService = app(\App\Services\ContabilidadService::class);
-            $arbol = $contabilidadService->obtenerArbolSaldos([$idEmpresa], null, '2026-09-30');
+            $arbol = $contabilidadService->obtenerArbolSaldos([$idEmpresa], null, $fechaCorte);
             $cxcActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '1.1.2.1');
             $cxpActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '2.1.1');
 
@@ -661,10 +663,36 @@ class ContabilidadSyncHistoricoCommand extends Command
                 auth()->login($usuario);
             }
             $cxcService = app(\App\Services\CuentasCobrarService::class);
-            $cxcPendiente = (float) $cxcService->obtenerporCliente()->sum('total_restante');
+
+            // Cotizaciones entregadas hasta el corte de septiembre 2026
+            $cotsCorte = Cotizaciones::where('id_empresa', $idEmpresa)
+                ->where('fecha_entrega', '<=', $fechaCorte)
+                ->whereIn('estatus', ['Aprobada', 'Finalizado'])
+                ->where('jerarquia', 'Principal')
+                ->pluck('id');
+
+            // Saldo pendiente hoy ÚNICAMENTE de cotizaciones entregadas hasta el 30/09/2026 (excluye viajes de octubre)
+            $cxcPendienteHoy = $cotsCorte->isNotEmpty()
+                ? (float) $cxcService->basequery(true)->whereIn('t.id', $cotsCorte)->sum('t.total_restante')
+                : 0.00;
+
+            // Cobros reales de viajes entregados hasta el 30/09/2026 que fueron cobrados DESPUÉS del corte (ej. en octubre)
+            $cobradoPosterior = (float) \App\Models\CobroPagoCotizacion::whereIn('cotizacion_id', $cotsCorte)
+                ->whereHas('cobroPago', function($q) use ($fechaCorte) {
+                    $q->where('tipo', 'cxc')
+                      ->where(function($sq) use ($fechaCorte) {
+                          $sq->where('fechaAplicacion1', '>', $fechaCorte)
+                             ->orWhere('fechaAplicacion2', '>', $fechaCorte);
+                      });
+                })
+                ->sum('monto');
+
+            // Al corte del 30 de septiembre, lo pendiente por cobrar es lo que sigue pendiente hoy + lo que se cobró en octubre
+            $cxcPendiente = round($cxcPendienteHoy + $cobradoPosterior, 2);
 
             $gastosEmpresa = Gasto::where('id_empresa', $idEmpresa)
                 ->where('estatus', '!=', 'cancelado')
+                ->where('fecha_gasto', '<=', $fechaCorte)
                 ->get();
             $cxpPendiente = (float) $gastosEmpresa->sum('saldo_pendiente');
 

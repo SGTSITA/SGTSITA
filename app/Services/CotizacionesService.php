@@ -333,6 +333,16 @@ class CotizacionesService
     public function contabilizarProvisionViaje(Cotizaciones $cotizacion): ?\App\Models\Poliza
     {
         return DB::transaction(function () use ($cotizacion) {
+            // Regla de Negocio para viajes Full:
+            // La cotización Secundaria comparte tracto y viaja en conjunto; la deuda y facturación
+            // comercial se centraliza en la cotización Principal. La secundaria no se provisiona para evitar doble ingreso y saldo falso en CxC.
+            if ($cotizacion->jerarquia === 'Secundario') {
+                \App\Models\Poliza::where('origen_tipo', 'cotizacion')
+                    ->where('origen_id', $cotizacion->id)
+                    ->delete();
+                return null;
+            }
+
             $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
 
             $precioViaje = (float) ($cotizacion->total ?? 0);
@@ -355,6 +365,21 @@ class CotizacionesService
                 $camionId = $doc->Asignaciones->id_camion;
             }
 
+            // Resolver referencia de contenedor(es) incluyendo pareja de Full si aplica
+            $contenedor = $doc?->num_contenedor;
+            if (!empty($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+                $contSec = $secundaria?->DocCotizacion?->num_contenedor;
+                if ($contSec && $contenedor) {
+                    $contenedor = "{$contenedor} / {$contSec}";
+                } elseif ($contSec) {
+                    $contenedor = $contSec;
+                }
+            }
+
             $polizaService = app(\App\Services\PolizaService::class);
 
             // Eliminar previa si existía para evitar duplicidad
@@ -369,11 +394,14 @@ class CotizacionesService
                 ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
                 : now()->format('Y-m-d');
 
+            $conceptoDetalle = 'Provisión viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
+
             $asientoData = $polizaService->resolverAsientoPorEvento('PROVISION_VIAJE', null, $cotizacion->id_empresa ?? 1, [
                 'id_equipo'   => $camionId,
                 'monto'       => $precioViaje,
                 'fecha'       => $fecha,
-                'concepto'    => 'Provisión viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'concepto'    => $conceptoDetalle,
+                'referencia'  => $contenedor ?: ('VIAJE_' . $cotizacion->id),
                 'origen_tipo' => 'cotizacion',
                 'origen_id'   => $cotizacion->id,
             ]);
@@ -401,11 +429,29 @@ class CotizacionesService
 
             $polizaService = app(\App\Services\PolizaService::class);
 
+            // Resolver referencia de contenedor(es) incluyendo pareja de Full si aplica
+            $contenedor = $doc?->num_contenedor;
+            if (!empty($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+                $contSec = $secundaria?->DocCotizacion?->num_contenedor;
+                if ($contSec && $contenedor) {
+                    $contenedor = "{$contenedor} / {$contSec}";
+                } elseif ($contSec) {
+                    $contenedor = $contSec;
+                }
+            }
+
+            $conceptoDetalle = 'Cobro CXC viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
+
             $asientoData = $polizaService->resolverAsientoPorEvento('COBRO_CXC', null, $cotizacion->id_empresa ?? 1, [
                 'id_equipo'          => $camionId,
                 'monto'              => $monto,
                 'fecha'              => $fecha,
-                'concepto'           => 'Cobro CXC viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'concepto'           => $conceptoDetalle,
+                'referencia'         => $contenedor ?: ('COBRO_' . $cotizacion->id),
                 'cuenta_bancaria_id' => $bancoId,
                 'origen_tipo'        => 'cotizacion_cobro',
                 'origen_id'          => $cotizacion->id,
