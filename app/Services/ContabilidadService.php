@@ -618,7 +618,13 @@ class ContabilidadService
                 $saldoAcumulado += ($haber - $debe);
             }
 
-            $contenedor = $mapaContenedores[$m->poliza_id] ?? null;
+            $contenedor = null;
+            if (!empty($m->referencia) && preg_match('/[A-Z]{4}\d{7}/', $m->referencia)) {
+                $contenedor = $m->referencia;
+            } else {
+                $contenedor = $mapaContenedores[$m->poliza_id] ?? null;
+            }
+
             $referenciaFinal = $m->referencia;
             if ($contenedor) {
                 if (empty($referenciaFinal)) {

@@ -877,7 +877,70 @@ class PolizaService
                     $refContra = 'COBRO_CXC';
                 }
 
-                $movimientos = [
+                $lineasHaber = [];
+                if ($mov->referenciaable_type === 'App\Models\CobroPago' && $mov->referenciaable_id && $cuentaContraId) {
+                    $cobroPago = \App\Models\CobroPago::find($mov->referenciaable_id);
+                    $origen = null;
+                    if ($cobroPago) {
+                        if ((int)$cobroPago->bancoA_id === (int)$mov->cuenta_bancaria_id && (int)$cobroPago->bancoB_id !== (int)$mov->cuenta_bancaria_id) {
+                            $origen = 'A';
+                        } elseif ((int)$cobroPago->bancoB_id === (int)$mov->cuenta_bancaria_id && (int)$cobroPago->bancoA_id !== (int)$mov->cuenta_bancaria_id) {
+                            $origen = 'B';
+                        } elseif (str_ends_with(trim($mov->referencia ?? ''), 'A')) {
+                            $origen = 'A';
+                        } elseif (str_ends_with(trim($mov->referencia ?? ''), 'B')) {
+                            $origen = 'B';
+                        }
+                    }
+
+                    $cpcQuery = \App\Models\CobroPagoCotizacion::where('cobro_pago_id', $mov->referenciaable_id)
+                        ->where('monto', '>', 0);
+                    if ($origen) {
+                        $cpcQuery->where('origen', $origen);
+                    }
+                    $cpcs = $cpcQuery->with(['cotizacion.cliente', 'cotizacion.DocCotizacion'])->get();
+
+                    if ($cpcs->isNotEmpty() && abs($cpcs->sum('monto') - $monto) < 0.05) {
+                        foreach ($cpcs as $cpc) {
+                            $cot = $cpc->cotizacion;
+                            $cont = $cot?->DocCotizacion?->num_contenedor;
+                            if ($cot && !empty($cot->referencia_full)) {
+                                $sec = \App\Models\Cotizaciones::where('referencia_full', $cot->referencia_full)
+                                    ->where('id', '!=', $cot->id)
+                                    ->with('DocCotizacion')
+                                    ->first();
+                                $contSec = $sec?->DocCotizacion?->num_contenedor;
+                                if ($contSec && $cont) {
+                                    $cont = "{$cont} / {$contSec}";
+                                } elseif ($contSec) {
+                                    $cont = $contSec;
+                                }
+                            }
+
+                            $conceptoDetalle = "Cobro viaje #" . ($cot?->id ?? '') . ($cont ? " [{$cont}]" : '') . " Cliente: " . ($cot?->cliente?->nombre ?? 'N/A');
+
+                            $lineasHaber[] = [
+                                'cuenta_contable_id' => $cuentaContraId,
+                                'debe'               => 0.00,
+                                'haber'              => round((float)$cpc->monto, 2),
+                                'referencia'         => $cont ?: 'COBRO_CXC',
+                                'concepto_detalle'   => $conceptoDetalle,
+                            ];
+                        }
+                    }
+                }
+
+                if (empty($lineasHaber)) {
+                    $lineasHaber[] = [
+                        'cuenta_contable_id' => $cuentaContraId,
+                        'debe'               => 0.00,
+                        'haber'              => $monto,
+                        'referencia'         => $refContra,
+                        'concepto_detalle'   => $conceptoContra,
+                    ];
+                }
+
+                $movimientos = array_merge([
                     [
                         'cuenta_contable_id' => $cuentaBancoContableId,
                         'debe'               => $monto,
@@ -885,14 +948,7 @@ class PolizaService
                         'referencia'         => 'DEP_BANCO',
                         'concepto_detalle'   => $mov->concepto ?? 'Depósito Bancario',
                     ],
-                    [
-                        'cuenta_contable_id' => $cuentaContraId,
-                        'debe'               => 0.00,
-                        'haber'              => $monto,
-                        'referencia'         => $refContra,
-                        'concepto_detalle'   => $conceptoContra,
-                    ],
-                ];
+                ], $lineasHaber);
             } else {
                 if ($mov->referenciaable_type === 'App\Models\SocioPago'
                     || str_contains($conceptoUpper, 'UTILIDADES GABRIEL') || str_contains($conceptoUpper, 'SOCIO')) {
