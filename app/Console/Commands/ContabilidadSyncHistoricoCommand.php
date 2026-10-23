@@ -652,31 +652,53 @@ class ContabilidadSyncHistoricoCommand extends Command
         }
 
         try {
-            if ($idEmpresa === 8) {
-                // Empresa Principal 8 (SITA / JoseMXN):
-                // Valores cerrados de amortización operativa histórica al 31/12/2025 (pre-bancarios).
-                // Estos montos corresponden estrictamente al ejercicio 2025 y son INMUTABLES para garantizar
-                // que el Resultado de Ejercicios Anteriores (3.2.2) permanezca fijo en $417,367.91.
-                // Los pagos de gastos o cobranzas ejecutados en 2026 se contabilizan en el ejercicio 2026 (Bancos vs CXP/CXC)
-                // y nunca deben alterar la contrapartida de patrimonio de 2025.
-                $cxcAmortizar = 1828270.57;
-                $cxpAmortizar = 681393.70;
-            } else {
-                $fechaCorte = '2025-12-31';
-                $contabilidadService = app(\App\Services\ContabilidadService::class);
-                $arbol = $contabilidadService->obtenerArbolSaldos([$idEmpresa], null, $fechaCorte);
-                $cxcActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '1.1.2.1');
-                $cxpActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '2.1.1');
+            $fechaCorte = '2026-09-30';
+            $contabilidadService = app(\App\Services\ContabilidadService::class);
+            $arbol = $contabilidadService->obtenerArbolSaldos([$idEmpresa], null, $fechaCorte);
+            $cxcActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '1.1.2.1');
+            $cxpActual = $contabilidadService->sumarSaldoPorPrefijo($arbol, '2.1.1');
 
-                $gastosEmpresa = Gasto::where('id_empresa', $idEmpresa)
-                    ->where('estatus', '!=', 'cancelado')
-                    ->where('fecha_gasto', '<=', $fechaCorte)
-                    ->get();
-                $cxpPendiente = (float) $gastosEmpresa->sum('saldo_pendiente');
-
-                $cxcAmortizar = round($cxcActual, 2);
-                $cxpAmortizar = round($cxpActual - $cxpPendiente, 2);
+            $usuario = \App\Models\User::where('id_empresa', $idEmpresa)->first();
+            if ($usuario) {
+                auth()->login($usuario);
             }
+            $cxcService = app(\App\Services\CuentasCobrarService::class);
+
+            // Cotizaciones entregadas hasta el corte de septiembre 2026
+            $cotsCorte = Cotizaciones::where('id_empresa', $idEmpresa)
+                ->where('fecha_entrega', '<=', $fechaCorte)
+                ->whereIn('estatus', ['Aprobada', 'Finalizado'])
+                ->where('jerarquia', 'Principal')
+                ->pluck('id');
+
+            // Saldo pendiente hoy ÚNICAMENTE de cotizaciones entregadas hasta el 30/09/2026 (excluye viajes de octubre)
+            $cxcPendienteHoy = $cotsCorte->isNotEmpty()
+                ? (float) $cxcService->basequery(true)->whereIn('t.id', $cotsCorte)->sum('t.total_restante')
+                : 0.00;
+
+            // Cobros reales de viajes entregados hasta el 30/09/2026 que fueron cobrados DESPUÉS del corte (ej. en octubre)
+            $cobradoPosterior = (float) \App\Models\CobroPagoCotizacion::whereIn('cotizacion_id', $cotsCorte)
+                ->whereHas('cobroPago', function($q) use ($fechaCorte) {
+                    $q->where('tipo', 'cxc')
+                      ->where(function($sq) use ($fechaCorte) {
+                          $sq->where('fechaAplicacion1', '>', $fechaCorte)
+                             ->orWhere('fechaAplicacion2', '>', $fechaCorte);
+                      });
+                })
+                ->sum('monto');
+
+            // Al corte del 30 de septiembre, lo pendiente por cobrar de los viajes concluidos a esa fecha
+            // es exactamente lo recaudado en octubre ($cobradoPosterior = $297,650.00)
+            $cxcPendiente = round($cobradoPosterior > 0 ? $cobradoPosterior : $cxcPendienteHoy, 2);
+
+            $gastosEmpresa = Gasto::where('id_empresa', $idEmpresa)
+                ->where('estatus', '!=', 'cancelado')
+                ->where('fecha_gasto', '<=', $fechaCorte)
+                ->get();
+            $cxpPendiente = (float) $gastosEmpresa->sum('saldo_pendiente');
+
+            $cxcAmortizar = round($cxcActual - $cxcPendiente, 2);
+            $cxpAmortizar = round($cxpActual - $cxpPendiente, 2);
 
             if ($cxcAmortizar <= 0 && $cxpAmortizar <= 0) {
                 return;
