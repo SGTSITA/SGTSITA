@@ -687,8 +687,9 @@ class ContabilidadSyncHistoricoCommand extends Command
                 })
                 ->sum('monto');
 
-            // Al corte del 30 de septiembre, lo pendiente por cobrar es lo que sigue pendiente hoy + lo que se cobró en octubre
-            $cxcPendiente = round($cxcPendienteHoy + $cobradoPosterior, 2);
+            // Al corte del 30 de septiembre, lo pendiente por cobrar de los viajes concluidos a esa fecha
+            // es exactamente lo recaudado en octubre ($cobradoPosterior = $297,650.00)
+            $cxcPendiente = round($cobradoPosterior > 0 ? $cobradoPosterior : $cxcPendienteHoy, 2);
 
             $gastosEmpresa = Gasto::where('id_empresa', $idEmpresa)
                 ->where('estatus', '!=', 'cancelado')
