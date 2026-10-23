@@ -5,10 +5,18 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.
 - Módulos activos: Cotizaciones, Viajes, Contenedores, Planeación, Monitoreo, Gastos y Liquidaciones.
 - Spec 011 (CONAC Pólizas & Verdad Operativa): Balance General al corte 2026-09-30 conciliado y cuadrado con Diferencia $0.00:
-  - Cuentas por Cobrar (CXC `1.1.2.1%`): $0.00 exactos (reflejo de `/cuentas/cobrar` donde no existen cobros pendientes).
+  - Cuentas por Cobrar (CXC `1.1.2.1%`): Al corte del 30 de septiembre 2026 muestra exactamente $297,650.00 (los 5 viajes entregados en septiembre que se cobraron el 01/10/2026); al corte actual muestra exactamente $0.00 tras la entrada de los depósitos bancarios de octubre.
   - Cuentas por Pagar (CXP `2.1.1%`): $288,857.96 exactos (reflejo fiel de los 71 gastos operativos pendientes de pago).
   - Bancos (`1.1.1.2%`): $432,750.25 (Azteca $12,775.96 + Banorte $419,974.29).
-  - Activo ($1,030,545.92) = Pasivo ($288,857.96) + Patrimonio ($741,687.96). Cuadrado: SI.
+  - Activo ($1,328,195.92) = Pasivo ($288,857.96) + Patrimonio ($1,039,337.96: Ej. Anteriores $417,367.91 + Ej. Actual $621,970.05). Cuadrado: SI (Diferencia: $0.00).
+- `ContabilidadSyncHistoricoCommand`: acepta argumento posicional `{empresa?}` y opción `--empresa=`. En `syncOperacionesHistoricasPreBanco`, aísla estrictamente cotizaciones y gastos entregados al corte `<= 2026-09-30`, previniendo que viajes de octubre alteren la amortización histórica prebancaria.
+- Conciliación de Ingresos por Fletes y Reporte de Utilidad:
+  - En `/reporteria/utilidad`: `precioViaje` toma `$d->total` sin sumar gastos operativos extraordinarios, cuadrando al centavo con la cuenta `4.1.1.1` (Ingresos por Fletes y Servicios) del Estado de Resultados en $3,810,200.00 (Diferencia: $0.00).
+- Desglose Contable de Cobros Multipoliza y Contenedores:
+  - En `PolizaService::contabilizarMovimientoBancario`: depósitos bancarios originados en `CobroPago` desglosan una partida individual de abono a Clientes (`1.1.2.1.001`) por cada cotización/contenedor cobrado, evitando asociar montos globales a un solo contenedor.
+  - En el Auxiliar Contable de CXC, el contenedor `MSKU1782954` muestra Cargo por $62,530.00 y Abonos por $21,280.00 (Azteca) y $41,250.00 (Banorte), saldo neto: $0.00.
+- Regla Contable para Viajes Full:
+  - En `CotizacionesService::contabilizarProvisionViaje`: solo se provisiona la cotización `Principal`, concatenando ambos contenedores (`CONT1 / CONT2`) en referencia y concepto. La cotización `Secundaria` no se provisiona para evitar duplicidad de ingresos y saldos falsos en CXC.
 - Provisión y Cobro Operativo en tiempo real:
   - Al capturar costos y crear viaje (`CotizacionesController::storeV2` y `update`): provisión automática `PROVISION_VIAJE` (Cargo CXC `1.1.2.1.001`, Abono Ingresos `4.1.1.1`).
   - Al cobrar en CXC (`CuentasCobrarController::aplicar_pagos` -> `BancosService::registrarMovimiento`): generación automática de póliza bancaria (Cargo Bancos `1.1.1.2.xxx`, Abono CXC `1.1.2.1.001`), cancelando de inmediato la provisión.

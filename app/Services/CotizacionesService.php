@@ -354,6 +354,25 @@ class CotizacionesService
                     + (float) ($cotizacion->otro ?? 0);
             }
 
+            // Si es Principal de un viaje Full, sumarle el importe de la cotización secundaria
+            if (!empty($cotizacion->referencia_full) && $cotizacion->jerarquia === 'Principal') {
+                $secundarias = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->where('id', '!=', $cotizacion->id)
+                    ->get();
+                foreach ($secundarias as $sec) {
+                    $montoSec = (float) ($sec->total ?? 0);
+                    if ($montoSec <= 0) {
+                        $montoSec = (float) ($sec->precio_viaje ?? 0)
+                            + (float) ($sec->burreo ?? 0)
+                            + (float) ($sec->maniobra ?? 0)
+                            + (float) ($sec->estadia ?? 0)
+                            + (float) ($sec->otro ?? 0);
+                    }
+                    $precioViaje += $montoSec;
+                }
+            }
+
             if ($precioViaje <= 0) {
                 return null;
             }
@@ -392,7 +411,9 @@ class CotizacionesService
 
             $fecha = !empty($cotizacion->fecha_entrega)
                 ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
-                : now()->format('Y-m-d');
+                : (!empty($doc?->Asignaciones?->fehca_inicio_guard)
+                    ? Carbon::parse($doc->Asignaciones->fehca_inicio_guard)->format('Y-m-d')
+                    : ($cotizacion->created_at ? $cotizacion->created_at->format('Y-m-d') : now()->format('Y-m-d')));
 
             $conceptoDetalle = 'Provisión viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
 
