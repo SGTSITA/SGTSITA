@@ -9,7 +9,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Cuentas por Pagar (CXP `2.1.1%`): $288,857.96 exactos (reflejo fiel de los 71 gastos operativos pendientes de pago).
   - Bancos (`1.1.1.2%`): $432,750.25 (Azteca $12,775.96 + Banorte $419,974.29).
   - Activo ($1,328,195.92) = Pasivo ($288,857.96) + Patrimonio ($1,039,337.96: Ej. Anteriores $417,367.91 + Ej. Actual $621,970.05). Cuadrado: SI (Diferencia: $0.00).
-- `ContabilidadSyncHistoricoCommand`: acepta argumento posicional `{empresa?}` y opción `--empresa=`. En `syncOperacionesHistoricasPreBanco`, aísla estrictamente cotizaciones y gastos entregados al corte `<= 2026-09-30`, previniendo que viajes de octubre alteren la amortización histórica prebancaria.
+- `ContabilidadSyncHistoricoCommand`: acepta argumento posicional `{empresa?}` y opción `--empresa=`. En `syncOperacionesHistoricasPreBanco`, la amortización histórica del ejercicio cerrado 2025 (pre-bancos) en Empresa 8 es fija e inmutable ($1,828,270.57 CxC, $681,393.70 CxP, $1,146,876.87 Patrimonio), garantizando que el Resultado de Ejercicios Anteriores (3.2.2) quede blindado en $417,367.91 y no sea alterado por pagos de gastos o cobranzas ejecutados en 2026. Para otras empresas, utiliza fecha de corte 2025-12-31.
 - Conciliación de Ingresos por Fletes y Reporte de Utilidad:
   - En `/reporteria/utilidad`: `precioViaje` toma `$d->total` sin sumar gastos operativos extraordinarios, cuadrando al centavo con la cuenta `4.1.1.1` (Ingresos por Fletes y Servicios) del Estado de Resultados en $3,810,200.00 (Diferencia: $0.00).
 - Desglose Contable de Cobros Multipoliza y Contenedores:
