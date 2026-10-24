@@ -476,6 +476,332 @@ class ContabilidadService
     }
 
     /**
+     * Genera el Auxiliar Contable (Libro Mayor por Cuentas) con desglose cronológico de pólizas por cuenta afectable.
+     *
+     * @param array|int $empresas
+     * @param int|null $idEquipo
+     * @param string $fechaCorte
+     * @param string|null $fechaInicio
+     * @param bool $soloConMovimientos
+     * @return array
+     */
+    public function calcularAuxiliarContable(array|int $empresas, ?int $idEquipo = null, string $fechaCorte = '', ?string $fechaInicio = null, bool $soloConMovimientos = false): array
+    {
+        $empresasIds = is_array($empresas) ? $empresas : [$empresas];
+        $fechaCorte = !empty($fechaCorte) ? Carbon::parse($fechaCorte)->format('Y-m-d') : now()->format('Y-m-d');
+        $anio = Carbon::parse($fechaCorte)->year;
+        $fechaInicio = !empty($fechaInicio) ? Carbon::parse($fechaInicio)->format('Y-m-d') : "{$anio}-01-01";
+
+        // 1. Catálogo completo ordenado jerárquicamente
+        $cuentas = CatCuentaContable::where('activo', true)
+            ->where(function ($q) use ($empresasIds) {
+                $q->whereNull('id_empresa')->orWhereIn('id_empresa', $empresasIds);
+            })
+            ->orderBy('codigo', 'asc')
+            ->get();
+
+        // 2. Saldos Iniciales (< fechaInicio o es_apertura = 1)
+        $movsInicialesQuery = DB::table('poliza_movimientos as pm')
+            ->join('polizas as p', 'p.id', '=', 'pm.poliza_id')
+            ->whereIn('p.id_empresa', $empresasIds)
+            ->where('p.estatus', 'aplicada')
+            ->where(function ($q) use ($fechaInicio) {
+                $q->where('p.fecha', '<', $fechaInicio)->orWhere('p.es_apertura', 1);
+            });
+
+        if ($idEquipo) {
+            $movsInicialesQuery->where(function ($q) use ($idEquipo) {
+                $q->where('pm.id_equipo', $idEquipo)->orWhere('p.id_equipo', $idEquipo);
+            });
+        }
+
+        $movsIniciales = $movsInicialesQuery->select(
+            'pm.cuenta_contable_id',
+            DB::raw('SUM(pm.debe) as debe'),
+            DB::raw('SUM(pm.haber) as haber')
+        )
+        ->groupBy('pm.cuenta_contable_id')
+        ->get()
+        ->keyBy('cuenta_contable_id');
+
+        // 3. Movimientos del Periodo (>= fechaInicio y <= fechaCorte y es_apertura = 0)
+        $movsPeriodoQuery = DB::table('poliza_movimientos as pm')
+            ->join('polizas as p', 'p.id', '=', 'pm.poliza_id')
+            ->whereIn('p.id_empresa', $empresasIds)
+            ->where('p.estatus', 'aplicada')
+            ->where('p.fecha', '>=', $fechaInicio)
+            ->where('p.fecha', '<=', $fechaCorte)
+            ->where('p.es_apertura', 0);
+
+        if ($idEquipo) {
+            $movsPeriodoQuery->where(function ($q) use ($idEquipo) {
+                $q->where('pm.id_equipo', $idEquipo)->orWhere('p.id_equipo', $idEquipo);
+            });
+        }
+
+        $movimientosRaw = $movsPeriodoQuery->select([
+            'pm.id as movimiento_id',
+            'pm.cuenta_contable_id',
+            'pm.debe',
+            'pm.haber',
+            'pm.referencia',
+            'pm.concepto_detalle',
+            'p.id as poliza_id',
+            'p.numero as poliza_numero',
+            'p.tipo as poliza_tipo',
+            'p.fecha as poliza_fecha',
+            'p.concepto as poliza_concepto',
+            'p.origen_tipo as poliza_origen_tipo',
+            'p.origen_id as poliza_origen_id',
+        ])
+        ->orderBy('p.fecha', 'asc')
+        ->orderBy('p.numero', 'asc')
+        ->orderBy('pm.id', 'asc')
+        ->get();
+
+        $mapaContenedores = $this->resolverContenedoresPorPolizas($movimientosRaw);
+        $movsPorCuenta = $movimientosRaw->groupBy('cuenta_contable_id');
+
+        $filasCuentas = [];
+        $totalGeneralDebe = 0.00;
+        $totalGeneralHaber = 0.00;
+        $conteoTotalMovimientos = 0;
+
+        foreach ($cuentas as $c) {
+            if (!$c->es_afectable) {
+                // Cuenta de Mayor / Título Estructural
+                $filasCuentas[] = [
+                    'id'               => $c->id,
+                    'codigo'           => $c->codigo,
+                    'nombre'           => $c->nombre,
+                    'naturaleza'       => $c->naturaleza,
+                    'nivel'            => $c->nivel,
+                    'rubro'            => $c->rubro,
+                    'es_afectable'     => false,
+                    'saldo_inicial'    => 0.00,
+                    'total_debe'       => 0.00,
+                    'total_haber'      => 0.00,
+                    'saldo_final'      => 0.00,
+                    'tiene_movimientos'=> false,
+                    'movimientos'      => [],
+                ];
+                continue;
+            }
+
+            // Cuenta afectable
+            $ini = $movsIniciales->get($c->id);
+            $iniDebe = $ini ? (float) $ini->debe : 0.00;
+            $iniHaber = $ini ? (float) $ini->haber : 0.00;
+            $saldoIni = ($c->naturaleza === 'deudora') ? ($iniDebe - $iniHaber) : ($iniHaber - $iniDebe);
+
+            $movs = $movsPorCuenta->get($c->id, collect());
+            $listaMovs = [];
+            $saldoAcum = $saldoIni;
+            $ctaDebe = 0.00;
+            $ctaHaber = 0.00;
+
+            foreach ($movs as $m) {
+                $debe = (float) $m->debe;
+                $haber = (float) $m->haber;
+                $ctaDebe += $debe;
+                $ctaHaber += $haber;
+
+                if ($c->naturaleza === 'deudora') {
+                    $saldoAcum += ($debe - $haber);
+                } else {
+                    $saldoAcum += ($haber - $debe);
+                }
+
+                $cont = null;
+                if (!empty($m->referencia) && preg_match('/[A-Z]{4}\d{7}/', $m->referencia)) {
+                    $cont = $m->referencia;
+                } else {
+                    $cont = $mapaContenedores[$m->poliza_id] ?? null;
+                }
+
+                $refFinal = $m->referencia;
+                if ($cont) {
+                    if (empty($refFinal)) {
+                        $refFinal = $cont;
+                    } elseif (!str_contains($refFinal, $cont)) {
+                        $refFinal = "{$refFinal} [{$cont}]";
+                    }
+                }
+
+                $listaMovs[] = [
+                    'id'              => $m->movimiento_id,
+                    'poliza_id'       => $m->poliza_id,
+                    'poliza_numero'   => $m->poliza_numero ?: ('POL-' . str_pad($m->poliza_id, 5, '0', STR_PAD_LEFT)),
+                    'poliza_tipo'     => strtoupper($m->poliza_tipo ?: 'diario'),
+                    'fecha'           => $m->poliza_fecha,
+                    'fecha_formato'   => Carbon::parse($m->poliza_fecha)->format('d/m/Y'),
+                    'concepto'        => $m->concepto_detalle ?: $m->poliza_concepto,
+                    'referencia'      => $refFinal,
+                    'contenedor'      => $cont,
+                    'debe'            => $debe,
+                    'haber'           => $haber,
+                    'saldo_acumulado' => round($saldoAcum, 2),
+                ];
+            }
+
+            $saldoFin = ($c->naturaleza === 'deudora') ? ($saldoIni + $ctaDebe - $ctaHaber) : ($saldoIni + $ctaHaber - $ctaDebe);
+            $tieneMovs = abs($saldoIni) > 0.001 || count($listaMovs) > 0;
+
+            $totalGeneralDebe += $ctaDebe;
+            $totalGeneralHaber += $ctaHaber;
+            $conteoTotalMovimientos += count($listaMovs);
+
+            $filasCuentas[] = [
+                'id'               => $c->id,
+                'codigo'           => $c->codigo,
+                'nombre'           => $c->nombre,
+                'naturaleza'       => $c->naturaleza,
+                'nivel'            => $c->nivel,
+                'rubro'            => $c->rubro,
+                'es_afectable'     => true,
+                'saldo_inicial'    => round($saldoIni, 2),
+                'total_debe'       => round($ctaDebe, 2),
+                'total_haber'      => round($ctaHaber, 2),
+                'saldo_final'      => round($saldoFin, 2),
+                'tiene_movimientos'=> $tieneMovs,
+                'movimientos'      => $listaMovs,
+            ];
+        }
+
+        return [
+            'fecha_corte'               => $fechaCorte,
+            'fecha_inicio'              => $fechaInicio,
+            'empresas_ids'              => $empresasIds,
+            'id_equipo'                 => $idEquipo,
+            'cuentas'                   => $filasCuentas,
+            'total_debe'                => round($totalGeneralDebe, 2),
+            'total_haber'               => round($totalGeneralHaber, 2),
+            'conteo_movimientos'        => $conteoTotalMovimientos,
+            'diferencia'                => round(abs($totalGeneralDebe - $totalGeneralHaber), 2),
+            'cuadrado'                  => abs($totalGeneralDebe - $totalGeneralHaber) < 0.01,
+        ];
+    }
+
+    /**
+     * Obtiene el Libro Diario de Pólizas con todas las partidas detalladas para conciliación.
+     *
+     * @param array|int $empresas
+     * @param int|null $idEquipo
+     * @param string $fechaCorte
+     * @param string|null $fechaInicio
+     * @return array
+     */
+    public function obtenerLibroDiario(array|int $empresas, ?int $idEquipo = null, string $fechaCorte = '', ?string $fechaInicio = null): array
+    {
+        $empresasIds = is_array($empresas) ? $empresas : [$empresas];
+        $fechaCorte = !empty($fechaCorte) ? Carbon::parse($fechaCorte)->format('Y-m-d') : now()->format('Y-m-d');
+        $anio = Carbon::parse($fechaCorte)->year;
+        $fechaInicio = !empty($fechaInicio) ? Carbon::parse($fechaInicio)->format('Y-m-d') : "{$anio}-01-01";
+
+        $polizasQuery = \App\Models\Poliza::whereIn('id_empresa', $empresasIds)
+            ->where('estatus', 'aplicada')
+            ->where('fecha', '<=', $fechaCorte)
+            ->where('fecha', '>=', $fechaInicio);
+
+        if ($idEquipo) {
+            $polizasQuery->where('id_equipo', $idEquipo);
+        }
+
+        $polizas = $polizasQuery->with(['movimientos.cuentaContable', 'equipo'])
+            ->orderBy('fecha', 'asc')
+            ->orderBy('numero', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $todosMovimientosRaw = collect();
+        foreach ($polizas as $p) {
+            foreach ($p->movimientos as $pm) {
+                $todosMovimientosRaw->push((object)[
+                    'poliza_id'          => $p->id,
+                    'poliza_origen_tipo' => $p->origen_tipo,
+                    'poliza_origen_id'   => $p->origen_id,
+                    'referencia'         => $pm->referencia,
+                    'concepto_detalle'   => $pm->concepto_detalle,
+                    'poliza_concepto'    => $p->concepto,
+                ]);
+            }
+        }
+        $mapaContenedores = $this->resolverContenedoresPorPolizas($todosMovimientosRaw);
+
+        $listaPolizas = [];
+        $totalGeneralDebe = 0.00;
+        $totalGeneralHaber = 0.00;
+
+        foreach ($polizas as $p) {
+            $pDebe = 0.00;
+            $pHaber = 0.00;
+            $partidas = [];
+            $contPoliza = $mapaContenedores[$p->id] ?? null;
+
+            foreach ($p->movimientos as $pm) {
+                $debe = (float) $pm->debe;
+                $haber = (float) $pm->haber;
+                $pDebe += $debe;
+                $pHaber += $haber;
+
+                $refFinal = $pm->referencia;
+                if ($contPoliza) {
+                    if (empty($refFinal)) {
+                        $refFinal = $contPoliza;
+                    } elseif (!str_contains($refFinal, $contPoliza)) {
+                        $refFinal = "{$refFinal} [{$contPoliza}]";
+                    }
+                }
+
+                $partidas[] = [
+                    'id'               => $pm->id,
+                    'linea'            => $pm->linea,
+                    'cuenta_id'        => $pm->cuenta_contable_id,
+                    'cuenta_codigo'    => $pm->cuentaContable?->codigo ?? 'N/A',
+                    'cuenta_nombre'    => $pm->cuentaContable?->nombre ?? 'Cuenta No Encontrada',
+                    'debe'             => $debe,
+                    'haber'            => $haber,
+                    'referencia'       => $refFinal,
+                    'contenedor'       => $contPoliza,
+                    'concepto_detalle' => $pm->concepto_detalle ?: $p->concepto,
+                ];
+            }
+
+            $totalGeneralDebe += $pDebe;
+            $totalGeneralHaber += $pHaber;
+
+            $listaPolizas[] = [
+                'id'            => $p->id,
+                'numero'        => $p->numero ?: ('POL-' . str_pad($p->id, 5, '0', STR_PAD_LEFT)),
+                'tipo'          => strtoupper($p->tipo ?: 'diario'),
+                'es_apertura'   => (bool) $p->es_apertura,
+                'fecha'         => $p->fecha?->format('Y-m-d'),
+                'fecha_formato' => $p->fecha?->format('d/m/Y'),
+                'concepto'      => $p->concepto,
+                'origen_tipo'   => $p->origen_tipo,
+                'origen_id'     => $p->origen_id,
+                'equipo'        => $p->equipo?->texto_select,
+                'total_debe'    => round($pDebe, 2),
+                'total_haber'   => round($pHaber, 2),
+                'cuadrada'      => abs($pDebe - $pHaber) < 0.01,
+                'partidas'      => $partidas,
+            ];
+        }
+
+        return [
+            'fecha_corte'    => $fechaCorte,
+            'fecha_inicio'   => $fechaInicio,
+            'empresas_ids'   => $empresasIds,
+            'id_equipo'      => $idEquipo,
+            'total_polizas'  => count($listaPolizas),
+            'total_debe'     => round($totalGeneralDebe, 2),
+            'total_haber'    => round($totalGeneralHaber, 2),
+            'cuadrado'       => abs($totalGeneralDebe - $totalGeneralHaber) < 0.01,
+            'polizas'        => $listaPolizas,
+        ];
+    }
+
+    /**
      * Suma los saldos netos de las cuentas que comienzan con el prefijo dado.
      * Toma el saldo de la cuenta de mayor más alta que coincida para no duplicar sumas.
      */

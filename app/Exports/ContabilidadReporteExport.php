@@ -25,6 +25,8 @@ class ContabilidadReporteExport implements FromView, ShouldAutoSize, WithStyles,
         $vista = match ($this->tipoReporte) {
             'estado_resultados'   => 'contabilidad.excel.estado-resultados',
             'balanza_comprobacion'=> 'contabilidad.excel.balanza-comprobacion',
+            'auxiliar_contable'   => 'contabilidad.excel.auxiliar-contable',
+            'libro_diario'        => 'contabilidad.excel.libro-diario',
             default               => 'contabilidad.excel.balance-general',
         };
 
@@ -43,6 +45,8 @@ class ContabilidadReporteExport implements FromView, ShouldAutoSize, WithStyles,
         return match ($this->tipoReporte) {
             'estado_resultados'   => 'Estado de Resultados',
             'balanza_comprobacion'=> 'Balanza de Comprobación',
+            'auxiliar_contable'   => 'Auxiliar Contable',
+            'libro_diario'        => 'Libro Diario de Pólizas',
             default               => 'Balance General',
         };
     }

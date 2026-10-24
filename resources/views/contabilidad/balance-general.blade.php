@@ -51,7 +51,7 @@
                     @endif
 
                     {{-- Filtro de Unidad / Camión (id_equipo - marca) --}}
-                    <div class="col-xl-{{ $esAdmin ? '3' : '4' }} col-lg-{{ $esAdmin ? '3' : '4' }} col-md-6">
+                    <div class="col-xl-{{ $esAdmin ? '2' : '3' }} col-lg-{{ $esAdmin ? '2' : '3' }} col-md-6">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
                             <i class="fas fa-truck text-primary me-1"></i> Unidad / Camión:
                         </label>
@@ -66,13 +66,22 @@
                         <small class="text-muted text-xxs">Filtra la operatividad por unidad vehicular.</small>
                     </div>
 
-                    {{-- Fecha de Corte --}}
-                    <div class="col-xl-{{ $esAdmin ? '3' : '4' }} col-lg-{{ $esAdmin ? '2' : '4' }} col-md-6">
+                    {{-- Fecha Desde (Inicio de Periodo) --}}
+                    <div class="col-xl-2 col-lg-2 col-md-3 col-6">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
-                            <i class="fas fa-calendar-alt text-primary me-1"></i> Fecha de Corte:
+                            <i class="fas fa-calendar-day text-primary me-1"></i> Fecha Desde:
+                        </label>
+                        <input type="date" name="fecha_inicio" class="form-control form-control-sm" value="{{ $fechaInicio }}">
+                        <small class="text-muted text-xxs">Inicio del periodo.</small>
+                    </div>
+
+                    {{-- Fecha de Corte (Hasta) --}}
+                    <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                        <label class="form-label fw-bold text-dark text-xs mb-1">
+                            <i class="fas fa-calendar-check text-primary me-1"></i> Fecha Corte:
                         </label>
                         <input type="date" name="fecha_corte" class="form-control form-control-sm" value="{{ $fechaCorte }}" required>
-                        <small class="text-muted text-xxs">Calcula saldos al día especificado.</small>
+                        <small class="text-muted text-xxs">Corte del periodo.</small>
                     </div>
 
                 </div>
@@ -123,6 +132,12 @@
             @if ($tipoReporte === 'balanza_comprobacion')
                 {{-- VISTA PREVIA: BALANZA DE COMPROBACIÓN [BC-03] --}}
                 @include('contabilidad.partials.vista-balanza-comprobacion')
+            @elseif ($tipoReporte === 'auxiliar_contable')
+                {{-- VISTA PREVIA: AUXILIAR CONTABLE / LIBRO MAYOR [AC-07] --}}
+                @include('contabilidad.partials.vista-auxiliar-contable')
+            @elseif ($tipoReporte === 'libro_diario')
+                {{-- VISTA PREVIA: LIBRO DIARIO DE PÓLIZAS [LD-06] --}}
+                @include('contabilidad.partials.vista-libro-diario')
             @elseif ($tipoReporte === 'estado_resultados')
                 {{-- VISTA PREVIA: ESTADO DE ACTIVIDADES / RESULTADOS [ERA-02] --}}
                 @include('contabilidad.partials.vista-estado-resultados')

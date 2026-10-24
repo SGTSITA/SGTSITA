@@ -6,7 +6,7 @@
     <style>
         @page {
             margin: 12mm 10mm 15mm 10mm;
-            size: {{ $tipoReporte === 'balanza_comprobacion' ? 'letter landscape' : 'letter portrait' }};
+            size: {{ in_array($tipoReporte, ['balanza_comprobacion', 'auxiliar_contable', 'libro_diario']) ? 'letter landscape' : 'letter portrait' }};
         }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
@@ -398,6 +398,133 @@
                 </span>
             @endif
         </div>
+
+    @elseif ($tipoReporte === 'auxiliar_contable')
+        {{-- ==================== 4. AUXILIAR CONTABLE (LIBRO MAYOR) ==================== --}}
+        @foreach ($data['cuentas'] as $c)
+            @if (!$c['es_afectable'])
+                <div style="background-color: #2b6cb0; color: #ffffff; padding: 4px 6px; font-weight: bold; font-size: 8pt; margin-top: 8px; margin-bottom: 2px;">
+                    {{ $c['codigo'] }} - {{ $c['nombre'] }}
+                </div>
+            @else
+                <table class="conac-table" style="margin-bottom: 8px; page-break-inside: avoid;">
+                    <thead>
+                        <tr style="background-color: #edf2f7; color: #2d3748;">
+                            <th colspan="5" class="text-left" style="background-color: #e2e8f0; color: #1a202c; font-size: 7.5pt;">
+                                CUENTA: {{ $c['codigo'] }} {{ $c['nombre'] }} ({{ ucfirst($c['naturaleza']) }})
+                            </th>
+                            <th colspan="2" class="text-right" style="background-color: #e2e8f0; color: #1a202c; font-size: 7.5pt;">
+                                SALDO INICIAL: $ {{ number_format($c['saldo_inicial'], 2) }}
+                            </th>
+                        </tr>
+                        @if(!empty($c['movimientos']))
+                            <tr>
+                                <th style="width: 10%;">FECHA</th>
+                                <th style="width: 8%;">TIPO</th>
+                                <th style="width: 15%;">PÓLIZA #</th>
+                                <th class="text-left" style="width: 32%;">CONCEPTO / DETALLE</th>
+                                <th class="text-left" style="width: 15%;">REF / CONT</th>
+                                <th class="text-right" style="width: 10%;">DEBE</th>
+                                <th class="text-right" style="width: 10%;">HABER</th>
+                            </tr>
+                        @endif
+                    </thead>
+                    <tbody>
+                        @forelse ($c['movimientos'] as $m)
+                            <tr>
+                                <td class="text-center">{{ $m['fecha_formato'] }}</td>
+                                <td class="text-center">{{ $m['poliza_tipo'] }}</td>
+                                <td class="text-center" style="font-family: monospace;">{{ $m['poliza_numero'] }}</td>
+                                <td class="text-left">{{ $m['concepto'] }}</td>
+                                <td class="text-left">{{ $m['referencia'] }}</td>
+                                <td class="text-right text-success">{{ $m['debe'] > 0 ? '$ ' . number_format($m['debe'], 2) : '-' }}</td>
+                                <td class="text-right text-danger">{{ $m['haber'] > 0 ? '$ ' . number_format($m['haber'], 2) : '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center" style="color: #718096; font-style: italic; font-size: 7pt; padding: 3px;">
+                                    (Sin movimientos en el periodo seleccionado)
+                                </td>
+                            </tr>
+                        @endforelse
+                        <tr class="total-row">
+                            <td colspan="5" class="text-right" style="font-size: 7.5pt;">TOTAL CUENTA {{ $c['codigo'] }}:</td>
+                            <td class="text-right text-success" style="font-size: 7.5pt;">$ {{ number_format($c['total_debe'], 2) }}</td>
+                            <td class="text-right text-danger" style="font-size: 7.5pt;">$ {{ number_format($c['total_haber'], 2) }}</td>
+                        </tr>
+                        <tr style="background-color: #f7fafc; font-weight: bold;">
+                            <td colspan="5" class="text-right" style="font-size: 7.5pt;">SALDO FINAL ({{ strtoupper($c['naturaleza']) }}):</td>
+                            <td colspan="2" class="text-right" style="font-size: 8pt; color: #2b6cb0;">
+                                $ {{ number_format($c['saldo_final'], 2) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            @endif
+        @endforeach
+
+        <table class="conac-table" style="margin-top: 10px;">
+            <tr class="total-row" style="background-color: #1a365d; color: #ffffff;">
+                <td colspan="5" class="text-right" style="color: #ffffff; font-weight: bold; font-size: 8.5pt;">SUMAS TOTALES AUXILIARES:</td>
+                <td class="text-right text-success" style="color: #68d391; font-weight: bold; font-size: 8.5pt;">$ {{ number_format($data['total_debe'], 2) }}</td>
+                <td class="text-right text-danger" style="color: #fc8181; font-weight: bold; font-size: 8.5pt;">$ {{ number_format($data['total_haber'], 2) }}</td>
+            </tr>
+        </table>
+
+    @elseif ($tipoReporte === 'libro_diario')
+        {{-- ==================== 5. LIBRO DIARIO DE PÓLIZAS ==================== --}}
+        <table class="conac-table">
+            <thead>
+                <tr>
+                    <th style="width: 9%;">FECHA</th>
+                    <th style="width: 8%;">TIPO</th>
+                    <th style="width: 14%;">PÓLIZA #</th>
+                    <th style="width: 12%;">CUENTA</th>
+                    <th class="text-left" style="width: 25%;">NOMBRE CUENTA / CONCEPTO</th>
+                    <th class="text-left" style="width: 14%;">REF / CONT</th>
+                    <th class="text-right" style="width: 9%;">DEBE</th>
+                    <th class="text-right" style="width: 9%;">HABER</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($data['polizas'] as $p)
+                    <tr style="background-color: #edf2f7; font-weight: bold; border-top: 1px solid #2b6cb0;">
+                        <td class="text-center">{{ $p['fecha_formato'] }}</td>
+                        <td class="text-center">{{ $p['tipo'] }}</td>
+                        <td class="text-center" style="font-family: monospace; color: #2b6cb0;">{{ $p['numero'] }}</td>
+                        <td colspan="3" class="text-left" style="color: #2d3748;">
+                            {{ $p['concepto'] }}
+                        </td>
+                        <td class="text-right text-success">$ {{ number_format($p['total_debe'], 2) }}</td>
+                        <td class="text-right text-danger">$ {{ number_format($p['total_haber'], 2) }}</td>
+                    </tr>
+                    @foreach ($p['partidas'] as $part)
+                        <tr>
+                            <td colspan="3" class="text-right" style="color: #a0aec0; font-size: 6.5pt;">
+                                <em>Línea {{ $part['linea'] }}</em>
+                            </td>
+                            <td class="text-center" style="font-family: monospace;">{{ $part['cuenta_codigo'] }}</td>
+                            <td class="text-left">
+                                <strong>{{ $part['cuenta_nombre'] }}</strong>
+                                @if($part['concepto_detalle'] && $part['concepto_detalle'] !== $p['concepto'])
+                                    <div style="color: #718096; font-size: 6.5pt;">{{ $part['concepto_detalle'] }}</div>
+                                @endif
+                            </td>
+                            <td class="text-left">{{ $part['referencia'] }}</td>
+                            <td class="text-right text-success">{{ $part['debe'] > 0 ? '$ ' . number_format($part['debe'], 2) : '-' }}</td>
+                            <td class="text-right text-danger">{{ $part['haber'] > 0 ? '$ ' . number_format($part['haber'], 2) : '-' }}</td>
+                        </tr>
+                    @endforeach
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="total-row" style="background-color: #1a365d; color: #ffffff;">
+                    <td colspan="6" class="text-right" style="color: #ffffff; font-weight: bold; font-size: 8.5pt;">SUMAS IGUALES DEL DIARIO:</td>
+                    <td class="text-right" style="color: #68d391; font-weight: bold; font-size: 8.5pt;">$ {{ number_format($data['total_debe'], 2) }}</td>
+                    <td class="text-right" style="color: #fc8181; font-weight: bold; font-size: 8.5pt;">$ {{ number_format($data['total_haber'], 2) }}</td>
+                </tr>
+            </tfoot>
+        </table>
     @endif
 
     {{-- LEYENDA LEGAL CONAC --}}
