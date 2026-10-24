@@ -21,7 +21,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Al capturar costos y crear viaje (`CotizacionesController::storeV2` y `update`): provisión automática `PROVISION_VIAJE` (Cargo CXC `1.1.2.1.001`, Abono Ingresos `4.1.1.1`).
   - Al cobrar en CXC (`CuentasCobrarController::aplicar_pagos` -> `BancosService::registrarMovimiento`): generación automática de póliza bancaria (Cargo Bancos `1.1.1.2.xxx`, Abono CXC `1.1.2.1.001`), cancelando de inmediato la provisión.
 - `/reporteria/viajes`: columna `peso_contenedor` configurada con `agNumberColumnFilter` y `comparator` numérico (filtros de Mayor que, Menor que, Igual a, En rango en español) y habilitada en exportaciones de Excel y PDF.
-- Formatos Oficiales CONAC & Exportación: Vistas previas dinámicas en `/contabilidad/balance-general` para Balance General (ESF-01), Estado de Resultados (ERA-02) y Balanza de Comprobación (BC-03) con exportaciones PDF y Excel.
+- Formatos Oficiales CONAC & Exportación: Vistas previas dinámicas en `/contabilidad/balance-general` para Balance General (ESF-01), Estado de Resultados (ERA-02), Balanza de Comprobación (BC-03), Auxiliar Contable / Libro Mayor por Cuentas (AC-07) con desglose de pólizas por cuenta afectable y saldos acumulados, y Libro Diario de Pólizas (LD-06) con partidas detalladas para conciliación. Soporte completo de exportación a PDF (DomPDF institucional apaisado con firmas) y Excel (Maatwebsite\Excel con estilos y sumas iguales).
 - Spec 002: Integración de movimientos y transferencias bancarias en gastos (Draft Autosave).
 - Spec 003: Refactorización GPS SIS hacia API REST Naanix (`MClientesExternosJSPY`).
 - Spec 004: Sincronización integral Gastos de viaje, Pagos bancarios y App Móvil Admin.

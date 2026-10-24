@@ -49,6 +49,10 @@ class ContabilidadController extends Controller
         $fechaCorte = $request->filled('fecha_corte')
             ? Carbon::parse($request->input('fecha_corte'))->format('Y-m-d')
             : now()->format('Y-m-d');
+        $anio = Carbon::parse($fechaCorte)->year;
+        $fechaInicio = $request->filled('fecha_inicio')
+            ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d')
+            : "{$anio}-01-01";
 
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
 
@@ -85,6 +89,20 @@ class ContabilidadController extends Controller
                 'disponible'  => true,
                 'descripcion' => 'Listado de todas las cuentas CONAC de mayor y detalle con movimientos Debe, Haber y Saldos.',
             ],
+            'auxiliar_contable' => [
+                'nombre'      => 'Auxiliar Contable (Libro Mayor por Cuentas)',
+                'codigo_conac'=> 'AC-07',
+                'icono'       => 'fas fa-book-open',
+                'disponible'  => true,
+                'descripcion' => 'Catálogo de cuentas con desglose cronológico de pólizas por cuenta afectable, cargos, abonos y saldos.',
+            ],
+            'libro_diario' => [
+                'nombre'      => 'Libro Diario de Pólizas',
+                'codigo_conac'=> 'LD-06',
+                'icono'       => 'fas fa-book',
+                'disponible'  => true,
+                'descripcion' => 'Registro cronológico exhaustivo de pólizas de Ingreso, Egreso, Diario y Apertura con partidas desglosadas.',
+            ],
             'variacion_hacienda' => [
                 'nombre'      => 'Estado de Variación en la Hacienda Pública / Patrimonio',
                 'codigo_conac'=> 'EVH-04',
@@ -99,32 +117,41 @@ class ContabilidadController extends Controller
                 'disponible'  => false,
                 'descripcion' => 'Origen y aplicación de recursos bancarios y de tesorería clasificados por actividades operativas.',
             ],
-            'libro_diario' => [
-                'nombre'      => 'Libro Diario de Pólizas',
-                'codigo_conac'=> 'LD-06',
-                'icono'       => 'fas fa-book',
-                'disponible'  => false,
-                'descripcion' => 'Registro cronológico exhaustivo de pólizas de Ingreso, Egreso, Diario y Apertura.',
-            ],
         ];
 
-        // 5. Calcular balance y estado de resultados
-        $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+        // 5. Calcular datos según reporte solicitado
+        $balance = null;
         $balanza = null;
+        $auxiliar = null;
+        $libroDiario = null;
+        $reportData = null;
+
         if ($tipoReporte === 'balanza_comprobacion') {
-            $balanza = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte);
+            $balanza = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
+            $reportData = $balanza;
+        } elseif ($tipoReporte === 'auxiliar_contable') {
+            $auxiliar = $this->contabilidadService->calcularAuxiliarContable($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
+            $reportData = $auxiliar;
+        } elseif ($tipoReporte === 'libro_diario') {
+            $libroDiario = $this->contabilidadService->obtenerLibroDiario($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
+            $reportData = $libroDiario;
+        } else {
+            $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $balance;
         }
 
         if ($request->ajax() || $request->wantsJson() || $request->has('json')) {
             return response()->json([
                 'success' => true,
-                'data'    => ($tipoReporte === 'balanza_comprobacion') ? $balanza : $balance,
+                'data'    => $reportData,
             ]);
         }
 
         return view('contabilidad.balance-general', [
             'balance'            => $balance,
             'balanza'            => $balanza,
+            'auxiliar'           => $auxiliar,
+            'libroDiario'        => $libroDiario,
             'todasEmpresas'      => $todasEmpresas,
             'seleccionEmpresas'  => $seleccionEmpresas,
             'esAdmin'            => $esAdmin,
@@ -132,6 +159,7 @@ class ContabilidadController extends Controller
             'equipoSeleccionado' => $equipoSeleccionado,
             'idEquipo'           => $idEquipo,
             'fechaCorte'         => $fechaCorte,
+            'fechaInicio'        => $fechaInicio,
             'tipoReporte'        => $tipoReporte,
             'catalogoReportes'   => $catalogoReportes,
         ]);
@@ -213,6 +241,10 @@ class ContabilidadController extends Controller
         $fechaCorte = $request->filled('fecha_corte')
             ? Carbon::parse($request->input('fecha_corte'))->format('Y-m-d')
             : now()->format('Y-m-d');
+        $anio = Carbon::parse($fechaCorte)->year;
+        $fechaInicio = $request->filled('fecha_inicio')
+            ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d')
+            : "{$anio}-01-01";
 
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
         $equipoSeleccionado = $idEquipo ? Equipo::find($idEquipo) : null;
@@ -226,9 +258,17 @@ class ContabilidadController extends Controller
 
         // Obtener datos del reporte solicitado
         if ($tipoReporte === 'balanza_comprobacion') {
-            $reportData = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $this->contabilidadService->calcularBalanzaComprobacion($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $tituloReporte = 'BALANZA DE COMPROBACIÓN CONAC • CÓDIGO BC-03';
             $filePrefix = 'Balanza_Comprobacion';
+        } elseif ($tipoReporte === 'auxiliar_contable') {
+            $reportData = $this->contabilidadService->calcularAuxiliarContable($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
+            $tituloReporte = 'AUXILIAR CONTABLE (LIBRO MAYOR POR CUENTAS) • CONAC AC-07';
+            $filePrefix = 'Auxiliar_Contable';
+        } elseif ($tipoReporte === 'libro_diario') {
+            $reportData = $this->contabilidadService->obtenerLibroDiario($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
+            $tituloReporte = 'LIBRO DIARIO DE PÓLIZAS • CONAC LD-06';
+            $filePrefix = 'Libro_Diario_Polizas';
         } elseif ($tipoReporte === 'estado_resultados') {
             $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
             $tituloReporte = 'ESTADO DE ACTIVIDADES / RESULTADOS • CONAC ERA-02';
@@ -267,7 +307,7 @@ class ContabilidadController extends Controller
 
         if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('contabilidad.pdf.reporte-conac', $dataView);
-            $orientation = ($tipoReporte === 'balanza_comprobacion') ? 'landscape' : 'portrait';
+            $orientation = in_array($tipoReporte, ['balanza_comprobacion', 'auxiliar_contable', 'libro_diario']) ? 'landscape' : 'portrait';
             $pdf->setPaper('letter', $orientation);
             $fileName = $filePrefix . '_' . $fechaCorte . '.pdf';
 
