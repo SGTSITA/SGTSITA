@@ -1756,6 +1756,9 @@ $this->procesarDocumento(
             $cotizaciones->latitud =  $request->latitud;
             $cotizaciones->longitud = $request->longitud;
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
+            if ($request->has('observaciones_edo_cuenta')) {
+                $cotizaciones->observaciones_edo_cuenta = $request->observaciones_edo_cuenta;
+            }
 
 
             if ($request->has('id_proveedor')) {
@@ -2086,6 +2089,9 @@ $this->procesarDocumento(
             $cotizaciones->direccion_mapa = $request->direccion_mapa;
 
             $cotizaciones->retencion_automatica = $retAuto;
+            if ($request->has('observaciones_edo_cuenta')) {
+                $cotizaciones->observaciones_edo_cuenta = $request->observaciones_edo_cuenta;
+            }
 
             /* if ($request->hasFile("carta_porte")) {
                  $file = $request->file('carta_porte');

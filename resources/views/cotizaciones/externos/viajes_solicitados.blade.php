@@ -171,6 +171,14 @@
                                 <i class="ki-outline ki-magnifier fs-3 position-absolute top-50 start-0 translate-middle-y ms-3 text-gray-500"></i>
                             </div>
 
+                            <!-- Botón Rápido WhatsApp al seleccionar contenedores -->
+                            <button type="button" class="btn btn-success btn-sm px-3 d-none" id="btnCompartirWhatsappRapido"
+                                onclick="compartirWhatsappMultiple()" title="Compartir contenedores seleccionados por WhatsApp">
+                                <i class="fab fa-whatsapp fs-3 me-1"></i>
+                                <span>WhatsApp</span>
+                                <span class="badge badge-light-success ms-1" id="badgeCountWhatsapp">0</span>
+                            </button>
+
                             <!-- Botón Opciones (Al lado del buscador) -->
                             <div class="card-toolbar m-0">
                                 <button class="btn btn-primary btn-sm px-4" data-kt-menu-trigger="click"
@@ -356,6 +364,7 @@
 
 
     @include('cotizaciones.externos.modal_fileuploader')
+    @include('cotizaciones.externos.modal_whatsapp_multiple')
 @endsection
 
 @push('javascript')

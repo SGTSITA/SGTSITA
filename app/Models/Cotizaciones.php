@@ -76,6 +76,7 @@ class Cotizaciones extends Model
         'responsable',
         'estatus_pago',
         'observaciones',
+        'observaciones_edo_cuenta',
         'tipo_viaje_seleccion',
         'origen_local',
         'destino_local',
