@@ -123,6 +123,8 @@ class CotizacionesService
             $carta_porte_xml = !empty($cotizacion->carta_porte_xml);
 
             $tipo = "Sencillo";
+            $numAutorizacion = $doc ? ($doc->num_autorizacion ?? '') : '';
+            $pesoContenedor = $cotizacion->peso_contenedor;
 
             // Si es tipo Full, concatenar contenedor secundario
             if (!is_null($cotizacion->referencia_full)) {
@@ -141,6 +143,12 @@ class CotizacionesService
                     $boletaVacio = ($boletaVacio && (!empty($secundaria->img_boleta) || ($secundaria->DocCotizacion && !empty($secundaria->DocCotizacion->boleta_vacio) && $secundaria->DocCotizacion->boleta_vacio === 'si')));
                     $fotoPatio = ($fotoPatio && !empty($secundaria->foto_patio));
                     $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                    if (!empty($secundaria->DocCotizacion->num_autorizacion)) {
+                        $numAutorizacion = trim($numAutorizacion . ' ' . $secundaria->DocCotizacion->num_autorizacion);
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor .= ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
 
                 $tipo = "Full";
@@ -195,8 +203,18 @@ class CotizacionesService
                 'edit_url' => route('edit.cotizaciones', $cotizacion->id),
                 'tipo' => $tipo,
                 'referencia_full' => $cotizacion->referencia_full,
-                'peso_contenedor' => $cotizacion->peso_contenedor,
-                'Peso' => $cotizacion->peso_contenedor,
+                'peso_contenedor' => $pesoContenedor,
+                'Peso' => $pesoContenedor,
+                'fecha_entrega' => !empty($cotizacion->fecha_entrega) ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d') : '',
+                'bloque_hora_i' => $cotizacion->bloque_hora_i ?? '',
+                'bloque_hora_f' => $cotizacion->bloque_hora_f ?? '',
+                'bloque_hora_i_local' => $cotizacion->bloque_hora_i_local ?? '',
+                'bloque_hora_f_local' => $cotizacion->bloque_hora_f_local ?? '',
+                'terminal' => $doc ? ($doc->terminal ?? '') : '',
+                'confirmacion_sello' => (bool)$cotizacion->confirmacion_sello,
+                'observaciones' => $cotizacion->observaciones ?? '',
+                'num_autorizacion' => $numAutorizacion,
+                'tipo_viaje_seleccion' => $cotizacion->tipo_viaje_seleccion,
                 'tamano' => $cotizacion->tamano,
                 'precio_viaje' => $cotizacion->precio_viaje,
                 'direccion_entrega' => $cotizacion->direccion_entrega,

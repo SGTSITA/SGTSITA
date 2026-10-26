@@ -416,6 +416,18 @@ const gridOptions = {
     rowData: [],
     onSelectionChanged: (event) => {
         const rows = event.api.getSelectedRows();
+
+        const btnWaRapido = document.getElementById("btnCompartirWhatsappRapido");
+        const badgeWaCount = document.getElementById("badgeCountWhatsapp");
+        if (btnWaRapido) {
+            if (rows.length > 0) {
+                btnWaRapido.classList.remove("d-none");
+                if (badgeWaCount) badgeWaCount.textContent = rows.length;
+            } else {
+                btnWaRapido.classList.add("d-none");
+            }
+        }
+
         const btn = document.getElementById("btnRegresarLocal");
 
         if (!btn) return;
@@ -1245,3 +1257,155 @@ if (radios.length > 0) {
         });
     });
 }
+
+/**
+ * Formatea la información de un contenedor individual para el mensaje de WhatsApp.
+ */
+function formatContenedorWhatsapp(row) {
+    const isLocal = row.convertido_local || row.tipo_viaje_seleccion === "local";
+    const fecha = row.fecha_entrega || row.FechaSolicitud || "";
+    const referencia = (row.NumContenedor || row.contenedor || "").trim();
+
+    let horaI = isLocal
+        ? (row.bloque_hora_i_local || row.bloque_hora_i || "")
+        : (row.bloque_hora_i || row.bloque_hora_i_local || "");
+    let horaF = isLocal
+        ? (row.bloque_hora_f_local || row.bloque_hora_f || "")
+        : (row.bloque_hora_f || row.bloque_hora_f_local || "");
+    const horario = (horaI || horaF) ? `${horaI} - ${horaF}` : "";
+
+    const terminal = (row.terminal || "").trim();
+    const cambioSello = row.confirmacion_sello ? "CAMBIO DE SELLO" : "";
+    const autorizacion = (row.num_autorizacion && row.num_autorizacion !== "null" && row.num_autorizacion !== "undefined")
+        ? String(row.num_autorizacion).trim() : "";
+    const obs = (row.observaciones && row.observaciones !== "null" && row.observaciones !== "undefined")
+        ? String(row.observaciones).trim() : "";
+    const peso = row.peso_contenedor || row.Peso || "";
+    const destino = row.destino || row.Destino || row.direccion_entrega || "";
+
+    let lines = [];
+    lines.push(isLocal ? `Fecha: ${fecha}` : `Fecha entrega: ${fecha}`);
+    lines.push("");
+    lines.push(`Referencia: ${referencia}`);
+    if (horario) {
+        lines.push(`Horario: ${horario}`);
+    }
+    if (terminal) {
+        lines.push(`Terminal: ${terminal}`);
+    }
+    if (cambioSello) {
+        lines.push("");
+        lines.push(cambioSello);
+    }
+    if (autorizacion) {
+        lines.push(`No. Autorización: ${autorizacion}`);
+    }
+    if (obs) {
+        lines.push(`${obs}`);
+    }
+    if (peso || destino) {
+        lines.push("");
+        if (peso) {
+            lines.push(`Peso: ${peso}`);
+        }
+        if (destino) {
+            lines.push(`Destino: ${destino}`);
+        }
+    }
+
+    return lines.join("\n").trim();
+}
+
+/**
+ * Abre el modal para compartir la información de uno o varios contenedores por WhatsApp sin requerir documentos.
+ */
+function compartirWhatsappMultiple() {
+    if (typeof apiGrid === "undefined" || !apiGrid) {
+        console.error("Grid no inicializado");
+        return;
+    }
+
+    const selectedRows = apiGrid.getSelectedRows();
+    if (!selectedRows || selectedRows.length === 0) {
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toastr-top-center",
+            timeOut: "4000",
+        };
+        toastr.warning("Debe seleccionar al menos un contenedor para compartir por WhatsApp");
+        return;
+    }
+
+    const bloques = selectedRows.map((row) => formatContenedorWhatsapp(row));
+    const textoFinal = bloques.join("\n\n-------------------------\n\n");
+
+    const modalEl = document.getElementById("modalCompartirWhatsappMultiple");
+    if (!modalEl) {
+        console.error("Modal modalCompartirWhatsappMultiple no encontrado");
+        return;
+    }
+
+    const textarea = document.getElementById("waTextoMensajeMultiple");
+    if (textarea) {
+        textarea.value = textoFinal;
+    }
+
+    const countLabel = document.getElementById("waMultipleContenedoresCount");
+    if (countLabel) {
+        const conts = selectedRows
+            .map((r) => r.NumContenedor || r.contenedor)
+            .filter(Boolean)
+            .join(", ");
+        countLabel.textContent = `${selectedRows.length} contenedor(es) seleccionado(s): ${conts}`;
+    }
+
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalInstance.show();
+}
+
+$(document).ready(function () {
+    const btnEnviarWa = document.getElementById("btnEnviarWhatsappMultiple");
+    if (btnEnviarWa) {
+        btnEnviarWa.addEventListener("click", function () {
+            const textarea = document.getElementById("waTextoMensajeMultiple");
+            const texto = textarea ? textarea.value.trim() : "";
+            if (!texto) {
+                toastr.warning("El mensaje está vacío");
+                return;
+            }
+            const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(url, "_blank");
+
+            const modalEl = document.getElementById("modalCompartirWhatsappMultiple");
+            if (modalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+            }
+        });
+    }
+
+    const btnCopiar = document.getElementById("btnCopiarTextoWhatsapp");
+    if (btnCopiar) {
+        btnCopiar.addEventListener("click", function () {
+            const textarea = document.getElementById("waTextoMensajeMultiple");
+            if (textarea && textarea.value.trim()) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textarea.value).then(() => {
+                        toastr.success("Texto copiado al portapapeles");
+                    }).catch(() => {
+                        textarea.select();
+                        document.execCommand("copy");
+                        toastr.success("Texto copiado al portapapeles");
+                    });
+                } else {
+                    textarea.select();
+                    document.execCommand("copy");
+                    toastr.success("Texto copiado al portapapeles");
+                }
+            } else {
+                toastr.warning("No hay texto para copiar");
+            }
+        });
+    }
+});
