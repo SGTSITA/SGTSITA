@@ -23,14 +23,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
+use App\Services\EquipoService;
 
 class LiquidacionesController extends Controller
 {
     protected $BancosService;
+    protected $equipoService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, EquipoService $equipoService)
     {
         $this->BancosService = $BancosService;
+        $this->equipoService = $equipoService;
     }
 
 
@@ -1542,8 +1545,9 @@ class LiquidacionesController extends Controller
 
     public function historialPagos()
     {
+        $equipos = $this->equipoService->getTractocamiones();
 
-        return view('liquidaciones.historial');
+        return view('liquidaciones.historial', compact('equipos'));
     }
 
     public function historialPagosData(Request $r)
@@ -1552,13 +1556,24 @@ class LiquidacionesController extends Controller
         $fechaI = $r->startDate;
         $fechaF = $r->endDate;
         $numContenedor = $r->num_contenedor;
+        $idEquipo = $r->id_equipo;
 
-        $query = Liquidaciones::with(['Operadores', 'Viajes.Contenedores'])
+        $query = Liquidaciones::with(['Operadores', 'Viajes.Contenedores.Asignaciones.Camion'])
             ->whereIn('id_operador', $idOperadores);
 
         if (!empty($numContenedor)) {
             $query->whereHas('Viajes.Contenedores', function ($q) use ($numContenedor) {
                 $q->where('num_contenedor', 'like', "%{$numContenedor}%");
+            });
+        }
+
+        if (!empty($idEquipo)) {
+            $query->whereExists(function ($sub) use ($idEquipo) {
+                $sub->select(DB::raw(1))
+                    ->from('liquidacion_contenedor')
+                    ->join('asignaciones', 'asignaciones.id_contenedor', '=', 'liquidacion_contenedor.id_contenedor')
+                    ->whereColumn('liquidacion_contenedor.id_liquidacion', 'liquidaciones.id')
+                    ->where('asignaciones.id_camion', $idEquipo);
             });
         }
 
@@ -1577,6 +1592,7 @@ class LiquidacionesController extends Controller
                 return [
                     'id_contenedor' => $v->id_contenedor,
                     'num_contenedor' => $v->Contenedores?->num_contenedor ?? 'N/A',
+                    'unidad' => $v->Contenedores?->Asignaciones?->Camion?->texto_select ?? 'N/A',
                     'sueldo_operador' => (float) $v->sueldo_operador,
                     'dinero_viaje' => (float) $v->dinero_viaje,
                     'dinero_justificado' => (float) $v->dinero_justificado,

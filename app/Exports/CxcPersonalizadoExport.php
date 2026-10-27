@@ -105,7 +105,7 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
 
                 // 5. Formato de datos (Filas 9 a $highestRow)
                 if ($highestRow >= 9) {
-                    $currencyFormat = '"$"#,##0.00;("$"#,##0.00);"-"';
+                    $currencyFormat = '"$"#,##0.00;("$"#,##0.00);"$0"';
 
                     // Columnas calculadas en gris claro (#F2F4F8)
                     foreach (['M', 'Q', 'R', 'S'] as $calcCol) {

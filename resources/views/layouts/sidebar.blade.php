@@ -455,10 +455,15 @@
                                 <span class="sidenav-mini-icon"> P </span>
                                 <span class="sidenav-normal">Liquidar Operadores</span>
                             </a>
-                            <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
+                            <a class="nav-link {{ Request::is('liquidaciones/historial*') ? 'active' : '' }}"
                                 href="{{ route('historial.liquidacion') }}">
-                                <span class="sidenav-mini-icon"> P </span>
+                                <span class="sidenav-mini-icon"> H </span>
                                 <span class="sidenav-normal">Historial Liquidaciones</span>
+                            </a>
+                            <a class="nav-link {{ Request::is('liquidaciones/ajustes*') ? 'active' : '' }}"
+                                href="{{ route('liquidaciones.ajustes.index') }}">
+                                <span class="sidenav-mini-icon"> A </span>
+                                <span class="sidenav-normal">Ajustes de Liquidación</span>
                             </a>
                             <a class="nav-link {{ Request::is('reporteria/cotizaciones/cxp*') ? 'show' : '' }}"
                                 href="{{ route('operadores.prestamo') }}">
