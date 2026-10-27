@@ -158,7 +158,26 @@
             $man = floatval($c->maniobra ?? 0);
             $bur = floatval($c->burreo ?? 0);
             $est = floatval($c->estadia ?? 0);
-            $sp = floatval($c->precio_sobre_peso ?? $c->sobrepeso ?? 0);
+            
+            // Total Sobre Peso Viaje (cálculo exacto idéntico a /cotizaciones/edit/{id})
+            $viaje = optional($c->viajes)->firstWhere('estado', 'activo') ?? optional($c->viajes)->first();
+            $costoSobrepeso = optional(optional($viaje)->costos)->firstWhere('concepto', 'sobrepeso');
+            $precioSp = floatval($costoSobrepeso?->meta['precio_sobre_peso'] ?? $c->precio_sobre_peso ?? 0);
+            $pesoCont = floatval($c->peso_contenedor ?? 0);
+            $pesoReg = floatval($c->peso_reglamentario ?? 0);
+            if ($pesoReg <= 0 && $pesoCont > 22) {
+                $pesoReg = 22;
+            }
+            $toneladasSp = ($pesoCont > $pesoReg && $pesoReg > 0) 
+                ? ($pesoCont - $pesoReg) 
+                : floatval($costoSobrepeso?->meta['peso'] ?? $c->sobrepeso ?? 0);
+
+            if ($toneladasSp > 0 && $precioSp > 0) {
+                $sp = round($toneladasSp * $precioSp, 2);
+            } else {
+                $sp = floatval($costoSobrepeso?->monto ?? 0);
+            }
+
             $ot = floatval($c->otro ?? 0);
             $ts = $pv + $man + $bur + $est + $sp + $ot;
 
@@ -263,7 +282,26 @@
                     $man = floatval($c->maniobra ?? 0);
                     $bur = floatval($c->burreo ?? 0);
                     $est = floatval($c->estadia ?? 0);
-                    $sp = floatval($c->precio_sobre_peso ?? $c->sobrepeso ?? 0);
+
+                    // Total Sobre Peso Viaje (cálculo exacto idéntico a /cotizaciones/edit/{id})
+                    $viaje = optional($c->viajes)->firstWhere('estado', 'activo') ?? optional($c->viajes)->first();
+                    $costoSobrepeso = optional(optional($viaje)->costos)->firstWhere('concepto', 'sobrepeso');
+                    $precioSp = floatval($costoSobrepeso?->meta['precio_sobre_peso'] ?? $c->precio_sobre_peso ?? 0);
+                    $pesoCont = floatval($c->peso_contenedor ?? 0);
+                    $pesoReg = floatval($c->peso_reglamentario ?? 0);
+                    if ($pesoReg <= 0 && $pesoCont > 22) {
+                        $pesoReg = 22;
+                    }
+                    $toneladasSp = ($pesoCont > $pesoReg && $pesoReg > 0) 
+                        ? ($pesoCont - $pesoReg) 
+                        : floatval($costoSobrepeso?->meta['peso'] ?? $c->sobrepeso ?? 0);
+
+                    if ($toneladasSp > 0 && $precioSp > 0) {
+                        $sp = round($toneladasSp * $precioSp, 2);
+                    } else {
+                        $sp = floatval($costoSobrepeso?->monto ?? 0);
+                    }
+
                     $ot = floatval($c->otro ?? 0);
                     $ts = $pv + $man + $bur + $est + $sp + $ot;
 
@@ -285,19 +323,19 @@
                     <td class="text-start">{{ $transp }}</td>
                     <td class="text-start">{{ $dest }}</td>
                     <td>{{ $pesoV > 0 ? number_format($pesoV, 3, '.', '') : '' }}</td>
-                    <td class="text-end">{{ $pv > 0 ? number_format($pv, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $man > 0 ? number_format($man, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $bur > 0 ? number_format($bur, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $est > 0 ? number_format($est, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $sp > 0 ? number_format($sp, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $ot > 0 ? number_format($ot, 2, '.', ',') : '' }}</td>
-                    <td class="text-end col-calc">{{ number_format($ts, 2, '.', ',') }}</td>
-                    <td class="text-end">{{ $bf > 0 ? number_format($bf, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $iv > 0 ? number_format($iv, 2, '.', ',') : '' }}</td>
-                    <td class="text-end">{{ $ret > 0 ? number_format($ret, 2, '.', ',') : '' }}</td>
-                    <td class="text-end col-calc">{{ number_format($tf, 2, '.', ',') }}</td>
-                    <td class="text-end col-calc">{{ number_format($rs, 2, '.', ',') }}</td>
-                    <td class="text-end col-calc" style="color: #0f5132;">{{ number_format($tap, 2, '.', ',') }}</td>
+                    <td class="text-end">{{ $pv > 0 ? number_format($pv, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $man > 0 ? number_format($man, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $bur > 0 ? number_format($bur, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $est > 0 ? number_format($est, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $sp > 0 ? number_format($sp, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $ot > 0 ? number_format($ot, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end col-calc">{{ $ts > 0 ? number_format($ts, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $bf > 0 ? number_format($bf, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $iv > 0 ? number_format($iv, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end">{{ $ret > 0 ? number_format($ret, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end col-calc">{{ $tf > 0 ? number_format($tf, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end col-calc">{{ $rs > 0 ? number_format($rs, 2, '.', ',') : '$0' }}</td>
+                    <td class="text-end col-calc" style="color: #0f5132;">{{ $tap > 0 ? number_format($tap, 2, '.', ',') : '$0' }}</td>
                     <td class="text-start">{{ $obs }}</td>
                 </tr>
             @endforeach
@@ -305,19 +343,19 @@
             <tr class="total-row">
                 <td colspan="5" style="text-align: right; padding-right: 6px;">TOTALES ({{ $totalContenedores }} cont.):</td>
                 <td>{{ number_format($sumPeso, 3, '.', '') }}</td>
-                <td class="text-end">{{ number_format($sumPrecioViaje, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumManiobra, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumBurreo, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumEstadia, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumSobrepeso, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumOtros, 2, '.', ',') }}</td>
-                <td class="text-end col-calc">{{ number_format($sumTotalServicio, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumBaseFacturada, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumIva, 2, '.', ',') }}</td>
-                <td class="text-end">{{ number_format($sumRetencion, 2, '.', ',') }}</td>
-                <td class="text-end col-calc">{{ number_format($sumTotalFactura, 2, '.', ',') }}</td>
-                <td class="text-end col-calc">{{ number_format($sumRestoSinFactura, 2, '.', ',') }}</td>
-                <td class="text-end col-calc" style="color: #0f5132;">{{ number_format($sumTotalAPagar, 2, '.', ',') }}</td>
+                <td class="text-end">{{ $sumPrecioViaje > 0 ? number_format($sumPrecioViaje, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumManiobra > 0 ? number_format($sumManiobra, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumBurreo > 0 ? number_format($sumBurreo, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumEstadia > 0 ? number_format($sumEstadia, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumSobrepeso > 0 ? number_format($sumSobrepeso, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumOtros > 0 ? number_format($sumOtros, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end col-calc">{{ $sumTotalServicio > 0 ? number_format($sumTotalServicio, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumBaseFacturada > 0 ? number_format($sumBaseFacturada, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumIva > 0 ? number_format($sumIva, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end">{{ $sumRetencion > 0 ? number_format($sumRetencion, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end col-calc">{{ $sumTotalFactura > 0 ? number_format($sumTotalFactura, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end col-calc">{{ $sumRestoSinFactura > 0 ? number_format($sumRestoSinFactura, 2, '.', ',') : '$0' }}</td>
+                <td class="text-end col-calc" style="color: #0f5132;">{{ $sumTotalAPagar > 0 ? number_format($sumTotalAPagar, 2, '.', ',') : '$0' }}</td>
                 <td></td>
             </tr>
         </tbody>

@@ -223,6 +223,7 @@ class ReporteriaController extends Controller
             'Subcliente',
             'Empresa',
             'Proveedor',
+            'viajes.costos',
         ])
             ->whereIn('id', $cotizacionIds)
             ->get();

@@ -28,6 +28,17 @@
                                             style="border: none; box-shadow: none;"
                                             />
                                         </div>
+                                        <div>
+                                            <div class="font-weight-bolder text-sm"><span class="small">Unidad / Tracto</span></div>
+                                            <select id="filtro_unidad" class="form-control form-control-sm" style="min-width: 180px;">
+                                                <option value="">-- Todas las unidades --</option>
+                                                @if(isset($equipos))
+                                                    @foreach($equipos as $equipo)
+                                                        <option value="{{ $equipo->id }}">{{ $equipo->texto_select }}</option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
