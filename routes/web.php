@@ -624,6 +624,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::get('poliza-apertura/data', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaData'])->name('poliza-apertura.data');
             Route::post('poliza-apertura/guardar', [App\Http\Controllers\ContabilidadController::class, 'guardarPolizaApertura'])->name('poliza-apertura.store');
             Route::get('manual', [App\Http\Controllers\ContabilidadController::class, 'manual'])->name('manual');
+            Route::get('cierre-ejercicio/previsualizar', [App\Http\Controllers\ContabilidadController::class, 'previsualizarCierre'])->name('cierre.previsualizar');
+            Route::post('cierre-ejercicio', [App\Http\Controllers\ContabilidadController::class, 'ejecutarCierre'])->name('cierre.store');
+            Route::get('cierre-ejercicio/historial', [App\Http\Controllers\ContabilidadController::class, 'historialCierres'])->name('cierre.historial');
+            Route::delete('cierre-ejercicio/{id}', [App\Http\Controllers\ContabilidadController::class, 'revertirCierre'])->name('cierre.destroy');
         });
 
 

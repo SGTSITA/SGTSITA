@@ -4,11 +4,16 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 ## Estado actual
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.
 - Módulos activos: Cotizaciones, Viajes, Contenedores, Planeación, Monitoreo, Gastos y Liquidaciones.
+- Spec 020 (Cierre Contable de Ejercicios, Acumulación Real 3.2.1, SGT DateRangePicker y Reorganización de Navegación):
+  - En `/contabilidad/balance-general`: botones "Matriz y Cuentas CONAC" y "Guía Contabilizadora" removidos; botón de acceso a "Guía Contabilizadora" integrado en `/contabilidad/configuracion`.
+  - Selector de fechas del Balance General migrado a `initSgtDateRange` con accesos rápidos: Ejercicio 2025, Ejercicio 2026, Este mes, Mes anterior y Personalizado.
+  - Acumulación real en `3.2.1`: Si no existen pólizas de cierre contable formal (`cierre_ejercicio`), `3.2.2` permanece estrictamente en $0.00 y `3.2.1` acumula el resultado operativo integral desde inicio de operaciones (2025 a corte) con Balance General perfectamente cuadrado ($A = P + C$, Diferencia $0.00).
+  - Motor de Cierre Contable: Modal interactivo con previsualización de partidas, validación transaccional (`CierreContableRequest`), cancelación de cuentas de resultados Clase 4 (Debe) y Clase 5 (Haber), creación automática de subcuentas secuenciales en catálogo (`3.2.2.01`, `3.2.2.02`, etc.) con nombre descriptivo del ejercicio, historial de cierres y función de reversión limpia.
 - Spec 011 (CONAC Pólizas & Verdad Operativa): Balance General al corte 2026-09-30 conciliado y cuadrado con Diferencia $0.00:
   - Cuentas por Cobrar (CXC `1.1.2.1%`): Al corte del 30 de septiembre 2026 muestra exactamente $297,650.00 (los 5 viajes entregados en septiembre que se cobraron el 01/10/2026); al corte actual muestra exactamente $0.00 tras la entrada de los depósitos bancarios de octubre.
   - Cuentas por Pagar (CXP `2.1.1%`): $288,857.96 exactos (reflejo fiel de los 71 gastos operativos pendientes de pago).
   - Bancos (`1.1.1.2%`): $432,750.25 (Azteca $12,775.96 + Banorte $419,974.29).
-  - Activo ($1,328,195.92) = Pasivo ($288,857.96) + Patrimonio ($1,039,337.96: Ej. Anteriores $417,367.91 + Ej. Actual $621,970.05). Cuadrado: SI (Diferencia: $0.00).
+  - Activo ($1,328,195.92) = Pasivo ($288,857.96) + Patrimonio ($1,039,337.96). Cuadrado: SI (Diferencia: $0.00).
 - `ContabilidadSyncHistoricoCommand`: acepta argumento posicional `{empresa?}` y opción `--empresa=`. En `syncOperacionesHistoricasPreBanco`, sincroniza la amortización de CxP y CxC al corte 30/09 contra el saldo pendiente real de gastos y cotizaciones, asegurando que Cuentas por Pagar (2.1.1) refleje con exactitud la deuda operativa pendiente ($186,857.96 en producción), manteniendo el Balance General estrictamente cuadrado con Diferencia $0.00.
 - Conciliación de Ingresos por Fletes y Reporte de Utilidad:
   - En `/reporteria/utilidad`: `precioViaje` toma `$d->total` sin sumar gastos operativos extraordinarios, cuadrando al centavo con la cuenta `4.1.1.1` (Ingresos por Fletes y Servicios) del Estado de Resultados en $3,810,200.00 (Diferencia: $0.00).

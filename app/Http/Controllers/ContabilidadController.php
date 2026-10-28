@@ -46,13 +46,21 @@ class ContabilidadController extends Controller
         }
 
         // 2. Parámetros de filtro
+        if ($request->filled('daterange') && (!$request->filled('fecha_inicio') || !$request->filled('fecha_corte'))) {
+            $partes = explode(' AL ', $request->input('daterange'));
+            if (count($partes) === 2) {
+                $fechaInicio = Carbon::parse(trim($partes[0]))->format('Y-m-d');
+                $fechaCorte = Carbon::parse(trim($partes[1]))->format('Y-m-d');
+            }
+        }
+
         $fechaCorte = $request->filled('fecha_corte')
             ? Carbon::parse($request->input('fecha_corte'))->format('Y-m-d')
-            : now()->format('Y-m-d');
+            : ($fechaCorte ?? now()->format('Y-m-d'));
         $anio = Carbon::parse($fechaCorte)->year;
         $fechaInicio = $request->filled('fecha_inicio')
             ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d')
-            : "{$anio}-01-01";
+            : ($fechaInicio ?? "{$anio}-01-01");
 
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
 
@@ -136,7 +144,7 @@ class ContabilidadController extends Controller
             $libroDiario = $this->contabilidadService->obtenerLibroDiario($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $reportData = $libroDiario;
         } else {
-            $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $reportData = $balance;
         }
 
@@ -270,12 +278,12 @@ class ContabilidadController extends Controller
             $tituloReporte = 'LIBRO DIARIO DE PÓLIZAS • CONAC LD-06';
             $filePrefix = 'Libro_Diario_Polizas';
         } elseif ($tipoReporte === 'estado_resultados') {
-            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $tituloReporte = 'ESTADO DE ACTIVIDADES / RESULTADOS • CONAC ERA-02';
             $filePrefix = 'Estado_Resultados';
         } else {
             $tipoReporte = 'balance_general';
-            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $tituloReporte = 'BALANCE GENERAL (ESTADO DE SITUACIÓN FINANCIERA) • CONAC ESF-01';
             $filePrefix = 'Balance_General';
         }
@@ -503,5 +511,91 @@ class ContabilidadController extends Controller
     public function manual()
     {
         return view('contabilidad.manual');
+    }
+
+    /**
+     * Previsualiza los importes y la póliza de cierre de ejercicio.
+     */
+    public function previsualizarCierre(Request $request)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+        $fechaInicio = $request->input('fecha_inicio', '2025-08-01');
+        $fechaFin = $request->input('fecha_fin', now()->format('Y-m-d'));
+        $nombreEjercicio = $request->input('nombre_ejercicio');
+
+        try {
+            $data = $this->contabilidadService->previsualizarCierreContable($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio);
+            return response()->json([
+                'success' => true,
+                'data'    => $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Ejecuta y aplica formalmente el cierre contable de ejercicio.
+     */
+    public function ejecutarCierre(\App\Http\Requests\CierreContableRequest $request)
+    {
+        try {
+            $idEmpresa = (int) $request->input('id_empresa');
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
+            $nombreEjercicio = $request->input('nombre_ejercicio');
+
+            $resultado = $this->contabilidadService->ejecutarCierreContable($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Póliza de cierre de ejercicio contable generada y aplicada exitosamente.',
+                'data'    => $resultado,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar el cierre contable: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Consulta el historial de cierres contables aplicados.
+     */
+    public function historialCierres(Request $request)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+        $historial = $this->contabilidadService->obtenerHistorialCierres($idEmpresa);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $historial,
+        ]);
+    }
+
+    /**
+     * Revierte un cierre contable aplicado.
+     */
+    public function revertirCierre(Request $request, int $id)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+
+        try {
+            $this->contabilidadService->revertirCierreContable($id, $idEmpresa);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Póliza de cierre contable revertida y cancelada correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al revertir el cierre: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }
