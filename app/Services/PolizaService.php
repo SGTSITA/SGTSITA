@@ -590,7 +590,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaClientes = $this->cuentaResolver->resolverCuentaCliente($cotizacion?->id_cliente, $idEmpresa);
+            $cuentaClientes = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
 
             $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
@@ -805,7 +805,7 @@ class PolizaService
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
-                    $cuentaClientes = $this->cuentaResolver->resolverCuentaCliente($cotizacion?->id_cliente, $idEmpresa);
+                    $cuentaClientes = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
                     $cuentaContraId = $cuentaClientes->id;
                     $refContra = 'COBRO_CXC';
                 }
