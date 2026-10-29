@@ -1,302 +1,77 @@
+let documentosPendientes = false;
 var _token = document
     .querySelector('meta[name="csrf-token"]')
     .getAttribute("content");
 
-let fileSettings = null;
-
 let frm = document.querySelector("#cotizacionCreate");
 
-function adjuntarDocumentos(filesContenedor) {
-    // document.getElementById('content-file-input').innerHTML = '<input type="file" name="files" id="fileuploader">';
-    numContenedor = localStorage.getItem("numContenedor");
-    let labelDocsViaje = document.getElementById("labelDocsViaje");
-    labelDocsViaje.textContent = `Documentos de viaje ${numContenedor}`;
+const documentosConfig = {
+    BoletaLib: {
+        input: "#BoletaLib",
+        titulo: "Boleta de Liberación",
+        folioInput: "#numBoleta",
+        requiereFolio: true,
+        fileCode: "Boleta-de-liberacion",
+    },
 
-    const input = $("#" + fileSettings.opcion);
+    Doda: {
+        input: "#Doda",
+        titulo: "DODA",
+        folioInput: "#numDoda",
+        requiereFolio: true,
+        fileCode: "Doda",
+    },
 
-    const fileUploaderInstance = $.fileuploader.getInstance(input);
-    console.log("fileUploaderInstance:", fileUploaderInstance);
-    if (fileUploaderInstance) {
-        fileUploaderInstance.setOption("upload", {
-            files: filesContenedor != null ? [filesContenedor] : null,
-            url: "/contenedores/files/upload",
-            data: (item) => ({
-                urlRepo: fileSettings.opcion,
-                numContenedor: numContenedor,
-                _token: _token,
-            }),
-            type: "POST",
-            enctype: "multipart/form-data",
-            start: true,
-            synchron: true,
+    CCP: {
+        input: "#CCP",
+        titulo: "Carta Porte",
+        folioInput: null,
+        requiereFolio: false,
+        fileCode: "Formato-para-Carta-porte",
+    },
+};
 
-            onBeforeSend: (xhr, settings) => {
-                const file = settings.files ? settings.files[0] : null;
-                if (!file || !file.name) {
-                    alert("Archivo inválido o vacío.");
-                    return false;
-                }
-            },
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
 
-            onSuccess: function (result, item) {
-                let data = {};
-
-                if (result && typeof result === "object") data = result;
-                else data.hasWarnings = true;
-
-                if (data.isSuccess && data.files && data.files[0]) {
-                    const fileData = data.files[0];
-                    item.name = fileData.name;
-                    item.html
-                        .find(".column-title > div:first-child")
-                        .text(fileData.old_name)
-                        .attr("title", fileData.old_name);
-                }
-
-                if (data.hasWarnings) {
-                    if (data.warnings) {
-                        for (const warning in data.warnings) {
-                            alert(data.warnings[warning]);
-                        }
-                    }
-                    item.html
-                        .removeClass("upload-successful")
-                        .addClass("upload-failed");
-                    return this.onError ? this.onError(item) : null;
-                }
-
-                item.html
-                    .find(".fileuploader-action-remove")
-                    .addClass("fileuploader-action-success");
-                setTimeout(
-                    () => item.html.find(".progress-bar2").fadeOut(400),
-                    400,
-                );
-
-                if (apiGrid) {
-                    const dataGrid = apiGrid.getGridOption("rowData") || [];
-                    const rowIndex = dataGrid.findIndex(
-                        (d) => d.NumContenedor === numContenedor,
-                    );
-                    const colId = fileSettings.agGrid;
-                    const rowNode = apiGrid.getDisplayedRowAtIndex(rowIndex);
-                    if (rowNode) rowNode.setDataValue(colId, true);
-                }
-            },
-
-            onError: function (item) {
-                const progressBar = item.html.find(".progress-bar2");
-                if (progressBar.length) {
-                    progressBar.find("span").html("0%");
-                    progressBar
-                        .find(".fileuploader-progressbar .bar")
-                        .width("0%");
-                    item.html.find(".progress-bar2").fadeOut(400);
-                }
-                if (
-                    item.upload.status !== "cancelled" &&
-                    !item.html.find(".fileuploader-action-retry").length
-                ) {
-                    item.html
-                        .find(".column-actions")
-                        .prepend(
-                            '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Reintentar"><i class="fileuploader-icon-retry"></i></button>',
-                        );
-                }
-            },
-
-            onProgress: function (data, item) {
-                const progressBar = item.html.find(".progress-bar2");
-                if (progressBar.length > 0) {
-                    progressBar.show();
-                    progressBar.find("span").html(`${data.percentage}%`);
-                    progressBar
-                        .find(".fileuploader-progressbar .bar")
-                        .width(`${data.percentage}%`);
-                }
-            },
-
-            onComplete: () => {
-                getFilesContenedor();
-
-                setTimeout(() => {
-                    adjuntarDocumentos();
-                }, 2500);
-            },
-        });
-
-        //   console.log(`Instancia de fileuploader en #${fileSettings.opcion} destruida correctamente.`);
-    } else {
-        input.fileuploader({
-            captions: "es",
-            enableApi: true,
-            limit: 1,
-            start: true,
-            files: filesContenedor != null ? [filesContenedor] : null,
-            changeInput:
-                '<div class="fileuploader-input">' +
-                '<div class="fileuploader-input-inner">' +
-                '<div class="fileuploader-icon-main"></div>' +
-                '<h3 class="fileuploader-input-caption"><span>${captions.feedback}</span></h3>' +
-                "<p>${captions.or}</p>" +
-                '<button type="button" class="fileuploader-input-button"><span>${captions.button}</span></button>' +
-                "</div>" +
-                "</div>",
-            theme: "dragdrop",
-            upload: {
-                url: "/contenedores/files/upload",
-                data: {
-                    urlRepo: fileSettings.opcion,
-                    numContenedor: numContenedor,
-                    _token: _token,
-                },
-                type: "POST",
-                enctype: "multipart/form-data",
-                start: true,
-                synchron: true,
-                onBeforeSend: (xhr, settings) => {},
-                onSuccess: function (result, item) {
-                    var data = {};
-
-                    if (result && result.files) data = result;
-                    else data.hasWarnings = true;
-
-                    if (data.isSuccess && data.files[0]) {
-                        item.name = data.files[0].name;
-                        item.html
-                            .find(".column-title > div:first-child")
-                            .text(data.files[0].old_name)
-                            .attr("title", data.files[0].old_name);
-                    }
-
-                    if (data.hasWarnings) {
-                        for (var warning in result.warnings) {
-                            Swal.fire(result.warnings[warning], "", "warning");
-                        }
-
-                        item.html
-                            .removeClass("upload-successful")
-                            .addClass("upload-failed");
-
-                        return this.onError ? this.onError(item) : null;
-                    }
-
-                    item.html
-                        .find(".fileuploader-action-remove")
-                        .addClass("fileuploader-action-success");
-                    setTimeout(function () {
-                        item.html.find(".progress-bar2").fadeOut(400);
-                    }, 400);
-
-                    //  const gridApi = gridOptions.api;
-
-                    /*toastr.options = {
-                    "closeButton": true,
-                    "debug": false,
-                    "newestOnTop": false,
-                    "progressBar": true,
-                    "positionClass": "toastr-bottom-center",
-                    "preventDuplicates": false,
-                    "onclick": null,
-                    "showDuration": "1500",
-                    "hideDuration": "1000",
-                    "timeOut": "5000",
-                    "extendedTimeOut": "1000",
-                    "showEasing": "swing",
-                    "hideEasing": "linear",
-                    "showMethod": "fadeIn",
-                    "hideMethod": "fadeOut"
-                  };
-
-                  toastr.success( `Se cargó el archivo correctamente en el contenedor ${fileSettings.titulo}`,`${fileSettings.titulo}: Carga Exitosa`);*/
-                },
-                onError: function (item) {
-                    var progressBar = item.html.find(".progress-bar2");
-
-                    if (progressBar.length) {
-                        progressBar.find("span").html(0 + "%");
-                        progressBar
-                            .find(".fileuploader-progressbar .bar")
-                            .width(0 + "%");
-                        item.html.find(".progress-bar2").fadeOut(400);
-                    }
-
-                    item.upload.status != "cancelled" &&
-                    item.html.find(".fileuploader-action-retry").length == 0
-                        ? item.html
-                              .find(".column-actions")
-                              .prepend(
-                                  '<button type="button" class="fileuploader-action fileuploader-action-retry" title="Retry"><i class="fileuploader-icon-retry"></i></button>',
-                              )
-                        : null;
-                },
-                onProgress: function (data, item) {
-                    var progressBar = item.html.find(".progress-bar2");
-
-                    if (progressBar.length > 0) {
-                        progressBar.show();
-                        progressBar.find("span").html(data.percentage + "%");
-                        progressBar
-                            .find(".fileuploader-progressbar .bar")
-                            .width(data.percentage + "%");
-                    }
-                },
-                onComplete: () => {},
-            },
-            beforeSelect: function (listEl, parentEl, newInputEl, inputEl) {
-                // Guardar la info del contenedor
-            },
-            onRemove: function (item) {
-                $.post("remove", {
-                    _token: _token,
-                    numContenedor: numContenedor,
-                    urlRepo: fileSettings.opcion,
-                    file: item.name,
-                });
-            },
-            captions: $.extend(true, {}, $.fn.fileuploader.languages["es"], {
-                feedback: `Arrastra tu archivo "${fileSettings.titulo}" y suéltalo aquí`,
-                feedback2: `Arrastra tu archivo "${fileSettings.titulo}" y suéltalo aquí`,
-                drop: `Arrastra tu archivo "${fileSettings.titulo}" y suéltalo aquí`,
-                or: "o",
-                button: "Examinar archivos",
-            }),
-        });
-    }
-
-    var fileInputElement = document.getElementById(fileSettings.opcion);
-    // Obtener la instancia de Fileuploader asociada a este campo de carga
-    //var api = $.fileuploader.getInstance(fileInputElement);
-    //ejemplo cambio de configuracion en tiempo real
-
-    // api.uploadStart(); // Iniciar la carga manualmente
+function getDocumentoConfig(key) {
+    return documentosConfig[key] || null;
 }
 
-/* async function consultarArchivos(numContenedor) {
-    try {
-      const response = await fetch(`/viajes/file-manager/get-file-list/${numContenedor}`, {
-        method: 'get',
+function getFolioDocumento(key) {
+    const config = getDocumentoConfig(key);
 
-      });
-
-      const fileList = await response.json();
-      let containerFiles = fileList.data
-      if(containerFiles.length == 0) return null;
-      let filter = containerFiles.find((f)=> fileSettings.agGrid == f.fileCode)
-      fileProperties = {
-        name:filter.fileName,
-        size:filter.fileSizeBytes ,
-        type:filter.mimeType,
-        file:`cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
-        data:{thumbnail: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`, // (optional)
-        readerForce: true}
+    if (!config || !config.folioInput) {
+        return "";
     }
 
-      return fileProperties;
-    } catch (error) {
-      console.error('Error:', error);
+    const input = document.querySelector(config.folioInput);
+
+    if (!input) {
+        return "";
     }
-  } */
+
+    return input.value.trim();
+}
+
+function requiereFolioDocumento(key) {
+    const config = getDocumentoConfig(key);
+
+    if (!config) {
+        return false;
+    }
+
+    return config.requiereFolio;
+}
+
+/*
+|--------------------------------------------------------------------------
+| CONSULTAR ARCHIVOS EXISTENTES
+|--------------------------------------------------------------------------
+*/
 
 async function consultarArchivos(numContenedor) {
     try {
@@ -307,116 +82,205 @@ async function consultarArchivos(numContenedor) {
             },
         );
 
-        const fileList = await response.json();
-        const containerFiles = fileList.data || [];
+        const result = await response.json();
 
-        // Si no hay archivos, salimos
-        if (containerFiles.length === 0) return null;
-
-        // Buscar por el código del archivo
-        const filter = containerFiles.find(
-            (f) => f.fileCode === fileSettings.agGrid,
-        );
-
-        // Si no se encuentra coincidencia, no sigas
-        if (!filter) {
-            console.warn(
-                `No se encontró archivo con fileCode: ${fileSettings.agGrid} para el contenedor ${numContenedor}`,
-            );
-            return null;
-        }
-
-        // Crear objeto seguro
-        const fileProperties = {
-            name: filter.fileName || "SinNombre",
-            size: filter.fileSizeBytes || 0,
-            type: filter.mimeType || "application/octet-stream",
-            file: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
-            data: {
-                thumbnail: `cotizaciones/cotizacion${filter.folder}/${filter.filePath}`,
-                readerForce: true,
-            },
-        };
-
-        return fileProperties;
+        return result.data || [];
     } catch (error) {
-        console.error("Error en consultarArchivos:", error);
-        return null;
+        console.error("Error consultando archivos:", error);
+
+        return [];
     }
 }
 
-function fileCheckTemplate(fileName, fileUrl) {
-    return `<div class="d-flex justify-content-between m-5">
-    <div class="flex-grow-1">
-      <span class="fs-6 fw-semibold text-gray-800 d-block">${fileName}</span>
-    </div>
-    <label class="form-check form-switch form-check-solid">
-      <input class="form-check-input" type="checkbox" name="waFiles" data-wafile="${fileName}" value="${fileUrl}" checked="checked" />
-      <span class="form-check-label"> Adjuntar </span>
-    </label>
-  </div>`;
+/*
+|--------------------------------------------------------------------------
+| PRELOAD
+|--------------------------------------------------------------------------
+*/
+
+function generarPreloadArchivo(file) {
+    return {
+        name: file.fileName,
+        size: file.fileSizeBytes || 0,
+        type: file.mimeType || "application/octet-stream",
+
+        file: `cotizaciones/cotizacion${file.folder}/${file.filePath}`,
+
+        data: {
+            readerForce: true,
+            thumbnail: `cotizaciones/cotizacion${file.folder}/${file.filePath}`,
+        },
+    };
 }
+
+/*
+|--------------------------------------------------------------------------
+| INICIALIZAR UN FILEUPLOADER
+|--------------------------------------------------------------------------
+*/
+
+function initSingleFileUploader(config, preloadFile = null) {
+    const input = $(config.input);
+
+    if (!input.length) {
+        return;
+    }
+
+    const instance = $.fileuploader.getInstance(input[0]);
+
+    if (instance) {
+        return;
+    }
+
+    input.fileuploader({
+        limit: 1,
+
+        addMore: false,
+
+        theme: "dragdrop",
+
+        files: preloadFile ? [preloadFile] : null,
+
+        changeInput:
+            '<div class="fileuploader-input">' +
+            '<div class="fileuploader-input-inner">' +
+            '<div class="fileuploader-icon-main"></div>' +
+            '<h3 class="fileuploader-input-caption">' +
+            `<span>Arrastra tu archivo "${config.titulo}" aquí</span>` +
+            "</h3>" +
+            "<p>o</p>" +
+            '<button type="button" class="fileuploader-input-button">' +
+            "<span>Examinar archivos</span>" +
+            "</button>" +
+            "</div>" +
+            "</div>",
+
+        captions: $.extend(true, {}, $.fn.fileuploader.languages["es"], {
+            feedback: `Arrastra tu archivo "${config.titulo}" aquí`,
+
+            feedback2: `Arrastra tu archivo "${config.titulo}" aquí`,
+
+            drop: `Arrastra tu archivo "${config.titulo}" aquí`,
+
+            or: "o",
+
+            button: "Examinar archivos",
+        }),
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| INIT GENERAL
+|--------------------------------------------------------------------------
+*/
 
 async function initFileUploader() {
-    var elementos = [
-        {
-            opcion: "BoletaLib",
-            titulo: "Boleta de Liberación",
-            agGrid: "Boleta-de-liberacion",
-            mandatory: true,
-        },
-        { opcion: "Doda", titulo: "DODA", agGrid: "Doda", mandatory: true },
-        {
-            opcion: "PreAlta",
-            titulo: "Pre Alta",
-            agGrid: "PreAlta",
-            mandatory: false,
-        },
-        {
-            opcion: "CartaPortePDF",
-            titulo: "Carta Porte PDF",
-            agGrid: "CartaPorte",
-            mandatory: false,
-        },
-        {
-            opcion: "CartaPorteXML",
-            titulo: "Carta Porte XML",
-            agGrid: "CartaPorteXML",
-            mandatory: false,
-        },
-        {
-            opcion: "CCP",
-            titulo: "CCP - Carta Porte",
-            agGrid: "Formato-para-Carta-porte",
-            mandatory: true,
-        },
-        {
-            opcion: "EIR",
-            titulo: "EIR - Comprobante de vacío",
-            agGrid: "EIR",
-            mandatory: false,
-        },
-    ];
+    const numContenedor = localStorage.getItem("numContenedor");
 
-    let waSendFiles = document.querySelector("#waSendFiles");
-    let itemTemplate = null;
+    let archivos = [];
 
-    for (const el of elementos) {
-        if (el.mandatory) {
-            fileSettings = el;
-            numContenedor = localStorage.getItem("numContenedor");
-            filesContenedor = await consultarArchivos(numContenedor);
+    // consultar existentes
+    if (numContenedor) {
+        archivos = await consultarArchivos(numContenedor);
+    }
 
-            if (filesContenedor != null) {
-                itemTemplate += fileCheckTemplate(
-                    filesContenedor.name,
-                    filesContenedor.file,
-                );
-                waSendFiles.innerHTML = itemTemplate;
+    Object.keys(documentosConfig).forEach((key) => {
+        const config = documentosConfig[key];
+
+        // buscar archivo existente
+        const archivoExistente = archivos.find(
+            (f) => f.fileCode === config.fileCode,
+        );
+
+        let preload = null;
+
+        if (archivoExistente) {
+            preload = generarPreloadArchivo(archivoExistente);
+        }
+
+        initSingleFileUploader(config, preload);
+    });
+}
+
+/*
+|--------------------------------------------------------------------------
+| VALIDAR FORM
+|--------------------------------------------------------------------------
+*/
+
+function validarDocumentos() {
+    for (const key in documentosConfig) {
+        const config = documentosConfig[key];
+
+        if (config.requiereFolio) {
+            const folio = getFolioDocumento(key);
+
+            if (!folio) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Folio requerido",
+                    text: `Debe ingresar el folio para ${config.titulo}`,
+                });
+
+                return false;
             }
-
-            adjuntarDocumentos(filesContenedor);
-            //console.log(filesContenedor)
         }
     }
+
+    return true;
+}
+
+/*
+|--------------------------------------------------------------------------
+| VALIDAR SUBMIT
+|--------------------------------------------------------------------------
+*/
+
+if (frm) {
+    frm.addEventListener("submit", function (e) {
+        const valido = validarDocumentos();
+
+        if (!valido) {
+            e.preventDefault();
+
+            return false;
+        }
+    });
+}
+
+function marcarDocumentosPendientes() {
+    documentosPendientes = true;
+
+    $("#docsPendingAlert").removeClass("d-none");
+
+    $("#btnGuardarViaje").addClass("pulse pulse-warning");
+
+    $("#btnGuardarViaje").prepend(`
+        <span class="pulse-ring"></span>
+    `);
+}
+
+$("#numBoleta, #numDoda").on("input", function () {
+    marcarDocumentosPendientes();
+});
+$("#BoletaLib, #Doda, #CCP").on("change", function () {
+    marcarDocumentosPendientes();
+});
+
+window.addEventListener("beforeunload", function (e) {
+    if (documentosPendientes) {
+        e.preventDefault();
+        e.returnValue = "";
+    }
+});
+
+function limpiarEstadoDocumentos() {
+    documentosPendientes = false;
+
+    $("#docsPendingAlert").addClass("d-none");
+
+    $("#btnGuardarViaje").removeClass("pulse pulse-warning");
+
+    $("#btnGuardarViaje .pulse-ring").remove();
 }

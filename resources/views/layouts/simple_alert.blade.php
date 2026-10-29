@@ -1,3 +1,4 @@
+@if (!request()->is('app-movil-admin*') && !View::hasSection('disable_simple_alert'))
 {{-- Message --}}
 @if (Session::has('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -45,4 +46,5 @@
             <span aria-hidden="true">&times;</span>
         </button>
     </div>
+@endif
 @endif

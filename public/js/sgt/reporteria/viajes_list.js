@@ -3,7 +3,10 @@ let fechaFinViajes;
 let gridApi = null;
 
 function searchviajesGet(inicio, fin) {
-    fetch(`/reporteria/viajes/data?fecha_inicio=${inicio}&fecha_fin=${fin}`)
+    fechaInicioViajes = inicio;
+    fechaFinViajes = fin;
+    const idEquipo = document.getElementById("selEquipoViajes")?.value || "";
+    fetch(`/reporteria/viajes/data?fecha_inicio=${inicio}&fecha_fin=${fin}&id_equipo=${encodeURIComponent(idEquipo)}`)
         .then((response) => response.json())
         .then((data) => {
             window.viajesData = data;
@@ -28,6 +31,12 @@ document.addEventListener("DOMContentLoaded", () => {
         endDate.format("YYYY-MM-DD"),
     );
 
+    document.getElementById("selEquipoViajes")?.addEventListener("change", () => {
+        if (fechaInicioViajes && fechaFinViajes) {
+            searchviajesGet(fechaInicioViajes, fechaFinViajes);
+        }
+    });
+
     const gridDiv = document.querySelector("#viajesGrid");
 
     const columnDefs = [
@@ -46,6 +55,41 @@ document.addEventListener("DOMContentLoaded", () => {
             filter: "agTextColumnFilter",
             floatingFilter: true,
             flex: 1,
+        },
+        {
+            headerName: "Peso Contenedor",
+            field: "peso_contenedor",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            filterParams: {
+                buttons: ["reset", "apply"],
+                debounceMs: 300,
+                allowedCharPattern: "\\d\\-\\.,",
+            },
+            filterValueGetter: (params) => {
+                const val = params.data?.peso_contenedor;
+                if (!val || val === "-" || val === "") return null;
+                const num = parseFloat(String(val).replace(",", ".").split("/")[0].trim());
+                return isNaN(num) ? null : num;
+            },
+            comparator: (valueA, valueB) => {
+                const numA = (!valueA || valueA === "-" || valueA === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueA).replace(",", ".").split("/")[0].trim()) || 0);
+                const numB = (!valueB || valueB === "-" || valueB === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueB).replace(",", ".").split("/")[0].trim()) || 0);
+                return numA - numB;
+            },
+            width: 160,
+            cellClass: "text-center",
+        },
+        {
+            headerName: "Unidad",
+            field: "camion",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 130,
         },
         {
             headerName: "Proveedor",
@@ -129,6 +173,27 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         onFilterChanged: () => {
             gridApi.deselectAll();
+        },
+        localeText: {
+            equals: "Igual a",
+            notEqual: "Diferente de",
+            lessThan: "Menor que",
+            lessThanOrEqual: "Menor o igual que",
+            greaterThan: "Mayor que",
+            greaterThanOrEqual: "Mayor o igual que",
+            inRange: "En rango",
+            inRangeStart: "Desde",
+            inRangeEnd: "Hasta",
+            filterOoo: "Filtrar...",
+            applyFilter: "Aplicar",
+            resetFilter: "Limpiar",
+            clearFilter: "Borrar",
+            contains: "Contiene",
+            notContains: "No contiene",
+            startsWith: "Empieza con",
+            endsWith: "Termina con",
+            blank: "En blanco",
+            notBlank: "No en blanco",
         },
     };
 
@@ -256,49 +321,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ========== Filtro local por fecha ==========
 
-    $("#daterange").daterangepicker(
+    initSgtDateRange(
+        "#daterange",
         {
             startDate,
             endDate,
-            maxDate: moment().endOf("month"),
-            opens: "right",
             locale: {
-                format: "YYYY-MM-DD",
                 separator: " al ",
-                applyLabel: "Aplicar",
-                cancelLabel: "Cancelar",
-                fromLabel: "Desde",
-                toLabel: "Hasta",
-                customRangeLabel: "Personalizado",
-                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                monthNames: [
-                    "Enero",
-                    "Febrero",
-                    "Marzo",
-                    "Abril",
-                    "Mayo",
-                    "Junio",
-                    "Julio",
-                    "Agosto",
-                    "Septiembre",
-                    "Octubre",
-                    "Noviembre",
-                    "Diciembre",
-                ],
-                firstDay: 1,
-            },
-            ranges: {
-                Hoy: [moment(), moment()],
-                "Últimos 7 días": [moment().subtract(6, "days"), moment()],
-                "Últimos 30 días": [moment().subtract(29, "days"), moment()],
-                "Este mes": [
-                    moment().startOf("month"),
-                    moment().endOf("month"),
-                ],
-                "Mes anterior": [
-                    moment().subtract(1, "month").startOf("month"),
-                    moment().subtract(1, "month").endOf("month"),
-                ],
             },
         },
         function (start, end) {
