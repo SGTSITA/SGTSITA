@@ -7,12 +7,19 @@ use App\Models\PolizaMovimiento;
 use App\Models\CatCuentaContable;
 use App\Models\GuiaContabilizadora;
 use App\Models\Bancos;
+use App\Services\CuentaContableResolverService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PolizaService
 {
+    protected CuentaContableResolverService $cuentaResolver;
+
+    public function __construct(?CuentaContableResolverService $cuentaResolver = null)
+    {
+        $this->cuentaResolver = $cuentaResolver ?: app(CuentaContableResolverService::class);
+    }
     /**
      * Crea una póliza contable con validación estricta de partida doble y cuentas afectables.
      *
@@ -168,8 +175,8 @@ class PolizaService
             $montoAnticipo = round((float) ($contexto['monto_anticipo_amortizado'] ?? 0.00), 2);
             $montoBanco = round((float) ($contexto['monto_pago_banco'] ?? max(0, $montoTotal - $montoAnticipo)), 2);
 
-            $cuentaPasivoSocios = $regla->cuenta_cargo_id ?: CatCuentaContable::where('codigo', '2.1.9.1.002')->first()?->id;
-            $cuentaAnticipo = $regla->cuenta_abono_id ?: CatCuentaContable::where('codigo', '1.1.2.3.003')->first()?->id;
+            $cuentaPasivoSocios = $regla->cuenta_cargo_id ?: $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_PASIVO_SOCIOS, $idEmpresa);
+            $cuentaAnticipo = $regla->cuenta_abono_id ?: $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
             $cuentaBanco = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
 
             if (!$cuentaPasivoSocios || !$cuentaAnticipo || !$cuentaBanco) {
@@ -232,6 +239,11 @@ class PolizaService
             $cuentaAbonoId = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
         }
 
+        if ($evento === 'PROVISION_VIAJE') {
+            $clienteId = $contexto['id_cliente'] ?? ($contexto['cliente_id'] ?? null);
+            $cuentaCargoId = $this->cuentaResolver->resolverCuentaCliente($clienteId, $idEmpresa)->id;
+        }
+
         if (!$cuentaCargoId || !$cuentaAbonoId) {
             throw new InvalidArgumentException("No fue posible resolver las cuentas de cargo y abono para el evento '{$evento}'.");
         }
@@ -272,38 +284,7 @@ class PolizaService
      */
     public function resolverCuentaBanco(?int $bancoId, int $idEmpresa): int
     {
-        if ($bancoId) {
-            $banco = Bancos::with('catBanco')->find($bancoId);
-            if ($banco) {
-                if (!empty($banco->cuenta_contable_id)) {
-                    return (int) $banco->cuenta_contable_id;
-                }
-                $nombreBanco = strtoupper(($banco->catBanco?->nombre ?? '') . ' ' . ($banco->nombre_banco ?? '') . ' ' . ($banco->nombre ?? '') . ' ' . ($banco->banco ?? ''));
-                if (str_contains($nombreBanco, 'AZTECA')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.002')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'BANORTE')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.005')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'BANAMEX') || str_contains($nombreBanco, 'CITI')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.003')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'SANTANDER')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.004')->first();
-                    if ($c) return $c->id;
-                }
-            }
-        }
-
-        // Default: BBVA Bancomer analítica o primera cuenta afectable de bancos
-        $default = CatCuentaContable::where('codigo', '1.1.1.2.001')->first()
-            ?: CatCuentaContable::where('codigo', 'like', '1.1.1.2%')->where('es_afectable', true)->first();
-
-        if (!$default) {
-            throw new InvalidArgumentException("No se encontró una subcuenta analítica afectable para Bancos (1.1.1.2).");
-        }
-
-        return $default->id;
+        return $this->cuentaResolver->resolverCuentaBanco($bancoId, $idEmpresa);
     }
 
     /**
@@ -311,38 +292,7 @@ class PolizaService
      */
     public function resolverCuentaGasto(?int $categoriaGastoId, int $idEmpresa, ?string $concepto = null): int
     {
-        $conceptoStr = strtoupper($concepto ?? '');
-
-        if ($categoriaGastoId) {
-            $cat = \App\Models\CategoriasGastos::find($categoriaGastoId);
-            if ($cat) {
-                $conceptoStr .= ' ' . strtoupper($cat->categoria);
-            }
-        }
-
-        if (str_contains($conceptoStr, 'DIESEL') || str_contains($conceptoStr, 'COMBUSTIBLE') || str_contains($conceptoStr, 'GASOLINA')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.1')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'CASETA') || str_contains($conceptoStr, 'PEAJE') || str_contains($conceptoStr, 'TAG')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.2')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'MANIOBRA') || str_contains($conceptoStr, 'BURREO') || str_contains($conceptoStr, 'CARGA') || str_contains($conceptoStr, 'DESCARGA')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.3')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'TALLER') || str_contains($conceptoStr, 'MANTENIMIENTO') || str_contains($conceptoStr, 'LLANTA') || str_contains($conceptoStr, 'REFACCION')) {
-            $c = CatCuentaContable::where('codigo', '5.1.2.1')->first();
-            if ($c) return $c->id;
-        }
-
-        // Default: Gastos Administrativos y Generales (5.1.3.1)
-        $gasto = CatCuentaContable::where('codigo', '5.1.3.1')->first()
-            ?: CatCuentaContable::where('codigo', 'like', '5.1%')->where('es_afectable', true)->first();
-
-        if (!$gasto) {
-            throw new InvalidArgumentException("No se encontró una cuenta analítica afectable de Gastos de Funcionamiento (5.1).");
-        }
-
-        return $gasto->id;
+        return $this->cuentaResolver->resolverCuentaGasto($categoriaGastoId, $idEmpresa, $concepto);
     }
 
     /**
@@ -509,8 +459,7 @@ class PolizaService
             $idEmpresa = $gasto->id_empresa ?? 1;
             $cuentaGastoId = $this->resolverCuentaGasto($gasto->categoria_gasto_id, $idEmpresa, $gasto->concepto);
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             if (!$cuentaProveedores) {
                 return null;
@@ -573,8 +522,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             $cuentaBancoId = $this->resolverCuentaBanco($pago->cuenta_bancaria_id, $idEmpresa);
 
@@ -642,8 +590,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+            $cuentaClientes = $this->cuentaResolver->resolverCuentaCliente($cotizacion?->id_cliente, $idEmpresa);
 
             $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
@@ -709,13 +656,8 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
-
-            $cuentaContraObj = CatCuentaContable::where('codigo', '3.2.2.001')->first()
-                ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
-                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
-            $cuentaContra = $cuentaContraObj->id;
+            $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+            $cuentaContra = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_CAJA_OPERATIVA, $idEmpresa);
 
             if (!$cuentaPrestamos) {
                 return null;
@@ -777,14 +719,9 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
-
-            // Los pagos de préstamos a operadores son amortizaciones descontadas de liquidaciones de viaje
-            $cuentaContra = CatCuentaContable::where('codigo', '2.1.1.1.001')->first()
-                ?: (CatCuentaContable::where('codigo', 'like', '2.1.1%')->where('es_afectable', true)->first()
-                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
-            $cuentaContraId = $cuentaContra?->id ?? $cuentaPrestamos->id;
+            $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+            $cuentaContra = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+            $cuentaContraId = $cuentaContra->id;
 
             if (!$cuentaPrestamos) {
                 return null;
@@ -856,24 +793,20 @@ class PolizaService
 
             if ($mov->tipo === 'abono') {
                 if (str_contains($conceptoUpper, 'SALDO INICIAL')) {
-                    $cuentaPatrimonio = CatCuentaContable::where('codigo', '3.2.2.001')->first()
-                        ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '3.1%')->where('es_afectable', true)->first());
-                    $cuentaContraId = $cuentaPatrimonio?->id;
+                    $cuentaPatrimonio = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CAJA_OPERATIVA, $idEmpresa);
+                    $cuentaContraId = $cuentaPatrimonio->id;
                     $refContra = 'APERTURA_BANCO';
                 } elseif (in_array($mov->referenciaable_type, ['App\Models\Asignaciones', 'App\Models\GastosOperadores', 'App\Models\GastosGenerales', 'App\Models\Gasto'])
                     || str_contains($conceptoUpper, 'DEVOLUCIÓN') || str_contains($conceptoUpper, 'DEV GASTOS') || str_contains($conceptoUpper, 'DEV.')) {
-                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaProveedores?->id;
+                    $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+                    $cuentaContraId = $cuentaProveedores->id;
                     $refContra = 'DEV_GASTO_CXP';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
-                    $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaClientes?->id;
+                    $cuentaClientes = $this->cuentaResolver->resolverCuentaCliente($cotizacion?->id_cliente, $idEmpresa);
+                    $cuentaContraId = $cuentaClientes->id;
                     $refContra = 'COBRO_CXC';
                 }
 
@@ -919,8 +852,10 @@ class PolizaService
 
                             $conceptoDetalle = "Cobro viaje #" . ($cot?->id ?? '') . ($cont ? " [{$cont}]" : '') . " Cliente: " . ($cot?->cliente?->nombre ?? 'N/A');
 
+                            $cuentaCxcDestino = $this->cuentaResolver->resolverCuentaCliente($cot?->id_cliente, $idEmpresa)->id;
+
                             $lineasHaber[] = [
-                                'cuenta_contable_id' => $cuentaContraId,
+                                'cuenta_contable_id' => $cuentaCxcDestino,
                                 'debe'               => 0.00,
                                 'haber'              => round((float)$cpc->monto, 2),
                                 'referencia'         => $cont ?: 'COBRO_CXC',
@@ -952,21 +887,20 @@ class PolizaService
             } else {
                 if ($mov->referenciaable_type === 'App\Models\SocioPago'
                     || str_contains($conceptoUpper, 'UTILIDADES GABRIEL') || str_contains($conceptoUpper, 'SOCIO')) {
-                    $cuentaSocios = CatCuentaContable::where('codigo', '1.1.2.3.003')->first();
-                    $cuentaContraId = $cuentaSocios?->id;
+                    $cuentaSocios = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
+                    $cuentaContraId = $cuentaSocios->id;
                     $refContra = 'ANTICIPO_SOCIO';
                 } elseif ($mov->referenciaable_type === 'App\Models\Prestamo') {
-                    $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first();
-                    $cuentaContraId = $cuentaPrestamos?->id;
+                    $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+                    $cuentaContraId = $cuentaPrestamos->id;
                     $refContra = 'PRESTAMO_OPE';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
                     // Todos los pagos operativos cancelan el pasivo devengado en Proveedores CXP
-                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaProveedores?->id;
+                    $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+                    $cuentaContraId = $cuentaProveedores->id;
                     $refContra = 'PAGO_CXP';
                 }
 
@@ -1034,11 +968,8 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaGasto = CatCuentaContable::where('codigo', '5.1.1.3')->first()
-                ?: CatCuentaContable::where('codigo', '5.1.3.1')->first();
-
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaGasto = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_GASTOS_MANIOBRAS, $idEmpresa);
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             if (!$cuentaGasto || !$cuentaProveedores) {
                 return null;
@@ -1102,8 +1033,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
@@ -1171,8 +1101,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaAnticipo = CatCuentaContable::where('codigo', '1.1.2.3.003')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
+            $cuentaAnticipo = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
 
             $cuentaBancoId = $this->resolverCuentaBanco($socioPago->banco_id, $idEmpresa);
 

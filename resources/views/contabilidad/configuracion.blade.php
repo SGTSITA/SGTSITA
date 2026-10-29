@@ -20,6 +20,12 @@
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('contabilidad.mapeo-modulos.index', ['id_empresa' => $idEmpresa]) }}" class="btn btn-outline-info btn-sm mb-0 shadow-sm" title="Mapeo y Desglose por Módulos">
+                    <i class="fas fa-network-wired me-1"></i> Mapeo por Módulos
+                </a>
+                <a href="{{ route('contabilidad.manual') }}" class="btn btn-outline-warning btn-sm mb-0 shadow-sm" title="Manual Contable y Guía CONAC">
+                    <i class="fas fa-book me-1"></i> Guía Contabilizadora
+                </a>
                 <a href="{{ route('contabilidad.balance-general.index') }}" class="btn btn-outline-primary btn-sm mb-0 shadow-sm">
                     <i class="fas fa-arrow-left me-1"></i> Volver al Balance General
                 </a>

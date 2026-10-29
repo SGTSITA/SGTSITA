@@ -436,6 +436,7 @@ class CotizacionesService
             $conceptoDetalle = 'Provisión viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
 
             $asientoData = $polizaService->resolverAsientoPorEvento('PROVISION_VIAJE', null, $cotizacion->id_empresa ?? 1, [
+                'id_cliente'  => $cotizacion->id_cliente,
                 'id_equipo'   => $camionId,
                 'monto'       => $precioViaje,
                 'fecha'       => $fecha,
@@ -508,23 +509,37 @@ class CotizacionesService
      */
     public function getPeriodosCotizaciones(): array
     {
-        return Cache::remember('sgt_periodos_cotizaciones', 3600, function () {
-            $minYear = (int) (DB::table('cotizaciones')->min(DB::raw('YEAR(created_at)')) ?? 2024);
-            $maxBd = (int) (DB::table('cotizaciones')->max(DB::raw('YEAR(created_at)')) ?? date('Y'));
-            $maxYear = max($maxBd, (int) date('Y') + 1);
+        try {
+            return Cache::remember('sgt_periodos_cotizaciones', 3600, function () {
+                return $this->calcularPeriodosCotizaciones();
+            });
+        } catch (\Throwable $e) {
+            return $this->calcularPeriodosCotizaciones();
+        }
+    }
 
-            $anios = [];
-            for ($y = $maxYear; $y >= $minYear; $y--) {
-                $anios[] = $y;
-            }
+    /**
+     * Calcula los rangos de años y fechas basados en cotizaciones en BD.
+     *
+     * @return array
+     */
+    protected function calcularPeriodosCotizaciones(): array
+    {
+        $minYear = (int) (DB::table('cotizaciones')->min(DB::raw('YEAR(created_at)')) ?? 2024);
+        $maxBd = (int) (DB::table('cotizaciones')->max(DB::raw('YEAR(created_at)')) ?? date('Y'));
+        $maxYear = max($maxBd, (int) date('Y') + 1);
 
-            return [
-                'ejercicio_ini_bd' => $minYear,
-                'ejercicio_fin_bd' => $maxYear,
-                'anios'            => $anios,
-                'min_date'         => "{$minYear}-01-01",
-                'max_date'         => "{$maxYear}-12-31",
-            ];
-        });
+        $anios = [];
+        for ($y = $maxYear; $y >= $minYear; $y--) {
+            $anios[] = $y;
+        }
+
+        return [
+            'ejercicio_ini_bd' => $minYear,
+            'ejercicio_fin_bd' => $maxYear,
+            'anios'            => $anios,
+            'min_date'         => "{$minYear}-01-01",
+            'max_date'         => "{$maxYear}-12-31",
+        ];
     }
 }
