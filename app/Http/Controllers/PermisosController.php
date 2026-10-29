@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Str;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 class PermisosController extends Controller
 {
@@ -19,7 +19,7 @@ class PermisosController extends Controller
 
         $slug = Str::slug($request->name, '-');
 
-        $permission = new Permission;
+        $permission = new Permission();
         $permission->name = $slug;
         $permission->modulo = $request->modulo;
         $permission->description = $request->description;
@@ -56,20 +56,20 @@ class PermisosController extends Controller
 
 
     public function updateAjax(Request $request, $id)
-{
-   $request->validate([
-    'modulo' => 'nullable|string|max:255',
-    'description' => 'nullable|string|max:255',
-    'sistema' => 'nullable|string|max:10',
+    {
+        $request->validate([
+         'modulo' => 'nullable|string|max:255',
+         'description' => 'nullable|string|max:255',
+         'sistema' => 'nullable|string|max:10',
 ]);
 
-$permission = Permission::findOrFail($id);
-$permission->modulo = $request->modulo;
-$permission->description = $request->description;
-$permission->sistema = $request->sistema;
-$permission->save();
+        $permission = Permission::findOrFail($id);
+        $permission->modulo = $request->modulo;
+        $permission->description = $request->description;
+        $permission->sistema = $request->sistema;
+        $permission->save();
 
-    return response()->json(['success' => true, 'message' => 'Permiso actualizado con éxito.']);
-}
+        return response()->json(['success' => true, 'message' => 'Permiso actualizado con éxito.']);
+    }
 
 }

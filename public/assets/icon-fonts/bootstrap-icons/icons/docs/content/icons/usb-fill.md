@@ -1,8 +1,8 @@
 ---
 title: USB fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - port
-  - plug
+    - port
+    - plug
 ---

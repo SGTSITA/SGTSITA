@@ -1,8 +1,8 @@
 ---
 title: Reply all fill
 categories:
-  - Communications
+    - Communications
 tags:
-  - mail
-  - email
+    - mail
+    - email
 ---

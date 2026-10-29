@@ -1,9 +1,9 @@
 ---
 title: Safe2 fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - vault
-  - bank
-  - finance
+    - vault
+    - bank
+    - finance
 ---

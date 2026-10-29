@@ -1,12 +1,12 @@
 ---
 title: List task
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
-  - justify
-  - alignment
-  - todos
-  - task
+    - text
+    - type
+    - justify
+    - alignment
+    - todos
+    - task
 ---

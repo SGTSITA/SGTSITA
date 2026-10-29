@@ -1,11 +1,11 @@
 ---
 title: Three dots vertical
 categories:
-  - Controls
+    - Controls
 tags:
-  - kebab
-  - more
-  - ellipsis
-  - overflow
-  - menu
+    - kebab
+    - more
+    - ellipsis
+    - overflow
+    - menu
 ---

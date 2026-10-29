@@ -1,13 +1,13 @@
 ---
 title: Arrow repeat
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
-  - spin
-  - turn
-  - around
-  - round
-  - rotate
-  - sync
+    - arrow
+    - spin
+    - turn
+    - around
+    - round
+    - rotate
+    - sync
 ---

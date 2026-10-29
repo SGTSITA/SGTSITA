@@ -1,7 +1,7 @@
 ---
 title: Crop
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - crop
+    - crop
 ---

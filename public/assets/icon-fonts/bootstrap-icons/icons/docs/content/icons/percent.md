@@ -1,9 +1,9 @@
 ---
 title: Percent
 categories:
-  - Typography
+    - Typography
 tags:
-  - percentage
-  - math
-  - fraction
+    - percentage
+    - math
+    - fraction
 ---

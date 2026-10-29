@@ -1,12 +1,12 @@
 ---
 title: Reception 1
 categories:
-  - Communications
+    - Communications
 tags:
-  - reception
-  - cellphone
-  - mobile
-  - carrier
-  - network
-  - signal
+    - reception
+    - cellphone
+    - mobile
+    - carrier
+    - network
+    - signal
 ---

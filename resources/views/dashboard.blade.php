@@ -7,34 +7,35 @@
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
-                            <a href="{{ route('clients.index') }}">
-                                <img src="{{ asset('img/icon/empleados.webp') }}" alt="" width="35px">
+                            <a href="{{ route('clientes.index') }}">
+                                <img src="{{ asset('img/icon/empleados.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
                         <div class="col-8">
-                            <a href="{{ route('clients.index') }}">
+                            <a href="{{ route('clientes.index') }}">
                                 <p style="margin: 0">Consulta</p>
-                                <h5>I - Clients</h5>
+                                <h5>I - Clientes</h5>
                             </a>
                         </div>
 
                         <div class="col-2 my-auto">
                             <a type="button" class="" data-bs-toggle="modal" data-bs-target="#exampleModal">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('proovedores-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
-                        <div class="col-2  my-auto">
+                        <div class="col-2 my-auto">
                             <a href="{{ route('index.proveedores') }}">
-                                <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/edificios_ciudad.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -47,20 +48,21 @@
 
                         <div class="col-2 my-auto">
                             <a type="button" class="" data-bs-toggle="modal" data-bs-target="#proveedores">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('equipos-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.equipos') }}">
-                                <img src="{{ asset('img/icon/referencia.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/referencia.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -73,20 +75,21 @@
 
                         <div class="col-2 my-auto">
                             <a type="button" class="" data-bs-toggle="modal" data-bs-target="#equipoModal">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('operadores-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.operadores') }}">
-                                <img src="{{ asset('img/icon/camion.png') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/camion.png') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -99,20 +102,21 @@
 
                         <div class="col-2 my-auto">
                             <a type="button" class="" data-bs-toggle="modal" data-bs-target="#operadoresModal">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('cotizaciones-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.cotizaciones') }}">
-                                <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/factura.png.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -125,20 +129,21 @@
 
                         <div class="col-2 my-auto">
                             <a href="{{ route('create.cotizaciones') }}">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('planeacion-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.planeaciones') }}">
-                                <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/inventario.png.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -149,25 +154,24 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('bancos-list')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
-                            <a href="{{ route('index.bancos') }}">
-                                <img src="{{ asset('img/icon/banco.png') }}" alt="" width="35px">
+                            <a href="{{ route('index.bancos2') }}">
+                                <img src="{{ asset('img/icon/banco.png') }}" alt="" width="35px" />
                             </a>
                         </div>
 
                         <div class="col-8">
-                            <a href="{{ route('index.bancos') }}">
+                            <a href="{{ route('index.bancos2') }}">
                                 <p style="margin: 0">Consulta</p>
                                 <h5>VII Bancos</h5>
                             </a>
@@ -175,21 +179,21 @@
 
                         <div class="col-2 my-auto">
                             <a type="button" class="" data-bs-toggle="modal" data-bs-target="#bancoModal">
-                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px">
-
+                                <img src="{{ asset('img/icon/anadir.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('cuentas-cobrar')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.cobrar') }}">
-                                <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/bolsa-de-dinero.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -200,19 +204,19 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('cuentas-pagar')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.pagar') }}">
-                                <img src="{{ asset('img/icon/gastos.png.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/gastos.png.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -223,8 +227,7 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
@@ -236,7 +239,7 @@
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.gastos_generales') }}">
-                                <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/billetera.png') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -247,8 +250,7 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
@@ -260,7 +262,7 @@
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('index.liquidacion') }}">
-                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/pago-en-efectivo.png') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -271,20 +273,19 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
         @endcan
 
-        @can('coordenadasv')
+        @can('Coordenadas SGT')
             <div class="col-4">
                 <div class="card p-3 mb-4">
                     <div class="row">
                         <div class="col-2 my-auto">
                             <a href="{{ route('ver.coordenadamapa') }}">
-                                <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="35px">
+                                <img src="{{ asset('img/icon/mapa-de-la-ciudad.webp') }}" alt="" width="35px" />
                             </a>
                         </div>
 
@@ -295,12 +296,12 @@
                             </a>
                         </div>
 
-                        <div class="col-2 my-auto">
-                        </div>
+                        <div class="col-2 my-auto"></div>
                     </div>
                 </div>
             </div>
         @endcan
+
         @can('ver-costos-pendientes')
             <div class="col-4">
                 <div class="card p-3 mb-4">
@@ -310,7 +311,7 @@
                                 <i class="fas fa-bell fs-3 position-relative">
                                     <span
                                         class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                                        id="badgeMEP" style="display: none; font-size: 0.7rem;">
+                                        id="badgeMEP" style="display: none; font-size: 0.7rem">
                                         0
                                     </span>
                                 </i>
@@ -330,24 +331,25 @@
             </div>
         @endcan
 
-
         @can('catalogo')
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('catalogo*') ? 'active' : '' }}" href="{{ route('index.catalogo') }}"
                     target="">
-                    <div class="icon icon-shape icon-sm text-center  me-2 d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px">
+                    <div class="icon icon-shape icon-sm text-center me-2 d-flex align-items-center justify-content-center">
+                        <img src="{{ asset('img/icon/catalogo.webp') }}" alt="" width="20px" />
                     </div>
-                    <span class="nav-link-text ms-1"><b>XIV</b>Catálogo</span>
+                    <span class="nav-link-text ms-1">
+                        <b>XIV</b>
+                        Catálogo
+                    </span>
                 </a>
             </li>
         @endcan
-
     </div>
 @endsection
 
 @section('content')
-    <!--modal cambiar de empresa menu  -->
+    {{-- <!--modal cambiar de empresa menu  -->
     <div class="modal fade" id="modalCambiarEmpresa" tabindex="-1" aria-labelledby="modalCambiarEmpresaLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -355,7 +357,6 @@
                 <form method="POST" action="{{ route('usuario.cambiarEmpresa') }}">
                     @csrf
                     <div class="modal-header">
-
                         <h5 class="modal-title" id="modalCambiarEmpresaLabel">Seleccionar Empresa</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
@@ -376,17 +377,18 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> --}}
 @endsection
+
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let pendientesCount = 0;
 
-        document.addEventListener("DOMContentLoaded", function() {
-            fetch("/mep/pendientes/count")
-                .then(res => res.json())
-                .then(data => {
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/mep/pendientes/count')
+                .then((res) => res.json())
+                .then((data) => {
                     pendientesCount = data.total || 0;
 
                     if (pendientesCount > 0) {
@@ -398,34 +400,36 @@
 
             const icono = document.getElementById('notificacionesMEP');
             const texto = document.getElementById('notificacionesMEP-text');
+            if (icono && texto) {
+                [icono, texto].forEach((el) => {
+                    el.addEventListener('click', function(e) {
+                        e.preventDefault();
 
-            [icono, texto].forEach(el => {
-                el.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    if (pendientesCount > 0) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Pendientes por verificar',
-                            text: `Tienes ${pendientesCount} viajes pendientes por verificar.`,
-                            confirmButtonText: 'Ir a revisar',
-                            showCancelButton: true,
-                            cancelButtonText: 'Más tarde'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href =
-                                    "{{ route('vista_pendientes.costos_mep') }}";
-                            }
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Sin pendientes',
-                            text: 'No hay viajes pendientes por verificar.'
-                        });
-                    }
+                        if (pendientesCount > 0) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Pendientes por verificar',
+                                text: `Tienes ${pendientesCount} viajes pendientes por verificar.`,
+                                confirmButtonText: 'Ir a revisar',
+                                showCancelButton: true,
+                                cancelButtonText: 'Más tarde',
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href =
+                                        '{{ route('vista_pendientes.costos_mep') }}';
+                                }
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Sin pendientes',
+                                text: 'No hay viajes pendientes por verificar.',
+                            });
+                        }
+                    });
                 });
-            });
+            }
+
         });
     </script>
 @endpush

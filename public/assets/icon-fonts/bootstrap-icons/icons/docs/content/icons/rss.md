@@ -1,9 +1,9 @@
 ---
 title: RSS
 categories:
-  - Communications
+    - Communications
 tags:
-  - atom
-  - feed
-  - xml
+    - atom
+    - feed
+    - xml
 ---

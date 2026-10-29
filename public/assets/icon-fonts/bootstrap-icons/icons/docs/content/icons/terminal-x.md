@@ -1,9 +1,9 @@
 ---
 title: Terminal x
 categories:
-  - Apps
+    - Apps
 tags:
-  - command-line
-  - cli
-  - command-prompt
+    - command-line
+    - cli
+    - command-prompt
 ---

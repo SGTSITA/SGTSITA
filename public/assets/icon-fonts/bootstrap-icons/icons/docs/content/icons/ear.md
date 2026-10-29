@@ -1,9 +1,9 @@
 ---
 title: Ear
 categories:
-  - Real World
+    - Real World
 tags:
-  - hearing
-  - sound
-  - listen
+    - hearing
+    - sound
+    - listen
 ---

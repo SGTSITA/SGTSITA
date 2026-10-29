@@ -1,8 +1,8 @@
 ---
 title: Battery charging
 categories:
-  - Devices
+    - Devices
 tags:
-  - power
-  - charge
+    - power
+    - charge
 ---

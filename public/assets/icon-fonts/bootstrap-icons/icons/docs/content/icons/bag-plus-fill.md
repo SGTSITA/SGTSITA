@@ -1,11 +1,11 @@
 ---
 title: Bag plus fill
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - shopping
-  - add
-  - cart
-  - basket
-  - bag
+    - shopping
+    - add
+    - cart
+    - basket
+    - bag
 ---

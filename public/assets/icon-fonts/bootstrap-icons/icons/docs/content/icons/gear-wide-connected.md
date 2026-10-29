@@ -1,9 +1,9 @@
 ---
 title: Gear wide connected
 categories:
-  - Tools
+    - Tools
 tags:
-  - tool
-  - settings
-  - preferences
+    - tool
+    - settings
+    - preferences
 ---

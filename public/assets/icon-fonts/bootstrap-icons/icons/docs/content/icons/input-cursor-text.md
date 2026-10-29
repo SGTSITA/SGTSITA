@@ -1,9 +1,9 @@
 ---
 title: Input cursor text
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - textarea
-  - form
-  - input
+    - textarea
+    - form
+    - input
 ---

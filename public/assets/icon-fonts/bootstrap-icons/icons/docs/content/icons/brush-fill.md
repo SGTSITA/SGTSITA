@@ -1,8 +1,8 @@
 ---
 title: Brush fill
 categories:
-  - Tools
+    - Tools
 tags:
-  - paint
-  - art
+    - paint
+    - art
 ---
