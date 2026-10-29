@@ -12,10 +12,12 @@ use Illuminate\Support\Facades\DB;
 class ContabilidadService
 {
     protected PolizaService $polizaService;
+    protected CuentaContableResolverService $cuentaResolver;
 
-    public function __construct(PolizaService $polizaService)
+    public function __construct(PolizaService $polizaService, ?CuentaContableResolverService $cuentaResolver = null)
     {
         $this->polizaService = $polizaService;
+        $this->cuentaResolver = $cuentaResolver ?: app(CuentaContableResolverService::class);
     }
 
     /**
@@ -211,6 +213,49 @@ class ContabilidadService
 
         $utilidadEjercicio = round(($ingresosFletes + $interesesGanados) - $gastosTotales, 2);
 
+        // 1.1 Desglose de Estado de Resultados por Ejercicio Anual
+        $desgloseEjercicios = [];
+        $queryEjercicios = DB::table('poliza_movimientos as pm')
+            ->join('polizas as p', 'p.id', '=', 'pm.poliza_id')
+            ->join('cat_cuentas_contables as c', 'c.id', '=', 'pm.cuenta_contable_id')
+            ->whereIn('p.id_empresa', $empresasIds)
+            ->where('p.estatus', 'aplicada')
+            ->where('p.fecha', '>=', $fechaInicioER)
+            ->where('p.fecha', '<=', $fechaCorte)
+            ->where('p.es_apertura', 0);
+
+        if ($idEquipo) {
+            $queryEjercicios->where(function ($q) use ($idEquipo) {
+                $q->where('pm.id_equipo', $idEquipo)->orWhere('p.id_equipo', $idEquipo);
+            });
+        }
+
+        $idCuentaIntereses = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_INGRESOS_INTERESES, $empresasIds[0] ?? 1);
+
+        $desgloseRaw = $queryEjercicios->selectRaw("
+            YEAR(p.fecha) as anio,
+            SUM(CASE WHEN c.id = {$idCuentaIntereses} OR c.cuenta_padre_id = {$idCuentaIntereses} THEN (pm.haber - pm.debe) ELSE 0 END) as intereses,
+            SUM(CASE WHEN c.rubro = 'ingresos' AND c.id != {$idCuentaIntereses} AND (c.cuenta_padre_id IS NULL OR c.cuenta_padre_id != {$idCuentaIntereses}) THEN (pm.haber - pm.debe) ELSE 0 END) as ingresos,
+            SUM(CASE WHEN c.rubro IN ('costos', 'gastos') THEN (pm.debe - pm.haber) ELSE 0 END) as gastos
+        ")
+        ->groupByRaw('YEAR(p.fecha)')
+        ->orderByRaw('YEAR(p.fecha) asc')
+        ->get();
+
+        foreach ($desgloseRaw as $row) {
+            $anio = (int) $row->anio;
+            $ing = round((float) $row->ingresos, 2);
+            $int = round((float) $row->intereses, 2);
+            $gas = round((float) $row->gastos, 2);
+            $desgloseEjercicios[$anio] = [
+                'anio'       => $anio,
+                'ingresos'   => $ing,
+                'intereses'  => $int,
+                'gastos'     => $gas,
+                'utilidad'   => round(($ing + $int) - $gas, 2),
+            ];
+        }
+
         // Construir items de resultados
         foreach ($conceptos->where('seccion', 'estado_resultados') as $c) {
             $monto = 0.00;
@@ -328,6 +373,8 @@ class ContabilidadService
         $diferencia = round($totalActivo - $totalPasivoYPatrimonio, 2);
         $cuadrado = abs($diferencia) < 0.01;
 
+        $ajustePatrimonioHistorico = round($resultadoEjercicioBalance - $utilidadEjercicio, 2);
+
         return [
             'fecha_corte'            => $fechaCorte,
             'fecha_inicio_ejercicio' => $fechaInicioER,
@@ -349,11 +396,14 @@ class ContabilidadService
             ],
             'total_pasivo_patrimonio' => $totalPasivoYPatrimonio,
             'estado_resultados'      => [
-                'items'              => $resultadosItems,
-                'ingresos_fletes'    => $ingresosFletes,
-                'intereses_ganados'  => $interesesGanados,
-                'gastos_totales'     => $gastosTotales,
-                'utilidad_neta'      => $utilidadEjercicio,
+                'items'                        => $resultadosItems,
+                'ingresos_fletes'              => $ingresosFletes,
+                'intereses_ganados'            => $interesesGanados,
+                'gastos_totales'               => $gastosTotales,
+                'utilidad_neta'                => $utilidadEjercicio,
+                'desglose_ejercicios'          => $desgloseEjercicios,
+                'ajuste_patrimonio_historico'  => $ajustePatrimonioHistorico,
+                'resultado_patrimonio_balance' => $resultadoEjercicioBalance,
             ],
             'cuadrado'               => $cuadrado,
             'diferencia'             => $diferencia,
@@ -920,16 +970,16 @@ class ContabilidadService
             } else {
                 $movQuery->where('p.fecha', '<', $fechaInicioEjercicio)
                          ->where(function($q) {
-                             $q->where('c.codigo', 'like', '4%')
-                               ->orWhere('c.codigo', 'like', '5%');
+                             $q->where('c.rubro', 'ingresos')
+                               ->orWhereIn('c.rubro', ['costos', 'gastos']);
                          });
             }
         } elseif ($concepto->seccion === 'patrimonio' && $concepto->es_calculado && str_contains(strtolower($concepto->concepto), 'resultado del ejercicio')) {
-            // Resultado del ejercicio actual: ingresos 4% y gastos 5% del ejercicio
+            // Resultado del ejercicio actual: ingresos y gastos del ejercicio
             $movQuery->where('p.fecha', '>=', $fechaInicioEjercicio)
                      ->where(function($q) {
-                         $q->where('c.codigo', 'like', '4%')
-                           ->orWhere('c.codigo', 'like', '5%');
+                         $q->where('c.rubro', 'ingresos')
+                           ->orWhereIn('c.rubro', ['costos', 'gastos']);
                      });
         } else {
             // Activo o Pasivo estándar
@@ -1325,8 +1375,8 @@ class ContabilidadService
             ->where('p.fecha', '<=', $fechaFin)
             ->where('p.origen_tipo', '!=', 'cierre_ejercicio')
             ->where(function ($q) {
-                $q->where('c.codigo', 'like', '4%')
-                  ->orWhere('c.codigo', 'like', '5%');
+                $q->where('c.rubro', 'ingresos')
+                  ->orWhereIn('c.rubro', ['costos', 'gastos']);
             })
             ->select([
                 'c.id as cuenta_id',

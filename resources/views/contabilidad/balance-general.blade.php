@@ -12,46 +12,45 @@
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-3">
             <form method="GET" action="{{ route('contabilidad.balance-general.index') }}" id="formFiltroBalance">
-                {{-- FILA 1: FILTROS PRINCIPALES Y TIPO DE REPORTE --}}
+                {{-- FILA 1: FILTROS PRINCIPALES Y TIPO DE REPORTE (ALINEADOS PERFECTAMENTE) --}}
                 <div class="row g-3 align-items-end mb-3">
 
                     {{-- Selector de Tipo de Reporte Contable --}}
-                    <div class="col-xl-3 col-lg-4 col-md-6">
+                    <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
                             <i class="fas fa-file-invoice text-primary me-1"></i> Tipo de Reporte Contable:
+                            @if (!empty($catalogoReportes[$tipoReporte]['descripcion']))
+                                <i class="fas fa-info-circle text-muted ms-1" title="{{ $catalogoReportes[$tipoReporte]['descripcion'] }}"></i>
+                            @endif
                         </label>
-                        <select name="tipo_reporte" id="selectTipoReporte" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()">
+                        <select name="tipo_reporte" id="selectTipoReporte" class="form-select form-select-sm fw-semibold" onchange="this.form.submit()" title="{{ $catalogoReportes[$tipoReporte]['descripcion'] ?? '' }}">
                             @foreach ($catalogoReportes as $key => $rep)
                                 <option value="{{ $key }}" {{ $tipoReporte === $key ? 'selected' : '' }}>
                                     [{{ $rep['codigo_conac'] }}] {{ $rep['nombre'] }} {{ !$rep['disponible'] ? '(Próximamente)' : '' }}
                                 </option>
                             @endforeach
                         </select>
-                        <small class="text-muted text-xxs d-block mt-1">
-                            <i class="fas fa-info-circle me-1"></i>{{ $catalogoReportes[$tipoReporte]['descripcion'] ?? '' }}
-                        </small>
                     </div>
 
                     {{-- Filtro de Empresas (solo si es_admin == 1) --}}
                     @if ($esAdmin)
-                        <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="col-xl-2 col-lg-3 col-md-6 col-12">
                             <label class="form-label fw-bold text-dark text-xs mb-1">
                                 <i class="fas fa-building text-primary me-1"></i> Empresa(s):
                             </label>
-                            <select name="empresas[]" id="selectEmpresas" class="form-select form-select-sm" multiple style="min-height: 38px;">
-                                <option value="todas" {{ in_array('todas', $seleccionEmpresas) ? 'selected' : '' }}>-- Todas las Empresas (Consolidado) --</option>
+                            <select name="empresas[]" id="selectEmpresas" class="form-select form-select-sm" multiple style="max-height: 31px;">
+                                <option value="todas" {{ in_array('todas', $seleccionEmpresas) ? 'selected' : '' }}>-- Todas las Empresas --</option>
                                 @foreach ($todasEmpresas as $emp)
                                     <option value="{{ $emp->id }}" {{ in_array($emp->id, $seleccionEmpresas) && !in_array('todas', $seleccionEmpresas) ? 'selected' : '' }}>
                                         {{ $emp->nombre }}
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted text-xxs">Mantén Ctrl presionado para multi-selección.</small>
                         </div>
                     @endif
 
                     {{-- Filtro de Unidad / Camión (id_equipo - marca) --}}
-                    <div class="col-xl-{{ $esAdmin ? '2' : '3' }} col-lg-{{ $esAdmin ? '2' : '3' }} col-md-6">
+                    <div class="col-xl-{{ $esAdmin ? '2' : '3' }} col-lg-3 col-md-6 col-12">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
                             <i class="fas fa-truck text-primary me-1"></i> Unidad / Camión:
                         </label>
@@ -63,55 +62,54 @@
                                 </option>
                             @endforeach
                         </select>
-                        <small class="text-muted text-xxs">Filtra la operatividad por unidad vehicular.</small>
                     </div>
 
-                    {{-- Selector de Rango de Fechas / Ejercicio (SGT DateRangePicker) --}}
-                    <div class="col-xl-4 col-lg-4 col-md-6 col-12">
+                    {{-- Selector de Rango de Fechas (SGT DateRangePicker Estándar) --}}
+                    <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                         <label class="form-label fw-bold text-dark text-xs mb-1">
-                            <i class="fas fa-calendar-alt text-primary me-1"></i> Periodo / Ejercicio:
+                            <i class="fas fa-calendar-alt text-primary me-1"></i> Periodo:
                         </label>
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-white text-primary border-end-0"><i class="fas fa-calendar-week"></i></span>
-                            <input type="text" id="balanceDaterange" class="form-control form-control-sm border-start-0 ps-1 fw-semibold text-dark" style="background-color: #fff; cursor: pointer;" readonly />
+                            <input type="text" id="balanceDaterange" value="{{ $fechaInicio }} AL {{ $fechaCorte }}" class="form-control form-control-sm border-start-0 ps-1 fw-semibold text-dark" style="background-color: #fff; cursor: pointer;" readonly />
                             <input type="hidden" name="fecha_inicio" id="fecha_inicio" value="{{ $fechaInicio }}">
                             <input type="hidden" name="fecha_corte" id="fecha_corte" value="{{ $fechaCorte }}">
                         </div>
-                        <small class="text-muted text-xxs">Rangos rápidos: Ejercicio 2025, Ejercicio 2026, Este mes o personalizado.</small>
                     </div>
 
-                </div>
-
-                {{-- FILA 2: BARRA DE ACCIONES Y BOTONES CON WRAP Y VISIBILIDAD GARANTIZADA --}}
-                <div class="d-flex flex-wrap align-items-center justify-content-between pt-2 border-top gap-2">
-                    
-                    {{-- Botón de Aplicar Filtro --}}
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm mb-0">
+                    {{-- Botón de Actualizar Reporte terminando el periodo --}}
+                    <div class="col-xl-auto col-lg-auto col-md-auto col-12">
+                        <button type="submit" class="btn btn-primary btn-sm px-3 shadow-sm mb-0 text-nowrap" style="height: 31px;" title="Actualizar datos del reporte">
                             <i class="fas fa-sync-alt me-1"></i> Actualizar Reporte
                         </button>
                     </div>
 
-                    {{-- Accesos Directos Contables --}}
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ route('contabilidad.poliza-apertura.index') }}" class="btn btn-outline-info btn-sm shadow-sm mb-0" title="Póliza de Apertura / Saldos Iniciales">
-                            <i class="fas fa-file-invoice-dollar me-1"></i> Póliza de Apertura
-                        </a>
-                        <button type="button" class="btn btn-dark btn-sm shadow-sm mb-0" data-bs-toggle="modal" data-bs-target="#modalCierreContable" title="Gestionar y aplicar Cierre Contable de Ejercicios">
-                            <i class="fas fa-lock me-1 text-warning"></i> Cierre Contable
-                        </button>
+                </div>
 
-                        {{-- Exportación Oficial CONAC (PDF y Excel) --}}
-                        @php
-                            $queryParams = array_merge(request()->all(), ['tipo_reporte' => $tipoReporte]);
-                        @endphp
-                        <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'pdf'])) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm mb-0" title="Ver y descargar formato oficial CONAC en PDF">
-                            <i class="fas fa-file-pdf me-1"></i> Exportar PDF
-                        </a>
-                        <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'excel'])) }}" class="btn btn-success btn-sm shadow-sm mb-0" title="Descargar formato oficial CONAC en Excel (XLSX)">
-                            <i class="fas fa-file-excel me-1"></i> Exportar Excel
-                        </a>
-                    </div>
+                {{-- FILA 2: BARRA DE ACCIONES CONTABLES Y EXPORTACIÓN --}}
+                <div class="d-flex flex-wrap align-items-center justify-content-end pt-2 border-top gap-2">
+
+                    {{-- Accesos Directos Contables --}}
+                    <a href="{{ route('contabilidad.mapeo-modulos.index') }}" class="btn btn-outline-primary btn-sm shadow-sm mb-0" title="Centro de Mapeo y Desglose por Módulos">
+                        <i class="fas fa-network-wired me-1"></i> Mapeo por Módulos
+                    </a>
+                    <a href="{{ route('contabilidad.poliza-apertura.index') }}" class="btn btn-outline-info btn-sm shadow-sm mb-0" title="Póliza de Apertura / Saldos Iniciales">
+                        <i class="fas fa-file-invoice-dollar me-1"></i> Póliza de Apertura
+                    </a>
+                    <button type="button" class="btn btn-dark btn-sm shadow-sm mb-0" data-bs-toggle="modal" data-bs-target="#modalCierreContable" title="Gestionar y aplicar Cierre Contable de Ejercicios">
+                        <i class="fas fa-lock me-1 text-warning"></i> Cierre Contable
+                    </button>
+
+                    {{-- Exportación Oficial CONAC (PDF y Excel) --}}
+                    @php
+                        $queryParams = array_merge(request()->all(), ['tipo_reporte' => $tipoReporte]);
+                    @endphp
+                    <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'pdf'])) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm mb-0" title="Ver y descargar formato oficial CONAC en PDF">
+                        <i class="fas fa-file-pdf me-1"></i> Exportar PDF
+                    </a>
+                    <a href="{{ route('contabilidad.balance-general.exportar', array_merge($queryParams, ['formato' => 'excel'])) }}" class="btn btn-success btn-sm shadow-sm mb-0" title="Descargar formato oficial CONAC en Excel (XLSX)">
+                        <i class="fas fa-file-excel me-1"></i> Exportar Excel
+                    </a>
 
                 </div>
             </form>
@@ -438,15 +436,21 @@
         </div>
     </div>
 </div>
+@endsection
 
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+$(document).ready(function () {
     const modalEl = document.getElementById('modalDetalleConcepto');
     if (!modalEl) return;
     const modal = new bootstrap.Modal(modalEl);
 
     document.querySelectorAll('.fila-concepto').forEach(row => {
-        row.addEventListener('click', function () {
+        row.addEventListener('click', function (e) {
+            // Evitar abrir modal si se hizo clic en el toggle del colapso de ejercicios
+            if (e.target.closest('.td-toggle-collapse') || e.target.closest('[data-bs-toggle="collapse"]')) {
+                return;
+            }
             const conceptoId = this.dataset.conceptoId;
             const conceptoNombre = this.dataset.conceptoNombre || 'Detalle';
             if (!conceptoId) return;
@@ -545,31 +549,71 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Inicialización de SGT DateRangePicker para Balance General
+    // Toggle interactivo de colapso de ejercicios en el Estado de Resultados
+    $(document).on('click', '.td-toggle-collapse', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const targetSelector = $(this).data('bs-target');
+        const targetEl = document.querySelector(targetSelector);
+        if (!targetEl) return;
+
+        const chevron = $(this).find('.fa-chevron-down, .fa-chevron-up');
+        if (typeof bootstrap !== 'undefined' && bootstrap.Collapse) {
+            const collapseInstance = bootstrap.Collapse.getOrCreateInstance(targetEl);
+            collapseInstance.toggle();
+        } else {
+            $(targetSelector).toggle();
+        }
+
+        setTimeout(() => {
+            if ($(targetSelector).hasClass('show')) {
+                chevron.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            } else {
+                chevron.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            }
+        }, 350);
+    });
+
+    // Inicialización de SGT DateRangePicker para Balance General (Estandarizado con el resto del sistema)
+    const fechaIniVal = $('#fecha_inicio').val() || '2025-08-01';
+    const fechaCorteVal = $('#fecha_corte').val() || moment().format('YYYY-MM-DD');
+
+    const onDateRangeApply = function (start, end, label) {
+        $('#fecha_inicio').val(start.format('YYYY-MM-DD'));
+        $('#fecha_corte').val(end.format('YYYY-MM-DD'));
+        $('#balanceDaterange').val(start.format('YYYY-MM-DD') + ' AL ' + end.format('YYYY-MM-DD'));
+        document.getElementById('formFiltroBalance').submit();
+    };
+
     if (typeof initSgtDateRange === 'function') {
-        const fechaIniVal = $('#fecha_inicio').val() || '2025-08-01';
-        const fechaCorteVal = $('#fecha_corte').val() || moment().format('YYYY-MM-DD');
-
-        const customRanges = {
-            'Ejercicio 2025': [moment('2025-01-01'), moment('2025-12-31')],
-            'Ejercicio 2026': [moment('2026-01-01'), moment('2026-12-31')],
-            'Este mes': [moment().startOf('month'), moment().endOf('month')],
-            'Mes anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-            'Todo el periodo histórico': [moment('2025-08-01'), moment()]
-        };
-
         initSgtDateRange('#balanceDaterange', {
             startDate: moment(fechaIniVal),
             endDate: moment(fechaCorteVal),
-            ranges: customRanges
-        }, function (start, end, label) {
-            $('#fecha_inicio').val(start.format('YYYY-MM-DD'));
-            $('#fecha_corte').val(end.format('YYYY-MM-DD'));
-            $('#balanceDaterange').val(start.format('YYYY-MM-DD') + ' AL ' + end.format('YYYY-MM-DD'));
-        });
-
-        $('#balanceDaterange').val(fechaIniVal + ' AL ' + fechaCorteVal);
+            locale: {
+                separator: ' AL '
+            }
+        }, onDateRangeApply);
+    } else if (typeof $.fn.daterangepicker === 'function') {
+        $('#balanceDaterange').daterangepicker({
+            startDate: moment(fechaIniVal),
+            endDate: moment(fechaCorteVal),
+            ranges: {
+                'Últimos 7 días': [moment().subtract(6, 'days').startOf('day'), moment().endOf('day')],
+                'Últimos 30 días': [moment().subtract(29, 'days').startOf('day'), moment().endOf('day')],
+                'Este mes': [moment().startOf('month'), moment().endOf('month')],
+                'Mes anterior': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MM-DD',
+                separator: ' AL ',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                customRangeLabel: 'Personalizado'
+            }
+        }, onDateRangeApply);
     }
+
+    $('#balanceDaterange').val(fechaIniVal + ' AL ' + fechaCorteVal);
 });
 
 // ==========================================
@@ -813,6 +857,5 @@ window.revertirCierre = function (id) {
     })
     .catch(err => alert('Error al revertir: ' + err.message));
 };
-});
 </script>
-@endsection
+@endpush

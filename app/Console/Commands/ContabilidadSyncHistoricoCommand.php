@@ -14,6 +14,7 @@ use App\Models\Prestamo;
 use App\Models\Poliza;
 use App\Models\SocioPago;
 use App\Services\CotizacionesService;
+use App\Services\CuentaContableResolverService;
 use App\Services\PolizaService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -194,10 +195,8 @@ class ContabilidadSyncHistoricoCommand extends Command
         }
 
         // Cuenta de Capital / Patrimonio para equilibrar la apertura
-        $cuentaCapital = CatCuentaContable::where('codigo', '3.2.2.1')->first()
-            ?: CatCuentaContable::where('codigo', '3.1.1.1.001')->first()
-            ?: CatCuentaContable::where('codigo', '3.2.1.1')->first()
-            ?: CatCuentaContable::where('codigo', 'like', '3%')->where('es_afectable', true)->first();
+        $cuentaResolver = app(CuentaContableResolverService::class);
+        $cuentaCapital = $cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CAPITAL_PATRIMONIO, $idEmpresa);
 
         if (!$cuentaCapital) {
             $this->warn("  [Apertura] No se encontró cuenta afectable de Patrimonio/Capital para empresa {$idEmpresa}.");
@@ -704,12 +703,10 @@ class ContabilidadSyncHistoricoCommand extends Command
                 return;
             }
 
-            $cxcCuenta = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
-            $cxpCuenta = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-            $patrimonioCuenta = CatCuentaContable::where('codigo', '3.2.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first();
+            $cuentaResolver = app(CuentaContableResolverService::class);
+            $cxcCuenta = $cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
+            $cxpCuenta = $cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+            $patrimonioCuenta = $cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CAJA_OPERATIVA, $idEmpresa);
 
             $movimientos = [];
             if ($cxcAmortizar > 0 && $cxcCuenta) {

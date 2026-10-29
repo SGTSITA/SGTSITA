@@ -628,6 +628,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::post('cierre-ejercicio', [App\Http\Controllers\ContabilidadController::class, 'ejecutarCierre'])->name('cierre.store');
             Route::get('cierre-ejercicio/historial', [App\Http\Controllers\ContabilidadController::class, 'historialCierres'])->name('cierre.historial');
             Route::delete('cierre-ejercicio/{id}', [App\Http\Controllers\ContabilidadController::class, 'revertirCierre'])->name('cierre.destroy');
+            Route::get('mapeo-modulos', [App\Http\Controllers\ContabilidadController::class, 'mapeoModulosIndex'])->name('mapeo-modulos.index');
+            Route::post('mapeo-modulos/desglosar', [App\Http\Controllers\ContabilidadController::class, 'desglosarEntidad'])->name('mapeo-modulos.desglosar');
+            Route::post('mapeo-modulos/revertir', [App\Http\Controllers\ContabilidadController::class, 'revertirEntidad'])->name('mapeo-modulos.revertir');
         });
 
 
