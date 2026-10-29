@@ -698,6 +698,17 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::patch('liquidaciones/update/{id}', [App\Http\Controllers\LiquidacionesController::class, 'update'])->name('update.liquidacion');
         Route::post('liquidaciones/update/varios', [App\Http\Controllers\LiquidacionesController::class, 'update_varios'])->name('update_varios.liquidacion');
 
+        // ==================== A J U S T E S   L I Q U I D A C I O N E S ====================
+        Route::prefix('liquidaciones/ajustes')->name('liquidaciones.ajustes.')->group(function () {
+            Route::get('/', [App\Http\Controllers\LiquidacionesAjustesController::class, 'index'])->name('index');
+            Route::post('/data', [App\Http\Controllers\LiquidacionesAjustesController::class, 'data'])->name('data');
+            Route::get('/buscar-liquidaciones', [App\Http\Controllers\LiquidacionesAjustesController::class, 'buscarLiquidaciones'])->name('buscar');
+            Route::get('/prestamos-operador/{idOperador}', [App\Http\Controllers\LiquidacionesAjustesController::class, 'getPrestamosOperador'])->name('prestamos');
+            Route::post('/store', [App\Http\Controllers\LiquidacionesAjustesController::class, 'store'])->name('store');
+            Route::get('/{id}/comprobante', [App\Http\Controllers\LiquidacionesAjustesController::class, 'comprobantePdf'])->name('comprobante');
+            Route::post('/{id}/cancelar', [App\Http\Controllers\LiquidacionesAjustesController::class, 'cancelar'])->name('cancelar');
+        });
+
         // ==================== G A S T O S  ====================
         Route::middleware('permission:gastos')
                 ->prefix('gastos')

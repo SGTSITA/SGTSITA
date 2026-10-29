@@ -44,7 +44,26 @@
             $man = floatval($c->maniobra ?? 0);
             $bur = floatval($c->burreo ?? 0);
             $est = floatval($c->estadia ?? 0);
-            $sp = floatval($c->precio_sobre_peso ?? $c->sobrepeso ?? 0);
+
+            // Total Sobre Peso Viaje (cálculo exacto idéntico a /cotizaciones/edit/{id})
+            $viaje = optional($c->viajes)->firstWhere('estado', 'activo') ?? optional($c->viajes)->first();
+            $costoSobrepeso = optional(optional($viaje)->costos)->firstWhere('concepto', 'sobrepeso');
+            $precioSp = floatval($costoSobrepeso?->meta['precio_sobre_peso'] ?? $c->precio_sobre_peso ?? 0);
+            $pesoCont = floatval($c->peso_contenedor ?? 0);
+            $pesoReg = floatval($c->peso_reglamentario ?? 0);
+            if ($pesoReg <= 0 && $pesoCont > 22) {
+                $pesoReg = 22;
+            }
+            $toneladasSp = ($pesoCont > $pesoReg && $pesoReg > 0) 
+                ? ($pesoCont - $pesoReg) 
+                : floatval($costoSobrepeso?->meta['peso'] ?? $c->sobrepeso ?? 0);
+
+            if ($toneladasSp > 0 && $precioSp > 0) {
+                $sp = round($toneladasSp * $precioSp, 2);
+            } else {
+                $sp = floatval($costoSobrepeso?->monto ?? 0);
+            }
+
             $ot = floatval($c->otro ?? 0);
             $ts = $pv + $man + $bur + $est + $sp + $ot;
 
@@ -200,7 +219,26 @@
                 $man = floatval($c->maniobra ?? 0);
                 $bur = floatval($c->burreo ?? 0);
                 $est = floatval($c->estadia ?? 0);
-                $sp = floatval($c->precio_sobre_peso ?? $c->sobrepeso ?? 0);
+
+                // Total Sobre Peso Viaje (cálculo exacto idéntico a /cotizaciones/edit/{id})
+                $viaje = optional($c->viajes)->firstWhere('estado', 'activo') ?? optional($c->viajes)->first();
+                $costoSobrepeso = optional(optional($viaje)->costos)->firstWhere('concepto', 'sobrepeso');
+                $precioSp = floatval($costoSobrepeso?->meta['precio_sobre_peso'] ?? $c->precio_sobre_peso ?? 0);
+                $pesoCont = floatval($c->peso_contenedor ?? 0);
+                $pesoReg = floatval($c->peso_reglamentario ?? 0);
+                if ($pesoReg <= 0 && $pesoCont > 22) {
+                    $pesoReg = 22;
+                }
+                $toneladasSp = ($pesoCont > $pesoReg && $pesoReg > 0) 
+                    ? ($pesoCont - $pesoReg) 
+                    : floatval($costoSobrepeso?->meta['peso'] ?? $c->sobrepeso ?? 0);
+
+                if ($toneladasSp > 0 && $precioSp > 0) {
+                    $sp = round($toneladasSp * $precioSp, 2);
+                } else {
+                    $sp = floatval($costoSobrepeso?->monto ?? 0);
+                }
+
                 $ot = floatval($c->otro ?? 0);
                 $ts = $pv + $man + $bur + $est + $sp + $ot;
 
@@ -222,19 +260,19 @@
                 <td>{{ $transportista }}</td>
                 <td>{{ $destino }}</td>
                 <td>{{ $peso > 0 ? $peso : '' }}</td>
-                <td>{{ $pv > 0 ? $pv : '' }}</td>
-                <td>{{ $man > 0 ? $man : '' }}</td>
-                <td>{{ $bur > 0 ? $bur : '' }}</td>
-                <td>{{ $est > 0 ? $est : '' }}</td>
-                <td>{{ $sp > 0 ? $sp : '' }}</td>
-                <td>{{ $ot > 0 ? $ot : '' }}</td>
-                <td>{{ $ts }}</td>
-                <td>{{ $bf > 0 ? $bf : '' }}</td>
-                <td>{{ $iv > 0 ? $iv : '' }}</td>
-                <td>{{ $ret > 0 ? $ret : '' }}</td>
-                <td>{{ $tf }}</td>
-                <td>{{ $rs }}</td>
-                <td>{{ $tap }}</td>
+                <td>{{ $pv ?: 0 }}</td>
+                <td>{{ $man ?: 0 }}</td>
+                <td>{{ $bur ?: 0 }}</td>
+                <td>{{ $est ?: 0 }}</td>
+                <td>{{ $sp ?: 0 }}</td>
+                <td>{{ $ot ?: 0 }}</td>
+                <td>{{ $ts ?: 0 }}</td>
+                <td>{{ $bf ?: 0 }}</td>
+                <td>{{ $iv ?: 0 }}</td>
+                <td>{{ $ret ?: 0 }}</td>
+                <td>{{ $tf ?: 0 }}</td>
+                <td>{{ $rs ?: 0 }}</td>
+                <td>{{ $tap ?: 0 }}</td>
                 <td>{{ $obs }}</td>
             </tr>
         @endforeach
