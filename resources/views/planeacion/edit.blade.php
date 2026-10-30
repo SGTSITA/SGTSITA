@@ -21,6 +21,7 @@
             $fechaAppRaw = $asignacion->fecha_pago_salida ?: $asignacion->fecha_inicio;
         }
         $fechaAppVal = $fechaAppRaw ? date('d/m/Y', strtotime($fechaAppRaw)) : date('d/m/Y');
+        $esElementalInicial = $asignacion ? (empty($asignacion->sueldo_viaje) || floatval($asignacion->sueldo_viaje) <= 0 || empty($asignacion->id_banco1_dinero_viaje)) : false;
     @endphp
 
     <div class="container-fluid py-4">
@@ -83,7 +84,7 @@
                             <div class="row mb-3">
                                 <div class="col-12">
                                     <div class="form-check form-switch bg-light p-3 rounded border">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="toggleElementalEdit" name="elemental" value="1">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="toggleElementalEdit" name="elemental" value="1" {{ $esElementalInicial ? 'checked' : '' }}>
                                         <label class="form-check-label font-weight-bold text-info" for="toggleElementalEdit" style="cursor: pointer;">
                                             ⚡ Planeación Elemental (Activar solo para modificar fechas, operador, unidad o chasis sin requerir sueldo, dinero de viaje ni banco)
                                         </label>
@@ -431,7 +432,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Manejo de Planeación Elemental en Edición (desmarcado por defecto)
+            // Manejo de Planeación Elemental en Edición
             const toggleElementalEdit = document.getElementById('toggleElementalEdit');
             const reqFieldsEdit = [
                 document.getElementById('txtSueldoOperador'),
@@ -447,8 +448,21 @@
                 hiddenElements.forEach(el => {
                     if (isElemental) {
                         el.classList.add('d-none');
+                        el.querySelectorAll('input, select, textarea').forEach(input => {
+                            if (input.hasAttribute('required') || input.required) {
+                                input.dataset.wasRequired = "true";
+                                input.removeAttribute('required');
+                                input.required = false;
+                            }
+                        });
                     } else {
                         el.classList.remove('d-none');
+                        el.querySelectorAll('input, select, textarea').forEach(input => {
+                            if (input.dataset.wasRequired === "true") {
+                                input.setAttribute('required', 'required');
+                                input.required = true;
+                            }
+                        });
                     }
                 });
 
@@ -456,8 +470,10 @@
                     if (field) {
                         if (isElemental) {
                             field.removeAttribute('required');
+                            field.required = false;
                         } else {
                             field.setAttribute('required', 'required');
+                            field.required = true;
                         }
                     }
                 });
@@ -673,109 +689,151 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
 
-                // Validar sueldo operador
-                const sueldoInput = document.getElementById("txtSueldoOperador");
-                const sueldoVal = parseFloat(sueldoInput.value.replace(/[$,]/g, '').trim()) || 0;
-                if (sueldoVal <= 0) {
-                    Swal.fire("Sueldo inválido", "El sueldo del operador debe ser mayor a 0.", "error");
+                const isElemental = toggleElementalEdit && toggleElementalEdit.checked;
+
+                // Validaciones base obligatorias para ambos modos (fechas, unidad, chasis, operador)
+                const fechaInicioInput = document.getElementById("txtFechaInicio");
+                if (!fechaInicioInput || !fechaInicioInput.value.trim()) {
+                    Swal.fire("Fecha de salida requerida", "Debe seleccionar la fecha de salida.", "error");
                     return;
                 }
 
-                // Validar dinero viaje
-                const dineroInput = document.getElementById("txtDineroViaje");
-                if (dineroInput.value.trim() === "") {
-                    Swal.fire("Dinero de viaje requerido", "Debe ingresar el dinero de viaje.", "error");
+                const fechaFinalInput = document.getElementById("txtFechaFinal");
+                if (!fechaFinalInput || !fechaFinalInput.value.trim()) {
+                    Swal.fire("Fecha de entrega requerida", "Debe seleccionar la fecha de entrega.", "error");
                     return;
                 }
 
-                // Validar banco
-                const bancoSelect = document.getElementById("cmbBanco");
-                if (bancoSelect.value === "") {
-                    Swal.fire("Banco requerido", "Debe seleccionar un banco.", "error");
+                // Validar que fecha final >= fecha inicio
+                if (fechaInicioInput.value && fechaFinalInput.value) {
+                    const partesIni = fechaInicioInput.value.split('/');
+                    const partesFin = fechaFinalInput.value.split('/');
+                    if (partesIni.length === 3 && partesFin.length === 3) {
+                        const dIni = new Date(partesIni[2], partesIni[1] - 1, partesIni[0]);
+                        const dFin = new Date(partesFin[2], partesFin[1] - 1, partesFin[0]);
+                        if (dFin < dIni) {
+                            Swal.fire("Fechas inválidas", "La fecha de entrega no puede ser anterior a la fecha de salida.", "error");
+                            return;
+                        }
+                    }
+                }
+
+                const camionSelect = document.getElementById("cmbCamion");
+                if (!camionSelect || !camionSelect.value) {
+                    Swal.fire("Unidad requerida", "Debe seleccionar una unidad.", "error");
                     return;
                 }
 
-                // Validar fecha de aplicación
-                const fechaAppInput = document.getElementById("FechaAplicacionDinero");
-                if (fechaAppInput.value.trim() === "") {
-                    Swal.fire("Fecha de aplicación requerida", "Debe ingresar la fecha de aplicación.",
-                        "error");
+                const chasisSelect = document.getElementById("cmbChasis");
+                if (!chasisSelect || !chasisSelect.value) {
+                    Swal.fire("Chasis requerido", "Debe seleccionar un chasis.", "error");
                     return;
                 }
 
-                // Validar litros diesel
-                const dieselInput = document.getElementById("litros_diesel");
-                const dieselVal = parseFloat(dieselInput.value) || 0;
-                if (dieselVal <= 0) {
-                    Swal.fire("Litros diésel inválido", "Los litros de diésel deben ser mayores a 0.",
-                        "error");
+                const operadorSelect = document.getElementById("cmbOperador");
+                if (!operadorSelect || !operadorSelect.value) {
+                    Swal.fire("Operador requerido", "Debe seleccionar un operador.", "error");
                     return;
                 }
 
                 const gastosValidos = [];
-                let errGasto = false;
 
-                container.querySelectorAll('.gasto-item').forEach(row => {
-                    const selectMotivo = row.querySelector('.gasto-select');
-                    const inputMonto = row.querySelector('input[name="gasto_monto[]"]');
-                    const checkPago = row.querySelector('.pagoInmediatoCheck');
-                    const selectBanco = row.querySelector('select[name="gasto_banco_id[]"]');
-                    const inputFecha = row.querySelector('input[name="fechaAplicacion[]"]');
-                    const inputConceptoOtro = row.querySelector('.concepto-otro-input');
-                    const gastoId = row.dataset.gastoId || row.querySelector('.gasto-id-input')?.value || null;
-
-                    if (selectMotivo) {
-                        if (!selectMotivo.value) {
-                            Swal.fire("Gasto inválido",
-                                "Debe seleccionar el motivo para todos los gastos adicionales.",
-                                "error");
-                            errGasto = true;
-                            return;
-                        }
-
-                        const montoVal = parseFloat(inputMonto.value) || 0;
-                        if (montoVal <= 0) {
-                            Swal.fire("Monto inválido",
-                                "El monto de los gastos adicionales debe ser mayor a 0.",
-                                "error");
-                            errGasto = true;
-                            return;
-                        }
-
-                        if (checkPago && checkPago.checked) {
-                            if (!selectBanco.value) {
-                                Swal.fire("Banco requerido",
-                                    "Para gastos con pago inmediato debe seleccionar un banco.",
-                                    "error");
-                                errGasto = true;
-                                return;
-                            }
-                            if (!inputFecha.value) {
-                                Swal.fire("Fecha de aplicación requerida",
-                                    "Para gastos con pago inmediato debe seleccionar una fecha de aplicación.",
-                                    "error");
-                                errGasto = true;
-                                return;
-                            }
-                        }
-
-                        gastosValidos.push({
-                            id: gastoId ? parseInt(gastoId) : null,
-                            motivo: selectMotivo.value,
-                            conceptoOtro: inputConceptoOtro ? inputConceptoOtro.value : null,
-                            monto: montoVal,
-                            pagoInmediato: checkPago ? checkPago.checked : false,
-                            banco: selectBanco ? selectBanco.value : null,
-                            fechaAplicacion: (checkPago && checkPago.checked) ? inputFecha
-                                .value : null
-                        });
+                if (!isElemental) {
+                    // Validar sueldo operador
+                    const sueldoInput = document.getElementById("txtSueldoOperador");
+                    const sueldoVal = parseFloat(sueldoInput ? sueldoInput.value.replace(/[$,]/g, '').trim() : 0) || 0;
+                    if (sueldoVal <= 0) {
+                        Swal.fire("Sueldo inválido", "El sueldo del operador debe ser mayor a 0.", "error");
+                        return;
                     }
-                });
 
-                if (errGasto) return;
+                    // Validar dinero viaje
+                    const dineroInput = document.getElementById("txtDineroViaje");
+                    if (!dineroInput || dineroInput.value.trim() === "") {
+                        Swal.fire("Dinero de viaje requerido", "Debe ingresar el dinero de viaje.", "error");
+                        return;
+                    }
+
+                    // Validar banco
+                    const bancoSelect = document.getElementById("cmbBanco");
+                    if (!bancoSelect || bancoSelect.value === "") {
+                        Swal.fire("Banco requerido", "Debe seleccionar un banco.", "error");
+                        return;
+                    }
+
+                    // Validar fecha de aplicación
+                    const fechaAppInput = document.getElementById("FechaAplicacionDinero");
+                    if (!fechaAppInput || fechaAppInput.value.trim() === "") {
+                        Swal.fire("Fecha de aplicación requerida", "Debe ingresar la fecha de aplicación.", "error");
+                        return;
+                    }
+
+                    // Validar litros diesel
+                    const dieselInput = document.getElementById("litros_diesel");
+                    const dieselVal = parseFloat(dieselInput ? dieselInput.value : 0) || 0;
+                    if (dieselVal <= 0) {
+                        Swal.fire("Litros diésel inválido", "Los litros de diésel deben ser mayores a 0.", "error");
+                        return;
+                    }
+
+                    let errGasto = false;
+                    container.querySelectorAll('.gasto-item').forEach(row => {
+                        const selectMotivo = row.querySelector('.gasto-select');
+                        const inputMonto = row.querySelector('input[name="gasto_monto[]"]');
+                        const checkPago = row.querySelector('.pagoInmediatoCheck');
+                        const selectBanco = row.querySelector('select[name="gasto_banco_id[]"]');
+                        const inputFecha = row.querySelector('input[name="fechaAplicacion[]"]');
+                        const inputConceptoOtro = row.querySelector('.concepto-otro-input');
+                        const gastoId = row.dataset.gastoId || row.querySelector('.gasto-id-input')?.value || null;
+
+                        if (selectMotivo) {
+                            if (!selectMotivo.value) {
+                                Swal.fire("Gasto inválido", "Debe seleccionar el motivo para todos los gastos adicionales.", "error");
+                                errGasto = true;
+                                return;
+                            }
+
+                            const montoVal = parseFloat(inputMonto.value) || 0;
+                            if (montoVal <= 0) {
+                                Swal.fire("Monto inválido", "El monto de los gastos adicionales debe ser mayor a 0.", "error");
+                                errGasto = true;
+                                return;
+                            }
+
+                            if (checkPago && checkPago.checked) {
+                                if (!selectBanco.value) {
+                                    Swal.fire("Banco requerido", "Para gastos con pago inmediato debe seleccionar un banco.", "error");
+                                    errGasto = true;
+                                    return;
+                                }
+                                if (!inputFecha.value) {
+                                    Swal.fire("Fecha de aplicación requerida", "Para gastos con pago inmediato debe seleccionar una fecha de aplicación.", "error");
+                                    errGasto = true;
+                                    return;
+                                }
+                            }
+
+                            gastosValidos.push({
+                                id: gastoId ? parseInt(gastoId) : null,
+                                motivo: selectMotivo.value,
+                                conceptoOtro: inputConceptoOtro ? inputConceptoOtro.value : null,
+                                monto: montoVal,
+                                pagoInmediato: checkPago ? checkPago.checked : false,
+                                banco: selectBanco ? selectBanco.value : null,
+                                fechaAplicacion: (checkPago && checkPago.checked) ? inputFecha.value : null
+                            });
+                        }
+                    });
+
+                    if (errGasto) return;
+                }
 
                 const formData = new FormData(form);
-                formData.set('filasOtrosGastos', JSON.stringify(gastosValidos));
+                if (!isElemental) {
+                    formData.set('filasOtrosGastos', JSON.stringify(gastosValidos));
+                } else {
+                    formData.delete('filasOtrosGastos');
+                }
 
                 $.ajax({
                     url: form.action,

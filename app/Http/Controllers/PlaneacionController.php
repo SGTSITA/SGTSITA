@@ -1239,7 +1239,10 @@ class PlaneacionController extends Controller
             $asignaciones->id_camion = $request->get('cmbCamion');
             $asignaciones->id_operador = $request->get('cmbOperador');
 
-            $sueldoOperador = $request->filled('txtSueldoOperador') ? str_replace(',', '', $request->get('txtSueldoOperador')) : 0;
+            $isElemental = $request->boolean('elemental');
+
+            if (!$isElemental) {
+                $sueldoOperador = $request->filled('txtSueldoOperador') ? str_replace(',', '', $request->get('txtSueldoOperador')) : 0;
             $dineroViaje = $request->filled('txtDineroViaje') ? str_replace(',', '', $request->get('txtDineroViaje')) : 0;
             $nuevoBancoDinero = $request->filled('cmbBanco') ? intval($request->get('cmbBanco')) : null;
             $nuevaFechaAppDinero = null;
@@ -1405,28 +1408,33 @@ class PlaneacionController extends Controller
                 }
             }
 
-            $asignaciones->sueldo_viaje = $sueldoOperador;
-            $asignaciones->dinero_viaje = $dineroViaje;
-            $asignaciones->id_banco1_dinero_viaje = $nuevoBancoDinero;
-            $asignaciones->cantidad_banco1_dinero_viaje = $dineroViaje;
+                $asignaciones->sueldo_viaje = $sueldoOperador;
+                $asignaciones->dinero_viaje = $dineroViaje;
+                $asignaciones->id_banco1_dinero_viaje = $nuevoBancoDinero;
+                $asignaciones->cantidad_banco1_dinero_viaje = $dineroViaje;
 
-            $resta = floatval($sueldoOperador) - floatval($dineroViaje);
-            $asignaciones->pago_operador = $resta;
-            $asignaciones->restante_pago_operador = $resta;
+                $resta = floatval($sueldoOperador) - floatval($dineroViaje);
+                $asignaciones->pago_operador = $resta;
+                $asignaciones->restante_pago_operador = $resta;
+            }
+
             $asignaciones->tipo_contrato = 'Propio';
-            $asignaciones->estatus_pagado = 'Pendiente Pago';
+            if (!$asignaciones->estatus_pagado) {
+                $asignaciones->estatus_pagado = 'Pendiente Pago';
+            }
 
             $asignaciones->save();
 
-            $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
-            $cotizacion->litros_urea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
+            if (!$isElemental) {
+                $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;
+                $cotizacion->litros_urea = $request->get('litros_urea') ?? $request->get('gasto_litros_urea') ?? 0;
+            }
             $cotizacion->estatus_planeacion = 1;
             $cotizacion->update();
 
-            Log::channel('daily')->info('filasOtrosGastos recibida en request: ' . $request->get('filasOtrosGastos'));
-            Log::channel('daily')->info('filasOtrosGastos filled check: ' . ($request->filled('filasOtrosGastos') ? 'true' : 'false'));
-
-            if ($request->has('filasOtrosGastos')) {
+            if (!$isElemental && $request->has('filasOtrosGastos')) {
+                Log::channel('daily')->info('filasOtrosGastos recibida en request: ' . $request->get('filasOtrosGastos'));
+                Log::channel('daily')->info('filasOtrosGastos filled check: ' . ($request->filled('filasOtrosGastos') ? 'true' : 'false'));
                 $resG = $this->sincronizarOtrosGastosPlaneacion($request, $asignaciones, $contenedor, $request->get('cmbOperador'));
                 Log::channel('daily')->info('Respuesta de sincronizarOtrosGastosPlaneacion: ' . json_encode($resG));
             }
