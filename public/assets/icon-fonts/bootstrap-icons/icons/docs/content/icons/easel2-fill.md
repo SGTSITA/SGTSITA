@@ -1,10 +1,10 @@
 ---
 title: Easel2 fill
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - paint
-  - draw
-  - art
-  - present
+    - paint
+    - draw
+    - art
+    - present
 ---

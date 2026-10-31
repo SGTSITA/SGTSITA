@@ -1,9 +1,9 @@
 ---
 title: Folder x
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - directory
-  - remove
-  - delete
+    - directory
+    - remove
+    - delete
 ---

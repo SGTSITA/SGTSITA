@@ -1,9 +1,9 @@
 ---
 title: Folder check
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - directory
-  - check
-  - verified
+    - directory
+    - check
+    - verified
 ---

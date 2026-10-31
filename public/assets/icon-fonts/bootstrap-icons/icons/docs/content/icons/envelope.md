@@ -1,10 +1,10 @@
 ---
 title: Envelope
 categories:
-  - Communications
+    - Communications
 tags:
-  - email
-  - message
-  - mail
-  - letter
+    - email
+    - message
+    - mail
+    - letter
 ---

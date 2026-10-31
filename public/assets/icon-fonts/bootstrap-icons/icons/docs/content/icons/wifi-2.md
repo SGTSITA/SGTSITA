@@ -1,9 +1,9 @@
 ---
 title: Wifi 2
 categories:
-  - Communications
+    - Communications
 tags:
-  - internet
-  - network
-  - wireless
+    - internet
+    - network
+    - wireless
 ---

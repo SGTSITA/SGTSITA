@@ -1,9 +1,9 @@
 ---
 title: Controller
 categories:
-  - Devices
+    - Devices
 tags:
-  - game
-  - gaming
-  - video-game
+    - game
+    - gaming
+    - video-game
 ---

@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Liquidaciones extends Model
 {
+    use Auditable;
     use HasFactory;
     protected $table = 'liquidaciones';
 
@@ -23,6 +25,11 @@ class Liquidaciones extends Model
     public function Viajes()
     {
         return $this->hasMany(LiquidacionContenedor::class, 'id_liquidacion');
+    }
+
+    public function Ajustes()
+    {
+        return $this->hasMany(LiquidacionAjuste::class, 'id_liquidacion');
     }
 
 }

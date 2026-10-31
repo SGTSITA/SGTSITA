@@ -1,7 +1,7 @@
 ---
 title: QR code scan
 categories:
-  - Communications
+    - Communications
 tags:
-  - scan
+    - scan
 ---

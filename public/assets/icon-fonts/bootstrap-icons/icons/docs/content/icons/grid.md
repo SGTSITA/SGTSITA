@@ -1,8 +1,8 @@
 ---
 title: Grid
 categories:
-  - Layout
+    - Layout
 tags:
-  - grid
-  - layout
+    - grid
+    - layout
 ---

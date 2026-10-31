@@ -1,10 +1,10 @@
 ---
 title: Disc fill
 categories:
-  - Media
+    - Media
 tags:
-  - cd
-  - compact disc
-  - bluray
-  - dvd
+    - cd
+    - compact disc
+    - bluray
+    - dvd
 ---

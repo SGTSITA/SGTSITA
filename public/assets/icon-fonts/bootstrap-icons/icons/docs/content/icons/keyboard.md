@@ -1,9 +1,9 @@
 ---
 title: Keyboard
 categories:
-  - Devices
+    - Devices
 tags:
-  - keyboard
-  - keys
-  - typing
+    - keyboard
+    - keys
+    - typing
 ---

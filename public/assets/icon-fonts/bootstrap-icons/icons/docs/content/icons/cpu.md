@@ -1,9 +1,9 @@
 ---
 title: CPU
 categories:
-  - Devices
+    - Devices
 tags:
-  - processor
-  - chip
-  - computer
+    - processor
+    - chip
+    - computer
 ---

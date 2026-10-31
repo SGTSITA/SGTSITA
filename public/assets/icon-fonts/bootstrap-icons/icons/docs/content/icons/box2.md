@@ -1,9 +1,9 @@
 ---
 title: Box2
 categories:
-  - Real World
+    - Real World
 tags:
-  - cardboard
-  - package
-  - cube
+    - cardboard
+    - package
+    - cube
 ---

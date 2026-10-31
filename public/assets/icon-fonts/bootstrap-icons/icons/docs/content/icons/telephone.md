@@ -1,9 +1,9 @@
 ---
 title: Telephone
 categories:
-  - Communications
+    - Communications
 tags:
-  - telephone
-  - phone
-  - call
+    - telephone
+    - phone
+    - call
 ---

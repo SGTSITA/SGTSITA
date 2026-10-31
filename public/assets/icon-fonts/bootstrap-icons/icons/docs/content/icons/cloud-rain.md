@@ -1,9 +1,9 @@
 ---
 title: Cloud rain
 categories:
-  - Weather
+    - Weather
 tags:
-  - cloud
-  - rainstorm
-  - storm
+    - cloud
+    - rainstorm
+    - storm
 ---

@@ -1,12 +1,12 @@
 ---
 title: Chat square heart
 categories:
-  - Communications
-  - Love
+    - Communications
+    - Love
 tags:
-  - chat bubble
-  - text
-  - message
-  - valentine
-  - romance
+    - chat bubble
+    - text
+    - message
+    - valentine
+    - romance
 ---

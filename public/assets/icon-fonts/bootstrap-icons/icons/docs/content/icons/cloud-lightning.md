@@ -1,8 +1,8 @@
 ---
 title: Cloud lightning
 categories:
-  - Weather
+    - Weather
 tags:
-  - thunder
-  - storm
+    - thunder
+    - storm
 ---

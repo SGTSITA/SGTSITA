@@ -1,7 +1,7 @@
 ---
 title: Wordpress
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

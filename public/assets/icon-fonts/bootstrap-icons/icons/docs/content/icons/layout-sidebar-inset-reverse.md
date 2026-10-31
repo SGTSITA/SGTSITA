@@ -1,8 +1,8 @@
 ---
 title: Layout sidebar inset reverse
 categories:
-  - Layout
+    - Layout
 tags:
-  - layout
-  - columns
+    - layout
+    - columns
 ---

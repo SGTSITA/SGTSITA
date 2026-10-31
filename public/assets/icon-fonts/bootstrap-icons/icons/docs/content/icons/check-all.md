@@ -1,10 +1,10 @@
 ---
 title: Check all
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - checkmark
-  - todo
-  - done
-  - select
+    - checkmark
+    - todo
+    - done
+    - select
 ---

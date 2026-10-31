@@ -1,8 +1,8 @@
 ---
 title: Emoji laughing
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - happy
+    - emoticon
+    - happy
 ---

@@ -1,8 +1,8 @@
 ---
 title: Phone landscape fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - mobile
-  - telephone
+    - mobile
+    - telephone
 ---

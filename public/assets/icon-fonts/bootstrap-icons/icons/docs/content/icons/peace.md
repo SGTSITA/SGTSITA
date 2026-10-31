@@ -1,8 +1,8 @@
 ---
 title: Peace
 categories:
-  - Miscellaneous
+    - Miscellaneous
 tags:
-  - peace
-  - love
+    - peace
+    - love
 ---

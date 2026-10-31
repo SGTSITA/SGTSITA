@@ -1,8 +1,8 @@
 ---
 title: Webcam fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - camera
-  - video
+    - camera
+    - video
 ---

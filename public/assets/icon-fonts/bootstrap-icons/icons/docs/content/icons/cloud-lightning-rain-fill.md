@@ -1,8 +1,8 @@
 ---
 title: Cloud lightning rain fill
 categories:
-  - Weather
+    - Weather
 tags:
-  - thunder
-  - storm
+    - thunder
+    - storm
 ---

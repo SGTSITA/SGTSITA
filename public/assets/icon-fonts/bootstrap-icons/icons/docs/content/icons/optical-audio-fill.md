@@ -1,9 +1,9 @@
 ---
 title: Optical audio fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - port
-  - plug
-  - sound
+    - port
+    - plug
+    - sound
 ---

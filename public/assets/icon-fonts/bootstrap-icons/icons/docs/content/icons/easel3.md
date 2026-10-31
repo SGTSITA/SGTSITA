@@ -1,10 +1,10 @@
 ---
 title: Easel3
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - paint
-  - draw
-  - art
-  - present
+    - paint
+    - draw
+    - art
+    - present
 ---

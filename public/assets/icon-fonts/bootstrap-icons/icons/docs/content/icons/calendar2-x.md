@@ -1,11 +1,11 @@
 ---
 title: Calendar2 x
 categories:
-  - Date and time
+    - Date and time
 tags:
-  - date
-  - time
-  - month
-  - remove
-  - delete
+    - date
+    - time
+    - month
+    - remove
+    - delete
 ---

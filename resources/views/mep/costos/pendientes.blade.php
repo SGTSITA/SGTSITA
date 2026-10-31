@@ -3,6 +3,7 @@
 @section('template_title')
     Viajes pendientes para verfificar cambio
 @endsection
+
 <style>
     /* ==== Estilo Modal macOS Minimalista ==== */
     .mac-modal {
@@ -11,8 +12,9 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
         border: none;
         overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
-            "Helvetica Neue", sans-serif;
+        font-family:
+            -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
+            'Helvetica Neue', sans-serif;
     }
 
     .mac-modal-header {
@@ -81,7 +83,7 @@
     }
 
     /* ==== Checkbox personalizado estilo mac ==== */
-    input[type="checkbox"].campo-checkbox {
+    input[type='checkbox'].campo-checkbox {
         appearance: none;
         width: 20px;
         height: 20px;
@@ -93,12 +95,12 @@
         transition: all 0.2s;
     }
 
-    input[type="checkbox"].campo-checkbox:checked {
+    input[type='checkbox'].campo-checkbox:checked {
         background-color: #007aff;
         border-color: #007aff;
     }
 
-    input[type="checkbox"].campo-checkbox:checked::after {
+    input[type='checkbox'].campo-checkbox:checked::after {
         content: '';
         position: absolute;
         top: 2px;
@@ -119,7 +121,7 @@
     }
 
     .diff-cell::after {
-        content: " ✱";
+        content: ' ✱';
         color: #007aff;
         font-size: 0.9rem;
         margin-left: 4px;
@@ -149,9 +151,7 @@
                 <h4 class="mb-0">Costos de viaje de Proveedores para verificar</h4>
             </div>
 
-
-            <div id="tablaPendientesMEP" class="ag-theme-alpine" style="height: 600px; min-width: 1200px;"></div>
-
+            <div id="tablaPendientesMEP" class="ag-theme-alpine" style="height: 600px; min-width: 1200px"></div>
         </div>
     </div>
 
@@ -161,7 +161,8 @@
             <div class="modal-content mac-modal">
                 <div class="modal-header mac-modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-balance-scale me-2"></i> Comparación de Costos del Viaje
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Comparación de Costos del Viaje
                     </h5>
                     <button type="button" class="mac-close-btn" data-bs-dismiss="modal" aria-label="Cerrar">
                         &times;
@@ -176,16 +177,28 @@
                     <!-- NUEVA SECCIÓN INFORMATIVA -->
                     <div class="row mb-4">
                         <div class="col-md-6">
-                            <p><strong>Número de contenedor:</strong> <span id="infoContenedor">-</span></p>
+                            <p>
+                                <strong>Número de contenedor:</strong>
+                                <span id="infoContenedor">-</span>
+                            </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Proveedor:</strong> <span id="infoProveedor">-</span></p>
+                            <p>
+                                <strong>Proveedor:</strong>
+                                <span id="infoProveedor">-</span>
+                            </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Fecha de inicio:</strong> <span id="infoFechaInicio">-</span></p>
+                            <p>
+                                <strong>Fecha de inicio:</strong>
+                                <span id="infoFechaInicio">-</span>
+                            </p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Fecha solicitud del proveedor:</strong> <span id="infoFechaSolicitud">-</span></p>
+                            <p>
+                                <strong>Fecha solicitud del proveedor:</strong>
+                                <span id="infoFechaSolicitud">-</span>
+                            </p>
                         </div>
                     </div>
 
@@ -207,24 +220,23 @@
                 </div>
                 <div class="modal-footer justify-content-end gap-3 p-3">
                     <button type="button" class="btn btn-outline-danger soft-btn" id="btnRechazarCambio">
-                        <i class="fas fa-times me-2"></i> Rechazar Cambio
+                        <i class="fas fa-times me-2"></i>
+                        Rechazar Cambio
                     </button>
                     <button type="button" class="btn btn-success soft-btn" id="btnAceptarCambio">
-                        <i class="fas fa-check me-2"></i> Aceptar Cambio
+                        <i class="fas fa-check me-2"></i>
+                        Aceptar Cambio
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-
-
     {{-- Inyectar token CSRF para JS --}}
     <script>
-        const csrf = "{{ csrf_token() }}";
+        const csrf = '{{ csrf_token() }}';
     </script>
 @endsection
-
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>

@@ -1,12 +1,12 @@
 ---
 title: Music note list
 categories:
-  - Media
+    - Media
 tags:
-  - music
-  - notes
-  - audio
-  - sound
-  - playlist
-  - library
+    - music
+    - notes
+    - audio
+    - sound
+    - playlist
+    - library
 ---

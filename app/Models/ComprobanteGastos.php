@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class ComprobanteGastos extends Model
 {
     use HasFactory;
+    use Auditable;
     protected $table = 'comprobantes_gastos';
 
     protected $fillable = [
@@ -28,11 +30,15 @@ class ComprobanteGastos extends Model
         parent::boot();
 
         static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::user()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::user()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
 }

@@ -1,9 +1,9 @@
 ---
 title: Eject fill
 categories:
-  - UI and keyboard
+    - UI and keyboard
 tags:
-  - disc
-  - cd
-  - dvd
+    - disc
+    - cd
+    - dvd
 ---

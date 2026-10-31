@@ -1,9 +1,9 @@
 ---
 title: Cone striped
 categories:
-  - Real world
+    - Real world
 tags:
-  - construction
-  - warning
-  - safety
+    - construction
+    - warning
+    - safety
 ---

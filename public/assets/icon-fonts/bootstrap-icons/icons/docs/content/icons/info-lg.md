@@ -1,8 +1,8 @@
 ---
 title: Info lg
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - information
-  - help
+    - information
+    - help
 ---

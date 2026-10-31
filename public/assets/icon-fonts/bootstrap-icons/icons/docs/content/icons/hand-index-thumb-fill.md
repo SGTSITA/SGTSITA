@@ -1,9 +1,9 @@
 ---
 title: Hand index thumb fill
 categories:
-  - Hands
+    - Hands
 tags:
-  - hand
-  - pointer
-  - cursor
+    - hand
+    - pointer
+    - cursor
 ---

@@ -7,14 +7,16 @@
         .card-stat {
             border: 0;
             border-radius: 1rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, .06);
-            transition: transform .15s, box-shadow .15s;
-            color: #0f172a
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            transition:
+                transform 0.15s,
+                box-shadow 0.15s;
+            color: #0f172a;
         }
 
         .card-stat:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, .08)
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
         }
 
         .stat-icon {
@@ -24,42 +26,42 @@
             display: grid;
             place-items: center;
             font-size: 20px;
-            background: rgba(0, 0, 0, .06);
-            backdrop-filter: blur(4px)
+            background: rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(4px);
         }
 
         /* Gradientes claros + texto oscuro CONSISTENTE */
         .bg-gradient-total {
-            background: linear-gradient(135deg, #e0f2fe, #bae6fd)
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
         }
 
         .bg-gradient-pendiente {
-            background: linear-gradient(135deg, #fde68a, #fcd34d)
+            background: linear-gradient(135deg, #fde68a, #fcd34d);
         }
 
         .bg-gradient-aprobado {
-            background: linear-gradient(135deg, #bbf7d0, #86efac)
+            background: linear-gradient(135deg, #bbf7d0, #86efac);
         }
 
         .bg-gradient-rechazado {
-            background: linear-gradient(135deg, #fecaca, #fca5a5)
+            background: linear-gradient(135deg, #fecaca, #fca5a5);
         }
 
         .stat-value {
             font-size: 2rem;
             font-weight: 800;
-            line-height: 1
+            line-height: 1;
         }
 
         .stat-label {
             margin: 0;
-            opacity: .9;
-            font-weight: 600
+            opacity: 0.9;
+            font-weight: 600;
         }
 
         .btn-clean {
-            border-radius: .75rem;
-            padding: .6rem 1rem
+            border-radius: 0.75rem;
+            padding: 0.6rem 1rem;
         }
     </style>
 @endpush
@@ -68,7 +70,7 @@
     <div class="container-fluid py-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
-                <h3 class="mb-0">Costos de Viaje </h3>
+                <h3 class="mb-0">Costos de Viaje</h3>
                 <small class="text-muted">Resumen general y accesos rápidos</small>
             </div>
         </div>
@@ -84,8 +86,10 @@
                         <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
                     </div>
                     <div class="card-footer border-0 bg-transparent pt-0">
-                        <a href="{{ route('viajes.costos_mep', ['status' => 'all']) }}"
-                            class="fw-semibold text-decoration-underline">
+                        <a
+                            href="{{ route('viajes.costos_mep', ['status' => 'all']) }}"
+                            class="fw-semibold text-decoration-underline"
+                        >
                             Ver costos solicitados
                         </a>
                     </div>
@@ -102,8 +106,10 @@
                         <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
                     </div>
                     <div class="card-footer border-0 bg-transparent pt-0">
-                        <a href="{{ route('viajes.costos_mep', ['status' => 'pendiente']) }}"
-                            class="fw-semibold text-decoration-underline">
+                        <a
+                            href="{{ route('viajes.costos_mep', ['status' => 'pendiente']) }}"
+                            class="fw-semibold text-decoration-underline"
+                        >
                             Ver pendientes
                         </a>
                     </div>
@@ -120,8 +126,10 @@
                         <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
                     </div>
                     <div class="card-footer border-0 bg-transparent pt-0">
-                        <a href="{{ route('viajes.costos_mep', ['status' => 'aprobado']) }}"
-                            class="fw-semibold text-decoration-underline">
+                        <a
+                            href="{{ route('viajes.costos_mep', ['status' => 'aprobado']) }}"
+                            class="fw-semibold text-decoration-underline"
+                        >
                             Ver aprobados
                         </a>
                     </div>
@@ -138,8 +146,10 @@
                         <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
                     </div>
                     <div class="card-footer border-0 bg-transparent pt-0">
-                        <a href="{{ route('viajes.costos_mep', ['status' => 'rechazado']) }}"
-                            class="fw-semibold text-decoration-underline">
+                        <a
+                            href="{{ route('viajes.costos_mep', ['status' => 'rechazado']) }}"
+                            class="fw-semibold text-decoration-underline"
+                        >
                             Ver rechazados
                         </a>
                     </div>
@@ -151,10 +161,13 @@
             <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
                 <div class="mb-2">
                     <h5 class="mb-1">¿Listo para capturar o editar costos?</h5>
-                    <p class="text-muted mb-0">Ve al tablero de trabajo para buscar por periodo, contenedor o proveedor.</p>
+                    <p class="text-muted mb-0">
+                        Ve al tablero de trabajo para buscar por periodo, contenedor o proveedor.
+                    </p>
                 </div>
                 <a href="{{ route('index.costos_mep') }}" class="btn btn-success btn-clean">
-                    <i class="fas fa-arrow-right me-2"></i> Ir al tablero de trabajo
+                    <i class="fas fa-arrow-right me-2"></i>
+                    Ir al tablero de trabajo
                 </a>
             </div>
         </div>
@@ -169,8 +182,8 @@
             try {
                 const r = await fetch(urlConteos, {
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
                 });
                 if (!r.ok) return;
                 const d = await r.json();

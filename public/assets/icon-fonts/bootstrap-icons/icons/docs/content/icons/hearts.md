@@ -1,8 +1,8 @@
 ---
 title: Hearts
 categories:
-  - Love
+    - Love
 tags:
-  - romance
-  - valentine
+    - romance
+    - valentine
 ---

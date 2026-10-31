@@ -1,8 +1,8 @@
 ---
 title: Gem
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - diamond
+    - shape
+    - diamond
 ---

@@ -1,8 +1,8 @@
 ---
 title: Pencil
 categories:
-  - Tools
+    - Tools
 tags:
-  - edit
-  - write
+    - edit
+    - write
 ---

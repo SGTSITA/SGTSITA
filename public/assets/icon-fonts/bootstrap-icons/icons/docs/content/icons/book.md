@@ -1,9 +1,9 @@
 ---
 title: Book
 categories:
-  - Real world
+    - Real world
 tags:
-  - novel
-  - read
-  - magazine
+    - novel
+    - read
+    - magazine
 ---

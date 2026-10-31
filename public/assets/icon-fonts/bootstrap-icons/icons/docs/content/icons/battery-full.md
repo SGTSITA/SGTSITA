@@ -1,8 +1,8 @@
 ---
 title: Battery full
 categories:
-  - Devices
+    - Devices
 tags:
-  - power
-  - charge
+    - power
+    - charge
 ---

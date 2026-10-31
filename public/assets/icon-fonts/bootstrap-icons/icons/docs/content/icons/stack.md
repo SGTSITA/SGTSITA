@@ -1,7 +1,7 @@
 ---
 title: Stack
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - layers
+    - layers
 ---

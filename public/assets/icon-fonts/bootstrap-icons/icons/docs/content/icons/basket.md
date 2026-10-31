@@ -1,12 +1,12 @@
 ---
 title: Basket
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - shopping
-  - checkout
-  - check
-  - cart
-  - basket
-  - bag
+    - shopping
+    - checkout
+    - check
+    - cart
+    - basket
+    - bag
 ---

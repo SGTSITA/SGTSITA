@@ -1,9 +1,9 @@
 ---
 title: Telephone inbound fill
 categories:
-  - Communications
+    - Communications
 tags:
-  - telephone
-  - phone
-  - call
+    - telephone
+    - phone
+    - call
 ---

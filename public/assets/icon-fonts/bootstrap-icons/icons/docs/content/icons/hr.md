@@ -1,8 +1,8 @@
 ---
 title: HR
 categories:
-  - Typography
+    - Typography
 tags:
-  - divider
-  - horizonal-rule
+    - divider
+    - horizonal-rule
 ---

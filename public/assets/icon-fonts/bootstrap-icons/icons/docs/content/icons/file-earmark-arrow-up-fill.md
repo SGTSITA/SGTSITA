@@ -1,9 +1,9 @@
 ---
 title: File earmark arrow up fill
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - doc
-  - document
-  - upload
+    - doc
+    - document
+    - upload
 ---

@@ -1,11 +1,11 @@
 ---
 title: Suit club fill
 categories:
-  - Entertainment
+    - Entertainment
 tags:
-  - card
-  - cards
-  - suit
-  - deck
-  - gambling
+    - card
+    - cards
+    - suit
+    - deck
+    - gambling
 ---

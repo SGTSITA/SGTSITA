@@ -1,10 +1,10 @@
 ---
 title: Calendar4 event
 categories:
-  - Date and time
+    - Date and time
 tags:
-  - date
-  - time
-  - event
-  - invite
+    - date
+    - time
+    - event
+    - invite
 ---

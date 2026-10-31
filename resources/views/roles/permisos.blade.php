@@ -1,10 +1,10 @@
-<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="csrf-token" content="{{ csrf_token() }}" />
 <div class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <label class="form-label fw-semibold mb-0">Permisos Personalizados:</label>
     </div>
 
-    <div id="tablaPermisosAGGrid" class="ag-theme-alpine" style="height: 400px; overflow: auto;"></div>
+    <div id="tablaPermisosAGGrid" class="ag-theme-alpine" style="height: 400px; overflow: auto"></div>
     <input type="hidden" name="custom_permissions_json" id="custom_permissions_json" />
 </div>
 

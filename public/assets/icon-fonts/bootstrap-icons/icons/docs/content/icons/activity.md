@@ -1,9 +1,9 @@
 ---
 title: Activity
 categories:
-  - Data
+    - Data
 tags:
-  - pulse
-  - heartbeat
-  - rhythm
+    - pulse
+    - heartbeat
+    - rhythm
 ---
