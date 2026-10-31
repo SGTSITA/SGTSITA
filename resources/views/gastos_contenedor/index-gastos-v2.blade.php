@@ -128,9 +128,6 @@
     <script
         src="{{ asset('js/sgt/gastos/gastosViajes.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosViajes.js')) }}">
     </script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <script src="{{ asset('js/sgt/gastos/gastosV2.js') }}?v={{ filemtime(public_path('js/sgt/gastos/gastosV2.js')) }}">
@@ -140,6 +137,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <script src="https://demos.creative-tim.com/argon-dashboard-pro/assets/js/plugins/choices.min.js"></script>
     <script>
+        window.mesinicio = null;
+        window.mesfin = null;
         $(document).ready(function() {
             flatpickr('.fechas', {
                 locale: 'es',
@@ -171,53 +170,15 @@
             const btnStore = document.querySelector('#btnStore');
             btnStore.addEventListener('click', (i) => gastosHandsOnTable.storeDataHTGastos());
 
-            $('#daterange').daterangepicker({
-                    opens: 'right',
-                    locale: {
-                        format: 'YYYY-MM-DD', // Formato de fecha
-                        separator: ' AL ', // Separador entre la fecha inicial y final
-                        applyLabel: 'Aplicar',
-                        cancelLabel: 'Cancelar',
-                        fromLabel: 'Desde',
-                        toLabel: 'Hasta',
-                        customRangeLabel: 'Personalizado',
-                        daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                        monthNames: [
-                            'Enero',
-                            'Febrero',
-                            'Marzo',
-                            'Abril',
-                            'Mayo',
-                            'Junio',
-                            'Julio',
-                            'Agosto',
-                            'Septiembre',
-                            'Octubre',
-                            'Noviembre',
-                            'Diciembre',
-                        ],
-                        firstDay: 1,
-                    },
-                    ranges: {
-                        Hoy: [moment(), moment()],
-                        'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-                        'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-                        'Este mes': [moment().startOf('month'), moment().endOf('month')],
-                        'Mes anterior': [
-                            moment().subtract(1, 'month').startOf('month'),
-                            moment().subtract(1, 'month').endOf('month'),
-                        ],
-                    },
-                    maxDate: moment(),
-                },
-                function(start, end, label) {
-                    //  getUtilidadesViajes();
-                    gastosHandsOnTable.fillDataHTGastos(start.format('YYYY-MM-DD'), end.format(
-                        'YYYY-MM-DD'));
-                    $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
-                    $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
-                },
-            );
+            initSgtDateRange('#daterange', {}, function(start, end, label) {
+                //  getUtilidadesViajes();
+                gastosHandsOnTable.fillDataHTGastos(start.format('YYYY-MM-DD'), end.format(
+                    'YYYY-MM-DD'));
+                $('#daterange').attr('data-start', start.format('YYYY-MM-DD'));
+                $('#daterange').attr('data-end', end.format('YYYY-MM-DD'));
+                window.mesinicio = moment(start).format('YYYY-MM-DD');
+                window.mesfin = moment(end).format('YYYY-MM-DD');
+            });
 
             const today = new Date();
             const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -226,6 +187,8 @@
 
             document.getElementById('daterange').value =
                 `${formatDate(firstDayOfMonth)} AL ${formatDate(today)}`;
+            window.mesinicio = moment(firstDayOfMonth).format('YYYY-MM-DD');
+            window.mesfin = moment(today).format('YYYY-MM-DD');
 
             gastosHandsOnTable.fillDataHTGastos(formatDate(firstDayOfMonth), formatDate(today));
 

@@ -22,6 +22,11 @@
                                         Tipo Documento
                                     </span>
                                 </label>
+                                <div class="mt-1 mb-3">
+                                    <span class="badge bg-light-success text-success fs-7" id="allowedFileTypesLabel">
+                                        Formatos permitidos: PDF, Imágenes, Excel, Word
+                                    </span>
+                                </div>
 
                                 <div data-kt-buttons="true">
                                     <div class="row mb-2"></div>

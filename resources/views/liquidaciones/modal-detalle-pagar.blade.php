@@ -8,49 +8,65 @@
              <div class="modal-body"> <!-- RESUMEN -->
                  <div id="previewResumen" class="mb-4"></div>
                  <!-- DETALLE VIAJES -->
-                 <div id="sectionViajes" class="mb-4">
-                     <h5 id="sectionViajesLabel">Detalle Viajes</h5>
-                     <table class="table table-bordered" id="tablaViajes">
-                         <thead>
-                             <tr>
-                                 <th>Contenedores</th>
-                                 <th class="text-end">Sueldo</th>
-                                 <th class="text-end">Dinero</th>
-                                 <th class="text-end">Justificado</th>
-                                 <th class="text-end">Monto Pago</th>
-                             </tr>
-                         </thead>
-                         <tbody></tbody>
-                     </table>
-                 </div> <!-- JUSTIFICADOS -->
-                 <div id="sectionJustificados" class="mb-4">
-                     <h5>Desglose Justificaciones</h5>
-                     <table class="table table-bordered" id="tablaJustificados">
-                         <thead>
-                             <tr>
-                                 <th>Contenedor</th>
-                                 <th>Concepto</th>
-                                 <th class="text-end">Importe</th>
-                             </tr>
-                         </thead>
-                         <tbody></tbody>
-                     </table>
-                 </div> <!-- DINERO VIAJE -->
-                 <div id="sectionDineroViaje" class="mb-4">
-                     <h5>Dinero Viaje</h5>
-                     <table class="table table-bordered" id="tablaDineroViaje">
-                         <thead>
-                             <tr>
-                                 <th>Contenedor</th>
-                                 <th>Concepto</th>
-                                 <th class="text-end">Importe</th>
-                                 <th>Fecha</th>
-                             </tr>
-                         </thead>
-                         <tbody></tbody>
-                     </table>
-                 </div> <!-- DEUDAS -->
-                 <div id="sectionDeudas">
+                  <!-- DETALLE VIAJES -->
+                  <div id="sectionViajes" class="mb-2">
+                      <div class="d-flex align-items-center mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseViajes">
+                          <h6 class="text-xs font-weight-bolder text-uppercase text-secondary mb-0" id="sectionViajesLabel">Detalle Viajes</h6>
+                          <i class="fa fa-chevron-down ms-2 text-xs text-secondary"></i>
+                      </div>
+                      <div class="collapse show" id="collapseViajes">
+                          <table class="table table-sm table-bordered align-middle mb-0" id="tablaViajes" style="font-size: 0.8rem;">
+                              <thead class="table-light">
+                                  <tr>
+                                      <th>Contenedores</th>
+                                      <th class="text-end">Sueldo</th>
+                                      <th class="text-end">Dinero</th>
+                                      <th class="text-end">Justificado</th>
+                                      <th class="text-end">Monto Pago</th>
+                                  </tr>
+                              </thead>
+                              <tbody></tbody>
+                          </table>
+                      </div>
+                  </div> <!-- JUSTIFICADOS -->
+                  <div id="sectionJustificados" class="mb-2">
+                      <div class="d-flex align-items-center mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseJustificados">
+                          <h6 class="text-xs font-weight-bolder text-uppercase text-secondary mb-0">Desglose Justificaciones</h6>
+                          <i class="fa fa-chevron-down ms-2 text-xs text-secondary"></i>
+                      </div>
+                      <div class="collapse show" id="collapseJustificados">
+                          <table class="table table-sm table-bordered align-middle mb-0" id="tablaJustificados" style="font-size: 0.8rem;">
+                              <thead class="table-light">
+                                  <tr>
+                                      <th>Contenedor</th>
+                                      <th>Concepto</th>
+                                      <th class="text-end">Importe</th>
+                                  </tr>
+                              </thead>
+                              <tbody></tbody>
+                          </table>
+                      </div>
+                  </div> <!-- DINERO VIAJE -->
+                  <div id="sectionDineroViaje" class="mb-2">
+                      <div class="d-flex align-items-center mb-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseDineroViaje">
+                          <h6 class="text-xs font-weight-bolder text-uppercase text-secondary mb-0">Dinero Viaje</h6>
+                          <i class="fa fa-chevron-down ms-2 text-xs text-secondary"></i>
+                      </div>
+                      <div class="collapse show" id="collapseDineroViaje">
+                          <table class="table table-sm table-bordered align-middle mb-0" id="tablaDineroViaje" style="font-size: 0.8rem;">
+                              <thead class="table-light">
+                                  <tr>
+                                      <th>Contenedor</th>
+                                      <th>Concepto</th>
+                                      <th class="text-end">Importe</th>
+                                      <th>Fecha</th>
+                                  </tr>
+                              </thead>
+                              <tbody></tbody>
+                          </table>
+                      </div>
+                  </div> <!-- DEUDAS -->
+                 <div id="sectionDeudas" class="d-none">
                      <h5>Deudas (Préstamos / Adelantos)</h5>
                      <table class="table table-bordered" id="tablaDeudas">
                          <thead>

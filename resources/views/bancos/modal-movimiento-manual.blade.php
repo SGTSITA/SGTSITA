@@ -47,11 +47,23 @@
                         </div>
 
                         {{-- Monto --}}
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Monto</label>
                             <input type="number" step="0.01" name="monto" class="form-control" required>
                         </div>
-                        <div class="col-md-6">
+
+                        {{-- Concepto Contable / Clasificación --}}
+                        <div class="col-md-4">
+                            <label class="form-label">Clasificación Contable</label>
+                            <select name="tipo_concepto" id="selectTipoConceptoMov" class="form-control" onchange="toggleInfoInteres(this.value)">
+                                <option value="operativo" selected>Operativo (General)</option>
+                                <option value="interes">Interés / Rendimiento Bancario</option>
+                                <option value="traspaso">Traspaso entre cuentas</option>
+                                <option value="comision">Comisión bancaria</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="form-label">Origen del movimiento</label>
                             <select name="origen" class="form-control" required>
                                 <option value="manual">Registro manual</option>
@@ -59,6 +71,15 @@
                                 <option value="ajuste">Ajuste</option>
                                 <option value="importacion">Importación</option>
                             </select>
+                        </div>
+
+                        <div class="col-12 d-none" id="alertInfoInteres">
+                            <div class="alert alert-info py-2 px-3 mb-0 d-flex align-items-center gap-2" style="font-size: 13px;">
+                                <i class="fa fa-info-circle text-info fs-5"></i>
+                                <div>
+                                    <strong>Tratamiento Contable CONAC:</strong> Este movimiento generará automáticamente una Póliza de Ingreso con abono a <em>4.3.1.1 Intereses Ganados / Rendimientos Financieros</em>, separándolo de los fletes operativos en el Balance y Estado de Resultados.
+                                </div>
+                            </div>
                         </div>
 
 
@@ -79,3 +100,16 @@
         </div>
     </div>
 </div>
+
+<script>
+    function toggleInfoInteres(val) {
+        const alertEl = document.getElementById('alertInfoInteres');
+        const tipoSelect = document.querySelector('#formcrearmovimientom select[name="tipo"]');
+        if (val === 'interes') {
+            if (alertEl) alertEl.classList.remove('d-none');
+            if (tipoSelect) tipoSelect.value = 'abono';
+        } else {
+            if (alertEl) alertEl.classList.add('d-none');
+        }
+    }
+</script>

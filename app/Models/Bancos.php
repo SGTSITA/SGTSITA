@@ -36,11 +36,15 @@ class Bancos extends Model
         parent::boot();
 
         static::creating(function ($banco) {
-            $banco->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $banco->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($banco) {
-            $banco->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $banco->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
 

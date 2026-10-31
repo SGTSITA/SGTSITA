@@ -23,8 +23,23 @@ class PagoPrestamo extends Model
         'fecha_pago'
     ];
 
+     protected $casts = [
+    'fecha_pago' => 'date',
+];
+
     public function prestamo()
     {
         return $this->belongsTo(Prestamo::class, 'id_prestamo');
+    }
+
+
+     public function liquidacion()
+    {
+        return $this->belongsTo(Liquidaciones::class, 'id_liquidacion', 'id');
+    }
+
+     public function banco()
+    {
+        return $this->belongsTo(Bancos::class, 'id_banco', 'id');
     }
 }

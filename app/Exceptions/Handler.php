@@ -4,6 +4,8 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Auth;
 
 class Handler extends ExceptionHandler
 {
@@ -37,5 +39,36 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+
+        $this->renderable(function (TokenMismatchException $e, $request) {
+        $sistemaActual = session('sistema_actual');
+
+        Auth::logout();
+
+        $request->session()->forget([
+            'sistema_actual',
+            'last_user_activity_at',
+        ]);
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        $redirect = $sistemaActual === 'scb'
+            ? route('scb.login')
+            : url('login');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tu sesión expiró. Inicia sesión nuevamente.',
+                'redirect' => $redirect,
+            ], 419);
+        }
+
+        return redirect($redirect)
+            ->withErrors([
+                'email' => 'Tu sesión expiró. Inicia sesión nuevamente.',
+            ]);
+    });
     }
 }

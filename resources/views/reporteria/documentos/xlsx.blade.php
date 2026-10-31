@@ -70,61 +70,44 @@
     </head>
 
     <body>
-        <h4>Empresa: {{ $user->Empresa->nombre }}</h4>
+        @php
+            $empresaActual = $user?->Empresa ?? null;
+            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
+        @endphp
+
+        <h4>Empresa: {{ optional($user?->Empresa)->nombre ?? 'SGT' }}</h4>
         <h4>Estatus Documentos</h4>
         <h5 style="text-align: right">Fecha: {{ date('d-m-Y') }}</h5>
 
-        <table>
-            <thead>
-                <tr>
-                    <th># Contenedor</th>
-                    <th>Formato CCP</th>
-                    <th>Boleta Liberación</th>
-                    <th>Doda</th>
-                    <th>Carta Porte</th>
-                    <th>Boleta Vacío</th>
-                    <th>EIR</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($cotizaciones as $cotizacion)
-                    <tr>
-                        <td>{{ $cotizacion['num_contenedor'] }}</td>
+        @php
+            $renderEstadoExcel = function ($eir, $cima) {
+                if ((int) $cima === 1) {
+                    return 'CIMA';
+                }
+                if ($eir) {
+                    return '✔';
+                }
+                return '✖';
+            };
+        @endphp
 
-                        @if (! isset($isExcel))
-                            <td>
-                                <span class="status-check {{ $cotizacion['doc_ccp'] ? 'checked' : 'unchecked' }}">
-                                    {{ $cotizacion['doc_ccp'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span
-                                    class="status-check {{ $cotizacion['boleta_liberacion'] ? 'checked' : 'unchecked' }}"
-                                >
-                                    {{ $cotizacion['boleta_liberacion'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-check {{ $cotizacion['doda'] ? 'checked' : 'unchecked' }}">
-                                    {{ $cotizacion['doda'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-check {{ $cotizacion['carta_porte'] ? 'checked' : 'unchecked' }}">
-                                    {{ $cotizacion['carta_porte'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-check {{ $cotizacion['boleta_vacio'] ? 'checked' : 'unchecked' }}">
-                                    {{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="status-check {{ $cotizacion['doc_eir'] ? 'checked' : 'unchecked' }}">
-                                    {{ $cotizacion['doc_eir'] ? '✔' : '✖' }}
-                                </span>
-                            </td>
-                        @else
+        @if (!$esEmpresaGlobal)
+            <table>
+                <thead>
+                    <tr>
+                        <th># Contenedor</th>
+                        <th>Formato CCP</th>
+                        <th>Boleta Liberación</th>
+                        <th>Doda</th>
+                        <th>Carta Porte</th>
+                        <th>Boleta Vacío</th>
+                        <th>EIR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($cotizaciones as $cotizacion)
+                        <tr>
+                            <td>{{ $cotizacion['num_contenedor'] }}</td>
                             <td>{{ $cotizacion['doc_ccp'] ? '✔' : '✖' }}</td>
                             <td>{{ $cotizacion['boleta_liberacion'] ? '✔' : '✖' }}</td>
                             <td>{{ $cotizacion['doda'] ? '✔' : '✖' }}</td>
@@ -139,16 +122,6 @@
 
                                     $cima1 = $isFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
                                     $cima2 = $isFull ? $cotizacion['cima_secundario'] ?? 0 : null;
-
-                                    $renderEstadoExcel = function ($eir, $cima) {
-                                        if ((int) $cima === 1) {
-                                            return 'CIMA';
-                                        }
-                                        if ($eir) {
-                                            return '✔';
-                                        }
-                                        return '✖';
-                                    };
                                 @endphp
 
                                 @if ($isFull)
@@ -157,10 +130,66 @@
                                     {{ $renderEstadoExcel($eir1, $cima1) }}
                                 @endif
                             </td>
-                        @endif
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            @php
+                $documentosPorUnidad = collect($cotizaciones)->groupBy(function($item) {
+                    return $item['unidad'] ?? 'SIN UNIDAD ASIGNADA';
+                });
+            @endphp
+
+            @foreach ($documentosPorUnidad as $unidadTexto => $itemsUnidad)
+                <table style="margin-bottom: 10px;" border="1">
+                    <thead>
+                        <tr>
+                            <th colspan="7" style="background-color: #2c3e50; color: #ffffff; text-align: left; font-weight: bold;">
+                                🚛 UNIDAD / TRACTOCAMIÓN: {{ $unidadTexto }} ({{ count($itemsUnidad) }} contenedores)
+                            </th>
+                        </tr>
+                        <tr style="background-color: #f2f2f2;">
+                            <th># Contenedor</th>
+                            <th>Formato CCP</th>
+                            <th>Boleta Liberación</th>
+                            <th>Doda</th>
+                            <th>Carta Porte</th>
+                            <th>Boleta Vacío</th>
+                            <th>EIR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($itemsUnidad as $cotizacion)
+                            <tr>
+                                <td>{{ $cotizacion['num_contenedor'] }}</td>
+                                <td>{{ $cotizacion['doc_ccp'] ? '✔' : '✖' }}</td>
+                                <td>{{ $cotizacion['boleta_liberacion'] ? '✔' : '✖' }}</td>
+                                <td>{{ $cotizacion['doda'] ? '✔' : '✖' }}</td>
+                                <td>{{ $cotizacion['carta_porte'] ? '✔' : '✖' }}</td>
+                                <td>{{ $cotizacion['boleta_vacio'] ? '✔' : '✖' }}</td>
+                                <td>
+                                    @php
+                                        $isFull = $cotizacion['tipo'] === 'Full';
+
+                                        $eir1 = $isFull ? $cotizacion['eir_primario'] ?? false : $cotizacion['doc_eir'] ?? false;
+                                        $eir2 = $isFull ? $cotizacion['eir_secundario'] ?? false : null;
+
+                                        $cima1 = $isFull ? $cotizacion['cima_primario'] ?? 0 : $cotizacion['cima'] ?? 0;
+                                        $cima2 = $isFull ? $cotizacion['cima_secundario'] ?? 0 : null;
+                                    @endphp
+
+                                    @if ($isFull)
+                                        {{ $renderEstadoExcel($eir1, $cima1) }} / {{ $renderEstadoExcel($eir2, $cima2) }}
+                                    @else
+                                        {{ $renderEstadoExcel($eir1, $cima1) }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endforeach
+        @endif
     </body>
 </html>

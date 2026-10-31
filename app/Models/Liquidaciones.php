@@ -27,4 +27,9 @@ class Liquidaciones extends Model
         return $this->hasMany(LiquidacionContenedor::class, 'id_liquidacion');
     }
 
+    public function Ajustes()
+    {
+        return $this->hasMany(LiquidacionAjuste::class, 'id_liquidacion');
+    }
+
 }

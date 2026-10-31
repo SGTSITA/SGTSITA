@@ -25,11 +25,8 @@
                                         <th>No</th>
 
                                         <th>
-                                            <img
-                                                src="{{ asset('img/icon/user_predeterminado.webp') }}"
-                                                alt=""
-                                                width="25px"
-                                            />
+                                            <img src="{{ asset('img/icon/user_predeterminado.webp') }}" alt=""
+                                                width="25px" />
                                             Nombre
                                         </th>
                                         <th>
@@ -53,17 +50,15 @@
                                 <tbody>
                                     @foreach ($cotizacionesPorCliente as $item)
                                         <tr>
-                                            <td>{{ $item->id }}</td>
+                                            <td>{{ $loop->iteration }}</td>
 
-                                            <td>{{ $item->Cliente->nombre }}</td>
-                                            <td>{{ $item->Cliente->telefono }}</td>
+                                            <td>{{ $item->cliente_nombre }}</td>
+                                            <td>{{ $item->cliente_telefono }}</td>
                                             <td>{{ $item->total_cotizaciones }}</td>
                                             <td>${{ number_format($item->total_restante, 0, '.', ',') }}</td>
                                             <td>
-                                                <a
-                                                    class="btn btn-xs btn-success"
-                                                    href="{{ route('show.cobrar', $item->id_cliente) }}"
-                                                >
+                                                <a class="btn btn-xs btn-success"
+                                                    href="{{ route('show.cobrar', $item->id_cliente) }}">
                                                     <i class="fa fa-fw fa-edit"></i>
                                                     Ver
                                                 </a>
@@ -86,6 +81,21 @@
         const dataTableSearch = new simpleDatatables.DataTable('#datatable-search', {
             searchable: true,
             fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 15, 20, 25],
+
+            labels: {
+                placeholder: "Buscar...",
+                perPage: "registros por página",
+                noRows: "No se encontraron registros",
+                noResults: "No hay resultados",
+                info: "Mostrando {start} a {end} de {rows} registros",
+
+                first: "Primero",
+                last: "Último",
+                next: "Siguiente",
+                previous: "Anterior"
+            }
         });
     </script>
 @endsection

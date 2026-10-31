@@ -39,7 +39,7 @@
                         <span class="me-2" data-kt-docs-table-select="selected_count"></span>
                     </div>
 
-                    <button type="button" class="btn btn-sm btn-secondary" name="btnAdjuntos" id="btnAdjuntos">
+                    <button type="button" class="btn btn-sm btn-secondary d-none" name="btnAdjuntos" id="btnAdjuntos">
                         <i class="ki-duotone ki-folder-up fs-2">
                             <span class="path1"></span>
                             <span class="path2"></span>

@@ -169,4 +169,71 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     getlistprestamos();
+
+    $("#btnGuardarPrestamoModal").on("click", function () {
+        let invalid = false;
+
+        const id_operador = $("#modal_id_operador").val();
+        const id_banco = $("#modal_id_banco").val();
+        const cantidad = $("#modal_cantidad").val();
+        const FechaAplicacion = $("#modal_FechaAplicacion").val();
+        const tipo = $("#modal_tipo").val();
+
+        $(".is-invalid").removeClass("is-invalid");
+
+        if (!id_operador) {
+            $("#modal_id_operador").addClass("is-invalid");
+            invalid = true;
+        }
+
+        if (!id_banco) {
+            $("#modal_id_banco").addClass("is-invalid");
+            invalid = true;
+        }
+
+        if (!cantidad || Number(cantidad) <= 0) {
+            $("#modal_cantidad").addClass("is-invalid");
+            invalid = true;
+        }
+
+        if (invalid) return;
+
+        Swal.fire({
+            title: "Guardando ...",
+            text: "Por favor espera",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+
+        $.ajax({
+            url: "/prestamos/store",
+            method: "POST",
+            data: {
+                id_operador,
+                id_banco,
+                cantidad,
+                FechaAplicacion,
+                tipo,
+                _token: $('meta[name="csrf-token"]').attr("content"),
+            },
+            success: function (resp) {
+                Swal.close();
+                if (resp.success === false) {
+                    Swal.fire("Error", resp.Mensaje, "error");
+                    return;
+                }
+
+                Swal.fire("Guardado correctamente", "", "success");
+
+                $("#modalNuevoPrestamo").modal("hide");
+                $("#formPrestamoModal")[0].reset();
+
+                // Aquí puedes recargar grid
+                $("#btnRecargarGrid").click();
+            },
+        });
+    });
 });
