@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Estado de Cuenta - Transporte</title>
+    <title>{{ ($fechaEnvio ?? date('Y-m-d')) . ' GC TRANSPORTE ' . ($cotizaciones->first()?->estadoCuenta?->numero ?? 'SIN-ESTADO') }}</title>
     <style>
         @page {
             size: letter landscape;
@@ -135,7 +135,8 @@
             ?? (request('numero_edo_cuenta') ? optional(\App\Models\Estado_Cuenta::find(request('numero_edo_cuenta')))->numero : 'S/F');
 
         $totalContenedores = $cotizaciones->count();
-        $fechaEnvio = date('Y-m-d');
+        $fechaEnvio = $fechaEnvio ?? date('Y-m-d');
+        $tituloEnvio = "{$fechaEnvio} GC TRANSPORTE {$folioEdoCuenta}";
 
         // Totales acumulados
         $sumPrecioViaje = 0;
@@ -206,7 +207,7 @@
         }
     @endphp
 
-    <div class="header-title">ESTADO DE CUENTA · TRANSPORTE</div>
+    <div class="header-title">{{ $tituloEnvio }}</div>
 
     <!-- Metadata del estado de cuenta -->
     <table class="meta-table">
