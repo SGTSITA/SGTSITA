@@ -70,6 +70,15 @@
                                         <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Periodo</label>
                                         <input type="text" id="daterange" readonly class="form-control form-control-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;" />
                                     </div>
+                                    <div class="d-flex flex-column" style="min-width: 220px;">
+                                        <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Cliente</label>
+                                        <select id="selClienteUtilidad" class="form-select form-select-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;">
+                                            <option value="">-- Todos los Clientes --</option>
+                                            @foreach ($clientes as $cliente)
+                                                <option value="{{ $cliente->id }}">{{ $cliente->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
                                     <div class="d-flex flex-column" style="min-width: 250px;">
                                         <label class="text-xs font-weight-bolder text-uppercase mb-1" style="color:#7b809a;">Proveedor</label>
                                         <select id="selProveedorUtilidad" class="form-select form-select-sm border border-light ps-2" style="background-color: #fff; box-shadow: none;">

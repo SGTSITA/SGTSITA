@@ -117,6 +117,51 @@ const formatFecha = (params) => {
     return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
 };
 
+let apiGrid = null;
+
+function obtenerFilasVisiblesGrid() {
+    const filas = [];
+    if (!apiGrid || typeof apiGrid.forEachNodeAfterFilterAndSort !== "function") return filas;
+
+    apiGrid.forEachNodeAfterFilterAndSort((node) => {
+        if (node.data) filas.push(node.data);
+    });
+
+    return filas;
+}
+
+function obtenerFilasSeleccionadasVisibles() {
+    const seleccionadas = [];
+    if (!apiGrid || typeof apiGrid.forEachNodeAfterFilterAndSort !== "function") return seleccionadas;
+
+    apiGrid.forEachNodeAfterFilterAndSort((node) => {
+        if (node.data && node.isSelected()) seleccionadas.push(node.data);
+    });
+
+    return seleccionadas;
+}
+
+function obtenerFilasParaReporte() {
+    const seleccionadas = obtenerFilasSeleccionadasVisibles();
+    if (apiGrid.getSelectedRows().length > 0) return seleccionadas;
+    return obtenerFilasVisiblesGrid();
+}
+
+function actualizarBotonVistaPreliminar() {
+    const btn = document.getElementById("btnVistaPreliminar");
+    if (!btn || !apiGrid) return;
+
+    const tieneSeleccionVisible = obtenerFilasSeleccionadasVisibles().length > 0;
+    const sinViajesVisibles = apiGrid.getDisplayedRowCount() === 0;
+
+    if (tieneSeleccionVisible || sinViajesVisibles) {
+        btn.classList.remove("d-none");
+    } else {
+        btn.classList.add("d-none");
+        document.getElementById("panelVistaPreliminar")?.classList.add("d-none");
+    }
+}
+
 const gridOptions = {
     pagination: true,
     paginationPageSize: 10,
@@ -124,6 +169,7 @@ const gridOptions = {
     rowSelection: {
         mode: "multiRow",
         headerCheckbox: true,
+        selectAll: "filtered",
     },
     rowClassRules: {
         "bg-gradient-danger": (params) => params.data.utilidad < 0,
@@ -183,23 +229,12 @@ const gridOptions = {
     ],
 
     localeText: localeText,
-    onSelectionChanged: () => {
-        const selectedRows = apiGrid ? apiGrid.getSelectedRows() : [];
-        const btn = document.getElementById("btnVistaPreliminar");
-        if (btn) {
-            if (selectedRows.length > 0) {
-                btn.classList.remove("d-none");
-            } else {
-                btn.classList.add("d-none");
-                // Hide the preview panel if no rows are selected
-                document.getElementById("panelVistaPreliminar").classList.add("d-none");
-            }
-        }
-    }
+    onSelectionChanged: actualizarBotonVistaPreliminar,
+    onFilterChanged: actualizarBotonVistaPreliminar,
 };
 
 const myGridElement = document.querySelector("#myGrid");
-let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
+apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
 const paginationTitle = document.querySelector("#ag-32-label");
@@ -237,10 +272,11 @@ function ejecutarExportacion(fileType) {
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    const rowData = JSON.stringify(apiGrid.getSelectedRows());
-    const totalRows = apiGrid.paginationGetRowCount();
+    const rowData = JSON.stringify(obtenerFilasParaReporte());
+    const totalRows = apiGrid.getDisplayedRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
+    let idCliente = $("#selClienteUtilidad").val();
     let idProveedor = $("#selProveedorUtilidad").val();
     let idEquipo = $("#selEquipoUtilidad").val();
 
@@ -250,10 +286,12 @@ function ejecutarExportacion(fileType) {
         data: {
             _token: _token,
             rowData: rowData,
+            usarFilasVisibles: true,
             totalRows: totalRows,
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
             fileType: fileType,
+            id_cliente: idCliente,
             id_proveedor: idProveedor,
             id_equipo: idEquipo,
         },
@@ -311,25 +349,28 @@ function getUtilidadesViajes(startDate, endDate) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
-   let idEquipo = $("#selEquipoUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val();
+    let idCliente = $("#selClienteUtilidad").val();
     return  $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
-        data: { _token, startDate, endDate, id_proveedor: idProveedor, id_equipo: idEquipo },
+        data: { _token, startDate, endDate, id_cliente: idCliente, id_proveedor: idProveedor, id_equipo: idEquipo },
         beforeSend: () => {
             mostrarLoading("Consultando viajes...");
         },
         success: (response) => {
             ocultarLoading();
             let data = JSON.parse(response);
+            apiGrid.deselectAll();
             apiGrid.setGridOption("rowData", data.Info);
+            actualizarBotonVistaPreliminar();
             
             // Guardar gastos generales
             window.latestGastosGenerales = data.GastosGenerales || [];
             
             // Actualizar vista preliminar si está abierta
             if (!document.getElementById("panelVistaPreliminar").classList.contains("d-none")) {
-                calcularVistaPreliminar();
+                cargarPdfVistaPreliminar();
             }
         },
         error: () => {
@@ -338,7 +379,7 @@ function getUtilidadesViajes(startDate, endDate) {
     });
 }
 
-$("#selProveedorUtilidad, #selEquipoUtilidad").on("change", function () {
+$("#selClienteUtilidad, #selProveedorUtilidad, #selEquipoUtilidad").on("change", function () {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     if (fechaInicio && fechaFin) {
@@ -351,10 +392,11 @@ function cargarPdfVistaPreliminar() {
     panel.classList.remove("d-none");
 
     const _token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
-    const rowData = JSON.stringify(apiGrid.getSelectedRows());
-    const totalRows = apiGrid.paginationGetRowCount();
+    const rowData = JSON.stringify(obtenerFilasParaReporte());
+    const totalRows = apiGrid.getDisplayedRowCount();
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
+    let idCliente = $("#selClienteUtilidad").val();
     let idProveedor = $("#selProveedorUtilidad").val();
     let idEquipo = $("#selEquipoUtilidad").val();
 
@@ -398,10 +440,12 @@ function cargarPdfVistaPreliminar() {
         const inputs = {
             _token: _token,
             rowData: rowData,
+            usarFilasVisibles: true,
             totalRows: totalRows,
             fechaInicio: fechaInicio,
             fechaFin: fechaFin,
             fileType: 'pdf',
+            id_cliente: idCliente,
             id_proveedor: idProveedor,
             id_equipo: idEquipo
         };

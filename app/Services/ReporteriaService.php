@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Cotizaciones;
+use App\Models\Client;
 use App\Models\DocumCotizacion;
 use App\Models\Asignaciones;
 use App\Models\Gasto;
@@ -19,7 +20,16 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteriaService
 {
-    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa, ?int $idProveedor = null, ?int $idEquipo = null): array
+    public function getClientesUtilidad(int $idEmpresa)
+    {
+        return Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('ce.id_empresa', $idEmpresa)
+            ->orderBy('clients.nombre')
+            ->distinct()
+            ->get(['clients.id', 'clients.nombre']);
+    }
+
+    public function getContenedorUtilidad(string $startDate, string $endDate, int $idEmpresa, ?int $idProveedor = null, ?int $idEquipo = null, ?int $idCliente = null): array
     {
         $fechaI = Carbon::parse($startDate)->startOfDay();
         $fechaF = Carbon::parse($endDate)->endOfDay();
@@ -65,6 +75,7 @@ class ReporteriaService
 
         $viajes = $viajesQuery->select(
             'c.id as id_cotizacion',
+            'c.id_cliente as id_cliente',
             'dc.id as id_docum_cotizacion',
             'a.id_camion',
             'dc.num_contenedor',
@@ -91,9 +102,15 @@ class ReporteriaService
         // Agrupar asignaciones por camión para calcular el prorrateo de gastos por viaje en memoria
         $viajesPorCamion = $viajes->groupBy('id_camion');
 
+        // Se filtran los viajes mostrados después de calcular el prorrateo sobre
+        // todos los viajes del periodo, para no cargar al cliente el gasto de otros.
+        $viajesDelReporte = $idCliente
+            ? $viajes->where('id_cliente', $idCliente)
+            : $viajes;
+
         $Info = [];
 
-        foreach ($viajes as $d) {
+        foreach ($viajesDelReporte as $d) {
             $detalleGastos = [];
 
             // Prorratear los gastos de la unidad (equipo) por viaje
@@ -179,6 +196,7 @@ class ReporteriaService
             }
 
             $Columns = [
+                "idCotizacion" => (int) $d->id_cotizacion,
                 "numContenedor" => $contenedor,
                 "cliente" => $d->cliente,
                 "precioViaje" => (float) $d->total,
