@@ -1,3 +1,8 @@
+@php
+    $user = $user ?? auth()->user();
+    $cotizacion = $cotizacion ?? null;
+    $cotizaciones = $cotizaciones ?? collect();
+@endphp
 <!DOCTYPE html>
 <html>
 @if (!isset($isExcel))

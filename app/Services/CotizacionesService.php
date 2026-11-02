@@ -680,13 +680,22 @@ class CotizacionesService
                         File::makeDirectory($pathDir, 0755, true);
                     }
                     $filePath = "{$pathDir}/formato_carta_porte_{$numContenedor}.pdf";
-                    $pdf = Pdf::loadView('cotizaciones.carta_porte_pdf', compact('cotizacion', 'numContenedor', 'subCliente'));
-                    $pdf->save($filePath);
+                    try {
+                        $pdf = Pdf::loadView('cotizaciones.carta_porte_pdf', [
+                            'cotizaciones' => $cotizacion,
+                            'cotizacion' => $cotizacion,
+                            'numContenedor' => $numContenedor,
+                            'subCliente' => $subCliente,
+                        ]);
+                        $pdf->save($filePath);
 
-                    if (File::exists($filePath)) {
-                        $docCot->ccp = 'si';
-                        $docCot->doc_ccp = "formato_carta_porte_{$numContenedor}.pdf";
-                        $docCot->save();
+                        if (File::exists($filePath)) {
+                            $docCot->ccp = 'si';
+                            $docCot->doc_ccp = "formato_carta_porte_{$numContenedor}.pdf";
+                            $docCot->save();
+                        }
+                    } catch (\Throwable $ePdf) {
+                        Log::channel('daily')->warning('No se pudo generar formato carta porte PDF al guardar cotización: ' . $ePdf->getMessage());
                     }
                 }
             }
