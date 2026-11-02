@@ -210,10 +210,17 @@ async function initFileUploader() {
 */
 
 function validarDocumentos() {
+    // En una solicitud nueva todavía no se pueden adjuntar documentos. Los
+    // folios solo se validan al editar un viaje y cuando se adjunta su archivo.
+    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") {
+        return true;
+    }
+
     for (const key in documentosConfig) {
         const config = documentosConfig[key];
+        const archivo = document.querySelector(config.input)?.files?.length > 0;
 
-        if (config.requiereFolio) {
+        if (config.requiereFolio && archivo) {
             const folio = getFolioDocumento(key);
 
             if (!folio) {
@@ -262,9 +269,11 @@ function marcarDocumentosPendientes() {
 }
 
 $("#numBoleta, #numDoda").on("input", function () {
+    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") return;
     marcarDocumentosPendientes();
 });
 $("#BoletaLib, #Doda, #CCP").on("change", function () {
+    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") return;
     marcarDocumentosPendientes();
 });
 
