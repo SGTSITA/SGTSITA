@@ -229,6 +229,7 @@ class ReporteriaController extends Controller
             ->get();
 
         $cotizacion = $cotizaciones->first();
+        $empresaCuentaId = $cotizacion?->id_empresa;
 
         $user = auth()->user();
         $cuentaGlobal = CuentaGlobal::first();
@@ -248,7 +249,7 @@ class ReporteriaController extends Controller
             if ($tipoReporte === 'personalizado') {
                 if ($request->fileType == "xlsx") {
                     Excel::store(
-                        new CxcPersonalizadoExport($cotizaciones, $user),
+                        new CxcPersonalizadoExport($cotizaciones, $user, $empresaCuentaId),
                         'cxc.xlsx',
                         'public'
                     );
@@ -258,7 +259,8 @@ class ReporteriaController extends Controller
 
                 $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', compact(
                     'cotizaciones',
-                    'user'
+                    'user',
+                    'empresaCuentaId'
                 ))->setPaper('letter', 'landscape');
 
                 $fileName = 'cxc.pdf';
@@ -327,7 +329,7 @@ class ReporteriaController extends Controller
                     if ($request->fileType == "xlsx") {
                         $excelName = "cxc_{$nombreGrupo}.xlsx";
                         Excel::store(
-                            new CxcPersonalizadoExport($items, $user),
+                            new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa),
                             $excelName,
                             'public'
                         );
@@ -340,6 +342,7 @@ class ReporteriaController extends Controller
                         $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
                             'cotizaciones' => $items,
                             'user' => $user,
+                            'empresaCuentaId' => $items->first()?->id_empresa,
                         ])->setPaper('letter', 'landscape');
 
                         $pdf->save($pdfPath);
@@ -448,7 +451,7 @@ class ReporteriaController extends Controller
                             $excelName = "cxc_{$nombreGrupo}.xlsx";
 
                             Excel::store(
-                                new CxcPersonalizadoExport($items, $user),
+                                new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa),
                                 $excelName,
                                 'public'
                             );
@@ -468,6 +471,7 @@ class ReporteriaController extends Controller
                             $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
                                 'cotizaciones' => $items,
                                 'user' => $user,
+                                'empresaCuentaId' => $items->first()?->id_empresa,
                             ])->setPaper('letter', 'landscape');
 
                             $pdf->save($pdfPath);
