@@ -682,8 +682,16 @@ function updateCotizacion(id) {
                 title: "Actualizado correctamente",
                 text: "Ahora puede adjuntar los documentos.",
             });
-            limpiarEstadoDocumentos();
-            // setTimeout(() => initFileUploader(), 300);
+            if (typeof reinicializarFileUploader === "function") {
+                reinicializarFileUploader()
+                    .then(() => limpiarEstadoDocumentos())
+                    .catch((error) => {
+                        console.error("No se pudieron recargar los documentos guardados:", error);
+                        limpiarEstadoDocumentos();
+                    });
+            } else {
+                limpiarEstadoDocumentos();
+            }
         },
         error: function (err) {
             console.error(err);
