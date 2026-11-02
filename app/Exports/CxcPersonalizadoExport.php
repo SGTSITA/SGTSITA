@@ -21,12 +21,14 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
     public $cotizaciones;
     public $user;
     public $empresaCuentaId;
+    public $fechaEnvio;
 
-    public function __construct($cotizaciones, $user = null, $empresaCuentaId = null)
+    public function __construct($cotizaciones, $user = null, $empresaCuentaId = null, $fechaEnvio = null)
     {
         $this->cotizaciones = $cotizaciones;
         $this->user = $user ?? auth()->user();
         $this->empresaCuentaId = $empresaCuentaId ?? $cotizaciones->first()?->id_empresa;
+        $this->fechaEnvio = $fechaEnvio ?? now()->format('Y-m-d');
     }
 
     public function view(): View
@@ -34,6 +36,7 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
         $cotizaciones = $this->cotizaciones;
         $user = $this->user;
         $empresaCuentaId = $this->empresaCuentaId;
+        $fechaEnvio = $this->fechaEnvio;
         $isExcel = true;
 
         return view('reporteria.cxc.excel_personalizado', compact('cotizaciones', 'user', 'empresaCuentaId', 'isExcel'));
@@ -85,6 +88,7 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
                 $sheet->mergeCells('B6:C6');
 
                 // 2. Título principal en A1
+                $sheet->mergeCells('A1:T1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('1F3864');
                 $sheet->getRowDimension(1)->setRowHeight(26);
 

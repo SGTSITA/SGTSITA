@@ -203,6 +203,7 @@ class ReporteriaController extends Controller
     {
 
         $fecha = date('Y-m-d');
+        $fechaEnvio = $fecha;
         $fechaCarbon = Carbon::parse($fecha);
         $modo = $request->input('modo');
         $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
@@ -230,6 +231,12 @@ class ReporteriaController extends Controller
 
         $cotizacion = $cotizaciones->first();
         $empresaCuentaId = $cotizacion?->id_empresa;
+        $nombreArchivoPersonalizado = static function ($items, string $extension) use ($fechaEnvio): string {
+            $folio = $items->first()?->estadoCuenta?->numero ?? 'SIN-ESTADO';
+            $folio = preg_replace('/[^A-Za-z0-9_-]/', '_', (string) $folio);
+
+            return "{$fechaEnvio} GC TRANSPORTE {$folio}.{$extension}";
+        };
 
         $user = auth()->user();
         $cuentaGlobal = CuentaGlobal::first();
@@ -248,22 +255,24 @@ class ReporteriaController extends Controller
 
             if ($tipoReporte === 'personalizado') {
                 if ($request->fileType == "xlsx") {
+                    $fileName = $nombreArchivoPersonalizado($cotizaciones, 'xlsx');
                     Excel::store(
-                        new CxcPersonalizadoExport($cotizaciones, $user, $empresaCuentaId),
-                        'cxc.xlsx',
+                        new CxcPersonalizadoExport($cotizaciones, $user, $empresaCuentaId, $fechaEnvio),
+                        $fileName,
                         'public'
                     );
 
-                    return response()->download(storage_path('app/public/' . 'cxc.xlsx'))->deleteFileAfterSend(true);
+                    return response()->download(storage_path('app/public/' . $fileName), $fileName)->deleteFileAfterSend(true);
                 }
 
                 $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', compact(
                     'cotizaciones',
                     'user',
-                    'empresaCuentaId'
+                    'empresaCuentaId',
+                    'fechaEnvio'
                 ))->setPaper('letter', 'landscape');
 
-                $fileName = 'cxc.pdf';
+                $fileName = $nombreArchivoPersonalizado($cotizaciones, 'pdf');
                 $filePath = storage_path('app/public/' . $fileName);
                 $pdf->save($filePath);
 
@@ -327,22 +336,23 @@ class ReporteriaController extends Controller
                 $reporte = "Estado de cuenta: {$nombreGrupo}\n\n";
                 if ($tipoReporte === 'personalizado') {
                     if ($request->fileType == "xlsx") {
-                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+                        $excelName = $nombreArchivoPersonalizado($items, 'xlsx');
                         Excel::store(
-                            new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa),
+                            new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa, $fechaEnvio),
                             $excelName,
                             'public'
                         );
 
                         $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
                     } else {
-                        $pdfName = "cxc_{$nombreGrupo}.pdf";
+                        $pdfName = $nombreArchivoPersonalizado($items, 'pdf');
                         $pdfPath = storage_path('app/public/' . $pdfName);
 
                         $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
                             'cotizaciones' => $items,
                             'user' => $user,
                             'empresaCuentaId' => $items->first()?->id_empresa,
+                            'fechaEnvio' => $fechaEnvio,
                         ])->setPaper('letter', 'landscape');
 
                         $pdf->save($pdfPath);
@@ -448,10 +458,10 @@ class ReporteriaController extends Controller
 
                     if ($tipoReporte === 'personalizado') {
                         if ($request->fileType == "xlsx") {
-                            $excelName = "cxc_{$nombreGrupo}.xlsx";
+                            $excelName = $nombreArchivoPersonalizado($items, 'xlsx');
 
                             Excel::store(
-                                new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa),
+                                new CxcPersonalizadoExport($items, $user, $items->first()?->id_empresa, $fechaEnvio),
                                 $excelName,
                                 'public'
                             );
@@ -465,13 +475,14 @@ class ReporteriaController extends Controller
                                 Log::warning("Excel no encontrado: {$excelPath}");
                             }
                         } else {
-                            $pdfName = "cxc_{$nombreGrupo}.pdf";
+                            $pdfName = $nombreArchivoPersonalizado($items, 'pdf');
                             $pdfPath = storage_path('app/public/' . $pdfName);
 
                             $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
                                 'cotizaciones' => $items,
                                 'user' => $user,
                                 'empresaCuentaId' => $items->first()?->id_empresa,
+                                'fechaEnvio' => $fechaEnvio,
                             ])->setPaper('letter', 'landscape');
 
                             $pdf->save($pdfPath);
