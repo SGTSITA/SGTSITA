@@ -505,9 +505,9 @@ function getFormData() {
     });
 
     //documentos
-    const boletaFile = document.getElementById("BoletaLib")?.files[0];
-    const dodaFile = document.getElementById("Doda")?.files[0];
-    const cBoletaPatioFile = document.getElementById("BoletaPatio")?.files[0];
+    const boletaFile = obtenerArchivoSeleccionado("BoletaLib");
+    const dodaFile = obtenerArchivoSeleccionado("Doda");
+    const cBoletaPatioFile = obtenerArchivoSeleccionado("BoletaPatio");
 
     if (boletaFile) {
         data["boleta_liberacion_file"] = boletaFile;
@@ -526,6 +526,18 @@ function getFormData() {
         .getAttribute("content");
 
     return data;
+}
+
+function obtenerArchivoSeleccionado(idInput) {
+    const input = document.getElementById(idInput);
+    if (!input) return null;
+
+    const uploader = $.fileuploader?.getInstance(input);
+    const archivoElegido = uploader?.getChoosedFiles?.().find((item) =>
+        item.file instanceof File,
+    );
+
+    return archivoElegido?.file || input.files?.[0] || null;
 }
 
 $("#solicitarservicio").on("click", function (e) {
