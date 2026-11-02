@@ -1395,7 +1395,8 @@ class ReporteriaController extends Controller
     {
         $proveedores = \App\Models\Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('nombre', 'asc')->get();
         $equipos = $this->equipoService->getTractocamiones();
-        return view('reporteria.utilidad.index', compact('proveedores', 'equipos'));
+        $clientes = $this->reporteriaService->getClientesUtilidad(auth()->user()->id_empresa);
+        return view('reporteria.utilidad.index', compact('proveedores', 'equipos', 'clientes'));
     }
 
     public function advance_utilidad(Request $request)
@@ -1444,7 +1445,8 @@ class ReporteriaController extends Controller
     {
         $idProveedor = $r->input('id_proveedor');
         $idEquipo = $r->input('id_equipo');
-        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor, $idEquipo);
+        $idCliente = $r->filled('id_cliente') ? (int) $r->input('id_cliente') : null;
+        $info = $this->reporteriaService->getContenedorUtilidad($r->startDate, $r->endDate, auth()->user()->id_empresa, $idProveedor, $idEquipo, $idCliente);
         $contadorPeriodos = Common::contadorPeriodos($r->startDate, $r->endDate);
 
         $gastosGenerales = $this->reporteriaService->getGastosGeneralesPeriodo($r->startDate, $r->endDate, auth()->user()->id_empresa);
@@ -1463,15 +1465,29 @@ class ReporteriaController extends Controller
         $fileType = $request->input('fileType');
         $idProveedor = $request->input('id_proveedor');
         $idEquipo = $request->input('id_equipo');
+        $idCliente = $request->filled('id_cliente') ? (int) $request->input('id_cliente') : null;
 
         $fecha = date('Y-m-d');
         $fechaCarbon = Carbon::parse($fecha);
 
-        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa, $idProveedor, $idEquipo);
+        $info = $this->reporteriaService->getContenedorUtilidad($fechaInicio, $fechaFin, auth()->user()->id_empresa, $idProveedor, $idEquipo, $idCliente);
         $cotizaciones = collect($info);
 
-        if ($request->has('rowData') && !empty($request->rowData)) {
-            $selectedData = json_decode($request->rowData, true);
+        if ($request->boolean('usarFilasVisibles')) {
+            $selectedData = json_decode($request->input('rowData', '[]'), true);
+            $selectedData = is_array($selectedData) ? $selectedData : [];
+            $selectedIds = collect($selectedData)->pluck('idCotizacion')->filter()->map(fn ($id) => (int) $id)->all();
+            $selectedContenedores = collect($selectedData)->pluck('numContenedor')->filter()->all();
+
+            $cotizaciones = $cotizaciones->filter(function ($item) use ($selectedIds, $selectedContenedores) {
+                if (!empty($item['idCotizacion'])) {
+                    return in_array((int) $item['idCotizacion'], $selectedIds, true);
+                }
+
+                return in_array($item['numContenedor'] ?? null, $selectedContenedores, true);
+            })->values();
+        } elseif ($request->has('rowData') && !empty($request->input('rowData'))) {
+            $selectedData = json_decode($request->input('rowData'), true);
             if (is_array($selectedData) && count($selectedData) > 0) {
                 $selectedContenedores = collect($selectedData)->pluck('numContenedor')->toArray();
                 $cotizaciones = $cotizaciones->filter(function ($item) use ($selectedContenedores) {
@@ -1488,7 +1504,7 @@ class ReporteriaController extends Controller
         $gastos = $gastosGenerales->sum('monto_aplicado');
         $utilidad = $cotizaciones->sum('utilidad');
 
-        $totalRows = count($info);
+        $totalRows = max(0, (int) $request->input('totalRows', count($info)));
         $selectedRows = $cotizaciones->count();
 
         if ($fileType == "xlsx") {
