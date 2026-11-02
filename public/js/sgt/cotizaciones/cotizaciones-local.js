@@ -611,6 +611,17 @@ function guardarCotizacionLocal() {
 }
 
 function updateCotizacion(id) {
+    const cotizacionId = Number(id);
+    if (!Number.isInteger(cotizacionId) || cotizacionId <= 0) {
+        console.error("ID de cotización local inválido:", id);
+        Swal.fire(
+            "No se pudo actualizar",
+            "No se encontró el ID de la cotización. Recargue el viaje e inténtelo de nuevo.",
+            "error",
+        );
+        return;
+    }
+
     let formData = new FormData();
     const data = getFormData();
 
@@ -619,7 +630,7 @@ function updateCotizacion(id) {
         formData.append(campo, data[campo]);
     }
 
-    const url = `/cotizaciones/single/update-local/${id}`;
+    const url = `/cotizaciones/single/update-local/${cotizacionId}`;
 
     $.ajax({
         url: url,
@@ -649,10 +660,18 @@ function updateCotizacion(id) {
             }
 
             // Guardar ID de la cotización
-            const id = res.id;
-            window.cotLocalId = id;
-            localStorage.setItem("cotizacionId", res.cotizacion_id);
-            localStorage.setItem("numContenedor", res.num_contenedor);
+            const idDocumento = res.docum_cotizacion_id || res.id;
+            const idCotizacionRespuesta = Number(res.cotizacion_id);
+            const idCotizacion =
+                Number.isInteger(idCotizacionRespuesta) &&
+                idCotizacionRespuesta > 0
+                    ? idCotizacionRespuesta
+                    : cotizacionId;
+            window.cotLocalId = idDocumento || null;
+            localStorage.setItem("cotizacionId", String(idCotizacion));
+            if (res.num_contenedor) {
+                localStorage.setItem("numContenedor", res.num_contenedor);
+            }
 
             // Mostrar file uploader
             $("#noticeFileUploader").addClass("d-none");

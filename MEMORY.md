@@ -68,6 +68,8 @@ Memoria viva del proyecto entre sesiones (máximo ~60 líneas).
 ## Errores a evitar
 - En `storeLocal`, crear primero `Cotizaciones`, después su bitácora y luego `DocumCotizacion` con el ID real; el frontend local espera `id`, `cotizacion_id` y `num_contenedor` en la respuesta. Todo debe persistir en una transacción.
 - En ediciones de viajes locales, `cotizaciones` no tiene columna `id_transportista`: persistir el transportista en `id_proveedor` y `transportista_local`, y mantener la empresa seleccionada en `id_empresa`/`empresa_local` (sincronizando `docum_cotizacion.id_empresa`).
+- Normalizar en el service los valores FormData `null`/vacíos de cantidades e importes locales a cero (y fechas a null); al actualizar devolver ID de cotización, ID de documento y contenedor para que el frontend no guarde `undefined` en localStorage.
+- Antes de llamar `/cotizaciones/single/update-local/{id}`, validar que el ID local sea entero positivo; en la respuesta conservar el ID actual si el backend no devuelve uno válido.
 - En `/viajes/solicitud/simple`, cargar `cotizaciones.js` antes de Google Maps para que `googleMapsReady` exista al dispararse el callback; el mapa debe tolerar que falte su contenedor. El FileUploader usa `enableApi`, evita doble submit y se reinicia desde los documentos persistidos al guardar. Validar folios solo al adjuntar archivos a viajes existentes; su procesamiento/persistencia/notificaciones viven en `CotizacionesService`.
 - NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
