@@ -1,5 +1,6 @@
 let map, marker;
 let mapex, markerext;
+let cotizacionSaveInProgress = false;
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
 const catalogo_clientes = document.querySelector("#txtClientes");
@@ -2062,6 +2063,8 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
 
 $("#cotizacionCreate").on("submit", function (e) {
     e.preventDefault();
+    if (cotizacionSaveInProgress) return false;
+
     var form = $(this);
     var url = form.attr("action");
 
@@ -2364,6 +2367,10 @@ $("#cotizacionCreate").on("submit", function (e) {
         multipartData.append(key, formData[key]);
     });
 
+    cotizacionSaveInProgress = true;
+    const saveButton = document.getElementById("btnGuardarViaje");
+    if (saveButton) saveButton.disabled = true;
+
     $.ajax({
         url: url,
         type: "post",
@@ -2371,43 +2378,47 @@ $("#cotizacionCreate").on("submit", function (e) {
         processData: false,
         contentType: false,
         beforeSend: function () {},
-        success: function (data) {
-            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
-                function () {
-                    if (data.TMensaje == "success") {
-                        localStorage.setItem(
-                            "numContenedor",
-                            formData["num_contenedor"],
-                        );
-                        initFileUploader();
-                        var uuid = localStorage.getItem("uuid");
-                        if (uuid) {
-                            setTimeout(() => {
-                                document
-                                    .getElementById("noticeFileUploader")
-                                    .classList.add("d-none");
-                                document
-                                    .getElementById("fileUploaderContainer")
-                                    .classList.remove("d-none");
-                            }, 3000);
+        success: async function (data) {
+            try {
+                if (data.TMensaje == "success") {
+                    localStorage.setItem(
+                        "numContenedor",
+                        formData["num_contenedor"],
+                    );
 
-                            if (form.data("sgtCotizacionAction") != "editar") {
-                                form.attr(
-                                    "action",
-                                    `/cotizaciones/single/update/${data.folio}`,
-                                );
-                                form.attr("sgt-cotizacion-action", "editar");
-                                form.data("sgtCotizacionAction", "editar");
-                            }
-                        } else {
-                            location.reload();
+                    var uuid = localStorage.getItem("uuid");
+                    if (uuid) {
+                        if (form.data("sgtCotizacionAction") != "editar") {
+                            form.attr(
+                                "action",
+                                `/cotizaciones/single/update/${data.folio}`,
+                            );
+                            form.attr("sgt-cotizacion-action", "editar");
+                            form.data("sgtCotizacionAction", "editar");
                         }
+
+                        await reinicializarFileUploader();
+                        document
+                            .getElementById("noticeFileUploader")
+                            ?.classList.add("d-none");
+                        document
+                            .getElementById("fileUploaderContainer")
+                            ?.classList.remove("d-none");
                         limpiarEstadoDocumentos();
+                    } else {
+                        location.reload();
                     }
-                },
-            );
+                }
+
+                await Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+            } finally {
+                cotizacionSaveInProgress = false;
+                if (saveButton) saveButton.disabled = false;
+            }
         },
         error: function () {
+            cotizacionSaveInProgress = false;
+            if (saveButton) saveButton.disabled = false;
             Swal.fire(
                 "Error",
                 "Ha ocurrido un error, intentelo nuevamente",

@@ -1,4 +1,5 @@
 let documentosPendientes = false;
+let fileUploaderInitPromise = null;
 var _token = document
     .querySelector('meta[name="csrf-token"]')
     .getAttribute("content");
@@ -133,6 +134,7 @@ function initSingleFileUploader(config, preloadFile = null) {
     }
 
     input.fileuploader({
+        enableApi: true,
         limit: 1,
 
         addMore: false,
@@ -175,32 +177,44 @@ function initSingleFileUploader(config, preloadFile = null) {
 |--------------------------------------------------------------------------
 */
 
-async function initFileUploader() {
-    const numContenedor = localStorage.getItem("numContenedor");
+function initFileUploader() {
+    if (fileUploaderInitPromise) return fileUploaderInitPromise;
 
-    let archivos = [];
+    fileUploaderInitPromise = (async () => {
+        const numContenedor = localStorage.getItem("numContenedor");
+        const archivos = numContenedor ? await consultarArchivos(numContenedor) : [];
 
-    // consultar existentes
-    if (numContenedor) {
-        archivos = await consultarArchivos(numContenedor);
+        Object.keys(documentosConfig).forEach((key) => {
+            const config = documentosConfig[key];
+            const archivoExistente = archivos.find(
+                (file) => file.fileCode === config.fileCode,
+            );
+            initSingleFileUploader(
+                config,
+                archivoExistente ? generarPreloadArchivo(archivoExistente) : null,
+            );
+        });
+    })().finally(() => {
+        fileUploaderInitPromise = null;
+    });
+
+    return fileUploaderInitPromise;
+}
+
+async function reinicializarFileUploader() {
+    // Esperar cualquier consulta inicial para no dejar varias inicializaciones
+    // compitiendo por el mismo input.
+    if (fileUploaderInitPromise) {
+        await fileUploaderInitPromise;
     }
 
-    Object.keys(documentosConfig).forEach((key) => {
-        const config = documentosConfig[key];
-
-        // buscar archivo existente
-        const archivoExistente = archivos.find(
-            (f) => f.fileCode === config.fileCode,
-        );
-
-        let preload = null;
-
-        if (archivoExistente) {
-            preload = generarPreloadArchivo(archivoExistente);
-        }
-
-        initSingleFileUploader(config, preload);
+    Object.values(documentosConfig).forEach((config) => {
+        const input = document.querySelector(config.input);
+        const instance = input && $.fileuploader.getInstance(input);
+        if (instance) instance.destroy();
     });
+
+    await initFileUploader();
 }
 
 /*
