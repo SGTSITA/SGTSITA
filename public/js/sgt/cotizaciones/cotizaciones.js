@@ -1179,14 +1179,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Agregar evento de cambio a los inputs
-    pesoReglamentarioInput.addEventListener("input", calcularSobrepeso);
-    pesoContenedorInput.addEventListener("input", calcularSobrepeso);
-    pesoContenedorInput.addEventListener("input", calcularSobrepeso);
-    pesoContenedorInput.addEventListener("input", valorSobrePrecio);
+    pesoReglamentarioInput?.addEventListener("input", calcularSobrepeso);
+    pesoContenedorInput?.addEventListener("input", calcularSobrepeso);
+    pesoContenedorInput?.addEventListener("input", valorSobrePrecio);
 
     var sobrepesoViajeInput = document.getElementById("sobrepeso_viaje");
 
     function valorSobrePrecio() {
+        if (!sobrepesoInput || !precioSobrePesoInput || !precioToneladaInput) return;
         // Obtener el valor de Sobrepeso
         var sobrepeso = parseFloat(sobrepesoInput.value.replace(/,/g, "")) || 0;
 
@@ -1201,16 +1201,19 @@ document.addEventListener("DOMContentLoaded", function () {
         precioToneladaInput.value = moneyFormat(resultado);
 
         //Tomar en cuenta el sobrepeso de todos los contenedores. Para obtener el sobrepeso del viaje
-        let sobrePeso = reverseMoneyFormat(sobrepesoViajeInput.value);
-        precioToneladaViajeInput.value = moneyFormat(
-            sobrePeso * precioSobrePeso,
-        );
+        if (sobrepesoViajeInput && precioToneladaViajeInput) {
+            let sobrePeso = reverseMoneyFormat(sobrepesoViajeInput.value);
+            precioToneladaViajeInput.value = moneyFormat(
+                sobrePeso * precioSobrePeso,
+            );
+        }
 
         // Calcular el total
         calcularTotal();
     }
 
     function valorSobrePrecioProveedor() {
+        if (!sobrePesoProveedor || !precioSobrePesoProveedor || !precioToneladaProveedor) return;
         // Obtener el valor de Sobrepeso
         var sobrepeso =
             parseFloat(sobrePesoProveedor.value.replace(/,/g, "")) || 0;
@@ -1230,6 +1233,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     // Función para calcular el sobrepeso
     function calcularSobrepeso() {
+        if (!pesoReglamentarioInput || !pesoContenedorInput) return;
         var pesoReglamentario = parseFloat(pesoReglamentarioInput.value) || 0;
         var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
 
@@ -2375,9 +2379,9 @@ $("#cotizacionCreate").on("submit", function (e) {
                             "numContenedor",
                             formData["num_contenedor"],
                         );
+                        initFileUploader();
                         var uuid = localStorage.getItem("uuid");
                         if (uuid) {
-                            //   initFileUploader();
                             setTimeout(() => {
                                 document
                                     .getElementById("noticeFileUploader")
@@ -2392,6 +2396,7 @@ $("#cotizacionCreate").on("submit", function (e) {
                                     "action",
                                     `/cotizaciones/single/update/${data.folio}`,
                                 );
+                                form.attr("sgt-cotizacion-action", "editar");
                                 form.data("sgtCotizacionAction", "editar");
                             }
                         } else {
