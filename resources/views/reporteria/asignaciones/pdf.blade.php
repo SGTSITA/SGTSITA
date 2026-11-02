@@ -54,7 +54,7 @@
 
 @php
     $empresaActual = $user?->Empresa ?? ($cotizacion?->Empresa ?? null);
-    $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
+    $debeSepararUnidades = !empty($separarUnidades);
 @endphp
 
 {{-- Empresa y fecha (siempre visibles) --}}
@@ -64,7 +64,7 @@
     <h4 style="margin-top: 5px;">Viajes</h4>
 </div>
 
-@if (!$esEmpresaGlobal)
+@if (!$debeSepararUnidades)
     {{-- MODO TRADICIONAL (Configuración Global = 0): Diseño 100% original e intacto --}}
     <table class="{{ !isset($isExcel) ? 'tabla-viajes' : '' }}">
         <thead>

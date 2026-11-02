@@ -73,6 +73,14 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @php
+                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                @endphp
+                                @if ($esEmpresaGlobal)
+                                @php
+                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                @endphp
+                                @if ($esEmpresaGlobal)
                                 <div class="col-md-2">
                                     <label for="id_equipo">Unidad / Equipo</label>
                                     <select name="id_equipo" id="id_equipo" class="form-control">
@@ -87,6 +95,8 @@
                                         @endif
                                     </select>
                                 </div>
+                                @endif
+                                @endif
                                 <div class="col-md-2">
                                     <label for="numero_edo_cuenta">Num. Edo. Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
