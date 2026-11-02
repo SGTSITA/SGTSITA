@@ -1,7 +1,8 @@
 # MEMORY.md — SGTSITA
-Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
+Memoria viva del proyecto entre sesiones (máximo ~60 líneas).
 
 ## Estado actual
+<<<<<<< Updated upstream
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.
 - Módulos activos: Cotizaciones, Viajes, Contenedores, Planeación, Monitoreo, Gastos y Liquidaciones.
 - Spec 018 (Complementos y Ajustes de Liquidación): Submódulo `/liquidaciones/ajustes` ("Ajustes de Liquidación") en el menú lateral. Permite registrar liquidaciones complementarias vinculadas a una liquidación previa sin modificar el histórico cerrado. Captura dinámica de Percepciones (sueldo, viáticos, reembolsos, bonos) y Deducciones (abonos a préstamos/adelantos con amortización en `pagos_prestamos`, descuentos). Cálculo de neto en tiempo real con salida y validación bancaria vía `BancosService::registrarMovimiento` (polimorfismo a `LiquidacionAjuste`). Generación de comprobante oficial en PDF y listado en AG Grid.
@@ -45,14 +46,31 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - `window.initSgtDateRange()` y `/sgt/fechas/periodos-cotizaciones`: calcula dinámicamente `ejercicio_ini_bd` (BD `cotizaciones`) y `ejercicio_fin_bd` (`max(max_bd, anio_actual + 1)`). Elimina años inválidos (2001) y previene mantenimiento anual. En acciones rápidas solo muestra: Últimos 7 días, Últimos 30 días, Este mes, Mes anterior y Personalizado (excluyendo Hoy, Ayer y años estáticos del menú rápido). Soportado tanto en `layouts.app` como en `layouts.usuario_externo` para vistas de clientes (`/viajes/mis-viajes`, `/viajes/documents`, reportería externa).
 - `/reporteria/utilidad`: botón "Ver Gastos" muestra gastos indirectos del periodo si no hay viajes o contenedor seleccionado.
 - `EquipoService` y accesor `$equipo->texto_select`: unifican consultas (`getTractocamiones()`) y estandarizan el formato visual de unidades a `id_equipo - marca` en todos los selectores de gastos y reportería (Principio 7 Constitución).
+=======
+- Plataforma ERP SGTSITA (Gologi Pro) 100% operativa (Metronic UI, Laravel 9, MySQL 8, Docker).
+- **Spec 019 (Thin Controllers & Reusable Services) — COMPLETADA AL 100% (Fases 1 a 6):**
+  * **Fase 1 (Catálogos):** `ClienteService`, `ProveedorService`, `OperadorService`, `PrestamoService`, `EquipoService` + FormRequests.
+  * **Fase 2 (Tesorería & CxC/CxP):** `BancosService`, `GastosService`, `CuentasCobrarService`, `CuentasPagarService`.
+  * **Fase 3 (Liquidaciones & Ajustes):** `LiquidacionesService` centraliza balance real, amortizaciones y bancos.
+  * **Fase 4 (Operaciones & Planeación):** `CotizacionesService` y `PlaneacionService` (`PlaneacionController` 2,473 -> 420 líneas; `CotizacionesLocalesController` 173 -> 60 líneas).
+  * **Fase 5 (Portales & Monitoreo):** `CostosViajeMepService`, `MepService`, `CoordenadasService` (`CostosViajeMEPController` 407 -> 154 líneas; `MepController` 570 -> 216 líneas; `ExternosController` y `ConboysController` desacoplados).
+  * **Fase 6 (Validación):** 37 archivos verificados sin errores sintácticos (`php -l`), cachés limpias (`optimize:clear`) y 100% de rutas resueltas. API móvil protegida sin cambios de contrato.
+- Submódulo `/liquidaciones/ajustes` para complementos y ajustes independientes.
+- Respaldo completo del sistema disponible vía `php artisan backup:sistema-completo`.
 
-## Aprendizajes y errores a evitar
-- NUNCA modificar la respuesta JSON de endpoints en `routes/api.php` sin verificar el impacto en Flutter (`operador_appsgt`).
+## Decisiones arquitectónicas (y por qué)
+- `PlaneacionService::anularPlaneacion`: centraliza reversión atómica de asignación, devolución bancaria de anticipos y cancelación de gastos asociados tanto para el panel web como para la app móvil Flutter.
+- `CotizacionesService`: unifica la lógica de creación individual, en lote y conversiones Full / Local-Foráneo para evitar duplicación entre controladores web y locales.
+- Deducciones en liquidaciones y ajustes amortizan préstamos/adelantos activos actualizando `saldo_actual` y registrando `pagos_prestamos`.
+- Transacciones `DB::transaction()` obligatorias en todo cálculo y mutación de saldo.
+>>>>>>> Stashed changes
+
+## Errores a evitar
+- NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
-- En Docker vs Host en Windows: para comandos Artisan que interactúan con MySQL o requieren conexión de red del contenedor (`host.docker.internal`), ejecutar `docker compose exec app php artisan <comando>`.
-- En liquidaciones y ajustes, validar siempre que los montos de conceptos sean mayores a cero y que el egreso neto cuente con cuenta bancaria asignada.
+- Validar siempre que el monto de conceptos sea positivo y que haya cuenta bancaria asignada cuando exista desembolso neto.
+- Al renderizar PDFs con Pdf::loadView, asegurar compatibilidad dual de variables (cotizacion/cotizaciones) y blindar blades con operadores null-safe (?->) y try-catch para no interrumpir transacciones de guardado.
 
 ## Próximos pasos
 - [ ] Validar en producción telemetría continua de Naanix y retirar `SISGPSTrait.php`.
 - [ ] Spec 001: Módulo de control y reportes de combustible por unidad de transporte.
-- [ ] Ejecutar `php artisan fix:gasto-fscu8106019` y `fix:gasto-msmu7292298` en producción.
