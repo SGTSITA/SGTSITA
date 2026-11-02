@@ -975,9 +975,116 @@ class CotizacionesService
         });
     }
 
-    /**
-     * Actualiza una cotización local individual.
-     */
+    /** Procesa un archivo adjunto de la solicitud del viaje. */
+    public function procesarDocumento($file, int $cotizacionId, int $idDoc, string $tipo, ?string $folio = null): void
+    {
+        if (!$file || !$file->isValid()) {
+            throw new \RuntimeException('El archivo del documento no se recibió correctamente.');
+        }
+
+        $cotizacion = Cotizaciones::findOrFail($cotizacionId);
+        $doc = DocumCotizacion::where('id', $idDoc)
+            ->where('id_cotizacion', $cotizacionId)
+            ->firstOrFail();
+
+        $campoArchivo = match ($tipo) {
+            'BoletaLib' => 'boleta_liberacion',
+            'Doda' => 'doda',
+            'CCP' => 'doc_ccp',
+            default => throw new \InvalidArgumentException("Tipo de documento no soportado: {$tipo}"),
+        };
+
+        $directorio = public_path("cotizaciones/cotizacion{$cotizacionId}");
+        if (!File::isDirectory($directorio)) {
+            File::makeDirectory($directorio, 0755, true);
+        }
+
+        $extension = preg_replace('/[^a-zA-Z0-9]/', '', $file->getClientOriginalExtension());
+        $nombreArchivo = bin2hex(random_bytes(12)) . ($extension !== '' ? ".{$extension}" : '');
+        $file->move($directorio, $nombreArchivo);
+
+        $doc->{$campoArchivo} = $nombreArchivo;
+        if ($tipo === 'CCP') {
+            $doc->ccp = 'si';
+        }
+
+        $usuario = auth()->user();
+        $esCliente = $usuario && $usuario->id_cliente != 0;
+        if ($esCliente && $tipo === 'BoletaLib' && filled($folio)) {
+            $doc->num_boleta_liberacion = $folio;
+        } elseif ($esCliente && $tipo === 'Doda' && filled($folio)) {
+            $doc->num_doda = $folio;
+        }
+        $doc->save();
+
+        if ($cotizacion->tipo_viaje_seleccion === 'local') {
+            $this->confirmarDocumentosLocal($cotizacionId);
+        } elseif ($esCliente) {
+            if (!empty($cotizacion->cliente?->correo)) {
+                event(new \App\Events\GenericNotificationEvent(
+                    [$cotizacion->cliente->correo],
+                    "Se cargó {$tipo}: {$doc->num_contenedor}",
+                    "Se cargó el documento {$tipo} del contenedor {$doc->num_contenedor}."
+                ));
+            }
+            event(new \App\Events\ConfirmarDocumentosEvent($cotizacionId));
+            if ($cotizacion->estatus !== 'Documentos Faltantes') {
+                event(new \App\Events\NotificaNuevoDocumentoEvent($cotizacion, $tipo));
+            }
+        }
+
+        $this->notificarDocumentoSubido($doc->id, $cotizacionId, $nombreArchivo, $esCliente, $folio, $tipo);
+    }
+
+    public function notificarDocumentoSubido(int $idDoc, int $cotizacionId, string $nombreArchivo, bool $esCliente, ?string $folio, string $tipo): void
+    {
+        $doc = DocumCotizacion::with('cotizacion')->find($idDoc);
+        if (!$doc) {
+            return;
+        }
+
+        app(\App\Services\NotificacionesService::class)->notificarDocumentoSubido(
+            urlRepo: $tipo,
+            empresaId: $doc->cotizacion->id_empresa ?? null,
+            id_cliente: $doc->cotizacion->id_cliente ?? null,
+            id_proveedor: $doc->cotizacion->id_proveedor ?? null,
+            nombreArchivo: $nombreArchivo,
+            modelo: $doc,
+            url: asset("cotizaciones/cotizacion{$cotizacionId}/{$nombreArchivo}"),
+            data: [
+                'docum_cotizacion_id' => $doc->id,
+                'cotizacion_id' => $doc->id_cotizacion,
+                'contenedor' => $doc->num_contenedor ?? null,
+                'folio' => $folio,
+                'es_cliente' => $esCliente,
+            ]
+        );
+    }
+
+    public function confirmarDocumentosLocal(int $cotizacionId): void
+    {
+        try {
+            $doc = DocumCotizacion::where('id_cotizacion', $cotizacionId)->first();
+            $cotizacion = Cotizaciones::where('id', $cotizacionId)
+                ->where('estatus', 'Documentos Faltantes')
+                ->where('tipo_viaje_seleccion', 'local')
+                ->first();
+
+            if ($cotizacion && $doc && $doc->doda && $doc->boleta_liberacion) {
+                $cotizacion->estatus = 'Local';
+                $cotizacion->estatus_maniobra_id = 1;
+                $cotizacion->en_patio = 0;
+                $cotizacion->save();
+            }
+        } catch (\Throwable $error) {
+            Log::channel('daily')->warning('No fue posible confirmar documentos del viaje local.', [
+                'cotizacion' => $cotizacionId,
+                'error' => $error->getMessage(),
+            ]);
+        }
+    }
+
+    /** Actualiza una cotización local individual. */
     public function singleUpdateLocal(int $id, array $data, int $idEmpresa, $user): void
     {
         DB::transaction(function () use ($id, $data, $idEmpresa) {

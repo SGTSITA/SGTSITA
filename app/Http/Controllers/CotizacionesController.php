@@ -1284,9 +1284,9 @@ public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
 
         $file_bolteta_lib=    $request->file('boleta_liberacion_file');
         if($file_bolteta_lib){
-      $this->procesarDocumento(
+      $this->CotizacionesService->procesarDocumento(
     $file_bolteta_lib,
-    $cotizaciones,
+    (int) $cotizaciones->id,
     $doc_cotizaciones->id,
     'BoletaLib',
     $request->numBoleta
@@ -1299,9 +1299,9 @@ public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
 
 
 
-  $this->procesarDocumento(
+  $this->CotizacionesService->procesarDocumento(
    $file_doda,
-    $cotizaciones,
+    (int) $cotizaciones->id,
     $doc_cotizaciones->id,
     'Doda',
     $request->numDoda
@@ -1310,9 +1310,9 @@ public function updateKmDiesel(Request $request, Cotizaciones $cotizacion)
 
    $file_ccp=  $request->file('ccp_file');
     if($file_ccp){
-$this->procesarDocumento(
+$this->CotizacionesService->procesarDocumento(
     $file_ccp,
-    $cotizaciones,
+    (int) $cotizaciones->id,
     $doc_cotizaciones->id,
     'CCP'
 );
@@ -3146,20 +3146,20 @@ $this->procesarDocumento(
 
             } else {
                 Log::channel('daily')->info('Maniobra local adjuntar documentos', ['cotizacion' => $id_cot, 'tipoViaje' => $tipoViajecontenedor]);
-                self::confirmarDocumentoslocal($id_cot);
+                $this->CotizacionesService->confirmarDocumentosLocal((int) $id_cot);
 
             }
 
 
             //enviar notificacio segun tipo de documento en base a reglas
             if (!empty($update)) {
-                $this->sendNotificacionDocs(
-                    idDocum: $idDocum,
-                    id_cot: $id_cot,
-                    nameArchivo: $item['name'],
-                    esCliente: $esCliente,
+                $this->CotizacionesService->notificarDocumentoSubido(
+                    idDoc: (int) $idDocum,
+                    cotizacionId: (int) $id_cot,
+                    nombreArchivo: $item['name'],
+                    esCliente: (bool) $esCliente,
                     folio: $r->folio ?? null,
-                    urlRepo: $r->urlRepo
+                    tipo: $r->urlRepo
                 );
             }
 
@@ -3168,32 +3168,6 @@ $this->procesarDocumento(
         }
         return response()->json($upload);
         exit;
-    }
-
-    private function sendNotificacionDocs($idDocum, $id_cot, $nameArchivo, $esCliente, $folio,$urlRepo)
-    {
-                      $docActualizado = DocumCotizacion::with('cotizacion')
-                    ->where('id', $idDocum)
-                    ->first();
-$urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
-                if ($docActualizado) {
-                    app(\App\Services\NotificacionesService::class)->notificarDocumentoSubido(
-                        urlRepo: $urlRepo,
-                        empresaId: $docActualizado->cotizacion->id_empresa ?? null,
-                        id_cliente: $docActualizado->cotizacion->id_cliente ?? null,
-                        id_proveedor: $docActualizado->cotizacion->id_proveedor ?? null,
-                        nombreArchivo: $nameArchivo,
-                        modelo: $docActualizado,
-                        url: $urlDocumento,
-                        data: [
-                            'docum_cotizacion_id' => $docActualizado->id,
-                            'cotizacion_id' => $docActualizado->id_cotizacion,
-                            'contenedor' => $docActualizado->num_contenedor ?? null,
-                            'folio' => $folio ?? null,
-                            'es_cliente' => $esCliente ?? false,
-                        ]
-                    );
-                }
     }
 
     public static function confirmarDocumentos($cotizacion)
@@ -3508,6 +3482,7 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
             $lock->release();
         }
     }
+
     public function getPeriodosCotizaciones(\App\Services\CotizacionesService $cotizacionesService)
     {
         return response()->json($cotizacionesService->getPeriodosCotizaciones());
