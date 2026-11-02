@@ -75,11 +75,11 @@
 
     <body>
         @php
-            $empresaActual = $user?->Empresa ?? null;
+            $empresaActual = data_get($user, 'Empresa');
             $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
         @endphp
 
-        <h4>Empresa: {{ optional($user?->Empresa)->nombre ?? 'SGT' }}</h4>
+        <h4>Empresa: {{ data_get($user, 'Empresa.nombre', 'SGT') }}</h4>
         <h4>Estatus Documentos</h4>
         <h5 style="text-align: right">Fecha: {{ date('d-m-Y') }}</h5>
 

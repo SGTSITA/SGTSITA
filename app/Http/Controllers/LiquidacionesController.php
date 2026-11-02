@@ -287,7 +287,7 @@ class LiquidacionesController extends Controller
     {
         $datos = $this->liquidacionesService->getDatosComprobantePago((int) $r->IdOperacion, Auth::user());
 
-        $pdf = Pdf::loadView('liquidaciones.comprobante_pago', $datos);
+        $pdf = Pdf::loadView('liquidaciones.pdf', $datos);
         return $pdf->stream('utilidades_rpt.pdf');
     }
 
