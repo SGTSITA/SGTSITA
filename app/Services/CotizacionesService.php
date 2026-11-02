@@ -1142,15 +1142,31 @@ class CotizacionesService
     }
 
     /** Actualiza una cotización local individual. */
-    public function singleUpdateLocal(int $id, array $data, int $idEmpresa, $user): void
+    public function singleUpdateLocal(int $id, array $data, int $idEmpresa, $user): array
     {
-        DB::transaction(function () use ($id, $data, $idEmpresa) {
+        return DB::transaction(function () use ($id, $data, $idEmpresa) {
             $cot = Cotizaciones::findOrFail($id);
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
             $contenedorOriginal = $doc->num_contenedor;
             $idEmpresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
             $idTransportista = !empty($data['id_transportista']) ? (int) $data['id_transportista'] : null;
+            $numero = static function ($valor, bool $entero = false) {
+                if ($valor === null || trim((string) $valor) === '' || strtolower(trim((string) $valor)) === 'null') {
+                    return 0;
+                }
+
+                if (!is_numeric($valor)) {
+                    return 0;
+                }
+
+                return $entero ? (int) $valor : (float) $valor;
+            };
+            $fecha = static function ($valor) {
+                if ($valor === null) return null;
+                $valor = trim((string) $valor);
+                return $valor === '' || strtolower($valor) === 'null' ? null : $valor;
+            };
 
             $cot->id_subcliente = $data['id_subcliente'] ?? null;
             $cot->id_empresa = $idEmpresaFinal;
@@ -1161,22 +1177,22 @@ class CotizacionesService
             $cot->origen = $data['origen'] ?? $cot->origen;
             $cot->tamano = $data['tamano'] ?? $cot->tamano;
             $cot->peso_contenedor = $data['peso_contenedor'] ?? $cot->peso_contenedor;
-            $cot->fecha_modulacion = $data['fecha_modulacion'] ?? $cot->fecha_modulacion;
+            $cot->fecha_modulacion = $fecha($data['fecha_modulacion'] ?? null);
             $cot->puerto = $data['puerto'] ?? null;
-            $cot->fecha_ingreso_puerto = $data['fecha_ingreso_puerto'] ?? null;
-            $cot->fecha_salida_puerto = $data['fecha_salida_puerto'] ?? null;
-            $cot->dias_estadia = $data['dias_estadia'] ?? 0;
-            $cot->tarifa_estadia = $data['tarifa_estadia'] ?? 0;
-            $cot->total_estadia = $data['total_estadia'] ?? 0;
-            $cot->dias_pernocta = $data['dias_pernocta'] ?? 0;
-            $cot->tarifa_pernocta = $data['tarifa_pernocta'] ?? 0;
-            $cot->total_pernocta = $data['total_pernocta'] ?? 0;
-            $cot->total_general = $data['total_general'] ?? 0;
+            $cot->fecha_ingreso_puerto = $fecha($data['fecha_ingreso_puerto'] ?? null);
+            $cot->fecha_salida_puerto = $fecha($data['fecha_salida_puerto'] ?? null);
+            $cot->dias_estadia = $numero($data['dias_estadia'] ?? null, true);
+            $cot->tarifa_estadia = $numero($data['tarifa_estadia'] ?? null);
+            $cot->total_estadia = $numero($data['total_estadia'] ?? null);
+            $cot->dias_pernocta = $numero($data['dias_pernocta'] ?? null, true);
+            $cot->tarifa_pernocta = $numero($data['tarifa_pernocta'] ?? null);
+            $cot->total_pernocta = $numero($data['total_pernocta'] ?? null);
+            $cot->total_general = $numero($data['total_general'] ?? null);
             $cot->motivo_demora = $data['motivo_demora'] ?? null;
-            $cot->liberado = $data['liberado'] ?? 0;
-            $cot->fecha_liberacion = $data['fecha_liberacion'] ?? null;
-            $cot->responsable = $data['responsable'] ?? null;
-            $cot->observaciones = $data['observaciones'] ?? null;
+            $cot->liberado = $numero($data['liberado'] ?? null, true);
+            $cot->fecha_liberacion = $fecha($data['fecha_liberacion'] ?? null);
+            $cot->responsable = ($data['responsable'] ?? null) === 'null' ? null : ($data['responsable'] ?? null);
+            $cot->observaciones = ($data['observaciones'] ?? null) === 'null' ? null : ($data['observaciones'] ?? null);
             $cot->save();
 
             $doc->id_empresa = $idEmpresaFinal;
@@ -1185,6 +1201,12 @@ class CotizacionesService
                 $doc->num_contenedor = $data['num_contenedor'];
             }
             $doc->save();
+
+            return [
+                'cotizacion_id' => $cot->id,
+                'docum_cotizacion_id' => $doc->id,
+                'num_contenedor' => $doc->num_contenedor,
+            ];
         });
     }
 

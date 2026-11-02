@@ -3422,11 +3422,16 @@ $this->CotizacionesService->procesarDocumento(
     public function singleUpdatelocal(Request $request, $id)
     {
         try {
-            $this->CotizacionesService->singleUpdateLocal((int) $id, $request->all(), (int) Auth::user()->id_empresa, Auth::user());
+            $res = $this->CotizacionesService->singleUpdateLocal((int) $id, $request->all(), (int) Auth::user()->id_empresa, Auth::user());
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Cotización actualizada correctamente.'
+                'success' => true,
+                'message' => 'Cotización actualizada correctamente.',
+                'id' => $res['docum_cotizacion_id'],
+                'cotizacion_id' => $res['cotizacion_id'],
+                'docum_cotizacion_id' => $res['docum_cotizacion_id'],
+                'num_contenedor' => $res['num_contenedor'],
             ]);
         } catch (\Throwable $e) {
             return response()->json([
