@@ -66,6 +66,7 @@ Memoria viva del proyecto entre sesiones (máximo ~60 líneas).
 >>>>>>> Stashed changes
 
 ## Errores a evitar
+- En `/viajes/solicitud/simple`, validar folios documentales solo al adjuntar archivos sobre viajes existentes, inicializar FileUploader después del guardado y proteger scripts compartidos ante campos ausentes. El procesamiento de archivos, persistencia, confirmaciones y notificaciones deben residir en `CotizacionesService`; el controlador solo delega.
 - NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
 - Validar siempre que el monto de conceptos sea positivo y que haya cuenta bancaria asignada cuando exista desembolso neto.
