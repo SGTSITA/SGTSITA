@@ -96,6 +96,7 @@ class CatCuentasContablesSeeder extends Seeder
             ['codigo' => '1.1.2.3.001', 'nombre' => 'Préstamos Otorgados a Unidades / Operadores', 'nivel' => 5, 'padre' => '1.1.2.3', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '1.1.2.3.002', 'nombre' => 'Gastos por Comprobar', 'nivel' => 5, 'padre' => '1.1.2.3', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '1.1.2.3.003', 'nombre' => 'Anticipos a Socios por Liquidar', 'nivel' => 5, 'padre' => '1.1.2.3', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
+            ['codigo' => '1.1.2.3.004', 'nombre' => 'Otros Deudores Diversos', 'nivel' => 5, 'padre' => '1.1.2.3', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => true],
 
             // Gastos Pagados por Anticipado
             ['codigo' => '1.1.5.1', 'nombre' => 'Gastos Pagados por Anticipado', 'nivel' => 4, 'padre' => '1.1.5', 'rubro' => 'activo', 'naturaleza' => 'deudora', 'es_afectable' => false],

@@ -2,350 +2,192 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\StoreSubclienteRequest;
+use App\Http\Requests\UpdateClientRequest;
 use App\Models\Client;
-use App\Models\Subclientes;
-use App\Models\User;
 use App\Models\Empresas;
-use App\Models\ClientEmpresa;
+use App\Models\Subclientes;
+use App\Services\ClienteService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
-/**
- * Class ClientController
- * @package App\Http\Controllers
- */
 class ClientController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    protected ClienteService $clienteService;
 
-    public function index()
+    public function __construct(ClienteService $clienteService)
     {
+        $this->clienteService = $clienteService;
+    }
 
-        $clients = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        $subclientes = Subclientes::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+    public function index(): View
+    {
+        $clients = $this->clienteService->getClientsByEmpresa();
+        $subclientes = $this->clienteService->getSubclientesByEmpresa();
 
         return view('client.index', compact('clients', 'subclientes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function create(): View
     {
         $client = new Client();
-        // Obtener todas las empresas
-        $empresas = Empresas::All();
+        $empresas = Empresas::all();
 
         return view('client.create', compact('client', 'empresas'));
     }
-    ///////////
 
-    /**
-        * Store a newly created resource in storage.
-        *
-        * @param  \Illuminate\Http\Request $request
-        * @return \Illuminate\Http\Response
-        */
-    public function store(Request $request)
+    public function store(StoreClientRequest $request): JsonResponse
     {
         try {
-            DB::beginTransaction();
-            $this->validate($request, [
-                'nombre' => 'required',
-                'correo' => 'required',
-                'telefono' => 'required'
+            $result = $this->clienteService->storeClient($request->validated());
+            $welcomePassword = $result['password'];
+
+            return response()->json([
+                "TMensaje" => "success",
+                "Titulo" => "Cliente creado correctamente",
+                "Mensaje" => "El cliente se ha creado con exito. Contraseña de acceso generada y enviada correctamente: $welcomePassword"
             ]);
-
-            $fechaActual = date('Y-m-d');
-
-            $client = new Client();
-            $client->id_empresa = auth()->user()->id_empresa;
-
-            $client->nombre = $request->get('nombre');
-            $client->correo = $request->get('correo');
-            $client->telefono = $request->get('telefono');
-            $client->direccion = $request->get('direccion');
-            $client->regimen_fiscal = $request->get('regimen_fiscal');
-            $client->rfc = $request->get('rfc');
-            $client->nombre_empresa = $request->get('nombre_empresa');
-            $client->fecha = $fechaActual;
-            $client->is_active = 1;
-            $client->save();
-
-            ClientEmpresa::create([
-                'id_client' => $client->id,
-                'id_empresa' => auth()->user()->id_empresa
-            ]);
-
-            //Crear usuario para el cliente
-            $welcomePassword = strtoupper(uniqid());
-            $clientUser['name'] = $request->get('nombre');
-            $clientUser['email'] = $request->get('correo');
-            $clientUser['password'] = Hash::make($welcomePassword);
-            $clientUser['id_empresa'] = auth()->user()->id_empresa;
-            $clientUser['id_cliente'] = $client->id;
-
-            $user = User::create($clientUser);
-            $user->assignRole([3]); // Se asgna ROL de cliente
-            DB::commit();
-
-            $emails = [$request->get('correo'),env('MAIL_NOTIFICATIONS')];
-            Mail::to($emails)->send(new \App\Mail\WelcomeMail($client, $welcomePassword));
-
-
-
-            return response()->json(["TMensaje" => "success", "Titulo" => "Cliente creado correctamente", "Mensaje" => "El cliente se ha creado con exito. Contraseña de acceso generada y enviada correctamente: $welcomePassword"]);
-            //  Session::flash('success', 'Se ha guardado sus datos con exito, Usuario de acceso generado automaticamente con contraseña: '.$welcomePassword);
-            //return redirect()->back()->with('success', 'Cliente creado correctamente. Proporcione contraseña: '.$welcomePassword);
         } catch (\Throwable $t) {
-            DB::rollback();
-            Log::channel('daily')->info('Error al crear cliente: '.$t->getMessage());
-            return response()->json(["TMensaje" => "error", "Titulo" => "Ocurrio un error", "Mensaje" => $t->getMessage()]);
+            Log::channel('daily')->error('Error al crear cliente: ' . $t->getMessage());
 
-            //Session::flash('warning', 'Error:'.$t->getMessage());
-
-            //return redirect()->back()->with('error', 'No se pudo crear el cliente. '.$t->getMessage());
+            return response()->json([
+                "TMensaje" => "error",
+                "Titulo" => "Ocurrio un error",
+                "Mensaje" => $t->getMessage()
+            ]);
         }
-
-
     }
 
-    /**
-     * Obtiene la lista de clientes del usuario logueado (según la empresa a la que corresponde)
-     */
-    public function get_list()
+    public function get_list(): JsonResponse
     {
-
-        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
-                            ->where('ce.id_empresa', Auth::User()->id_empresa)
-                            ->where('is_active', 1)
-                            ->orderBy('nombre')->get();
-
-        $list = $clientes->map(function ($c) {
-            return [
-                "IdCliente" => $c->id,
-                "Nombre" => $c->nombre,
-                "Correo" => $c->correo,
-                "Telefono" => $c->telefono,
-                "RFC" => $c->rfc,
-                "RegimenFiscal" => $c->regimen_fiscal,
-                "Empresa" => $c->nombre_empresa,
-                "Direccion" => $c->direccion,
-            ];
-        });
+        $list = $this->clienteService->getClientesListForEmpresa();
 
         return response()->json(["list" => $list, "TMensaje" => "success"]);
     }
 
-    /**
-     * Vista disponible unicamente en Modulo Externo de Clientes
-     */
-    public function index_subcliente()
+    public function index_subcliente(): View
     {
         return view('client.cliente_externo');
     }
 
-    public function new_subcliente(Request $request)
+    public function new_subcliente(Request $request): View
     {
         return view('client.new_subclient', ["idClient" => $request->idClient]);
     }
 
-    public function subcliente_list()
+    public function subcliente_list(): View
     {
         return view('client.subcliente_list');
     }
 
-    public function subcliente_list_internal(Request $request)
+    public function subcliente_list_internal(Request $request): View
     {
         $client = Client::where('id', $request->id_client)->first();
+
         return view('client.subcliente_list_internal', ["id_client" => $request->id_client, "client" => $client]);
     }
 
-    public function subcliente_get_list(Request $request)
+    public function subcliente_get_list(Request $request): JsonResponse
     {
-        $subClientes = Subclientes::where('id_cliente', $request->_cliente)->get();
-        $list = $subClientes->map(function ($s) {
-            return [
-                "IdSubCliente" => $s->id,
-                "SubCliente" => $s->nombre,
-                "RFC" => $s->rfc,
-                "NombreComercial" => $s->nombre_empresa,
-                "CorreoElectronico" => $s->correo,
-                "Telefono" => $s->telefono
-            ];
-        });
+        $list = $this->clienteService->getSubclientesByCliente((int)$request->_cliente);
 
         return response()->json(["TMensaje" => "success", "data" => $list]);
     }
 
-    public function store_subclientes(Request $request)
+    public function store_subclientes(StoreSubclienteRequest $request): JsonResponse
     {
-        $this->validate($request, [
-            'nombre' => 'required',
-            'correo' => 'required',
-            'telefono' => 'required'
+        $this->clienteService->storeSubcliente($request->validated());
+
+        return response()->json([
+            "TMensaje" => "success",
+            "Mensaje" => "Se ha creado el cliente correctamente",
+            "Titulo" => "Proceso satisfactorio"
         ]);
-
-        $fechaActual = date('Y-m-d');
-
-        $client = new Subclientes();
-        $client->id_cliente = $request->has('id_client') ? $request->id_client : $request->id_cliente;
-        $client->nombre = $request->get('nombre');
-        $client->correo = $request->get('correo');
-        $client->telefono = $request->get('telefono');
-        $client->direccion = $request->get('direccion');
-        $client->regimen_fiscal = $request->get('regimen_fiscal');
-        $client->rfc = $request->get('rfc');
-        $client->nombre_empresa = $request->get('nombre_empresa');
-        $client->fecha = $fechaActual;
-        $client->save();
-
-        if ($request->has('uuid')) {
-            return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
-        }
-
-        return response()->json(["TMensaje" => "success", "Mensaje" => "Se ha creado el cliente correctamente","Titulo" => "Proceso satisfactorio"]);
-
-
-
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
+    public function show($id): View
     {
-        $client = Client::find($id);
+        $client = Client::findOrFail($id);
 
         return view('client.show', compact('client'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show_edit(Request $request)
+    public function show_edit(Request $request): View
     {
         $subCliente = Subclientes::find($request->id_subcliente);
 
-        return (Auth::User()->id_cliente != 0)
-         ? view('client.cliente_externo', ["subCliente" => $subCliente])
-         : view('client.new_subclient', ["subCliente" => $subCliente, "idClient" => $request->idClient]);
-
-        //  return view('client.cliente_externo', ["subCliente" =>$subCliente]);
+        return (Auth::user()->id_cliente != 0)
+            ? view('client.cliente_externo', ["subCliente" => $subCliente])
+            : view('client.new_subclient', ["subCliente" => $subCliente, "idClient" => $request->idClient]);
     }
 
     public function edit(Request $request)
     {
-        $cliente = Client::find($request->id_client);
+        $cliente = Client::findOrFail($request->id_client);
 
         if ($request->has('toggle_empresa')) {
-            // Gestionar el cambio de estado del switch
-            $idEmpresa = $request->toggle_empresa; // ID de la empresa
-            $checked = $request->checked; // Estado del switch
+            $idEmpresa = (int) $request->toggle_empresa;
+            $checked = (bool) $request->checked;
 
-            if ($checked) {
-                // Crear la relación si está activada
-                DB::table('client_empresa')->updateOrInsert([
-                    'id_client' => $cliente->id,
-                    'id_empresa' => $idEmpresa,
-                ], [
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } else {
-                // Eliminar la relación si está desactivada
-                DB::table('client_empresa')
-                    ->where('id_client', $cliente->id)
-                    ->where('id_empresa', $idEmpresa)
-                    ->delete();
-            }
+            $this->clienteService->toggleEmpresaVinculacion($cliente->id, $idEmpresa, $checked);
 
             return response()->json(['success' => true]);
         }
 
-        // Obtener todas las empresas
         $empresas = Empresas::all();
-
-        // Identificar las empresas vinculadas al cliente
-        $vinculadas = DB::table('client_empresa')
-            ->where('id_client', $cliente->id)
-            ->pluck('id_empresa')
-            ->toArray();
+        $vinculadas = $this->clienteService->getEmpresasVinculadas($cliente->id);
 
         return view('client.create', compact('cliente', 'empresas', 'vinculadas'));
     }
-    public function edit_subclientes($id)
+
+    public function edit_subclientes($id): View
     {
         $subcliente = Subclientes::find($id);
 
-        return (Auth::User()->id_cliente != 0)
-         ? view('client.subclientes', compact('subcliente'))
-         : view('client.new_subclient', compact('subcliente'));
+        return (Auth::user()->id_cliente != 0)
+            ? view('client.subclientes', compact('subcliente'))
+            : view('client.new_subclient', compact('subcliente'));
     }
 
-
-    public function update_subclientes(Request $request, Subclientes $id = null)
+    public function update_subclientes(Request $request, ?Subclientes $id = null): JsonResponse
     {
+        $subclienteId = $request->get('id_subcliente', $id?->id);
 
-        if ($request->has('id_subcliente')) {
-            $id = Subclientes::find($request->id_subcliente);
+        if ($subclienteId) {
+            $this->clienteService->updateSubcliente((int) $subclienteId, $request->except(['_token', 'id_subcliente']));
         }
 
-        $id->update($request->all());
-
-        return response()->json(["TMensaje" => "success","Mensaje" => "SubCliente modificado con exito","Titulo" => "Proceso exitoso!"]);
-
-        Session::flash('edit', 'Se ha editado sus datos con exito');
-        return redirect()->route('clientes.index')
-            ->with('success', 'Client updated successfully');
+        return response()->json([
+            "TMensaje" => "success",
+            "Mensaje" => "SubCliente modificado con exito",
+            "Titulo" => "Proceso exitoso!"
+        ]);
     }
 
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  Client $client
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request)
+    public function update(UpdateClientRequest $request): JsonResponse
     {
-        $client = Client::where('id', $request->idClient);
-        $client->update($request->only('nombre', 'rfc', 'regimen_fiscal', 'nombre_empresa', 'correo', 'telefono', 'direccion'));
+        $this->clienteService->updateClient((int) $request->idClient, $request->validated());
 
-        return response()->json(["Titulo" => "Datos actualizados", "Mensaje" => "Los datos del cliente han sido actualizados correctamente","TMensaje" => "success"]);
+        return response()->json([
+            "Titulo" => "Datos actualizados",
+            "Mensaje" => "Los datos del cliente han sido actualizados correctamente",
+            "TMensaje" => "success"
+        ]);
     }
 
-    /**
-     * @param int $id
-     * @return \Illuminate\Http\RedirectResponse
-     * @throws \Exception
-     */
-    public function destroy($id)
+    public function destroy($id): RedirectResponse
     {
-        $client = Client::find($id)->delete();
+        $this->clienteService->deleteClient((int) $id);
 
         Session::flash('delete', 'Se ha eliminado sus datos con exito');
+
         return redirect()->route('clientes.index')
             ->with('success', 'Client deleted successfully');
     }
-
 }

@@ -171,6 +171,7 @@ const gridOptions = {
                 <thead class="bg-light">
                     <tr>
                         <th>No. Contenedor</th>
+                        <th>Unidad / Tracto</th>
                         <th class="text-right">Sueldo Operador</th>
                         <th class="text-right">Dinero Viaje</th>
                         <th class="text-right">Gastos Justificados</th>
@@ -183,6 +184,7 @@ const gridOptions = {
             html += `
                 <tr>
                     <td><strong class="text-primary">${c.num_contenedor}</strong></td>
+                    <td><span class="badge badge-light-primary">${c.unidad || 'N/A'}</span></td>
                     <td class="text-right">${currencyFormatter(c.sueldo_operador)}</td>
                     <td class="text-right">${currencyFormatter(c.dinero_viaje)}</td>
                     <td class="text-right">${currencyFormatter(c.dinero_justificado)}</td>
@@ -358,16 +360,33 @@ $(document).on("keyup input", "#num_contenedor_search", function () {
     }, 400);
 });
 
+$(document).on("change", "#filtro_unidad", function () {
+    let picker = $("#daterange").data("daterangepicker");
+    if (picker) {
+        getHistorial(
+            picker.startDate.format("YYYY-MM-DD"),
+            picker.endDate.format("YYYY-MM-DD")
+        );
+    } else {
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        const formatDate = (date) => date.toISOString().split("T")[0];
+        getHistorial(formatDate(sevenDaysAgo), formatDate(today));
+    }
+});
+
 function getHistorial(startDate, endDate) {
     let _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let num_contenedor = $("#num_contenedor_search").val() || "";
+    let id_equipo = $("#filtro_unidad").val() || "";
 
     $.ajax({
         url: "/liquidaciones/historial/data",
         type: "post",
-        data: { _token, startDate, endDate, num_contenedor },
+        data: { _token, startDate, endDate, num_contenedor, id_equipo },
         beforeSend: () => {},
         success: (response) => {
             originalHistorialData = response.data || [];

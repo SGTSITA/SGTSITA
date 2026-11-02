@@ -181,7 +181,7 @@ class ReporteriaService
             $Columns = [
                 "numContenedor" => $contenedor,
                 "cliente" => $d->cliente,
-                "precioViaje" => $d->total + $sumGastosExtra,
+                "precioViaje" => (float) $d->total,
                 "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                 "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
                 "pagoOperacion" => $pagoOperacion - $sinJustificar,
@@ -194,7 +194,7 @@ class ReporteriaService
                 "gastosDiferidos" => $gastosDiferidos,
                 "estatusViaje" => ($d->estatus === 'Aprobada' && $d->estatus_planeacion == 1) ? 'Planeada' : $d->estatus,
                 "estatusPago" => $d->estatus_pago == 1 ? 'Pagado' : 'Por Cobrar',
-                "utilidad" => ($d->total + $sumGastosExtra) - ($pagoOperacion + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
+                "utilidad" => ((float) $d->total) - ($pagoOperacion + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
                 "detalleGastos" => $detalleGastos,
                 "id_camion" => $d->id_camion,
                 "unidad" => $textoUnidad,

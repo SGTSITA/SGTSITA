@@ -7,8 +7,19 @@ use App\Models\Asignaciones;
 use App\Models\BitacoraViajeOperador;
 use App\Models\Cotizaciones;
 use App\Models\User;
+use App\Models\Client;
+use App\Models\Subclientes;
+use App\Models\Viajes;
+use App\Models\Empresas;
+use App\Models\Proveedor;
+use App\Models\BitacoraCotizacionesEstatus;
+use App\Traits\CommonTrait as Common;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class CotizacionesService
@@ -123,6 +134,8 @@ class CotizacionesService
             $carta_porte_xml = !empty($cotizacion->carta_porte_xml);
 
             $tipo = "Sencillo";
+            $numAutorizacion = $doc ? ($doc->num_autorizacion ?? '') : '';
+            $pesoContenedor = $cotizacion->peso_contenedor;
 
             // Si es tipo Full, concatenar contenedor secundario
             if (!is_null($cotizacion->referencia_full)) {
@@ -141,6 +154,12 @@ class CotizacionesService
                     $boletaVacio = ($boletaVacio && (!empty($secundaria->img_boleta) || ($secundaria->DocCotizacion && !empty($secundaria->DocCotizacion->boleta_vacio) && $secundaria->DocCotizacion->boleta_vacio === 'si')));
                     $fotoPatio = ($fotoPatio && !empty($secundaria->foto_patio));
                     $contenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                    if (!empty($secundaria->DocCotizacion->num_autorizacion)) {
+                        $numAutorizacion = trim($numAutorizacion . ' ' . $secundaria->DocCotizacion->num_autorizacion);
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor .= ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
 
                 $tipo = "Full";
@@ -195,8 +214,18 @@ class CotizacionesService
                 'edit_url' => route('edit.cotizaciones', $cotizacion->id),
                 'tipo' => $tipo,
                 'referencia_full' => $cotizacion->referencia_full,
-                'peso_contenedor' => $cotizacion->peso_contenedor,
-                'Peso' => $cotizacion->peso_contenedor,
+                'peso_contenedor' => $pesoContenedor,
+                'Peso' => $pesoContenedor,
+                'fecha_entrega' => !empty($cotizacion->fecha_entrega) ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d') : '',
+                'bloque_hora_i' => $cotizacion->bloque_hora_i ?? '',
+                'bloque_hora_f' => $cotizacion->bloque_hora_f ?? '',
+                'bloque_hora_i_local' => $cotizacion->bloque_hora_i_local ?? '',
+                'bloque_hora_f_local' => $cotizacion->bloque_hora_f_local ?? '',
+                'terminal' => $doc ? ($doc->terminal ?? '') : '',
+                'confirmacion_sello' => (bool)$cotizacion->confirmacion_sello,
+                'observaciones' => $cotizacion->observaciones ?? '',
+                'num_autorizacion' => $numAutorizacion,
+                'tipo_viaje_seleccion' => $cotizacion->tipo_viaje_seleccion,
                 'tamano' => $cotizacion->tamano,
                 'precio_viaje' => $cotizacion->precio_viaje,
                 'direccion_entrega' => $cotizacion->direccion_entrega,
@@ -333,6 +362,16 @@ class CotizacionesService
     public function contabilizarProvisionViaje(Cotizaciones $cotizacion): ?\App\Models\Poliza
     {
         return DB::transaction(function () use ($cotizacion) {
+            // Regla de Negocio para viajes Full:
+            // La cotización Secundaria comparte tracto y viaja en conjunto; la deuda y facturación
+            // comercial se centraliza en la cotización Principal. La secundaria no se provisiona para evitar doble ingreso y saldo falso en CxC.
+            if ($cotizacion->jerarquia === 'Secundario') {
+                \App\Models\Poliza::where('origen_tipo', 'cotizacion')
+                    ->where('origen_id', $cotizacion->id)
+                    ->delete();
+                return null;
+            }
+
             $cotizacion->loadMissing(['cliente', 'DocCotizacion.Asignaciones']);
 
             $precioViaje = (float) ($cotizacion->total ?? 0);
@@ -344,6 +383,25 @@ class CotizacionesService
                     + (float) ($cotizacion->otro ?? 0);
             }
 
+            // Si es Principal de un viaje Full, sumarle el importe de la cotización secundaria
+            if (!empty($cotizacion->referencia_full) && $cotizacion->jerarquia === 'Principal') {
+                $secundarias = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->where('id', '!=', $cotizacion->id)
+                    ->get();
+                foreach ($secundarias as $sec) {
+                    $montoSec = (float) ($sec->total ?? 0);
+                    if ($montoSec <= 0) {
+                        $montoSec = (float) ($sec->precio_viaje ?? 0)
+                            + (float) ($sec->burreo ?? 0)
+                            + (float) ($sec->maniobra ?? 0)
+                            + (float) ($sec->estadia ?? 0)
+                            + (float) ($sec->otro ?? 0);
+                    }
+                    $precioViaje += $montoSec;
+                }
+            }
+
             if ($precioViaje <= 0) {
                 return null;
             }
@@ -353,6 +411,21 @@ class CotizacionesService
             $doc = $cotizacion->DocCotizacion;
             if ($doc && $doc->Asignaciones && $doc->Asignaciones->id_camion) {
                 $camionId = $doc->Asignaciones->id_camion;
+            }
+
+            // Resolver referencia de contenedor(es) incluyendo pareja de Full si aplica
+            $contenedor = $doc?->num_contenedor;
+            if (!empty($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+                $contSec = $secundaria?->DocCotizacion?->num_contenedor;
+                if ($contSec && $contenedor) {
+                    $contenedor = "{$contenedor} / {$contSec}";
+                } elseif ($contSec) {
+                    $contenedor = $contSec;
+                }
             }
 
             $polizaService = app(\App\Services\PolizaService::class);
@@ -367,13 +440,18 @@ class CotizacionesService
 
             $fecha = !empty($cotizacion->fecha_entrega)
                 ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
-                : now()->format('Y-m-d');
+                : (!empty($doc?->Asignaciones?->fehca_inicio_guard)
+                    ? Carbon::parse($doc->Asignaciones->fehca_inicio_guard)->format('Y-m-d')
+                    : ($cotizacion->created_at ? $cotizacion->created_at->format('Y-m-d') : now()->format('Y-m-d')));
+
+            $conceptoDetalle = 'Provisión viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
 
             $asientoData = $polizaService->resolverAsientoPorEvento('PROVISION_VIAJE', null, $cotizacion->id_empresa ?? 1, [
                 'id_equipo'   => $camionId,
                 'monto'       => $precioViaje,
                 'fecha'       => $fecha,
-                'concepto'    => 'Provisión viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'concepto'    => $conceptoDetalle,
+                'referencia'  => $contenedor ?: ('VIAJE_' . $cotizacion->id),
                 'origen_tipo' => 'cotizacion',
                 'origen_id'   => $cotizacion->id,
             ]);
@@ -401,11 +479,29 @@ class CotizacionesService
 
             $polizaService = app(\App\Services\PolizaService::class);
 
+            // Resolver referencia de contenedor(es) incluyendo pareja de Full si aplica
+            $contenedor = $doc?->num_contenedor;
+            if (!empty($cotizacion->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $cotizacion->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+                $contSec = $secundaria?->DocCotizacion?->num_contenedor;
+                if ($contSec && $contenedor) {
+                    $contenedor = "{$contenedor} / {$contSec}";
+                } elseif ($contSec) {
+                    $contenedor = $contSec;
+                }
+            }
+
+            $conceptoDetalle = 'Cobro CXC viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
+
             $asientoData = $polizaService->resolverAsientoPorEvento('COBRO_CXC', null, $cotizacion->id_empresa ?? 1, [
                 'id_equipo'          => $camionId,
                 'monto'              => $monto,
                 'fecha'              => $fecha,
-                'concepto'           => 'Cobro CXC viaje #' . $cotizacion->id . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A'),
+                'concepto'           => $conceptoDetalle,
+                'referencia'         => $contenedor ?: ('COBRO_' . $cotizacion->id),
                 'cuenta_bancaria_id' => $bancoId,
                 'origen_tipo'        => 'cotizacion_cobro',
                 'origen_id'          => $cotizacion->id,
@@ -441,5 +537,990 @@ class CotizacionesService
                 'max_date'         => "{$maxYear}-12-31",
             ];
         });
+    }
+
+    /**
+     * Resuelve o asocia el viaje (sencillo o full) a partir de una cotización.
+     */
+    public function resolverViajeDesdeRequest(string $tipoCotizacion, int $idCotizacion): Viajes
+    {
+        if ($tipoCotizacion === "Full") {
+            $referencia = Cotizaciones::find($idCotizacion)?->referencia_full;
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+
+            if ($cotizaciones->count() < 2) {
+                throw new \DomainException('No es un viaje FULL válido (requiere al menos 2 contenedores vinculados).');
+            }
+
+            $viajeExistente = Viajes::where('estado', 'activo')
+                ->where('tipo', 'full')
+                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
+                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
+                })
+                ->first();
+
+            if ($viajeExistente) {
+                return $viajeExistente;
+            }
+
+            $viajesIds = DB::table('viajes_cotizacion')
+                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
+                ->pluck('viaje_id')
+                ->unique();
+
+            if ($viajesIds->isNotEmpty()) {
+                Viajes::whereIn('id', $viajesIds)->update(['estado' => 'cancelado']);
+            }
+
+            $viaje = Viajes::create([
+                'tipo' => 'full',
+                'estado' => 'activo',
+            ]);
+
+            $viaje->cotizaciones()->attach($cotizaciones->pluck('id')->toArray());
+
+            return $viaje;
+        }
+
+        $cotizacion = Cotizaciones::find($idCotizacion);
+        $viaje = $cotizacion?->viajes()->first();
+
+        if ($viaje) {
+            return $viaje;
+        }
+
+        return Viajes::create([
+            'tipo' => 'sencillo',
+            'estado' => 'activo',
+        ]);
+    }
+
+    /**
+     * Registra una cotización individual tradicional.
+     */
+    public function storeCotizacion(array $data, int $idEmpresa, $user): Cotizaciones
+    {
+        return DB::transaction(function () use ($data, $idEmpresa, $user) {
+            if (!empty($data['num_contenedor'])) {
+                $numContenedor = str_replace(' ', '', $data['num_contenedor']);
+                $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+                if ($contenedorExistente) {
+                    throw new \DomainException("El contenedor {$numContenedor} ya existe en el sistema.");
+                }
+            } else {
+                $numContenedor = '';
+            }
+
+            $total = !empty($data['total']) ? floatval(str_replace(',', '', $data['total'])) : 0.0;
+            $empresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
+
+            $cotizacion = new Cotizaciones();
+            $cotizacion->id_cliente = $data['id_cliente'] ?? null;
+            $cotizacion->id_subcliente = $data['id_subcliente'] ?? null;
+            $cotizacion->origen = $data['origen'] ?? null;
+            $cotizacion->destino = $data['destino'] ?? null;
+            $cotizacion->tamano = $data['tamano'] ?? null;
+            $cotizacion->peso_contenedor = $data['peso_contenedor'] ?? null;
+            $cotizacion->otro = $data['otro'] ?? null;
+            $cotizacion->fecha_modulacion = $data['fecha_modulacion'] ?? null;
+            $cotizacion->fecha_entrega = $data['fecha_entrega'] ?? null;
+            $cotizacion->iva = $data['iva'] ?? null;
+            $cotizacion->retencion = $data['retencion'] ?? null;
+            $cotizacion->peso_reglamentario = $data['peso_reglamentario'] ?? null;
+            $cotizacion->precio_sobre_peso = $data['precio_sobre_peso'] ?? null;
+            $cotizacion->sobrepeso = $data['sobrepeso'] ?? null;
+            $cotizacion->estatus = !empty($data['uuid']) ? 'Documentos Faltantes' : 'Pendiente';
+            $cotizacion->precio_viaje = $data['precio_viaje'] ?? 0;
+            $cotizacion->burreo = $data['burreo'] ?? 0;
+            $cotizacion->maniobra = $data['maniobra'] ?? 0;
+            $cotizacion->estadia = $data['estadia'] ?? 0;
+            $cotizacion->base_factura = $data['base_factura'] ?? null;
+            $cotizacion->base_taref = $data['base_taref'] ?? null;
+            $cotizacion->recinto_clientes = $data['recinto_clientes'] ?? null;
+            $cotizacion->precio_tonelada = 0;
+            $cotizacion->total = $total;
+            $cotizacion->restante = $total;
+            $cotizacion->estatus_pago = '0';
+            $cotizacion->origen_captura = $data['origen_captura'] ?? null;
+            $cotizacion->user_id = $user->id;
+            $cotizacion->direccion_entrega = $data['direccion_entrega'] ?? null;
+            $cotizacion->id_empresa = $empresaFinal;
+            $cotizacion->save();
+
+            $docCot = new DocumCotizacion();
+            $docCot->id_cotizacion = $cotizacion->id;
+            $docCot->num_contenedor = $numContenedor;
+            $docCot->id_empresa = $empresaFinal;
+            $docCot->save();
+
+            // Generar carta porte PDF si procede
+            if (!$user->can('mec-ocultar_datos_facturacion')) {
+                $cotizacion->sat_uso_cfdi_id = $data['id_uso_cfdi'] ?? null;
+                $cotizacion->sat_forma_pago_id = $data['id_forma_pago'] ?? null;
+                $cotizacion->sat_metodo_pago_id = $data['id_metodo_pago'] ?? null;
+                $cotizacion->direccion_recinto = $data['direccion_recinto'] ?? null;
+                $cotizacion->uso_recinto = ($data['text_recinto'] ?? '') === 'recinto-si' ? 1 : 0;
+                $cotizacion->cp_fraccion = $data['cp_fraccion'] ?? null;
+                $cotizacion->cp_clave_sat = $data['cp_clave_sat'] ?? null;
+                $cotizacion->cp_pedimento = $data['cp_pedimento'] ?? null;
+                $cotizacion->cp_clase_ped = $data['cp_clase_pedimento'] ?? null;
+                $cotizacion->cp_cantidad = $data['cp_cantidad'] ?? null;
+                $cotizacion->cp_valor = $data['cp_valor'] ?? null;
+                $cotizacion->cp_moneda = $data['cp_moneda_valor'] ?? null;
+                $cotizacion->cp_contacto_entrega = $data['cp_contacto_entrega'] ?? null;
+                $cotizacion->cp_fecha_tentativa_entrega = $data['cp_fecha_tentativa_entrega'] ?? null;
+                $cotizacion->cp_hora_tentativa_entrega = $data['cp_hora_tentativa_entrega'] ?? null;
+                $cotizacion->cp_comentarios = $data['cp_comentarios'] ?? null;
+                $cotizacion->save();
+
+                if (!empty($numContenedor)) {
+                    $subCliente = Subclientes::find($cotizacion->id_subcliente);
+                    $pathDir = public_path("cotizaciones/cotizacion{$cotizacion->id}");
+                    if (!File::exists($pathDir)) {
+                        File::makeDirectory($pathDir, 0755, true);
+                    }
+                    $filePath = "{$pathDir}/formato_carta_porte_{$numContenedor}.pdf";
+                    $pdf = Pdf::loadView('cotizaciones.carta_porte_pdf', compact('cotizacion', 'numContenedor', 'subCliente'));
+                    $pdf->save($filePath);
+
+                    if (File::exists($filePath)) {
+                        $docCot->ccp = 'si';
+                        $docCot->doc_ccp = "formato_carta_porte_{$numContenedor}.pdf";
+                        $docCot->save();
+                    }
+                }
+            }
+
+            return $cotizacion;
+        });
+    }
+
+    /**
+     * Modifica el estatus de una cotización respetando la jerarquía de avance de operaciones.
+     */
+    public function updateEstatusCotizacion(int $id, string $newEstatus, $user): array
+    {
+        $cotizacion = Cotizaciones::findOrFail($id);
+
+        $statusWeights = [
+            'Pendiente' => 1,
+            'Documentos Faltantes' => 1,
+            'Aprobada' => 2,
+            'Planeada' => 3,
+            'Cancelada' => 4,
+        ];
+
+        $currentEstatusName = $cotizacion->estatus;
+        if ($currentEstatusName == 'Aprobada' && $cotizacion->estatus_planeacion == 1) {
+            $currentEstatusName = 'Planeada';
+        }
+
+        if ($currentEstatusName === 'Planeada') {
+            throw new \DomainException('No se puede cambiar el estatus de una cotización ya planeada. Debe anular la planeación primero desde el tablero.');
+        }
+
+        if ($currentEstatusName === 'Cancelada' && !in_array($newEstatus, ['Cancelada', 'Aprobada'])) {
+            throw new \DomainException('De una cotización cancelada solo se puede cambiar el estatus a Aprobada.');
+        }
+
+        $currentWeight = $statusWeights[$currentEstatusName] ?? 0;
+        $newWeight = $statusWeights[$newEstatus] ?? 0;
+        $isCancelledToApproved = ($currentEstatusName === 'Cancelada' && $newEstatus === 'Aprobada');
+
+        if ($newWeight < $currentWeight && !$isCancelledToApproved) {
+            throw new \DomainException("No se puede cambiar el estatus hacia atrás (de {$currentEstatusName} a {$newEstatus}).");
+        }
+
+        $cotizacion->estatus = $newEstatus;
+        $cotizacion->estatus_planeacion = null;
+        $cotizacion->save();
+
+        if (in_array($newEstatus, ['Cancelada', 'Pendiente'])) {
+            if ($cotizacion->DocCotizacion && $cotizacion->DocCotizacion->Asignaciones) {
+                $asignacion = $cotizacion->DocCotizacion->Asignaciones;
+                $asignacion->fecha_inicio = null;
+                $asignacion->fecha_fin = null;
+                $asignacion->save();
+            }
+        }
+
+        return ['success' => true, 'message' => 'Estatus actualizado correctamente.'];
+    }
+
+    /**
+     * Convierte dos o más cotizaciones en un viaje FULL unificado.
+     */
+    public function convertirFull(array $viajes, $user): array
+    {
+        $ids = collect($viajes)->pluck('id');
+
+        $estatus = Cotizaciones::whereIn('id', $ids)->pluck('estatus')->unique();
+        if ($estatus->count() > 1) {
+            throw new \DomainException('Los viajes seleccionados deben tener el mismo estatus para poder convertirlos a Full.');
+        }
+
+        $viajesExistentes = Cotizaciones::whereIn('id', $ids)
+            ->whereNotNull('referencia_full')
+            ->pluck('id')
+            ->toArray();
+
+        if (count($viajesExistentes) > 0) {
+            throw new \DomainException('Los siguientes viajes ya pertenecen a un viaje Full: ' . implode(', ', $viajesExistentes));
+        }
+
+        $fullUUID = Common::generarUuidV4();
+
+        DB::transaction(function () use ($viajes, $fullUUID) {
+            for ($x = 0; $x < sizeof($viajes); $x++) {
+                $jerarquia = ($x == 0) ? 'Principal' : 'Secundario';
+                Cotizaciones::where('id', $viajes[$x]['id'])->update([
+                    'tipo_viaje' => 'Full',
+                    'referencia_full' => $fullUUID,
+                    'jerarquia' => $jerarquia,
+                ]);
+            }
+        });
+
+        return [
+            "Titulo" => "Proceso satisfactorio",
+            "Mensaje" => "Se ha realizado la fusión de viajes a tipo Full",
+            "TMensaje" => "success",
+        ];
+    }
+
+    /**
+     * Cancela la fusión de viajes Full y los regresa a modalidad sencilla.
+     */
+    public function cancelarFull(array $viajes, $user): array
+    {
+        $ids = collect($viajes)->pluck('id');
+        $estatus = Cotizaciones::whereIn('id', $ids)->whereIn('estatus', ['Finalizado', 'Cancelada'])->pluck('estatus')->unique();
+
+        if ($estatus->count() > 0) {
+            throw new \DomainException('Los viajes seleccionados no pueden ser cancelados de tipo Full porque ya están Finalizados o Cancelados.');
+        }
+
+        DB::transaction(function () use ($viajes) {
+            for ($x = 0; $x < sizeof($viajes); $x++) {
+                Cotizaciones::where('id', $viajes[$x]['id'])->update([
+                    'tipo_viaje' => 'Sencillo',
+                    'referencia_full' => null,
+                    'jerarquia' => 'Principal',
+                ]);
+            }
+        });
+
+        return [
+            "Titulo" => "Proceso satisfactorio",
+            "Mensaje" => "Se ha cancelado la fusión de viajes Full",
+            "TMensaje" => "success",
+        ];
+    }
+
+    /**
+     * Obtiene cotizaciones vinculadas por el UUID de referencia Full.
+     */
+    public function getCotizacionesFull(string $uuid): array
+    {
+        $uuid = trim($uuid);
+        if (empty($uuid)) {
+            return [];
+        }
+
+        return Cotizaciones::leftJoin('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->where('referencia_full', '=', $uuid)
+            ->orderBy('jerarquia')
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Convierte viajes locales en viajes foráneos.
+     */
+    public function convertirLocalForaneo(array $viajes, $user): array
+    {
+        DB::transaction(function () use ($viajes) {
+            foreach ($viajes as $v) {
+                $doc = DocumCotizacion::where('id_cotizacion', $v['id'])->first();
+                $estatusA = "Documentos Faltantes";
+                if ($doc && $doc->boleta_liberacion != null && $doc->doda != null) {
+                    $estatusA = "Pendiente";
+                }
+
+                $cotizacion = Cotizaciones::find($v['id']);
+                if ($cotizacion) {
+                    $cotizacion->tipo_viaje_seleccion = "local_to_foraneo";
+                    $cotizacion->en_patio = 0;
+                    $cotizacion->estatus = $estatusA;
+                    $cotizacion->fecha_entrega = Carbon::now();
+                    $cotizacion->save();
+                }
+            }
+        });
+
+        return [
+            "Titulo" => "Proceso satisfactorio",
+            "Mensaje" => "Se ha realizado el proceso de conversión a viaje foráneo",
+            "TMensaje" => "success",
+        ];
+    }
+
+    /**
+     * Revierte viajes convertidos a foráneo de regreso a modalidad local.
+     */
+    public function revertirForaneo(array $viajes, $user): array
+    {
+        DB::transaction(function () use ($viajes) {
+            foreach ($viajes as $v) {
+                $cotizacion = Cotizaciones::find($v['id']);
+                if ($cotizacion) {
+                    $cotizacion->tipo_viaje_seleccion = "local";
+                    $cotizacion->en_patio = 1;
+                    $cotizacion->estatus = "Documentos Faltantes";
+                    $cotizacion->fecha_entrega = null;
+                    $cotizacion->save();
+                }
+            }
+        });
+
+        return [
+            "Titulo" => "Proceso satisfactorio",
+            "Mensaje" => "Se ha revertido el proceso a viaje local",
+            "TMensaje" => "success",
+        ];
+    }
+
+    /**
+     * Asigna o cambia la empresa responsable de una cotización.
+     */
+    public function cambiarEmpresa(int $idCotizacion, int $idEmpresaNueva, $user): void
+    {
+        DB::transaction(function () use ($idCotizacion, $idEmpresaNueva) {
+            Cotizaciones::where('id', $idCotizacion)->update(['id_empresa' => $idEmpresaNueva]);
+            DocumCotizacion::where('id_cotizacion', $idCotizacion)->update(['id_empresa' => $idEmpresaNueva]);
+            Asignaciones::whereHas('contenedor', fn ($q) => $q->where('id_cotizacion', $idCotizacion))
+                ->update(['id_empresa' => $idEmpresaNueva]);
+        });
+    }
+
+    /**
+     * Registra una cotización local.
+     */
+    public function storeLocal(array $data, int $idEmpresa, $user): array
+    {
+        return DB::transaction(function () use ($data, $idEmpresa) {
+            $doc = DocumCotizacion::create([
+                'id_cotizacion' => 0,
+                'id_empresa' => $idEmpresa,
+                'num_contenedor' => $data['num_contenedor'] ?? null,
+                'terminal' => $data['terminal'] ?? null,
+                'num_autorizacion' => $data['num_autorizacion'] ?? null,
+                'boleta_liberacion' => $data['boleta_liberacion'] ?? null,
+                'doda' => $data['doda'] ?? null,
+                'num_boleta_liberacion' => $data['num_boleta_liberacion'] ?? null,
+                'num_doda' => $data['num_doda'] ?? null,
+                'num_carta_porte' => $data['num_carta_porte'] ?? null,
+                'boleta_vacio' => $data['boleta_vacio'] ?? null,
+                'fecha_boleta_vacio' => $data['fecha_boleta_vacio'] ?? null,
+                'eir' => $data['eir'] ?? null,
+                'doc_eir' => $data['doc_eir'] ?? null,
+                'ccp' => $data['ccp'] ?? null,
+                'doc_ccp' => $data['doc_ccp'] ?? null,
+                'foto_patio' => $data['foto_patio'] ?? null,
+                'boleta_patio' => $data['boleta_patio'] ?? null,
+                'fecha_boleta_patio' => $data['fecha_boleta_patio'] ?? null,
+                'cima' => $data['cima'] ?? 0,
+            ]);
+
+            $local = \App\Models\CotizacionesLocales::create([
+                'id_contenedor' => $doc->id,
+                'id_subcliente' => $data['id_subcliente'] ?? null,
+                'id_empresa' => $idEmpresa,
+                'id_proveedor' => $idEmpresa,
+                'id_transportista' => $data['id_transportista'] ?? null,
+                'origen' => $data['origen'] ?? null,
+                'tamano' => $data['tamano'] ?? null,
+                'peso_contenedor' => $data['peso_contenedor'] ?? null,
+                'fecha_modulacion' => $data['fecha_modulacion'] ?? null,
+                'puerto' => $data['puerto'] ?? null,
+                'fecha_ingreso_puerto' => $data['fecha_ingreso_puerto'] ?? null,
+                'fecha_salida_puerto' => $data['fecha_salida_puerto'] ?? null,
+                'dias_estadia' => $data['dias_estadia'] ?? 0,
+                'dias_pernocta' => $data['dias_pernocta'] ?? 0,
+                'tarifa_estadia' => $data['tarifa_estadia'] ?? 0,
+                'tarifa_pernocta' => $data['tarifa_pernocta'] ?? 0,
+                'total_estadia' => $data['total_estadia'] ?? 0,
+                'total_pernocta' => $data['total_pernocta'] ?? 0,
+                'total_general' => $data['total_general'] ?? 0,
+                'motivo_demora' => $data['motivo_demora'] ?? null,
+                'liberado' => $data['liberado'] ?? 0,
+                'fecha_liberacion' => $data['fecha_liberacion'] ?? null,
+                'responsable' => $data['responsable'] ?? null,
+                'observaciones' => $data['observaciones'] ?? null,
+            ]);
+
+            return [
+                'docum_cotizacion_id' => $doc->id,
+                'cotizacion_local_id' => $local->id,
+            ];
+        });
+    }
+
+    /**
+     * Actualiza una cotización local individual.
+     */
+    public function singleUpdateLocal(int $id, array $data, int $idEmpresa, $user): void
+    {
+        DB::transaction(function () use ($id, $data, $idEmpresa) {
+            $cot = Cotizaciones::findOrFail($id);
+            $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
+
+            $contenedorOriginal = $doc->num_contenedor;
+
+            $cot->id_subcliente = $data['id_subcliente'] ?? null;
+            $cot->id_empresa = $idEmpresa;
+            $cot->id_proveedor = $data['id_proveedor'] ?? null;
+            $cot->id_transportista = $data['id_transportista'] ?? null;
+            $cot->origen = $data['origen'] ?? $cot->origen;
+            $cot->tamano = $data['tamano'] ?? $cot->tamano;
+            $cot->peso_contenedor = $data['peso_contenedor'] ?? $cot->peso_contenedor;
+            $cot->fecha_modulacion = $data['fecha_modulacion'] ?? $cot->fecha_modulacion;
+            $cot->puerto = $data['puerto'] ?? null;
+            $cot->fecha_ingreso_puerto = $data['fecha_ingreso_puerto'] ?? null;
+            $cot->fecha_salida_puerto = $data['fecha_salida_puerto'] ?? null;
+            $cot->dias_estadia = $data['dias_estadia'] ?? 0;
+            $cot->tarifa_estadia = $data['tarifa_estadia'] ?? 0;
+            $cot->total_estadia = $data['total_estadia'] ?? 0;
+            $cot->dias_pernocta = $data['dias_pernocta'] ?? 0;
+            $cot->tarifa_pernocta = $data['tarifa_pernocta'] ?? 0;
+            $cot->total_pernocta = $data['total_pernocta'] ?? 0;
+            $cot->total_general = $data['total_general'] ?? 0;
+            $cot->motivo_demora = $data['motivo_demora'] ?? null;
+            $cot->liberado = $data['liberado'] ?? 0;
+            $cot->fecha_liberacion = $data['fecha_liberacion'] ?? null;
+            $cot->responsable = $data['responsable'] ?? null;
+            $cot->observaciones = $data['observaciones'] ?? null;
+            $cot->save();
+
+            if (!empty($data['num_contenedor']) && $data['num_contenedor'] != $contenedorOriginal) {
+                $doc->num_contenedor = $data['num_contenedor'];
+                $doc->save();
+            }
+        });
+    }
+
+    /**
+     * Guarda cotizaciones en lote desde matriz de datos (Handsontable / Excel).
+     */
+    public function storeMultipleCotizaciones(array $contenedores, array $params, $user): array
+    {
+        $idEmpresa = $user->id_empresa;
+        $row = 1;
+        $sumarIndex = (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) ? 2 : 0;
+        $mapsService = app(\App\Services\GoogleMapsService::class);
+
+        // 1. Validaciones previas de todas las filas
+        foreach ($contenedores as $cont) {
+            $numContenedor = str_replace(' ', '', $cont[3 + $sumarIndex] ?? '');
+            if (empty($numContenedor)) {
+                throw new \DomainException("El número de contenedor en la fila {$row} es requerido.");
+            }
+
+            $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+            if ($contenedorExistente) {
+                throw new \DomainException("El contenedor {$numContenedor} en la fila {$row} ya existe en el sistema.");
+            }
+
+            $numSubCliente = substr($cont[0], 0, 5);
+            if (!Subclientes::where('id', $numSubCliente)->exists()) {
+                throw new \DomainException("El subcliente de la fila {$row} no es válido.");
+            }
+
+            if (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) {
+                $numProveedor = substr($cont[1], 0, 5);
+                if (!Empresas::where('id', $numProveedor)->exists()) {
+                    throw new \DomainException("El proveedor de la fila {$row} no es válido.");
+                }
+                $numTransportista = substr($cont[2], 0, 5);
+                if (!Proveedor::where('id', $numTransportista)->exists()) {
+                    throw new \DomainException("El transportista de la fila {$row} no es válido.");
+                }
+            }
+
+            $pesoCont = $cont[7 + $sumarIndex] ?? null;
+            if (is_null($pesoCont) || $pesoCont === '' || !is_numeric($pesoCont) || floatval($pesoCont) <= 0) {
+                throw new \DomainException("El peso del contenedor de la fila {$row} debe ser un número válido mayor a cero.");
+            }
+
+            $row++;
+        }
+
+        // 2. Inserción dentro de transacción
+        return DB::transaction(function () use ($contenedores, $params, $user, $sumarIndex, $mapsService) {
+            $sumarIndexOriginal = $sumarIndex;
+            foreach ($contenedores as $contenedor) {
+                $pesocontenedor = (float) ($contenedor[7 + $sumarIndexOriginal] ?? 0);
+                $numSubCliente = substr($contenedor[0], 0, 5);
+                $pesoReglamentario = 22;
+                $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndexOriginal]);
+
+                $url = $contenedor[18 + $sumarIndexOriginal] ?? null;
+                $lat = null;
+                $lng = null;
+                if ($url) {
+                    $coords = $mapsService->resolver($url);
+                    $lat = $coords['lat'] ?? null;
+                    $lng = $coords['lng'] ?? null;
+                }
+
+                $cotizacion = new Cotizaciones();
+                $cotizacion->id_cliente = $user->id_cliente ?: ($params['id_cliente'] ?? null);
+                $cotizacion->id_subcliente = $numSubCliente;
+                if (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) {
+                    $cotizacion->id_empresa = substr($contenedor[1], 0, 5);
+                    $cotizacion->id_proveedor = substr($contenedor[2], 0, 5);
+                } else {
+                    $cotizacion->id_empresa = $user->id_empresa;
+                }
+
+                $cotizacion->origen = $contenedor[4 + $sumarIndexOriginal] ?? null;
+                $cotizacion->destino = $contenedor[5 + $sumarIndexOriginal] ?? null;
+                $cotizacion->tamano = $contenedor[6 + $sumarIndexOriginal] ?? null;
+                $cotizacion->peso_contenedor = $pesocontenedor;
+                $cotizacion->bloque = $contenedor[14 + $sumarIndexOriginal] ?? null;
+                $cotizacion->bloque_hora_i = $contenedor[15 + $sumarIndexOriginal] ?? null;
+                $cotizacion->bloque_hora_f = $contenedor[16 + $sumarIndexOriginal] ?? null;
+                $cotizacion->direccion_entrega = $contenedor[17 + $sumarIndexOriginal] ?? null;
+                $cotizacion->latitud = $lat;
+                $cotizacion->longitud = $lng;
+                $cotizacion->otro = 0;
+                $cotizacion->fecha_modulacion = $contenedor[12 + $sumarIndexOriginal] ?? null;
+                $cotizacion->fecha_entrega = $contenedor[13 + $sumarIndexOriginal] ?? Carbon::now();
+                $cotizacion->iva = 0;
+                $cotizacion->retencion = 0;
+                $cotizacion->peso_reglamentario = $pesoReglamentario;
+                $cotizacion->precio_sobre_peso = 0;
+                $cotizacion->sobrepeso = ($pesocontenedor > $pesoReglamentario) ? ($pesocontenedor - $pesoReglamentario) : 0;
+                $cotizacion->estatus = !empty($params['uuid']) ? 'Documentos Faltantes' : 'Pendiente';
+                $cotizacion->precio_viaje = 0;
+                $cotizacion->burreo = 0;
+                $cotizacion->maniobra = 0;
+                $cotizacion->estadia = 0;
+                $cotizacion->base_factura = 0;
+                $cotizacion->base_taref = 0;
+                $cotizacion->total = 0;
+                $cotizacion->restante = 0;
+                $cotizacion->estatus_pago = '0';
+                $cotizacion->origen_captura = $params['origen_captura'] ?? null;
+                $cotizacion->user_id = $user->id;
+                $cotizacion->save();
+
+                $doc = new DocumCotizacion();
+                $doc->id_cotizacion = $cotizacion->id;
+                $doc->num_contenedor = $numContenedor;
+                $doc->id_empresa = $cotizacion->id_empresa;
+                $doc->save();
+            }
+
+            return [
+                "Titulo" => "Proceso satisfactorio",
+                "Mensaje" => "Se han guardado las cotizaciones con éxito",
+                "TMensaje" => "success"
+            ];
+        });
+    }
+
+    /**
+     * Guarda cotizaciones locales en lote desde matriz de datos.
+     */
+    public function storeMultipleLocal(array $contenedores, array $params, $user): array
+    {
+        $idEmpresa = $user->id_empresa;
+        $row = 1;
+        $sumarIndex = (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) ? 2 : 0;
+
+        foreach ($contenedores as $cont) {
+            $numContenedor = str_replace(' ', '', $cont[3 + $sumarIndex] ?? '');
+            if (empty($numContenedor)) {
+                throw new \DomainException("El contenedor en la fila {$row} es requerido.");
+            }
+            $row++;
+        }
+
+        return DB::transaction(function () use ($contenedores, $params, $user, $sumarIndex) {
+            foreach ($contenedores as $contenedor) {
+                $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
+                $numSubCliente = substr($contenedor[0], 0, 5);
+
+                $doc = DocumCotizacion::create([
+                    'id_cotizacion' => 0,
+                    'id_empresa' => $user->id_empresa,
+                    'num_contenedor' => $numContenedor,
+                ]);
+
+                \App\Models\CotizacionesLocales::create([
+                    'id_contenedor' => $doc->id,
+                    'id_subcliente' => $numSubCliente ?: null,
+                    'id_empresa' => $user->id_empresa,
+                    'id_proveedor' => $user->id_empresa,
+                    'origen' => $contenedor[4 + $sumarIndex] ?? null,
+                    'tamano' => $contenedor[6 + $sumarIndex] ?? null,
+                    'peso_contenedor' => $contenedor[7 + $sumarIndex] ?? null,
+                    'fecha_modulacion' => $contenedor[12 + $sumarIndex] ?? null,
+                    'total_general' => 0,
+                ]);
+            }
+
+            return [
+                "Titulo" => "Proceso satisfactorio",
+                "Mensaje" => "Se han guardado las cotizaciones locales con éxito",
+                "TMensaje" => "success"
+            ];
+        });
+    }
+
+    /**
+     * Obtiene contenedores con estatus 'NO ASIGNADA' para asignación.
+     */
+    public function getContenedoresAsignables()
+    {
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->join('clients as cl', 'cotizaciones.id_cliente', '=', 'cl.id')
+            ->join('subclientes as sc', 'cotizaciones.id_subcliente', '=', 'sc.id')
+            ->where('estatus', '=', 'NO ASIGNADA')
+            ->where('jerarquia', '!=', 'Secundario')
+            ->orderBy('created_at', 'desc')
+            ->selectRaw('cotizaciones.*, d.num_contenedor, d.doc_eir, d.doc_ccp, d.boleta_liberacion, d.doda, cl.nombre as cliente, sc.nombre as subcliente')
+            ->get();
+
+        return $contenedoresPendientes->map(function ($c) {
+            $numContenedor = $c->num_contenedor;
+            $tipo = "Sencillo";
+            $docCCP = ($c->doc_ccp == null) ? false : true;
+            $doda = ($c->doda == null) ? false : true;
+            $boletaLiberacion = ($c->boleta_liberacion == null) ? false : true;
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp) ? true : false;
+                    $doda = ($doda && $secundaria->DocCotizacion->doda) ? true : false;
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion) ? true : false;
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
+            return [
+                "IdContenedor" => $c->id,
+                "Cliente" => $c->cliente,
+                "SubCliente" => $c->subcliente,
+                "NumContenedor" => $numContenedor,
+                "Estatus" => $c->estatus,
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "FormatoCartaPorte" => $docCCP,
+                "IdCliente" => $c->id_cliente,
+                "tipo" => $tipo,
+            ];
+        });
+    }
+
+    /**
+     * Cancela un viaje solicitado por un cliente externo según número de contenedor.
+     */
+    public function cancelarViajeCliente(string $numContenedor, $user): array
+    {
+        $cotizacion = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->where('d.num_contenedor', $numContenedor)
+            ->first();
+
+        if (!$cotizacion) {
+            return [
+                "Titulo" => "No encontrado",
+                "Mensaje" => "No se encontró viaje con el contenedor $numContenedor",
+                "TMensaje" => "warning"
+            ];
+        }
+
+        if ($cotizacion->estatus === 'Cancelada') {
+            return [
+                "Titulo" => "Previamente Cancelado",
+                "Mensaje" => "El contenedor $numContenedor fue cancelado previamente",
+                "TMensaje" => "info"
+            ];
+        }
+
+        $cotizacionModel = Cotizaciones::findOrFail($cotizacion->id);
+        $cotizacionModel->estatus = 'Cancelada';
+        $cotizacionModel->save();
+
+        try {
+            $emailList = array_filter([env('MAIL_NOTIFICATIONS'), $user?->email]);
+            if (!empty($emailList)) {
+                Mail::to($emailList)->send(new \App\Mail\NotificaCancelarViajeMail($cotizacionModel, $numContenedor));
+            }
+        } catch (\Throwable $e) {
+            Log::channel('daily')->warning("No se pudo enviar correo de cancelación para {$numContenedor}: " . $e->getMessage());
+        }
+
+        return [
+            "Titulo" => "Cancelado correctamente",
+            "Mensaje" => "Se canceló el viaje con el Núm. Contenedor $numContenedor",
+            "TMensaje" => "success"
+        ];
+    }
+
+    /**
+     * Actualiza el estatus de una maniobra local y registra la bitácora.
+     */
+    public function cambiarEstatusManiobra(int $idCotizacion, int $idEstatus, ?string $nota, $user): array
+    {
+        return DB::transaction(function () use ($idCotizacion, $idEstatus, $nota, $user) {
+            $cotizacion = Cotizaciones::findOrFail($idCotizacion);
+            $cotizacion->estatus_maniobra_id = $idEstatus;
+            $cotizacion->save();
+
+            $bitacora = new BitacoraCotizacionesEstatus();
+            $bitacora->cotizaciones_id = $cotizacion->id;
+            $bitacora->estatus_id = $idEstatus;
+            $bitacora->user_id = $user->id;
+            $bitacora->nota = $nota;
+            $bitacora->save();
+
+            return [
+                "Titulo" => "Estatus actualizado",
+                "Mensaje" => "El estatus de la maniobra se actualizó correctamente",
+                "TMensaje" => "success"
+            ];
+        });
+    }
+
+    /**
+     * Consulta el historial de cambios de estatus de una maniobra.
+     */
+    public function getHistorialEstatusManiobra(int $idCotizacion)
+    {
+        return BitacoraCotizacionesEstatus::with('estatus', 'usuario')
+            ->where('cotizaciones_id', $idCotizacion)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($h) {
+                return [
+                    'estatus' => $h->estatus?->nombre ?? 'N/A',
+                    'nota' => $h->nota,
+                    'usuario' => $h->usuario?->name ?? 'Sistema',
+                    'created_at' => $h->created_at ? $h->created_at->format('d/m/Y H:i') : '',
+                ];
+            });
+    }
+
+    /**
+     * Obtiene el listado de contenedores en patio para un cliente externo.
+     */
+    public function getListPatio(int $idCliente)
+    {
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->where('cotizaciones.id_cliente', '=', $idCliente)
+            ->where('estatus', '=', 'local')
+            ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
+            ->where('jerarquia', '!=', 'Secundario')
+            ->where('en_patio', '=', '1')
+            ->orderBy('created_at', 'desc')
+            ->selectRaw('cotizaciones.*, d.num_contenedor, d.doc_eir, d.doc_ccp, d.boleta_liberacion, d.doda, d.foto_patio, d.boleta_patio')
+            ->get();
+
+        return $contenedoresPendientes->map(function ($c) {
+            $numContenedor = $c->num_contenedor;
+            $docCCP = !is_null($c->doc_ccp);
+            $doda = !is_null($c->doda);
+            $boletaLiberacion = !is_null($c->boleta_liberacion);
+            $cartaPorte = (bool) $c->carta_porte;
+            $boletaVacio = !is_null($c->img_boleta);
+            $docEir = $c->doc_eir;
+            $fotoPatio = !is_null($c->foto_patio);
+            $boleta_patio = !is_null($c->boleta_patio);
+            $tipo = "Sencillo";
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion.Asignaciones')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP = ($docCCP && $secundaria->DocCotizacion->doc_ccp);
+                    $doda = ($doda && $secundaria->DocCotizacion->doda);
+                    $docEir = ($docEir && $secundaria->DocCotizacion->doc_eir);
+                    $boletaLiberacion = ($boletaLiberacion && $secundaria->DocCotizacion->boleta_liberacion);
+                    $cartaPorte = ($cartaPorte && $secundaria->carta_porte);
+                    $boletaVacio = ($boletaVacio && $secundaria->img_boleta);
+                    $fotoPatio = ($fotoPatio && $secundaria->foto_patio);
+                    $numContenedor .= '  ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
+            return [
+                "NumContenedor" => $numContenedor,
+                "Estatus" => ($c->estatus == "Local") ? "Patio" : $c->estatus,
+                "Origen" => $c->origen,
+                "Destino" => $c->destino,
+                "Peso" => $c->peso_contenedor,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "BoletaPatio" => $boleta_patio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "tipo" => $tipo,
+                "id" => $c->id
+            ];
+        });
+    }
+
+    /**
+     * Obtiene contenedores locales pendientes para un cliente externo.
+     */
+    public function getContenedoresLocalesCliente(int $idCliente, $estatus, bool $ocultarForaneo = false)
+    {
+        $condicion = ($estatus != 'all') ? '=' : '!=';
+        $contenedoresPendientes = Cotizaciones::join('docum_cotizacion as d', 'cotizaciones.id', '=', 'd.id_cotizacion')
+            ->join('estatus_maniobras as estat', 'estat.id', '=', 'cotizaciones.estatus_maniobra_id')
+            ->join('subclientes', 'subclientes.id', '=', 'cotizaciones.sub_cliente_local')
+            ->join('clients', 'clients.id', '=', 'subclientes.id_cliente')
+            ->join('empresas', 'empresas.id', '=', 'cotizaciones.empresa_local')
+            ->join('proveedores', 'proveedores.id', '=', 'cotizaciones.transportista_local')
+            ->leftjoin('navieras', 'navieras.id', '=', 'd.naviera_id')
+            ->where('cotizaciones.id_cliente', $idCliente)
+            ->where('cotizaciones.estatus_maniobra_id', $condicion, $estatus)
+            ->when($ocultarForaneo, function ($query) {
+                $query->where('tipo_viaje_seleccion', 'local');
+            }, function ($query) {
+                $query->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo']);
+            })
+            ->where('jerarquia', '!=', 'Secundario')
+            ->orderBy('cotizaciones.created_at', 'desc')
+            ->select([
+                'cotizaciones.*',
+                'd.num_contenedor',
+                'd.doc_eir',
+                'd.doc_ccp',
+                'd.boleta_liberacion',
+                'd.doda',
+                'd.foto_patio',
+                'd.boleta_patio',
+                'd.terminal',
+                'd.num_autorizacion',
+                'navieras.naviera',
+                'd.cita_at',
+                'd.eta',
+                'd.pedimento_recibido_at',
+                'estat.nombre as estatus_maniobra',
+                'empresas.nombre as empresa',
+                'proveedores.nombre as proveedor',
+                'clients.nombre as cliente',
+                'subclientes.nombre as subcliente',
+            ])
+            ->get();
+
+        return $contenedoresPendientes->map(function ($c) {
+            $numContenedor = $c->num_contenedor;
+            $docCCP = !is_null($c->doc_ccp);
+            $doda = !is_null($c->doda);
+            $boletaLiberacion = !is_null($c->boleta_liberacion);
+            $boletaVacio = !is_null($c->img_boleta);
+            $docEir = !is_null($c->doc_eir);
+            $fotoPatio = !is_null($c->foto_patio);
+            $boleta_patio = !is_null($c->boleta_patio);
+            $tipo = "Sencillo";
+
+            if (!is_null($c->referencia_full)) {
+                $secundaria = Cotizaciones::where('referencia_full', $c->referencia_full)
+                    ->where('jerarquia', 'Secundario')
+                    ->with('DocCotizacion')
+                    ->first();
+
+                if ($secundaria && $secundaria->DocCotizacion) {
+                    $docCCP &= (bool) $secundaria->DocCotizacion->doc_ccp;
+                    $doda &= (bool) $secundaria->DocCotizacion->doda;
+                    $docEir &= (bool) $secundaria->DocCotizacion->doc_eir;
+                    $boletaLiberacion &= (bool) $secundaria->DocCotizacion->boleta_liberacion;
+                    $boletaVacio &= (bool) $secundaria->img_boleta;
+                    $fotoPatio &= (bool) $secundaria->foto_patio;
+                    $numContenedor .= ' ' . $secundaria->DocCotizacion->num_contenedor;
+                }
+
+                $tipo = "Full";
+            }
+
+            return [
+                "NUM_CONTENEDOR_REFER" => $numContenedor,
+                "NumContenedor" => self::limpiarNumContenedor($numContenedor),
+                "Referencia" => self::obtenerReferencias($numContenedor),
+                "EstatusManiobra" => $c->estatus_maniobra,
+                "Origen" => $c->origen_local,
+                "Destino" => $c->destino_local,
+                "Peso" => $c->peso_contenedor,
+                "Tamano" => $c->tamano,
+                "BoletaLiberacion" => $boletaLiberacion,
+                "FechaModulacion" => Carbon::parse($c->fecha_modulacion)->format('Y-m-d'),
+                "DODA" => $doda,
+                "foto_patio" => $fotoPatio,
+                "FormatoCartaPorte" => $docCCP,
+                "PreAlta" => $boletaVacio,
+                "BoletaPatio" => $boleta_patio,
+                "FechaSolicitud" => Carbon::parse($c->created_at)->format('Y-m-d'),
+                "naviera" => $c->naviera,
+                "cita_at" => $c->cita_at,
+                "eta" => $c->eta,
+                "pedimento_recibido_at" => $c->pedimento_recibido_at,
+                "tipo" => $tipo,
+                "Observaciones" => (is_null($c->observaciones) || $c->observaciones === 'null' || trim($c->observaciones) === '') ? '' : $c->observaciones,
+                "Terminal" => $c->terminal,
+                "Puerto" => $c->puerto,
+                "NAutorizacion" => $c->num_autorizacion,
+                "cp_pedimento" => $c->cp_pedimento,
+                "cp_clase_ped" => $c->cp_clase_ped,
+                "dias_estadia" => $c->dias_estadia,
+                "dias_pernocta" => $c->dias_pernocta,
+                "tarifa_estadia" => $c->tarifa_estadia,
+                "tarifa_pernocta" => $c->tarifa_pernocta,
+                "total_estadia" => $c->total_estadia,
+                "total_pernocta" => $c->total_pernocta,
+                "total_general" => $c->total_general,
+                "costo_maniobra_local" => $c->costo_maniobra_local,
+                "estado_contenedor" => (is_null($c->estado_contenedor) || $c->estado_contenedor === 'null' || trim($c->estado_contenedor) === '') ? 'Ninguno' : $c->estado_contenedor,
+                'agente_aduanal' => (is_null($c->agente_aduanal) || $c->agente_aduanal === 'null' || trim($c->agente_aduanal) === '') ? '' : $c->agente_aduanal,
+                "Empresa" => $c->empresa,
+                "Proveedor" => $c->proveedor,
+                "Cliente" => $c->cliente,
+                "Subcliente" => $c->subcliente,
+                "id" => $c->id,
+                "estatus_maniobra_id" => $c->estatus_maniobra_id,
+                "convertido_foraneo" => str_contains($c->tipo_viaje_seleccion, 'foraneo'),
+            ];
+        });
+    }
+
+    public static function obtenerReferencias(string $texto): string
+    {
+        preg_match_all('/\[(.*?)\]/', $texto, $coincidencias);
+        return implode(' ', $coincidencias[1] ?? []);
+    }
+
+    public static function limpiarNumContenedor(string $texto): string
+    {
+        return preg_replace('/\[.*?\]/', '', $texto);
     }
 }

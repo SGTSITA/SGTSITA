@@ -2029,6 +2029,9 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
     formData["retencion_automatica"] =
         document.getElementById("retencion_automatica")?.checked ?? null;
 
+    formData["observaciones_edo_cuenta"] =
+        document.getElementById("observaciones_edo_cuenta")?.value ?? null;
+
     $.ajax({
         url: url,
         type: "post",

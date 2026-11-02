@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Exports\CotizacionesCXC;
 use App\Exports\GenericExport;
 use App\Exports\CxcExport;
+use App\Exports\CxcPersonalizadoExport;
 use App\Exports\CxpExport;
 use App\Models\GastosDiferidosDetalle;
 use App\Models\DineroContenedor;
@@ -207,6 +208,7 @@ class ReporteriaController extends Controller
         $separarUnidades = $request->boolean('separar_unidades', false);
         $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
         $documentos = $request->input('documentos', []);
+        $tipoReporte = $request->input('tipo_reporte', 'predeterminado');
 
         $cotizacionIds = $request->input('selected_ids', []);
 
@@ -219,7 +221,10 @@ class ReporteriaController extends Controller
             'DocCotizacion.Asignaciones.Camion',
             'DocCotizacion.Asignaciones.Proveedor',
             'Cliente',
-            'Subcliente'
+            'Subcliente',
+            'Empresa',
+            'Proveedor',
+            'viajes.costos',
         ])
             ->whereIn('id', $cotizacionIds)
             ->get();
@@ -240,6 +245,29 @@ class ReporteriaController extends Controller
 
 
         if ($modo === 'preview' || !$adjuntar) {
+
+            if ($tipoReporte === 'personalizado') {
+                if ($request->fileType == "xlsx") {
+                    Excel::store(
+                        new CxcPersonalizadoExport($cotizaciones, $user),
+                        'cxc.xlsx',
+                        'public'
+                    );
+
+                    return response()->download(storage_path('app/public/' . 'cxc.xlsx'))->deleteFileAfterSend(true);
+                }
+
+                $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', compact(
+                    'cotizaciones',
+                    'user'
+                ))->setPaper('letter', 'landscape');
+
+                $fileName = 'cxc.pdf';
+                $filePath = storage_path('app/public/' . $fileName);
+                $pdf->save($filePath);
+
+                return response()->download($filePath, $fileName)->deleteFileAfterSend(true);
+            }
 
             if ($request->fileType == "xlsx") {
 
@@ -298,37 +326,61 @@ class ReporteriaController extends Controller
                 $nombreGrupoDocs = 'Docs_' . $nombreGrupo;
 
                 $reporte = "Estado de cuenta: {$nombreGrupo}\n\n";
-                if ($request->fileType == "xlsx") {
+                if ($tipoReporte === 'personalizado') {
+                    if ($request->fileType == "xlsx") {
+                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+                        Excel::store(
+                            new CxcPersonalizadoExport($items, $user),
+                            $excelName,
+                            'public'
+                        );
 
-                    $excelName = "cxc_{$nombreGrupo}.xlsx";
-                    // dd($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user);
-                    Excel::store(
-                        new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user, $separarUnidades),
-                        $excelName,
-                        'public'
-                    );
+                        $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
+                    } else {
+                        $pdfName = "cxc_{$nombreGrupo}.pdf";
+                        $pdfPath = storage_path('app/public/' . $pdfName);
 
-                    $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
+                        $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
+                            'cotizaciones' => $items,
+                            'user' => $user,
+                        ])->setPaper('letter', 'landscape');
 
+                        $pdf->save($pdfPath);
+
+                        $zip->addFile($pdfPath, $pdfName);
+                    }
                 } else {
+                    if ($request->fileType == "xlsx") {
 
-                    $pdfName = "cxc_{$nombreGrupo}.pdf";
-                    $pdfPath = storage_path('app/public/' . $pdfName);
+                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+                        // dd($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user);
+                        Excel::store(
+                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                            $excelName,
+                            'public'
+                        );
 
-                    $pdf = PDF::loadView('reporteria.cxc.pdf', [
-                        'cotizaciones' => $items,
-                        'fechaCarbon' => $fechaCarbon,
-                        'bancos_oficiales' => $bancos_oficiales,
-                        'bancos_no_oficiales' => $bancos_no_oficiales,
-                        'cotizacion' => $items->first(),
-                        'user' => $user,
-                        'cuentaGlobal' => $cuentaGlobal,
-                        'separarUnidades' => $separarUnidades
-                    ])->setPaper([0, 0, 595, 1200], 'landscape');
+                        $zip->addFile(storage_path('app/public/' . $excelName), $excelName);
 
-                    $pdf->save($pdfPath);
+                    } else {
 
-                    $zip->addFile($pdfPath, $pdfName);
+                        $pdfName = "cxc_{$nombreGrupo}.pdf";
+                        $pdfPath = storage_path('app/public/' . $pdfName);
+
+                        $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                            'cotizaciones' => $items,
+                            'fechaCarbon' => $fechaCarbon,
+                            'bancos_oficiales' => $bancos_oficiales,
+                            'bancos_no_oficiales' => $bancos_no_oficiales,
+                            'cotizacion' => $items->first(),
+                            'user' => $user,
+                            'cuentaGlobal' => $cuentaGlobal
+                        ])->setPaper([0, 0, 595, 1200], 'landscape');
+
+                        $pdf->save($pdfPath);
+
+                        $zip->addFile($pdfPath, $pdfName);
+                    }
                 }
 
 
@@ -394,48 +446,85 @@ class ReporteriaController extends Controller
                     $reporte = "Estado de cuenta: {$numero}\n\n";
 
 
-                    if ($request->fileType == "xlsx") {
+                    if ($tipoReporte === 'personalizado') {
+                        if ($request->fileType == "xlsx") {
+                            $excelName = "cxc_{$nombreGrupo}.xlsx";
 
-                        $excelName = "cxc_{$nombreGrupo}.xlsx";
+                            Excel::store(
+                                new CxcPersonalizadoExport($items, $user),
+                                $excelName,
+                                'public'
+                            );
 
-                        Excel::store(
-                            new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user, $separarUnidades),
-                            $excelName,
-                            'public'
-                        );
+                            $excelPath = storage_path('app/public/' . $excelName);
 
-                        $excelPath = storage_path('app/public/' . $excelName);
-
-                        if (file_exists($excelPath)) {
-                            $zip->addFile($excelPath, "{$nombreGrupo}/{$excelName}");
+                            if (file_exists($excelPath)) {
+                                $zip->addFile($excelPath, "{$nombreGrupo}/{$excelName}");
+                            } else {
+                                $reporte .= "❌ Excel no encontrado: {$excelName}\n";
+                                Log::warning("Excel no encontrado: {$excelPath}");
+                            }
                         } else {
-                            $reporte .= "❌ Excel no encontrado: {$excelName}\n";
-                            Log::warning("Excel no encontrado: {$excelPath}");
+                            $pdfName = "cxc_{$nombreGrupo}.pdf";
+                            $pdfPath = storage_path('app/public/' . $pdfName);
+
+                            $pdf = PDF::loadView('reporteria.cxc.pdf_personalizado', [
+                                'cotizaciones' => $items,
+                                'user' => $user,
+                            ])->setPaper('letter', 'landscape');
+
+                            $pdf->save($pdfPath);
+
+                            if (file_exists($pdfPath)) {
+                                $zip->addFile($pdfPath, "{$nombreGrupo}/{$pdfName}");
+                            } else {
+                                $reporte .= "❌ PDF no encontrado: {$pdfName}\n";
+                                Log::warning("PDF no encontrado: {$pdfPath}");
+                            }
                         }
-
                     } else {
+                        if ($request->fileType == "xlsx") {
 
-                        $pdfName = "cxc_{$nombreGrupo}.pdf";
-                        $pdfPath = storage_path('app/public/' . $pdfName);
+                            $excelName = "cxc_{$nombreGrupo}.xlsx";
 
-                        $pdf = PDF::loadView('reporteria.cxc.pdf', [
-                            'cotizaciones' => $items,
-                            'fechaCarbon' => $fechaCarbon,
-                            'bancos_oficiales' => $bancos_oficiales,
-                            'bancos_no_oficiales' => $bancos_no_oficiales,
-                            'cotizacion' => $items->first(),
-                            'user' => $user,
-                            'cuentaGlobal' => $cuentaGlobal,
-                            'separarUnidades' => $separarUnidades
-                        ]);
+                            Excel::store(
+                                new CxcExport($items, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $items->first(), $user),
+                                $excelName,
+                                'public'
+                            );
 
-                        $pdf->save($pdfPath);
+                            $excelPath = storage_path('app/public/' . $excelName);
 
-                        if (file_exists($pdfPath)) {
-                            $zip->addFile($pdfPath, "{$nombreGrupo}/{$pdfName}");
+                            if (file_exists($excelPath)) {
+                                $zip->addFile($excelPath, "{$nombreGrupo}/{$excelName}");
+                            } else {
+                                $reporte .= "❌ Excel no encontrado: {$excelName}\n";
+                                Log::warning("Excel no encontrado: {$excelPath}");
+                            }
+
                         } else {
-                            $reporte .= "❌ PDF no encontrado: {$pdfName}\n";
-                            Log::warning("PDF no encontrado: {$pdfPath}");
+
+                            $pdfName = "cxc_{$nombreGrupo}.pdf";
+                            $pdfPath = storage_path('app/public/' . $pdfName);
+
+                            $pdf = PDF::loadView('reporteria.cxc.pdf', [
+                                'cotizaciones' => $items,
+                                'fechaCarbon' => $fechaCarbon,
+                                'bancos_oficiales' => $bancos_oficiales,
+                                'bancos_no_oficiales' => $bancos_no_oficiales,
+                                'cotizacion' => $items->first(),
+                                'user' => $user,
+                                'cuentaGlobal' => $cuentaGlobal
+                            ]);
+
+                            $pdf->save($pdfPath);
+
+                            if (file_exists($pdfPath)) {
+                                $zip->addFile($pdfPath, "{$nombreGrupo}/{$pdfName}");
+                            } else {
+                                $reporte .= "❌ PDF no encontrado: {$pdfName}\n";
+                                Log::warning("PDF no encontrado: {$pdfPath}");
+                            }
                         }
                     }
 
@@ -1047,15 +1136,21 @@ class ReporteriaController extends Controller
         //  dd(Carbon::parse($fechaFin)->endOfDay(), $asignaciones);
 
         $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+            $numContenedor = $a->Contenedor->num_contenedor ?? '';
+            $pesoContenedor = $a->Contenedor?->Cotizacion?->peso_contenedor ?? '';
+            if (!is_null($a->Contenedor?->Cotizacion?->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
                 ->where('jerarquia', 'Secundario')
                 ->with('DocCotizacion.Asignaciones')
                 ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                if ($secundaria) {
+                    if ($secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor = ($pesoContenedor ?: '-') . ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
             }
             return [
@@ -1065,6 +1160,7 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'peso_contenedor' => $pesoContenedor ?: '-',
                 'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => optional($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => optional($a->fehca_fin_guard)->format('d-m-Y'),
@@ -1092,6 +1188,20 @@ class ReporteriaController extends Controller
 
         }
 
+    }
+
+    public static function getPesoContenedorSecundario($referencia_full)
+    {
+        if (!is_null($referencia_full)) {
+            $secundaria = Cotizaciones::where('referencia_full', $referencia_full)
+                ->where('jerarquia', 'Secundario')
+                ->first();
+
+            if ($secundaria && !empty($secundaria->peso_contenedor)) {
+                return ' / ' . $secundaria->peso_contenedor;
+            }
+        }
+        return '';
     }
 
     public function advance_viajes(Request $request)
@@ -1150,15 +1260,21 @@ class ReporteriaController extends Controller
         $asignaciones = $asignaciones->get();
 
         $viajesData = $asignaciones->map(function ($a) {
-            $numContenedor = $a->Contenedor->num_contenedor;
-            if (!is_null($a->Contenedor->Cotizacion->referencia_full)) {
+            $numContenedor = $a->Contenedor->num_contenedor ?? '';
+            $pesoContenedor = $a->Contenedor?->Cotizacion?->peso_contenedor ?? '';
+            if (!is_null($a->Contenedor?->Cotizacion?->referencia_full)) {
                 $secundaria = Cotizaciones::where('referencia_full', $a->Contenedor->Cotizacion->referencia_full)
                 ->where('jerarquia', 'Secundario')
                 ->with('DocCotizacion.Asignaciones')
                 ->first();
 
-                if ($secundaria && $secundaria->DocCotizacion) {
-                    $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                if ($secundaria) {
+                    if ($secundaria->DocCotizacion) {
+                        $numContenedor .= ' / ' . $secundaria->DocCotizacion->num_contenedor;
+                    }
+                    if (!empty($secundaria->peso_contenedor)) {
+                        $pesoContenedor = ($pesoContenedor ?: '-') . ' / ' . $secundaria->peso_contenedor;
+                    }
                 }
             }
             return [
@@ -1168,6 +1284,7 @@ class ReporteriaController extends Controller
                 'origen' => $a->Contenedor->Cotizacion->origen ?? '',
                 'destino' => $a->Contenedor->Cotizacion->destino ?? '',
                 'contenedor' => $numContenedor ?? '',
+                'peso_contenedor' => $pesoContenedor ?: '-',
                 'camion' => $a->Camion ? ($a->Camion->id_equipo ?: $a->Camion->placas) : '-',
                 'fecha_salida' => \Carbon\Carbon::parse($a->fehca_inicio_guard)->format('d-m-Y'),
                 'fecha_llegada' => \Carbon\Carbon::parse($a->fehca_fin_guard)->format('d-m-Y'),

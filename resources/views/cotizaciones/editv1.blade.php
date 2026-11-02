@@ -419,6 +419,12 @@
                                                     </button>
                                                 </div>
 
+                                                <div class="mt-3">
+                                                    <label class="form-label fw-semibold" for="observaciones_edo_cuenta">Observaciones estado de cuenta</label>
+                                                    <textarea class="form-control" name="observaciones_edo_cuenta" id="observaciones_edo_cuenta" rows="3"
+                                                        placeholder="Observaciones para el estado de cuenta (ej. Estadía / Sobrepeso / Otros)">{{ old('observaciones_edo_cuenta', $cotizacion->observaciones_edo_cuenta) }}</textarea>
+                                                </div>
+
                                                 <input class="form-control" type="hidden" name="latitud" id="latitud"
                                                     value="{{ $cotizacion->latitud }}" />
                                                 <input class="form-control" type="hidden" name="longitud"

@@ -124,38 +124,42 @@
                             </div>
                         </form>
 
-                        <div class="col-md-12 mt-3 d-flex align-items-center gap-3">
+                        <div class="col-md-12 mt-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" id="checkDocumentos">
+                                    <label class="form-check-label mb-0">
+                                        Adjuntar documentos
+                                    </label>
+                                </div>
 
-
-                            <div class="form-check m-0">
-                                <input class="form-check-input" type="checkbox" id="checkDocumentos">
-                                <label class="form-check-label mb-0">
-                                    Adjuntar documentos
-                                </label>
+                                <div id="contenedorDocumentos" style="display:none; min-width: 300px;">
+                                    <select name="documentos[]" id="documentos" class="form-control" multiple>
+                                        @foreach ($documentos as $descripcion => $id)
+                                            <option value="{{ $id }}">
+                                                {{ str_replace('-', ' ', $descripcion) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
 
-                            @if ($esEmpresaGlobal ?? false)
-                            @if ($esEmpresaGlobal ?? false)
-                            <div class="form-check form-switch m-0 d-flex align-items-center">
-                                <input class="form-check-input" type="checkbox" id="checkSepararUnidadesCxc" name="separar_unidades" value="1">
-                                <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesCxc">
-                                    Separar por unidades
-                                </label>
+                            <!-- Selector Tipo de Reporte (1 Predeterminado / 2 Personalizado) -->
+                            <div class="d-flex align-items-center gap-3 px-3 py-2 bg-light rounded border">
+                                <span class="fw-bold text-gray-700 fs-7">Tipo de reporte:</span>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="tipo_reporte" id="tipo_reporte_1" value="predeterminado" checked>
+                                    <label class="form-check-label fw-semibold text-gray-800 fs-7 mb-0 cursor-pointer" for="tipo_reporte_1">
+                                        1 Predeterminado
+                                    </label>
+                                </div>
+                                <div class="form-check form-check-inline m-0">
+                                    <input class="form-check-input" type="radio" name="tipo_reporte" id="tipo_reporte_2" value="personalizado">
+                                    <label class="form-check-label fw-semibold text-gray-800 fs-7 mb-0 cursor-pointer" for="tipo_reporte_2">
+                                        2 Personalizado
+                                    </label>
+                                </div>
                             </div>
-                            @endif
-                            @endif
-
-
-                            <div id="contenedorDocumentos" style="display:none; min-width: 300px;">
-                                <select name="documentos[]" id="documentos" class="form-control" multiple>
-                                    @foreach ($documentos as $descripcion => $id)
-                                        <option value="{{ $id }}">
-                                            {{ str_replace('-', ' ', $descripcion) }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
                         </div>
 
                         <div class="d-flex justify-content-end my-2">
@@ -546,7 +550,7 @@
                         adjuntar_docs: adjuntarDocs,
                         documentos: documentosSeleccionados,
                         modo: modo,
-                        separar_unidades: $('#checkSepararUnidadesCxc').is(':checked') ? 1 : 0,
+                        tipo_reporte: $('input[name="tipo_reporte"]:checked').val() || 'predeterminado',
                     },
                     xhrFields: {
                         responseType: 'blob', // Indicar que esperamos una respuesta tipo blob (archivo)

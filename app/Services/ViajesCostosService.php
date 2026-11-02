@@ -61,36 +61,43 @@ class ViajesCostosService
     }
     private function procesarSobrepeso($viaje, $request)
     {
-
         $precio = floatval($request->precio_sobre_peso ?? 0);
-        $peso = floatval($request->sobrePeso ?? 0);
 
+        // Calcular la diferencia exacta con los decimales reales de peso_contenedor
+        $pesoExacto = 0;
+        if ($viaje) {
+            $viaje->loadMissing('cotizaciones');
+            if ($viaje->cotizaciones && $viaje->cotizaciones->isNotEmpty()) {
+                foreach ($viaje->cotizaciones as $c) {
+                    $pCont = floatval($c->peso_contenedor ?? 0);
+                    $pReg = floatval($c->peso_reglamentario ?: 22);
+                    if ($pCont > $pReg) {
+                        $pesoExacto += ($pCont - $pReg);
+                    }
+                }
+            }
+        }
 
-        $monto = $precio * $peso;
-
-
-
+        $peso = $pesoExacto > 0 ? $pesoExacto : floatval($request->sobrePeso ?? 0);
+        $monto = round($precio * $peso, 2);
 
         if ($monto > 0) {
-
             ViajesCostos::updateOrCreate(
                 [
-                'viaje_id' => $viaje->id,
-                'concepto' => 'sobrepeso'
+                    'viaje_id' => $viaje->id,
+                    'concepto' => 'sobrepeso'
                 ],
                 [
-                'monto' => $monto,
-                'tipo_operacion' => 'cargo',
-                'meta' => [
-                    'precio_sobre_peso' => $request->precio_sobre_peso,
-                    'peso' => $peso,
-                    'precio_tonelada' => $monto,
-                ]
+                    'monto' => $monto,
+                    'tipo_operacion' => 'cargo',
+                    'meta' => [
+                        'precio_sobre_peso' => $precio,
+                        'peso' => $peso,
+                        'precio_tonelada' => $monto,
+                    ]
                 ]
             );
-
         } else {
-
             ViajesCostos::where('viaje_id', $viaje->id)
                 ->where('concepto', 'sobrepeso')
                 ->delete();
