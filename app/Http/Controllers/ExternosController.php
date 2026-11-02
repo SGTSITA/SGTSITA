@@ -471,6 +471,7 @@ class ExternosController extends Controller
 
             return [
                 "filePath" => $file,
+                "url" => asset('cotizaciones/cotizacion'.$id.'/'.$file),
                 'fileName' => $title,
                 "folder" => $id,
                 'secondaryFileName' => $title.' '.$contenedor,

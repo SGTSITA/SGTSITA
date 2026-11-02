@@ -1047,6 +1047,7 @@ class CotizacionesService
         $campoArchivo = match ($tipo) {
             'BoletaLib' => 'boleta_liberacion',
             'Doda' => 'doda',
+            'BoletaPatio' => 'boleta_patio',
             'CCP' => 'doc_ccp',
             default => throw new \InvalidArgumentException("Tipo de documento no soportado: {$tipo}"),
         };
@@ -1144,7 +1145,7 @@ class CotizacionesService
     /** Actualiza una cotización local individual. */
     public function singleUpdateLocal(int $id, array $data, int $idEmpresa, $user): array
     {
-        return DB::transaction(function () use ($id, $data, $idEmpresa) {
+        $resultado = DB::transaction(function () use ($id, $data, $idEmpresa) {
             $cot = Cotizaciones::findOrFail($id);
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
@@ -1197,6 +1198,13 @@ class CotizacionesService
 
             $doc->id_empresa = $idEmpresaFinal;
 
+            foreach (['numBoleta' => 'num_boleta_liberacion', 'numDoda' => 'num_doda'] as $campoEntrada => $campoDocumento) {
+                if (array_key_exists($campoEntrada, $data)) {
+                    $folio = trim((string) $data[$campoEntrada]);
+                    $doc->{$campoDocumento} = $folio === '' || strtolower($folio) === 'null' ? null : $folio;
+                }
+            }
+
             if (!empty($data['num_contenedor']) && $data['num_contenedor'] != $contenedorOriginal) {
                 $doc->num_contenedor = $data['num_contenedor'];
             }
@@ -1208,6 +1216,25 @@ class CotizacionesService
                 'num_contenedor' => $doc->num_contenedor,
             ];
         });
+
+        foreach ([
+            'boleta_liberacion_file' => ['BoletaLib', $data['numBoleta'] ?? null],
+            'doda_file' => ['Doda', $data['numDoda'] ?? null],
+            'BoletaPatio' => ['BoletaPatio', null],
+        ] as $campoArchivo => [$tipoDocumento, $folio]) {
+            $archivo = $data[$campoArchivo] ?? null;
+            if ($archivo instanceof \Illuminate\Http\UploadedFile) {
+                $this->procesarDocumento(
+                    $archivo,
+                    (int) $resultado['cotizacion_id'],
+                    (int) $resultado['docum_cotizacion_id'],
+                    $tipoDocumento,
+                    $folio
+                );
+            }
+        }
+
+        return $resultado;
     }
 
     /**
