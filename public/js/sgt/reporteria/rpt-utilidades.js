@@ -242,7 +242,7 @@ function ejecutarExportacion(fileType) {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
-    let idEquipo = $("#selEquipoUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val() || "";
 
     $.ajax({
         url: "/reporteria/utilidad/export",
@@ -256,6 +256,7 @@ function ejecutarExportacion(fileType) {
             fileType: fileType,
             id_proveedor: idProveedor,
             id_equipo: idEquipo,
+            separar_unidades: $("#checkSepararUnidadesUtilidad").is(":checked") ? 1 : 0,
         },
         xhrFields: {
             responseType: "blob",
@@ -311,7 +312,7 @@ function getUtilidadesViajes(startDate, endDate) {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
     let idProveedor = $("#selProveedorUtilidad").val();
-   let idEquipo = $("#selEquipoUtilidad").val();
+   let idEquipo = $("#selEquipoUtilidad").val() || "";
     return  $.ajax({
         url: "/reporteria/utilidad/ver-utilidad",
         type: "post",
@@ -356,7 +357,7 @@ function cargarPdfVistaPreliminar() {
     let fechaInicio = $("#daterange").attr("data-start");
     let fechaFin = $("#daterange").attr("data-end");
     let idProveedor = $("#selProveedorUtilidad").val();
-    let idEquipo = $("#selEquipoUtilidad").val();
+    let idEquipo = $("#selEquipoUtilidad").val() || "";
 
     let iframeContainer = document.getElementById("iframePreviewContainer");
     iframeContainer.innerHTML = ''; // Clear previous
@@ -403,7 +404,8 @@ function cargarPdfVistaPreliminar() {
             fechaFin: fechaFin,
             fileType: 'pdf',
             id_proveedor: idProveedor,
-            id_equipo: idEquipo
+            id_equipo: idEquipo,
+            separar_unidades: $("#checkSepararUnidadesUtilidad").is(":checked") ? 1 : 0
         };
 
         for (const [key, value] of Object.entries(inputs)) {
@@ -530,6 +532,7 @@ function renderizarGastosIndirectos() {
             const fechaLetra = fechaStr ? obtenerFechaFormateada(fechaStr) : 'Sin fecha';
             const metodo = item.metodo_imputacion ? `<span class="badge bg-light text-secondary border text-xxs ms-1">${item.metodo_imputacion}</span>` : '';
             const estatus = item.estatus ? `<span class="badge bg-success-transparent text-success text-xxs text-uppercase ms-1">${item.estatus}</span>` : '';
+            const unidadBadge = item.unidad_texto && item.unidad_texto !== 'SIN UNIDAD ASIGNADA' ? `<span class="badge bg-info-transparent text-info text-xxs ms-1"><i class="fas fa-truck me-1"></i>${item.unidad_texto}</span>` : '';
 
             const liTemplate = `
                 <li class="list-group-item border-0 d-flex justify-content-between align-items-center ps-0 mb-2 border-radius-lg p-2 bg-light">
@@ -538,6 +541,7 @@ function renderizarGastosIndirectos() {
                         <div class="d-flex align-items-center gap-1 flex-wrap">
                             <span class="text-xs text-muted"><i class="far fa-calendar-alt me-1"></i>${fechaLetra}</span>
                             <span class="badge bg-purple-transparent text-xs">${catNombre}</span>
+                            ${unidadBadge}
                             ${metodo}
                             ${estatus}
                         </div>

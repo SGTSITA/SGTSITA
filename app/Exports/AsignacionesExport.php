@@ -17,15 +17,16 @@ class AsignacionesExport implements FromView,ShouldAutoSize
     public $vBancosNoOficiales;
     public $vCotizacion;
     public $vUser;
+    public $vSepararUnidades;
 
-    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales, $cotizacion,  $user){
+    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales, $cotizacion, $user, $separarUnidades = false){
         $this->vCotizaciones = $cotizaciones;
         $this->vFechaCarbon = $fechaCarbon;
         $this->vBancosOficiales = $bancosOficiales;
         $this->vBancosNoOficiales = $bancosNoOficiales;
         $this->vCotizacion = $cotizacion;
         $this->vUser = $user;
-        
+        $this->vSepararUnidades = (bool)$separarUnidades;
     }
 
     public function view() : View
@@ -36,9 +37,9 @@ class AsignacionesExport implements FromView,ShouldAutoSize
         $bancos_no_oficiales = $this->vBancosNoOficiales;
         $cotizacion = $this->vCotizacion;
         $user = $this->vUser;
+        $separarUnidades = $this->vSepararUnidades;
         $isExcel = true;
        
-        return view('reporteria.asignaciones.pdf',compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user','isExcel'));
-
+        return view('reporteria.asignaciones.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user', 'isExcel', 'separarUnidades'));
     }
-}
+}

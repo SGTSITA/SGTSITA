@@ -32,6 +32,14 @@
                                 style="width: auto; min-width: 200px; box-shadow: none"
                             />
                         </div>
+                        @php
+                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                    @endphp
+                    @if ($esEmpresaGlobal)
+                        @php
+                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                    @endphp
+                    @if ($esEmpresaGlobal)
                         <div class="d-flex align-items-center gap-2">
                             <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
                             <select id="selEquipoDocumentos" class="form-select form-select-sm" style="width: auto; min-width: 200px; box-shadow: none">
@@ -45,10 +53,22 @@
                                 @endif
                             </select>
                         </div>
+                    @endif
+                    @endif
                     </div>
 
                     <div class="card-body">
-                        <div class="d-flex justify-content-start my-2 gap-2">
+                        <div class="d-flex justify-content-start my-2 gap-2 align-items-center flex-wrap">
+                            @if ($esEmpresaGlobal ?? false)
+                            @if ($esEmpresaGlobal ?? false)
+                            <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                <input class="form-check-input" type="checkbox" id="checkSepararUnidadesDocs" name="separar_unidades" value="1">
+                                <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesDocs">
+                                    Separar por unidades
+                                </label>
+                            </div>
+                            @endif
+                            @endif
                             <button
                                 type="button"
                                 id="exportButtonExcel"
