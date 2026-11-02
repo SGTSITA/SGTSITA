@@ -66,7 +66,9 @@ Memoria viva del proyecto entre sesiones (máximo ~60 líneas).
 >>>>>>> Stashed changes
 
 ## Errores a evitar
-- En `/viajes/solicitud/simple`, validar folios documentales solo al adjuntar archivos sobre viajes existentes, inicializar FileUploader después del guardado y proteger scripts compartidos ante campos ausentes. El procesamiento de archivos, persistencia, confirmaciones y notificaciones deben residir en `CotizacionesService`; el controlador solo delega.
+- En `storeLocal`, crear primero `Cotizaciones`, después su bitácora y luego `DocumCotizacion` con el ID real; el frontend local espera `id`, `cotizacion_id` y `num_contenedor` en la respuesta. Todo debe persistir en una transacción.
+- En ediciones de viajes locales, `cotizaciones` no tiene columna `id_transportista`: persistir el transportista en `id_proveedor` y `transportista_local`, y mantener la empresa seleccionada en `id_empresa`/`empresa_local` (sincronizando `docum_cotizacion.id_empresa`).
+- En `/viajes/solicitud/simple`, cargar `cotizaciones.js` antes de Google Maps para que `googleMapsReady` exista al dispararse el callback; el mapa debe tolerar que falte su contenedor. El FileUploader usa `enableApi`, evita doble submit y se reinicia desde los documentos persistidos al guardar. Validar folios solo al adjuntar archivos a viajes existentes; su procesamiento/persistencia/notificaciones viven en `CotizacionesService`.
 - NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
 - Validar siempre que el monto de conceptos sea positivo y que haya cuenta bancaria asignada cuando exista desembolso neto.

@@ -917,12 +917,91 @@ class CotizacionesService
      */
     public function storeLocal(array $data, int $idEmpresa, $user): array
     {
-        return DB::transaction(function () use ($data, $idEmpresa) {
+        return DB::transaction(function () use ($data, $idEmpresa, $user) {
+            $numContenedor = preg_replace('/\s+/', '', (string) ($data['num_contenedor'] ?? ''));
+            if ($numContenedor === '') {
+                throw new \DomainException('Debe indicar el número de contenedor.');
+            }
+
+            if (DocumCotizacion::where('num_contenedor', $numContenedor)->exists()) {
+                throw new \DomainException('El contenedor ya existe en la empresa.');
+            }
+
+            $idEmpresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
+            $idTransportista = !empty($data['id_transportista']) ? (int) $data['id_transportista'] : null;
+            $normalizarFecha = static function ($valor) {
+                if ($valor === null) return null;
+                $valor = trim((string) $valor);
+                return $valor === '' || strtolower($valor) === 'null' ? null : $valor;
+            };
+
+            $cotizacion = Cotizaciones::create([
+                'id_cliente' => $data['id_cliente'] ?? null,
+                'id_empresa' => $idEmpresaFinal,
+                'id_subcliente' => $data['id_subcliente'] ?? null,
+                'id_proveedor' => $idTransportista,
+                'cp_pedimento' => $data['num_pedimento'] ?? null,
+                'cp_clase_ped' => $data['cp_clase_ped'] ?? null,
+                'bloque' => $data['bloque'] ?? null,
+                'bloque_hora_i' => $data['bloque_hora_i'] ?? null,
+                'bloque_hora_f' => $data['bloque_hora_f'] ?? null,
+                'bloque_local' => $data['bloque'] ?? null,
+                'bloque_hora_i_local' => $data['bloque_hora_i'] ?? null,
+                'bloque_hora_f_local' => $data['bloque_hora_f'] ?? null,
+                'peso_reglamentario' => 22,
+                'sobrepeso' => 0,
+                'origen' => $data['origen'] ?? null,
+                'tamano' => $data['tamano'] ?? null,
+                'peso_contenedor' => $data['peso_contenedor'] ?? null,
+                'fecha_modulacion' => $data['fecha_modulacion'] ?? null,
+                'origen_local' => $data['origen'] ?? null,
+                'destino_local' => $data['destino'] ?? null,
+                'costo_maniobra_local' => (float) ($data['Costomaniobra'] ?? 0),
+                'estado_contenedor' => $data['estado_contenedor'] ?? '',
+                'fecha_modulacion_local' => $data['fecha_modulacion'] ?? null,
+                'empresa_local' => $idEmpresaFinal,
+                'sub_cliente_local' => $data['id_subcliente'] ?? null,
+                'transportista_local' => $idTransportista,
+                'en_patio' => 1,
+                'estatus' => 'Documentos Faltantes',
+                'tipo_viaje_seleccion' => 'local',
+                'puerto' => $data['puerto'] ?? '',
+                'fecha_ingreso_puerto' => $data['fecha_ingreso_puerto'] ?? null,
+                'fecha_salida_puerto' => $data['fecha_salida_puerto'] ?? null,
+                'dias_estadia' => (int) ($data['dias_estadia'] ?? 0),
+                'tarifa_estadia' => (float) ($data['tarifa_estadia'] ?? 0),
+                'total_estadia' => (float) ($data['total_estadia'] ?? 0),
+                'dias_pernocta' => (int) ($data['dias_pernocta'] ?? 0),
+                'tarifa_pernocta' => (float) ($data['tarifa_pernocta'] ?? 0),
+                'total_pernocta' => (float) ($data['total_pernocta'] ?? 0),
+                'total_general' => (float) ($data['total_general'] ?? 0),
+                'motivo_demora' => $data['motivo_demora'] ?? null,
+                'liberado' => $data['liberado'] ?? 0,
+                'fecha_liberacion' => $data['fecha_liberacion'] ?? null,
+                'responsable' => 'Viaje local',
+                'observaciones' => $data['observaciones'] ?? null,
+                'nuevo_sello' => array_key_exists('nuevo_sello', $data) ? filter_var($data['nuevo_sello'], FILTER_VALIDATE_BOOLEAN) : null,
+                'confirmacion_sello' => array_key_exists('confirmacion_sello', $data) ? filter_var($data['confirmacion_sello'], FILTER_VALIDATE_BOOLEAN) : null,
+                'estatus_maniobra_id' => 4,
+                'origen_captura' => $data['origen_captura'] ?? null,
+                'user_id' => $user->id,
+                'agente_aduanal' => $data['agente_aduanal'] ?? '',
+                'estatus_pago' => '0',
+            ]);
+
+            BitacoraCotizacionesEstatus::create([
+                'cotizaciones_id' => $cotizacion->id,
+                'estatus_id' => 4,
+                'user_id' => $user->id,
+                'nota' => 'Creación de cotización local',
+            ]);
+
+            $naviera = $data['naviera'] ?? null;
             $doc = DocumCotizacion::create([
-                'id_cotizacion' => 0,
-                'id_empresa' => $idEmpresa,
-                'num_contenedor' => $data['num_contenedor'] ?? null,
-                'terminal' => $data['terminal'] ?? null,
+                'id_cotizacion' => $cotizacion->id,
+                'id_empresa' => $idEmpresaFinal,
+                'num_contenedor' => $numContenedor,
+                'terminal' => $data['terminal_local'] ?? null,
                 'num_autorizacion' => $data['num_autorizacion'] ?? null,
                 'boleta_liberacion' => $data['boleta_liberacion'] ?? null,
                 'doda' => $data['doda'] ?? null,
@@ -939,38 +1018,16 @@ class CotizacionesService
                 'boleta_patio' => $data['boleta_patio'] ?? null,
                 'fecha_boleta_patio' => $data['fecha_boleta_patio'] ?? null,
                 'cima' => $data['cima'] ?? 0,
-            ]);
-
-            $local = \App\Models\CotizacionesLocales::create([
-                'id_contenedor' => $doc->id,
-                'id_subcliente' => $data['id_subcliente'] ?? null,
-                'id_empresa' => $idEmpresa,
-                'id_proveedor' => $idEmpresa,
-                'id_transportista' => $data['id_transportista'] ?? null,
-                'origen' => $data['origen'] ?? null,
-                'tamano' => $data['tamano'] ?? null,
-                'peso_contenedor' => $data['peso_contenedor'] ?? null,
-                'fecha_modulacion' => $data['fecha_modulacion'] ?? null,
-                'puerto' => $data['puerto'] ?? null,
-                'fecha_ingreso_puerto' => $data['fecha_ingreso_puerto'] ?? null,
-                'fecha_salida_puerto' => $data['fecha_salida_puerto'] ?? null,
-                'dias_estadia' => $data['dias_estadia'] ?? 0,
-                'dias_pernocta' => $data['dias_pernocta'] ?? 0,
-                'tarifa_estadia' => $data['tarifa_estadia'] ?? 0,
-                'tarifa_pernocta' => $data['tarifa_pernocta'] ?? 0,
-                'total_estadia' => $data['total_estadia'] ?? 0,
-                'total_pernocta' => $data['total_pernocta'] ?? 0,
-                'total_general' => $data['total_general'] ?? 0,
-                'motivo_demora' => $data['motivo_demora'] ?? null,
-                'liberado' => $data['liberado'] ?? 0,
-                'fecha_liberacion' => $data['fecha_liberacion'] ?? null,
-                'responsable' => $data['responsable'] ?? null,
-                'observaciones' => $data['observaciones'] ?? null,
+                'cita_at' => $normalizarFecha($data['cita_at'] ?? null),
+                'eta' => $normalizarFecha($data['eta'] ?? null),
+                'pedimento_recibido_at' => $normalizarFecha($data['pedimento_recibido_at'] ?? null),
+                'naviera_id' => ($naviera === null || $naviera === '' || $naviera === 'null') ? null : (int) $naviera,
             ]);
 
             return [
+                'cotizacion_id' => $cotizacion->id,
                 'docum_cotizacion_id' => $doc->id,
-                'cotizacion_local_id' => $local->id,
+                'num_contenedor' => $numContenedor,
             ];
         });
     }
@@ -1092,11 +1149,15 @@ class CotizacionesService
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
             $contenedorOriginal = $doc->num_contenedor;
+            $idEmpresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
+            $idTransportista = !empty($data['id_transportista']) ? (int) $data['id_transportista'] : null;
 
             $cot->id_subcliente = $data['id_subcliente'] ?? null;
-            $cot->id_empresa = $idEmpresa;
-            $cot->id_proveedor = $data['id_proveedor'] ?? null;
-            $cot->id_transportista = $data['id_transportista'] ?? null;
+            $cot->id_empresa = $idEmpresaFinal;
+            $cot->id_proveedor = $idTransportista;
+            $cot->empresa_local = $idEmpresaFinal;
+            $cot->sub_cliente_local = $data['id_subcliente'] ?? null;
+            $cot->transportista_local = $idTransportista;
             $cot->origen = $data['origen'] ?? $cot->origen;
             $cot->tamano = $data['tamano'] ?? $cot->tamano;
             $cot->peso_contenedor = $data['peso_contenedor'] ?? $cot->peso_contenedor;
@@ -1118,10 +1179,12 @@ class CotizacionesService
             $cot->observaciones = $data['observaciones'] ?? null;
             $cot->save();
 
+            $doc->id_empresa = $idEmpresaFinal;
+
             if (!empty($data['num_contenedor']) && $data['num_contenedor'] != $contenedorOriginal) {
                 $doc->num_contenedor = $data['num_contenedor'];
-                $doc->save();
             }
+            $doc->save();
         });
     }
 

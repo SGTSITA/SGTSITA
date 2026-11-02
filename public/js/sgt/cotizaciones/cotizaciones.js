@@ -973,7 +973,10 @@ function getClientes(clienteId, subclienteid) {
 }
 
 function googleMapsReady() {
-    map = new google.maps.Map(document.getElementById("map"), {
+    const mapElement = document.getElementById("map");
+    if (!window.google?.maps || !mapElement) return;
+
+    map = new google.maps.Map(mapElement, {
         center: { lat: 19.4326, lng: -99.1332 }, // CDMX por defecto
         zoom: 12,
     });
