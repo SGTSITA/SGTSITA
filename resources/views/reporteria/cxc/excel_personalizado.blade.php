@@ -302,3 +302,5 @@
         </tr>
     </tbody>
 </table>
+
+@include('reporteria.cxc.partials.cuentas_bancarias', ['empresaCuentaId' => $empresaCuentaId ?? $primera?->id_empresa])
