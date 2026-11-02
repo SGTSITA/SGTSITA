@@ -208,13 +208,31 @@ async function reinicializarFileUploader() {
         await fileUploaderInitPromise;
     }
 
-    Object.values(documentosConfig).forEach((config) => {
-        const input = document.querySelector(config.input);
-        const instance = input && $.fileuploader.getInstance(input);
-        if (instance) instance.destroy();
-    });
+    const numContenedor = localStorage.getItem("numContenedor");
+    const archivos = numContenedor ? await consultarArchivos(numContenedor) : [];
 
-    await initFileUploader();
+    Object.values(documentosConfig).forEach((config) => {
+        const input = $(config.input);
+        if (!input.length) return;
+
+        const archivoExistente = archivos.find(
+            (file) => file.fileCode === config.fileCode,
+        );
+        const preload = archivoExistente
+            ? generarPreloadArchivo(archivoExistente)
+            : null;
+        const instance = $.fileuploader.getInstance(input[0]);
+
+        if (instance) {
+            // Mantener el wrapper ya renderizado; solo limpiar la selección
+            // enviada y reemplazar la lista con los archivos persistidos.
+            instance.reset();
+            if (preload) instance.append([preload]);
+            return;
+        }
+
+        initSingleFileUploader(config, preload);
+    });
 }
 
 /*

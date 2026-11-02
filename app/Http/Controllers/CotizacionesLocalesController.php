@@ -25,8 +25,10 @@ class CotizacionesLocalesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización local guardada correctamente',
+                'id' => $res['docum_cotizacion_id'],
+                'cotizacion_id' => $res['cotizacion_id'],
                 'docum_cotizacion_id' => $res['docum_cotizacion_id'],
-                'cotizacion_local_id' => $res['cotizacion_local_id'],
+                'num_contenedor' => $res['num_contenedor'],
             ]);
         } catch (\Throwable $e) {
             Log::error('Error guardando cotización local: ' . $e->getMessage());

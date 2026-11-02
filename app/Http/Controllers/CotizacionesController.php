@@ -3399,8 +3399,10 @@ $this->CotizacionesService->procesarDocumento(
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización local guardada correctamente',
+                'id' => $res['docum_cotizacion_id'],
+                'cotizacion_id' => $res['cotizacion_id'],
                 'docum_cotizacion_id' => $res['docum_cotizacion_id'],
-                'cotizacion_local_id' => $res['cotizacion_local_id'],
+                'num_contenedor' => $res['num_contenedor'],
             ]);
         } catch (\DomainException $e) {
             return response()->json([
