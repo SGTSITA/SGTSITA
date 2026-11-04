@@ -872,6 +872,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::get('/backups-historiales/descargar/{file}', [App\Http\Controllers\DatabaseController::class, 'descargarBackupHistorial'])->name('backups.historiales.descargar');
     Route::delete('/backups-historiales/eliminar/{file}', [App\Http\Controllers\DatabaseController::class, 'eliminarBackupHistorial'])->name('backups.historiales.eliminar');
     Route::post('/backups-historiales/limpiar-ahora', [App\Http\Controllers\DatabaseController::class, 'ejecutarLimpiezaAhora'])->name('backups.historiales.limpiar');
+    Route::post('/backups-historiales/sistema-completo', [App\Http\Controllers\DatabaseController::class, 'generarRespaldoCompletoSistema'])->name('backups.sistema_completo.generar');
 
 
     // Ruta para la vista principal de correos

@@ -138,7 +138,15 @@ class ReporteriaService
                 $q->where('tipo_vinculo', 'cotizacion')
                   ->where('vinculable_type', Cotizaciones::class)
                   ->where('vinculable_id', $d->id_cotizacion);
-            })->whereIn('tipo_gasto', ['operador', 'viaje'])->get();
+            })->whereIn('tipo_gasto', ['operador', 'viaje'])
+              ->whereDoesntHave('categoria', fn ($cq) => $cq->where('categoria', 'Sueldos de Operadores'))
+              ->where(function ($q) {
+                  $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                      'asignacion_sueldo_operador',
+                      'asignacion_anticipo_operador',
+                      'dinero_contenedor_anticipo',
+                  ]);
+              })->get();
 
             foreach ($gastosExtra as $ge) {
                 $detalleGastos[] = [
@@ -181,7 +189,15 @@ class ReporteriaService
                 }
             }
 
-            $pagoOperacion = (is_null($d->Proveedor)) ? $d->sueldo_viaje : $d->total_proveedor;
+            $pagoOperacion = (is_null($d->Proveedor)) ? (float) $d->sueldo_viaje : (float) $d->total_proveedor;
+            if (is_null($d->Proveedor)) {
+                $liqCont = \App\Models\LiquidacionContenedor::where('id_contenedor', $d->id_docum_cotizacion)->first();
+                if ($liqCont && $liqCont->total_pagado !== null) {
+                    $pagoOperacion = min((float) $d->sueldo_viaje, (float) $liqCont->total_pagado);
+                } elseif ($sinJustificar > 0) {
+                    $pagoOperacion = max(0, (float) $d->sueldo_viaje - $sinJustificar);
+                }
+            }
             $gastosDiferidos = round($camionGastos->sum('total_gastos_periodo') / $totalViajesCamion, 2);
 
             $sumGastosExtra = $gastosExtra->sum('monto_total');
@@ -202,7 +218,7 @@ class ReporteriaService
                 "precioViaje" => (float) $d->total,
                 "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                 "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                "pagoOperacion" => $pagoOperacion - $sinJustificar,
+                "pagoOperacion" => $pagoOperacion,
                 "gastosExtra" => $sumGastosExtra,
                 "dineroViajeSinJustificar" => $sinJustificar,
                 "gastosViaje" => $sumGastosOperador,
@@ -212,7 +228,7 @@ class ReporteriaService
                 "gastosDiferidos" => $gastosDiferidos,
                 "estatusViaje" => ($d->estatus === 'Aprobada' && $d->estatus_planeacion == 1) ? 'Planeada' : $d->estatus,
                 "estatusPago" => $d->estatus_pago == 1 ? 'Pagado' : 'Por Cobrar',
-                "utilidad" => ((float) $d->total) - ($pagoOperacion + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
+                "utilidad" => ((float) $d->total) - ($pagoOperacion + $sinJustificar + $sumGastosExtra + $sumGastosOperador + $gastosDiferidos),
                 "detalleGastos" => $detalleGastos,
                 "id_camion" => $d->id_camion,
                 "unidad" => $textoUnidad,

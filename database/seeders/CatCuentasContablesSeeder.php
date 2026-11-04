@@ -139,8 +139,10 @@ class CatCuentasContablesSeeder extends Seeder
             ['codigo' => '5.1.1.1', 'nombre' => 'Combustible (Diesel)', 'nivel' => 4, 'padre' => '5.1.1', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '5.1.1.2', 'nombre' => 'Casetas y Peajes', 'nivel' => 4, 'padre' => '5.1.1', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '5.1.1.3', 'nombre' => 'Maniobras y Burreo', 'nivel' => 4, 'padre' => '5.1.1', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
+            ['codigo' => '5.1.1.4', 'nombre' => 'Sueldos y Salarios de Operadores', 'nivel' => 4, 'padre' => '5.1.1', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '5.1.2.1', 'nombre' => 'Mantenimiento, Llantas y Reparaciones', 'nivel' => 4, 'padre' => '5.1.2', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
             ['codigo' => '5.1.3.1', 'nombre' => 'Gastos Administrativos y Generales', 'nivel' => 4, 'padre' => '5.1.3', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
+            ['codigo' => '5.1.3.7', 'nombre' => 'Servicios de Traslado y Viáticos de Operadores', 'nivel' => 4, 'padre' => '5.1.3', 'rubro' => 'gastos', 'naturaleza' => 'deudora', 'es_afectable' => true],
         ];
 
         // Mapeo en memoria para asignar cuenta_padre_id dinámicamente

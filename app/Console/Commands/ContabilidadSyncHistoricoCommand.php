@@ -16,6 +16,7 @@ use App\Models\SocioPago;
 use App\Services\CotizacionesService;
 use App\Services\CuentaContableResolverService;
 use App\Services\PolizaService;
+use App\Services\OperadorGastosContabilidadService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -29,7 +30,11 @@ class ContabilidadSyncHistoricoCommand extends Command
     protected $signature = 'contabilidad:sync-historico 
                             {empresa? : ID de la empresa a procesar (opcional)}
                             {--empresa= : ID de la empresa a procesar (opcional, por defecto todas)}
-                            {--force : Forzar regeneración de pólizas que ya existen}';
+                            {--force : Forzar regeneración de pólizas que ya existen}
+                            {--solo-operadores : Sincroniza únicamente sueldos, anticipos y comprobaciones de operadores}
+                            {--dry-run : Muestra faltantes de operadores sin crear o modificar registros}
+                            {--desde= : Fecha inicial del histórico de operadores (YYYY-MM-DD)}
+                            {--hasta= : Fecha final del histórico de operadores (YYYY-MM-DD)}';
 
     /**
      * The console command description.
@@ -42,7 +47,8 @@ class ContabilidadSyncHistoricoCommand extends Command
 
     public function __construct(
         protected PolizaService $polizaService,
-        protected CotizacionesService $cotizacionesService
+        protected CotizacionesService $cotizacionesService,
+        protected OperadorGastosContabilidadService $operadorGastosContabilidadService
     ) {
         parent::__construct();
     }
@@ -60,6 +66,21 @@ class ContabilidadSyncHistoricoCommand extends Command
 
         $empresaFiltro = $this->argument('empresa') ?: $this->option('empresa');
         $force = (bool) $this->option('force');
+        $soloOperadores = (bool) $this->option('solo-operadores') || (bool) $this->option('dry-run');
+        $dryRun = (bool) $this->option('dry-run');
+        $desde = $this->option('desde');
+        $hasta = $this->option('hasta');
+
+        foreach (['desde' => $desde, 'hasta' => $hasta] as $opcion => $fecha) {
+            if ($fecha && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                $this->error("La opción --{$opcion} debe tener formato YYYY-MM-DD.");
+                return Command::FAILURE;
+            }
+        }
+        if ($desde && $hasta && $desde > $hasta) {
+            $this->error('La fecha --desde no puede ser posterior a --hasta.');
+            return Command::FAILURE;
+        }
 
         $empresasQuery = Empresas::query();
         if ($empresaFiltro) {
@@ -74,6 +95,32 @@ class ContabilidadSyncHistoricoCommand extends Command
             return Command::FAILURE;
         }
 
+        if ($soloOperadores) {
+            if ($force) {
+                $this->error('No combines --force con --solo-operadores/--dry-run: este reproceso conserva las pólizas existentes y solo completa o corrige orígenes de operador.');
+                return Command::FAILURE;
+            }
+            $this->info($dryRun ? 'Vista previa del backfill de operadores (sin escrituras)' : 'Sincronización histórica de operadores');
+            $this->table(['Empresa', 'Asignaciones', 'Sueldos', 'Importe sueldo', 'Anticipos', 'Importe anticipos', 'Comprobaciones', 'Importe comprobaciones', 'Excedentes', 'Importe excedentes', 'Pólizas faltantes', 'Errores'], $empresas->map(function ($empresa) use ($desde, $hasta, $dryRun) {
+                $resumen = $this->operadorGastosContabilidadService->sincronizarHistorico((int) $empresa->id, $desde, $hasta, $dryRun);
+                return [
+                    $empresa->nombre,
+                    $resumen['asignaciones'],
+                    $resumen['sueldos'],
+                    number_format($resumen['monto_sueldos'], 2),
+                    $resumen['anticipos'],
+                    number_format($resumen['monto_anticipos'], 2),
+                    $resumen['comprobaciones'],
+                    number_format($resumen['monto_comprobaciones'], 2),
+                    $resumen['excedentes'],
+                    number_format($resumen['monto_excedentes'], 2),
+                    $resumen['polizas'] ?? 0,
+                    $resumen['errores'],
+                ];
+            })->toArray());
+            return Command::SUCCESS;
+        }
+
         $resumen = [
             'aperturas'        => 0,
             'cotizaciones'     => 0,
@@ -82,6 +129,10 @@ class ContabilidadSyncHistoricoCommand extends Command
             'cxp_pagos'        => 0,
             'gastos_deveng'    => 0,
             'gastos_pagos'     => 0,
+            'sueldos_operador' => 0,
+            'anticipos_operador' => 0,
+            'comprobaciones_operador' => 0,
+            'polizas_operador' => 0,
             'prestamos'        => 0,
             'socios_pagos'     => 0,
             'ajustes_hist'     => 0,
@@ -111,6 +162,13 @@ class ContabilidadSyncHistoricoCommand extends Command
                 // 3. Cobros de Clientes (CxC Recaudado a Bancos)
                 $this->syncCobrosClientes($empresa->id, $force, $resumen);
             }
+
+            $resumenOperadores = $this->operadorGastosContabilidadService->sincronizarHistorico((int) $empresa->id, $desde, $hasta, false);
+            $resumen['sueldos_operador'] += $resumenOperadores['sueldos'];
+            $resumen['anticipos_operador'] += $resumenOperadores['anticipos'];
+            $resumen['comprobaciones_operador'] += $resumenOperadores['comprobaciones'];
+            $resumen['polizas_operador'] += $resumenOperadores['polizas'] ?? 0;
+            $resumen['errores'] += $resumenOperadores['errores'];
 
             // 4. CxP Proveedores Subcontratados (Únicamente GC - ID 7)
             if ((int)$empresa->id === 7) {
@@ -156,6 +214,10 @@ class ContabilidadSyncHistoricoCommand extends Command
                 ['Provisiones CXP Fletes Subcontratados (GC ID: 7)', $resumen['cxp_provisiones']],
                 ['Pagos CXP Fletes Proveedores (GC ID: 7)', $resumen['cxp_pagos']],
                 ['Gastos Devengados (Gasto vs Proveedores CXP)', $resumen['gastos_deveng']],
+                ['Sueldos Devengados de Operadores', $resumen['sueldos_operador']],
+                ['Anticipos de Viaje por Comprobar', $resumen['anticipos_operador']],
+                ['Comprobaciones de Operadores', $resumen['comprobaciones_operador']],
+                ['Pólizas de Liquidación / Anticipo Operadores', $resumen['polizas_operador']],
                 ['Pagos de Gastos a Proveedores (CXP vs Bancos)', $resumen['gastos_pagos']],
                 ['Préstamos / Adelantos Otorgados a Operadores', $resumen['prestamos']],
                 ['Anticipos y Retiros a Socios (SocioPagos)', $resumen['socios_pagos']],
@@ -336,6 +398,15 @@ class ContabilidadSyncHistoricoCommand extends Command
         $gastos = Gasto::where('id_empresa', $idEmpresa)
             ->where('monto_total', '>', 0)
             ->where('estatus', '!=', 'cancelado')
+            ->where(function ($q) {
+                $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                    'asignacion_sueldo_operador',
+                    'asignacion_anticipo_operador',
+                    'dinero_contenedor_anticipo',
+                    'viaticos_operadores',
+                    'viaticos_operadores_excedente',
+                ]);
+            })
             ->get();
 
         $count = 0;
@@ -371,6 +442,15 @@ class ContabilidadSyncHistoricoCommand extends Command
     {
         $pagos = GastoPago::whereHas('gasto', function ($q) use ($idEmpresa) {
                 $q->where('id_empresa', $idEmpresa);
+                $q->where(function ($sq) {
+                    $sq->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                        'asignacion_sueldo_operador',
+                        'asignacion_anticipo_operador',
+                        'dinero_contenedor_anticipo',
+                        'viaticos_operadores',
+                        'viaticos_operadores_excedente',
+                    ]);
+                });
             })
             ->where('monto', '>', 0)
             ->get();
@@ -604,6 +684,9 @@ class ContabilidadSyncHistoricoCommand extends Command
     {
         $pagos = \App\Models\PagoPrestamo::whereHas('prestamo.operador', function ($q) use ($idEmpresa) {
                 $q->where('id_empresa', $idEmpresa);
+            })
+            ->where(function ($q) {
+                $q->whereNull('tipo_origen')->orWhere('tipo_origen', '!=', 'liquidacion');
             })
             ->where('monto_pago', '>', 0)
             ->get();
