@@ -131,6 +131,18 @@ class OperadorGastosContabilidadService
                 return $gasto;
             }
 
+            if (!$gasto) {
+                $yaMigrado = Gasto::where('id_empresa', $asignacion->id_empresa)
+                    ->where('origen_legacy', 'gastos_operadores')
+                    ->where('monto_total', $monto)
+                    ->whereHas('vinculos', function ($q) use ($viatico) {
+                        $q->where('tipo_vinculo', 'cotizacion')->where('vinculable_id', $viatico->id_cotizacion);
+                    })->first();
+                if ($yaMigrado) {
+                    return $yaMigrado;
+                }
+            }
+
             $gasto = $this->gastosService->registrar($this->payloadVinculado($asignacion, [
                 'id' => $gasto?->id,
                 'categoria_gasto_id' => $this->categoriaId('Gastos de Viaje de Operadores'),
@@ -247,6 +259,10 @@ class OperadorGastosContabilidadService
 
     public function sincronizarHistorico(int $idEmpresa, ?string $desde, ?string $hasta, bool $dryRun): array
     {
+        if (!$dryRun) {
+            $this->limpiarComprobacionesDuplicadas($idEmpresa);
+        }
+
         $asignaciones = Asignaciones::with(['Contenedor.cotizacion', 'Operador', 'Camion'])
             ->where('id_empresa', $idEmpresa)
             ->where(function ($q) {
@@ -314,6 +330,16 @@ class OperadorGastosContabilidadService
             ->orderBy('id')
             ->get();
         foreach ($viaticos as $viatico) {
+            $matchLegacy = Gasto::where('id_empresa', $idEmpresa)
+                ->where('origen_legacy', 'gastos_operadores')
+                ->where('monto_total', $viatico->monto)
+                ->whereHas('vinculos', function ($q) use ($viatico) {
+                    $q->where('tipo_vinculo', 'cotizacion')->where('vinculable_id', $viatico->id_cotizacion);
+                })->exists();
+            if ($matchLegacy) {
+                continue;
+            }
+
             $existe = Gasto::withTrashed()->where('origen_legacy', 'viaticos_operadores')->where('origen_legacy_id', $viatico->id)->exists();
             $gastoComprobacion = Gasto::withTrashed()->where('origen_legacy', 'viaticos_operadores')->where('origen_legacy_id', $viatico->id)->first();
             $polizaComprobacionExiste = $gastoComprobacion && Poliza::where('origen_tipo', 'gasto_comprobacion_operador')->where('origen_id', $gastoComprobacion->id)->exists();
@@ -404,6 +430,46 @@ class OperadorGastosContabilidadService
                 'origen' => 'directo',
             ]],
         ], $payload);
+    }
+
+    public function limpiarComprobacionesDuplicadas(int $idEmpresa): int
+    {
+        return DB::transaction(function () use ($idEmpresa) {
+            $duplicadosCount = 0;
+            $gastosViaticos = Gasto::where('id_empresa', $idEmpresa)
+                ->where('origen_legacy', 'viaticos_operadores')
+                ->get();
+
+            foreach ($gastosViaticos as $gv) {
+                $cotId = $gv->vinculos()->where('tipo_vinculo', 'cotizacion')->value('vinculable_id');
+                if (!$cotId) {
+                    continue;
+                }
+
+                $existeLegacy = Gasto::where('id_empresa', $idEmpresa)
+                    ->where('id', '!=', $gv->id)
+                    ->where('origen_legacy', 'gastos_operadores')
+                    ->where('monto_total', $gv->monto_total)
+                    ->whereHas('vinculos', function ($q) use ($cotId) {
+                        $q->where('tipo_vinculo', 'cotizacion')->where('vinculable_id', $cotId);
+                    })->exists();
+
+                if ($existeLegacy) {
+                    Poliza::where('origen_tipo', 'gasto_comprobacion_operador')
+                        ->where('origen_id', $gv->id)
+                        ->delete();
+
+                    $gv->pagos()->delete();
+                    $gv->partidas()->delete();
+                    $gv->imputaciones()->delete();
+                    $gv->vinculos()->delete();
+                    $gv->forceDelete();
+                    $duplicadosCount++;
+                }
+            }
+
+            return $duplicadosCount;
+        });
     }
 
     private function categoriaId(string $categoria): ?int

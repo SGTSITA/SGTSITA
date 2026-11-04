@@ -1540,6 +1540,14 @@ class PlaneacionController extends Controller
                     });
                 })
                 ->where('estatus', '!=', 'cancelado')
+                ->where('tipo_gasto', '!=', 'sueldo')
+                ->where(function ($q) {
+                    $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                        'asignacion_sueldo_operador',
+                        'asignacion_anticipo_operador',
+                        'dinero_contenedor_anticipo',
+                    ]);
+                })
                 ->get();
         }
 
@@ -1864,6 +1872,14 @@ class PlaneacionController extends Controller
                         $q->where('vinculable_type', \App\Models\Asignaciones::class)
                           ->where('vinculable_id', $asignacion->id);
                     });
+                })
+                ->where('tipo_gasto', '!=', 'sueldo')
+                ->where(function ($q) {
+                    $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                        'asignacion_sueldo_operador',
+                        'asignacion_anticipo_operador',
+                        'dinero_contenedor_anticipo',
+                    ]);
                 })
                 ->get();
 
