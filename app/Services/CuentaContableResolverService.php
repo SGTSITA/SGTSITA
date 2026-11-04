@@ -32,6 +32,9 @@ class CuentaContableResolverService
     public const ROL_GASTOS_CASETAS           = 'GASTOS_CASETAS';
     public const ROL_GASTOS_MANIOBRAS         = 'GASTOS_MANIOBRAS';
     public const ROL_GASTOS_MANTENIMIENTO     = 'GASTOS_MANTENIMIENTO';
+    public const ROL_GASTOS_SUELDOS_OPERADORES = 'GASTOS_SUELDOS_OPERADORES';
+    public const ROL_SUELDOS_POR_PAGAR         = 'SUELDOS_OPERADORES_POR_PAGAR';
+    public const ROL_GASTOS_VIATICOS_OPERADORES = 'GASTOS_VIATICOS_OPERADORES';
 
     /**
      * Mapeo de fallbacks estándar CONAC en caso de ausencia de configuración en BD.
@@ -55,6 +58,9 @@ class CuentaContableResolverService
         self::ROL_GASTOS_CASETAS           => '5.1.1.2',
         self::ROL_GASTOS_MANIOBRAS         => '5.1.1.3',
         self::ROL_GASTOS_MANTENIMIENTO     => '5.1.2.1',
+        self::ROL_GASTOS_SUELDOS_OPERADORES => '5.1.1.4',
+        self::ROL_SUELDOS_POR_PAGAR         => '2.1.9.1.001',
+        self::ROL_GASTOS_VIATICOS_OPERADORES => '5.1.3.7',
     ];
 
     /**

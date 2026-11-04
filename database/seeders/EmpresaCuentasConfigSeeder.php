@@ -35,6 +35,9 @@ class EmpresaCuentasConfigSeeder extends Seeder
             CuentaContableResolverService::ROL_GASTOS_CASETAS       => ['codigo' => '5.1.1.2',     'desc' => 'Peajes y Casetas de Autopista'],
             CuentaContableResolverService::ROL_GASTOS_MANIOBRAS     => ['codigo' => '5.1.1.3',     'desc' => 'Maniobras y Burreo'],
             CuentaContableResolverService::ROL_GASTOS_MANTENIMIENTO => ['codigo' => '5.1.2.1',     'desc' => 'Mantenimiento y Refacciones de Unidades'],
+            CuentaContableResolverService::ROL_GASTOS_SUELDOS_OPERADORES => ['codigo' => '5.1.1.4', 'desc' => 'Sueldos y Salarios de Operadores'],
+            CuentaContableResolverService::ROL_SUELDOS_POR_PAGAR => ['codigo' => '2.1.9.1.001',    'desc' => 'Sueldos de Operadores por Pagar'],
+            CuentaContableResolverService::ROL_GASTOS_VIATICOS_OPERADORES => ['codigo' => '5.1.3.7', 'desc' => 'Servicios de Traslado y Viáticos de Operadores'],
         ];
 
         // 1. Sembrar configuración Global (id_empresa = NULL)
