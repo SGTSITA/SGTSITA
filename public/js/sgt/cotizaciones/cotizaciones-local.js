@@ -424,6 +424,32 @@ function getClientes(clienteId, subclienteid) {
 
 function validateFormFields() {
     for (const f of formFields) {
+        if (f.field === "numBoleta") {
+            const boletaFile = document.getElementById("BoletaLib")?.files[0];
+            if (!boletaFile) continue;
+        }
+        if (f.field === "numDoda") {
+            const dodaFile = document.getElementById("Doda")?.files[0];
+            if (!dodaFile) continue;
+        }
+        if (f.field === "terminal_local") {
+            const puertoEl = document.getElementById("puerto");
+            if (puertoEl && puertoEl.value === "LAZARO") {
+                const checked = document.querySelector(
+                    'input[name="terminal_local"]:checked',
+                );
+                if (!checked) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Campo requerido",
+                        html: `El campo <strong>${f.label}</strong> es obligatorio.`,
+                        confirmButtonText: "Entendido",
+                    });
+                    return false;
+                }
+            }
+            continue;
+        }
         if (!f.required) continue;
         const el = document.getElementById(f.id);
 
@@ -488,14 +514,19 @@ function getFormData() {
             if (!el) return;
 
             if (f.type === "select") {
-                value = el.options[el.selectedIndex]?.value || null;
+                value =
+                    el.value !== undefined && el.value !== ""
+                        ? el.value
+                        : el.options[el.selectedIndex]?.value || "";
+            } else if (el.type === "checkbox") {
+                value = el.checked ? "1" : "0";
             } else {
-                value = el.value || null;
+                value = el.value ?? "";
             }
         }
 
         if (value && typeof value === "string") {
-            if (/[\d.,]+/.test(value)) {
+            if (f.type === "numeric" && /[\d.,]+/.test(value)) {
                 value = value.replace(/,/g, "").replace(/\$/g, "").trim();
                 if (!isNaN(value)) value = parseFloat(value);
             }
@@ -528,7 +559,27 @@ function getFormData() {
     return data;
 }
 
+function obtenerCotizacionIdActual() {
+    return (
+        window.currentCotizacionId ||
+        document.getElementById("cotizacionCreate")?.dataset?.cotizacionId ||
+        localStorage.getItem("cotizacionId") ||
+        null
+    );
+}
+
 $("#solicitarservicio").on("click", function (e) {
+    if (validateFormFields()) {
+        const cotizacionId = obtenerCotizacionIdActual();
+        if (cotizacionId) {
+            updateCotizacion(cotizacionId);
+        } else {
+            guardarCotizacionLocal();
+        }
+    }
+});
+
+$("#solicitarservicio_legacy_unused").on("click", function (e) {
     if (validateFormFields()) {
         if (localStorage.getItem("cotizacionId")) {
             const cotizacionId = localStorage.getItem("cotizacionId");
@@ -540,6 +591,17 @@ $("#solicitarservicio").on("click", function (e) {
 });
 
 $("#btnContinuar").on("click", function () {
+    if (validateFormFields()) {
+        const cotizacionId = obtenerCotizacionIdActual();
+        if (cotizacionId) {
+            updateCotizacion(cotizacionId);
+        } else {
+            guardarCotizacionLocal();
+        }
+    }
+});
+
+$("#btnContinuar_legacy_unused").on("click", function () {
     if (validateFormFields()) {
         if (localStorage.getItem("cotizacionId")) {
             const cotizacionId = localStorage.getItem("cotizacionId");
@@ -555,7 +617,7 @@ function guardarCotizacionLocal() {
 
     const data = getFormData();
     for (const campo in data) {
-        formData.append(campo, data[campo]);
+        formData.append(campo, data[campo] ?? "");
     }
 
     return $.ajax({
@@ -586,7 +648,9 @@ function guardarCotizacionLocal() {
             }
 
             // Guardamos ID para subir archivos
-            window.cotLocalId = res.id;
+            window.cotLocalId = res.cotizacion_id || res.id;
+            window.currentCotizacionId = res.cotizacion_id || res.id;
+            window.currentNumContenedor = res.num_contenedor;
 
             $("#noticeFileUploader").addClass("d-none");
             $("#fileUploaderContainer").removeClass("d-none");
@@ -616,7 +680,7 @@ function updateCotizacion(id) {
 
     // Convertir datos a FormData
     for (const campo in data) {
-        formData.append(campo, data[campo]);
+        formData.append(campo, data[campo] ?? "");
     }
 
     const url = `/cotizaciones/single/update-local/${id}`;
@@ -650,7 +714,9 @@ function updateCotizacion(id) {
 
             // Guardar ID de la cotización
             const id = res.id;
-            window.cotLocalId = id;
+            window.cotLocalId = res.cotizacion_id || id;
+            window.currentCotizacionId = res.cotizacion_id || id;
+            window.currentNumContenedor = res.num_contenedor;
             localStorage.setItem("cotizacionId", res.cotizacion_id);
             localStorage.setItem("numContenedor", res.num_contenedor);
 

@@ -954,6 +954,9 @@ function fileManager() {
         '<form action="' +
             url +
             '" method="post" >' +
+            '<input type="hidden" name="idCotizacion" value="' +
+            (typeof viaje !== "undefined" && viaje ? viaje.id || "" : "") +
+            '" />' +
             '<input type="hidden" name="numContenedor" value="' +
             numContenedor +
             '" />' +
@@ -1009,7 +1012,7 @@ function editarViaje() {
     const viaje = seleccionados[0];
 
     // Si es FULL y tiene más de un viaje asociado, mostrar modal
-    const contenedores = viaje.NumContenedor?.split(" ")
+    const contenedores = (viaje.NUM_CONTENEDOR_REFER || viaje.NumContenedor)?.split(" ")
         .map((c) => c.trim())
         .filter(Boolean);
 
@@ -1060,6 +1063,9 @@ function editarViaje() {
         '<form action="' +
             url +
             '" method="post" >' +
+            '<input type="hidden" name="idCotizacion" value="' +
+            (typeof viaje !== "undefined" && viaje ? viaje.id || "" : "") +
+            '" />' +
             '<input type="hidden" name="numContenedor" value="' +
             numContenedor +
             '" />' +

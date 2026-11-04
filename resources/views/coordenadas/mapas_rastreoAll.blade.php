@@ -849,6 +849,15 @@
         </script>
 
 
+        @auth
+            <script>
+                window.SGT_SESSION_TIMEOUT_MS = {{ config('session.lifetime') * 60 * 1000 }};
+                window.SGT_LOGOUT_URL = "{{ route('logout') }}";
+                window.SGT_LOGIN_URL = "{{ url('login') }}";
+                window.SGT_DISABLE_AUTO_LOGOUT = true;
+            </script>
+            <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}?v={{ filemtime(public_path('js/sgt/common/sessionAutoLogout.js')) }}"></script>
+        @endauth
 </body>
 
 </html>
