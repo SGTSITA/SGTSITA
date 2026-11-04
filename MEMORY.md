@@ -2,6 +2,12 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Spec 024 (Devengo de sueldos y anticipos de operadores):
+  - `OperadorGastosContabilidadService`: registra sueldos devengados, anticipos y comprobaciones. Soporta asignaciones con `tipo_contrato = 'Propio'` o implícitamente propias (`empty(tipo_contrato)` + `is_null(id_proveedor)` + `id_operador`).
+  - Asignación 2493 (Empresa 8, Oliva) normalizada e integrada: conciliación perfecta de sueldos devengados entre Reportería y Contabilidad (`5.1.1.4`) por $578,500.00 con Diferencia $0.00.
+  - Catálogo de conceptos de Balance General: prefijo `1.1.1.1%` corregido de `INVERSIONES` a `EFECTIVO Y CAJA` en seeder y migración.
+  - Balance General Empresa 8 (Oliva) al 2026-09-30: Activo $1,884,619.88 = Pasivo $857,939.96 + Patrimonio $1,026,679.92. Cuadrado estrictamente con Diferencia $0.00.
+  - En consolidado multi-empresa: empresas sin módulo de bancos activo que registren egresos muestran déficit bancario por ausencia de depósitos operativos o pólizas de apertura.
 - Plataforma ERP de Transporte y Logística (Gologi Pro / SGTSITA) operativa.
 - Módulos activos: Cotizaciones, Viajes, Contenedores, Planeación, Monitoreo, Gastos y Liquidaciones.
 - Spec 020 (Cierre Contable de Ejercicios, Acumulación Real 3.2.1, SGT DateRangePicker y Reorganización de Navegación):
@@ -63,6 +69,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - En liquidaciones y ajustes, validar siempre que los montos de conceptos sean mayores a cero y que el egreso neto cuente con cuenta bancaria asignada.
 
 ## Próximos pasos
+- [ ] SDD-024 borrador: sueldo bruto $5,500 ($5,100 banco + $400 no comprobados dentro de sueldos), $600 comprobados como gasto de viaje, anticipo $1,000 y backfill idempotente; migración de categoría de sueldos si falta. Pendiente aprobación.
 - [ ] Validar en producción telemetría continua de Naanix y retirar `SISGPSTrait.php`.
 - [ ] Spec 001: Módulo de control y reportes de combustible por unidad de transporte.
 - [ ] Ejecutar `php artisan fix:gasto-fscu8106019` y `fix:gasto-msmu7292298` en producción.

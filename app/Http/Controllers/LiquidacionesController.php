@@ -24,16 +24,19 @@ use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\BancosService;
 use App\Services\EquipoService;
+use App\Services\OperadorGastosContabilidadService;
 
 class LiquidacionesController extends Controller
 {
     protected $BancosService;
     protected $equipoService;
+    protected OperadorGastosContabilidadService $operadorGastosContabilidadService;
 
-    public function __construct(BancosService $BancosService, EquipoService $equipoService)
+    public function __construct(BancosService $BancosService, EquipoService $equipoService, OperadorGastosContabilidadService $operadorGastosContabilidadService)
     {
         $this->BancosService = $BancosService;
         $this->equipoService = $equipoService;
+        $this->operadorGastosContabilidadService = $operadorGastosContabilidadService;
     }
 
 
@@ -485,6 +488,7 @@ class LiquidacionesController extends Controller
                     ]
                 ]
             ]);
+            $this->operadorGastosContabilidadService->sincronizarComprobacion($viaticoEntidad, $gasto);
 
             //Registramos el excedente en una nueva partida y lo dejamos como pendiente de pago
             if ($r->montoJustificacion > $r->sinJustificar) {
@@ -532,6 +536,7 @@ class LiquidacionesController extends Controller
                         ]
                     ]
                 ]);
+                $this->operadorGastosContabilidadService->sincronizarExcedenteComprobacion($viaticoEntidad, $excedenteGasto);
             }
             //Fin
 
@@ -672,6 +677,7 @@ class LiquidacionesController extends Controller
                             ]
                         ]
                     ]);
+                    $this->operadorGastosContabilidadService->sincronizarComprobacion($viaticoEntidad, $gastoOp);
                 }
 
                 // Si excede
@@ -731,6 +737,7 @@ class LiquidacionesController extends Controller
                             ]
                         ]);
                     }
+                    $this->operadorGastosContabilidadService->sincronizarExcedenteComprobacion($viaticoEntidad, $excedenteGasto);
                 }
             }
 
@@ -1396,6 +1403,7 @@ class LiquidacionesController extends Controller
                             'cuenta_bancaria_id' => $cuentaBancariaId,
                             'fecha_pago' => \Carbon\Carbon::createFromFormat('d/m/Y', $fechaAplicacionDinero)->format('Y-m-d'),
                             'monto' => $gasto->monto_total,
+                            'referencia' => 'LIQUIDACION_' . $liquidacion->id,
                             'estatus' => 'aplicado',
                             'user_id' => auth()->id(),
                         ]);
@@ -1421,6 +1429,7 @@ class LiquidacionesController extends Controller
             }
 
             //bancos nuevo registrar movi
+            $movimeintoCrear = null;
             if ($request->filled('bancoId') &&  $contenedores->sum('MontoPago') > 0) {
                 $FechaAplicacionPago = $request->get('FechaAplicacionPago');
 
@@ -1450,8 +1459,8 @@ class LiquidacionesController extends Controller
                     throw new \Exception('No se pudo crear el movimiento bancario, liquidacion operador  ');
                 }
 
-
             }
+            $this->operadorGastosContabilidadService->sincronizarLiquidacion($liquidacion, $movimeintoCrear->id ?? null);
             //termina nuevo bancos
 
 

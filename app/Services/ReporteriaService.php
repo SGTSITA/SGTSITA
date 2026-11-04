@@ -138,7 +138,14 @@ class ReporteriaService
                 $q->where('tipo_vinculo', 'cotizacion')
                   ->where('vinculable_type', Cotizaciones::class)
                   ->where('vinculable_id', $d->id_cotizacion);
-            })->whereIn('tipo_gasto', ['operador', 'viaje'])->get();
+            })->whereIn('tipo_gasto', ['operador', 'viaje'])
+              ->where(function ($q) {
+                  $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                      'asignacion_sueldo_operador',
+                      'asignacion_anticipo_operador',
+                      'dinero_contenedor_anticipo',
+                  ]);
+              })->get();
 
             foreach ($gastosExtra as $ge) {
                 $detalleGastos[] = [
@@ -202,7 +209,7 @@ class ReporteriaService
                 "precioViaje" => (float) $d->total,
                 "transportadoPor" => (is_null($d->Proveedor)) ? 'Operador' : 'Proveedor',
                 "operadorOrProveedor" => (is_null($d->Proveedor)) ? $d->Operador : $d->Proveedor,
-                "pagoOperacion" => $pagoOperacion - $sinJustificar,
+                "pagoOperacion" => $pagoOperacion,
                 "gastosExtra" => $sumGastosExtra,
                 "dineroViajeSinJustificar" => $sinJustificar,
                 "gastosViaje" => $sumGastosOperador,
