@@ -93,6 +93,7 @@
                         <option value="cotizacion">Cotización</option>
                         <option value="contenedor">Contenedor</option>
                         <option value="operador">Operador</option>
+                        <option value="sueldo">Sueldos</option>
                     </select>
                 </div>
 

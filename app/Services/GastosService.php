@@ -116,10 +116,27 @@ class GastosService
                         });
                 });
             });
+
+            if (empty($filters['tipo_gasto']) || !in_array($filters['tipo_gasto'], ['sueldo', 'sueldos'])) {
+                $query->where(function ($sq) {
+                    $sq->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                        'asignacion_sueldo_operador',
+                        'asignacion_anticipo_operador',
+                        'dinero_contenedor_anticipo',
+                    ]);
+                })->whereDoesntHave('categoria', function ($cq) {
+                    $cq->where('categoria', 'Sueldos de Operadores');
+                });
+            }
         }
 
         if (!empty($filters['tipo_gasto']) && $filters['tipo_gasto'] !== 'todos') {
-            if ($filters['tipo_gasto'] === 'cotizacion') {
+            if ($filters['tipo_gasto'] === 'sueldo' || $filters['tipo_gasto'] === 'sueldos') {
+                $query->where(function ($q) {
+                    $q->where('origen_legacy', 'asignacion_sueldo_operador')
+                      ->orWhereHas('categoria', fn ($cq) => $cq->where('categoria', 'Sueldos de Operadores'));
+                });
+            } elseif ($filters['tipo_gasto'] === 'cotizacion') {
                 $query->where(function ($q) {
                     $q->where('tipo_gasto', 'cotizacion')
                       ->orWhere(function ($sub) {
@@ -130,7 +147,15 @@ class GastosService
                       });
                 });
             } elseif ($filters['tipo_gasto'] === 'operador') {
-                $query->whereIn('tipo_gasto', ['operador', 'viaje']);
+                $query->whereIn('tipo_gasto', ['operador', 'viaje'])
+                      ->where('origen_legacy', '!=', 'asignacion_sueldo_operador')
+                      ->whereDoesntHave('categoria', fn ($cq) => $cq->where('categoria', 'Sueldos de Operadores'))
+                      ->where(function ($sq) {
+                          $sq->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                              'asignacion_anticipo_operador',
+                              'dinero_contenedor_anticipo',
+                          ]);
+                      });
             } else {
                 $query->where('tipo_gasto', $filters['tipo_gasto']);
             }
