@@ -143,6 +143,12 @@ class OperadorGastosContabilidadService
                 }
             }
 
+            $fechaGasto = $viatico->fecha_comprobante 
+                ?: $viatico->created_at 
+                ?: $asignacion->fecha_inicio 
+                ?: $asignacion->fecha_salida 
+                ?: now();
+
             $gasto = $this->gastosService->registrar($this->payloadVinculado($asignacion, [
                 'id' => $gasto?->id,
                 'categoria_gasto_id' => $this->categoriaId('Gastos de Viaje de Operadores'),
@@ -150,7 +156,7 @@ class OperadorGastosContabilidadService
                 'concepto' => $viatico->descripcion_gasto ?: 'Gasto de viaje comprobado',
                 'descripcion' => 'Comprobación aceptada de anticipo de viaje.',
                 'monto_total' => $monto,
-                'fecha_gasto' => $viatico->fecha_comprobante ?: $viatico->created_at ?: now(),
+                'fecha_gasto' => $fechaGasto,
                 'tipo_gasto' => 'operador',
                 'estatus' => 'pagado',
                 'origen_legacy' => 'viaticos_operadores',
@@ -163,7 +169,7 @@ class OperadorGastosContabilidadService
             $pagoComprobacion->fill([
                 'cuenta_bancaria_id' => null,
                 'movimiento_bancario_id' => null,
-                'fecha_pago' => $viatico->fecha_comprobante ?: $viatico->created_at ?: now(),
+                'fecha_pago' => $fechaGasto,
                 'monto' => $monto,
                 'metodo_pago' => 'Aplicación de anticipo comprobado',
                 'estatus' => 'aplicado',
@@ -200,7 +206,12 @@ class OperadorGastosContabilidadService
                 'concepto' => $gasto->concepto ?: 'Gasto excedente comprobado de viaje',
                 'descripcion' => 'Comprobación aceptada que excede el anticipo; pendiente de reembolso al operador.',
                 'monto_total' => $gasto->monto_total,
-                'fecha_gasto' => $gasto->fecha_gasto ?: $viatico->fecha_comprobante ?: now(),
+                'fecha_gasto' => $gasto->fecha_gasto 
+                    ?: $viatico->fecha_comprobante 
+                    ?: $viatico->created_at 
+                    ?: $asignacion->fecha_inicio 
+                    ?: $asignacion->fecha_salida 
+                    ?: now(),
                 'tipo_gasto' => 'operador',
                 'estatus' => $gasto->estatus ?: 'pendiente_pago',
                 'origen_legacy' => 'viaticos_operadores_excedente',

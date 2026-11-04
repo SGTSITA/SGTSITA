@@ -193,7 +193,7 @@ class ReporteriaService
             if (is_null($d->Proveedor)) {
                 $liqCont = \App\Models\LiquidacionContenedor::where('id_contenedor', $d->id_docum_cotizacion)->first();
                 if ($liqCont && $liqCont->total_pagado !== null) {
-                    $pagoOperacion = (float) $liqCont->total_pagado;
+                    $pagoOperacion = min((float) $d->sueldo_viaje, (float) $liqCont->total_pagado);
                 } elseif ($sinJustificar > 0) {
                     $pagoOperacion = max(0, (float) $d->sueldo_viaje - $sinJustificar);
                 }
