@@ -26,14 +26,17 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Services\BancosService;
+use App\Services\OperadorGastosContabilidadService;
 
 class PlaneacionController extends Controller
 {
     protected $BancosService;
+    protected OperadorGastosContabilidadService $operadorGastosContabilidadService;
 
-    public function __construct(BancosService $BancosService)
+    public function __construct(BancosService $BancosService, OperadorGastosContabilidadService $operadorGastosContabilidadService)
     {
         $this->BancosService = $BancosService;
+        $this->operadorGastosContabilidadService = $operadorGastosContabilidadService;
     }
 
 
@@ -904,6 +907,7 @@ class PlaneacionController extends Controller
                 $passwordTemporal = (string) mt_rand(100000, 999999);
                 $asignaciones->password_temporal = $passwordTemporal;
                 $asignaciones->save();
+                $this->operadorGastosContabilidadService->sincronizarPlaneacion($asignaciones);
 
                 // Fetch details to build the WhatsApp share message
                 $camion = Equipo::find($asignaciones->id_camion);
@@ -1424,6 +1428,7 @@ class PlaneacionController extends Controller
             }
 
             $asignaciones->save();
+            $this->operadorGastosContabilidadService->sincronizarPlaneacion($asignaciones);
 
             if (!$isElemental) {
                 $cotizacion->litros_diesel = $request->get('litros_diesel') ?? $request->get('gasto_litros_diesel') ?? 0;

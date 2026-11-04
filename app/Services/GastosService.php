@@ -601,6 +601,7 @@ class GastosService
     public function pagar(Gasto $gasto, array $data): GastoPago
     {
         return DB::transaction(function () use ($gasto, $data) {
+            $this->validarPagoManualPermitido($gasto);
             $monto = $this->normalizarMonto($data['monto'] ?? $gasto->saldo_pendiente);
             $fechaPago = $this->normalizarFecha($data['fecha_pago'] ?? now());
             $cuentaId = $data['cuenta_bancaria_id'];
@@ -725,6 +726,7 @@ class GastosService
 
     public function pagarConMovimientoExistente(Gasto $gasto, array $data): GastoPago
     {
+        $this->validarPagoManualPermitido($gasto);
         $monto = $this->normalizarMonto($data['monto'] ?? $gasto->saldo_pendiente);
         $fechaPago = $this->normalizarFecha($data['fecha_pago'] ?? now());
 
@@ -1046,6 +1048,15 @@ class GastosService
         };
 
         $gasto->updateQuietly(['estatus' => $estatus]);
+    }
+
+    private function validarPagoManualPermitido(Gasto $gasto): void
+    {
+        if ($gasto->origen_legacy === 'asignacion_sueldo_operador') {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'gasto' => 'El sueldo del operador se paga desde la liquidación del viaje; no se puede registrar otro pago desde el módulo Gastos.',
+            ]);
+        }
     }
 
     private function actualizarProgramacionPagada(GastoPago $pago): void

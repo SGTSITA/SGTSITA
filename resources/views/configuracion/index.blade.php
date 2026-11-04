@@ -13,6 +13,12 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h3 class="mb-0">Configuracion Sistema</h3>
                         <div class="d-flex gap-2">
+                            <form id="formRespaldoCompletoIndex" action="{{ route('backups.sistema_completo.generar') }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="button" class="btn btn-sm btn-success" onclick="confirmarRespaldoCompletoIndex();">
+                                    <i class="fas fa-archive me-1"></i> Respaldo Completo (Docs + BD)
+                                </button>
+                            </form>
                             <a href="{{ route('descargar.db') }}" class="btn btn-sm btn-primary" onclick="event.preventDefault(); confirmarDescargaDb(this.href);">
                                 <i class="fas fa-database me-1"></i> Descargar Base de Datos
                             </a>
@@ -219,6 +225,31 @@
 
 @push('custom-javascript')
 <script>
+function confirmarRespaldoCompletoIndex() {
+    Swal.fire({
+        title: '¿Generar respaldo completo del sistema?',
+        text: 'Se empaquetará el código fuente, todos los documentos físicos (cotizaciones, uploads, equipos, operadores) y la base de datos completa (excluyendo datos sensibles como .env). Esto puede tardar 1 o 2 minutos.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2dce89',
+        cancelButtonColor: '#8898aa',
+        confirmButtonText: 'Sí, generar respaldo completo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({
+                title: 'Generando respaldo del sistema...',
+                text: 'Empaquetando documentos, base de datos y código. Por favor espere y no cierre esta página.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            document.getElementById('formRespaldoCompletoIndex').submit();
+        }
+    });
+}
+
 function confirmarDescargaDb(url) {
     Swal.fire({
         title: 'Generar Respaldo de Base de Datos',
