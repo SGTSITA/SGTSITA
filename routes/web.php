@@ -96,6 +96,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     // pero lo ideal es cambiar tus botones a POST route('logout').
     Route::post('logout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('logout');
     Route::get('signout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('signout');
+    Route::match(['get', 'post'], '/session/keep-alive', function (\Illuminate\Http\Request $request) {
+        session(['last_user_activity_at' => time()]);
+        return response()->json(['ok' => true, 'timestamp' => time()]);
+    })->name('session.keepalive');
 
     Route::post('/cambiar-empresa', [App\Http\Controllers\UserController::class, 'cambiarEmpresa'])
         ->name('usuario.cambiarEmpresa');

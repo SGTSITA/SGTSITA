@@ -3966,7 +3966,7 @@ $urlDocumento = asset("cotizaciones/cotizacion{$id_cot}/{$nameArchivo}");
 };
 
 
-$naviera = $request->naviera ?? null;
+$naviera = $request->input('naviera_id', $request->input('naviera'));
 
             $doc = DocumCotizacion::create([
                 'id_cotizacion'          => $cotizacion->id,
@@ -3992,7 +3992,7 @@ $naviera = $request->naviera ?? null;
                 'cita_at'               => $normalizarFecha($request->cita_at),
                 'eta'                   => $normalizarFecha($request->eta),
                 'pedimento_recibido_at' => $normalizarFecha($request->pedimento_recibido_at),
-                'naviera_id'             => ($naviera === null || $naviera === '' || $naviera === 'null')    ? null    : (int) $naviera ,
+                'naviera_id'             => ($naviera === null || $naviera === '' || strtolower(trim((string) $naviera)) === 'null' || (int) $naviera <= 0) ? null : (int) $naviera,
 
             ]);
 
@@ -4002,6 +4002,8 @@ $naviera = $request->naviera ?? null;
 
             return response()->json([
                 'success' => true,
+                'status' => 'success',
+                'id' => $cotizacion->id,
                 'message' => 'Cotización local guardada correctamente',
                 'cotizacion_id' => $cotizacion->id,
                 'docum_cotizacion_id' => $doc->id,
@@ -4192,16 +4194,16 @@ $this->procesarDocumento(
             }
 
 
-                 $doc->num_boleta_liberacion = $request['numBoleta'] ?? '';
-            $doc->num_doda = $request['numDoda'] ?? '';
+            $doc->num_boleta_liberacion = $normalizarFecha($request->input('numBoleta', $request->input('num_boleta_liberacion'))) ?? ($doc->num_boleta_liberacion ?? '');
+            $doc->num_doda = $normalizarFecha($request->input('numDoda', $request->input('num_doda'))) ?? ($doc->num_doda ?? '');
 
             $doc->terminal = $request->terminal_local;
             $doc->num_autorizacion = $request->num_autorizacion;
             $doc->cita_at = $normalizarFecha($request->cita_at);
             $doc->eta = $normalizarFecha($request->eta);
-            $naviera = $request->naviera_id;
+            $naviera = $request->input('naviera_id', $request->input('naviera'));
 
-            $doc->naviera_id = ($naviera === null || $naviera === '' || $naviera === 'null')    ? null    : (int) $naviera;
+            $doc->naviera_id = ($naviera === null || $naviera === '' || strtolower(trim((string) $naviera)) === 'null' || (int) $naviera <= 0) ? null : (int) $naviera;
             $doc->pedimento_recibido_at = $normalizarFecha($request->pedimento_recibido_at);
 
 
@@ -4215,7 +4217,9 @@ $this->procesarDocumento(
                 'message' => 'Cotización actualizada correctamente.',
                 'cotizacion_id' => $cot->id,
                 'docum_cotizacion_id' => $doc->id,
-                'num_contenedor' => $contenedorupdate,
+                'success' => true,
+                'id' => $cot->id,
+                'num_contenedor' => $doc->num_contenedor,
             ]);
 
         } catch (\Throwable $e) {

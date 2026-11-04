@@ -173,7 +173,7 @@
         <form method="POST"
             @if ($action == 'editar') action="{{ route('update.singlelocal', $cotizacion->id) }}"
     @else action="{{ route('store.cotizacioneslocal') }}" @endif
-            id="cotizacionCreate" enctype="multipart/form-data" role="form">
+            id="cotizacionCreate" @if ($action == 'editar' && isset($cotizacion)) data-cotizacion-id="{{ $cotizacion->id }}" @endif enctype="multipart/form-data" role="form">
 
             @csrf
             <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
@@ -231,12 +231,15 @@
         let COTIZACION_URL = "{{ route('store.cotizacioneslocal') }}";
 
         @if ($action == 'editar')
+            window.currentNumContenedor = '{{ $cotizacion->DocCotizacion->num_contenedor }}';
+            window.currentCotizacionId = '{{ $cotizacion->id }}';
             localStorage.setItem('numContenedor', '{{ $cotizacion->DocCotizacion->num_contenedor }}');
             localStorage.setItem('cotizacionId', '{{ $cotizacion->id }}');
         @else
+            window.currentNumContenedor = null;
+            window.currentCotizacionId = null;
             if (localStorage.getItem('cotizacionId')) {
                 localStorage.removeItem('cotizacionId');
-
             }
         @endif
     </script>
@@ -266,7 +269,7 @@
 
     <script>
         $(document).ready(() => {
-            let subclienteid = {{ $cotizacion?->id_subcliente ?? 'null' }};
+            let subclienteid = {{ $cotizacion?->sub_cliente_local ?? $cotizacion?->id_subcliente ?? 'null' }};
             getClientes({{ Auth::User()->id_cliente }}, subclienteid);
 
             var genericUUID = localStorage.getItem('uuid');
@@ -401,19 +404,51 @@
             const puertoOpcion = document.getElementById("puerto_opcion");
 
             function validarPuerto() {
-                if (puerto.value === "LAZARO") {
-                    subPuerto.style.display = "block";
-                    puertoOpcion.required = true;
+                if (puerto && puerto.value === "LAZARO") {
+                    if (subPuerto) subPuerto.style.display = "block";
+                    if (puertoOpcion) puertoOpcion.required = true;
                 } else {
-                    subPuerto.style.display = "none";
-                    puertoOpcion.required = false;
-                    puertoOpcion.value = "";
+                    if (subPuerto) subPuerto.style.display = "none";
+                    if (puertoOpcion) {
+                        puertoOpcion.required = false;
+                        puertoOpcion.value = "";
+                    }
                 }
             }
 
-            puerto.addEventListener("change", validarPuerto);
+            if (puerto) {
+                puerto.addEventListener("change", validarPuerto);
+                validarPuerto();
+            }
 
-            validarPuerto();
+            const selectFull = document.getElementById('selectContenedorFull');
+            if (selectFull) {
+                selectFull.addEventListener('change', function() {
+                    const contenedorSeleccionado = this.value;
+                    if (!contenedorSeleccionado) return;
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/viajes/editar-local';
+
+                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                    const inputToken = document.createElement('input');
+                    inputToken.type = 'hidden';
+                    inputToken.name = '_token';
+                    inputToken.value = token;
+
+                    const inputContenedor = document.createElement('input');
+                    inputContenedor.type = 'hidden';
+                    inputContenedor.name = 'numContenedor';
+                    inputContenedor.value = contenedorSeleccionado;
+
+                    form.appendChild(inputToken);
+                    form.appendChild(inputContenedor);
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
         });
     </script>
 @endpush

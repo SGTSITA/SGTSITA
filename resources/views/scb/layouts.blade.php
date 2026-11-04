@@ -619,7 +619,7 @@
             window.SGT_LOGIN_URL = "{{ route('scb.login') }}";
         </script>
 
-        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}?v={{ filemtime(public_path('js/sgt/common/sessionAutoLogout.js')) }}"></script>
     @endauth
     @stack('custom-javascript')
     @stack('scripts')

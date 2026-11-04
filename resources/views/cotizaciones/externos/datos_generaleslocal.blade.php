@@ -7,6 +7,11 @@
                 </div>
                 <select class="form-select subcliente d-inline-block" id="id_subcliente" name="id_subcliente">
                     <option value="">Seleccionar subcliente</option>
+                    @if ($action == 'editar' && ($cotizacion?->sub_cliente_local ?? $cotizacion?->id_subcliente))
+                        <option value="{{ $cotizacion?->sub_cliente_local ?? $cotizacion?->id_subcliente }}" selected>
+                            Subcliente actual
+                        </option>
+                    @endif
                 </select>
             </div>
         </div>
@@ -374,7 +379,7 @@
     <div class="col-md-3">
         <div class="form-floating mb-3">
             <input type="date" class="form-control" id="cita_at" name="cita_at"
-                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->cita_at)->format('Y-m-d') }}" @endif>
+                @if ($action == 'editar' && !empty($cotizacion?->DocCotizacion?->cita_at)) value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->cita_at)->format('Y-m-d') }}" @endif>
             <label>Cita</label>
         </div>
     </div>
@@ -383,7 +388,7 @@
     <div class="col-md-3">
         <div class="form-floating mb-3">
             <input type="date" class="form-control" id="eta" name="eta"
-                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->eta)->format('Y-m-d') }}" @endif>
+                @if ($action == 'editar' && !empty($cotizacion?->DocCotizacion?->eta)) value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion?->eta)->format('Y-m-d') }}" @endif>
             <label>ETA</label>
         </div>
     </div>
@@ -407,7 +412,7 @@
     <div class="col-md-3">
         <div class="form-floating mb-3">
             <input type="date" class="form-control" id="pedimento_recibido_at" name="pedimento_recibido_at"
-                @if ($action == 'editar') value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion->pedimento_recibido_at)->format('Y-m-d') }}" @endif>
+                @if ($action == 'editar' && !empty($cotizacion?->DocCotizacion?->pedimento_recibido_at)) value="{{ \Carbon\Carbon::parse($cotizacion?->DocCotizacion->pedimento_recibido_at)->format('Y-m-d') }}" @endif>
             <label>Recepción de Pedimento</label>
         </div>
     </div>
