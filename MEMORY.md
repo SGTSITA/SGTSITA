@@ -2,6 +2,12 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Cierre de Sesión Automático y Rastreo de Mapas (`CheckUserSessionTimeout.php` y `sessionAutoLogout.js`):
+  - Sincronización multi-pestaña en `localStorage` (`sgt_last_activity_at` y `sgt_map_tracking_active_at`) para evitar que una pestaña en segundo plano dispare `POST /logout` y cierre la sesión activa de otras pestañas.
+  - Detección de actividad real en interfaz (`mousemove`, `mousedown`, `keydown`, `scroll`, `touchstart`, `click`, `input`, `change`) con keep-alive automático a `/session/keep-alive` cada 4 minutos mientras haya actividad o rastreo de mapas.
+  - En pantallas de rastreo/mapas (`/coordenadas*`, `/mapa-comparacion*`, `/configurar-geocerca*`, `/gps*`, `/reporteria/consumo-unidades/mapa*`, o mapas visibles en pantalla), el cierre automático por inactividad se pausa y mantiene viva la sesión indefinidamente.
+  - Rutas autenticadas de `routes/externos.php` integradas en `middleware(['auth', 'idle.timeout'])` para que la navegación de clientes externos actualice `last_user_activity_at`.
+- Viajes Locales (Burrero / Vaimas — `/viajes/solicitud/simple-local` y `/viajes/editar-local`): corregido guardado de `naviera_id` en `CotizacionesController::storelocal` (antes leía `$request->naviera` en lugar de `naviera_id`, guardando `NULL` en el primer intento) y sanitización de strings `'null'` en `singleUpdatelocal`. En `cotizaciones-local.js`, `numBoleta` y `numDoda` solo se exigen si se adjunta archivo (`#BoletaLib`/`#Doda`), evitando bloqueos tras 3.8s cuando `#fileUploaderContainer` pierde `.d-none`; el ID activo se aísla por pestaña (`window.currentCotizacionId` / `data-cotizacion-id`) para evitar colisiones por `localStorage.cotizacionId`, y `ExternosController::editFormlocal` filtra por `idCotizacion`/`id_cliente` con `orderByDesc('id')`.
 - Spec 024 (Devengo de sueldos, anticipos de operadores y deducciones de liquidación):
   - `OperadorGastosContabilidadService`: deduplicación automática de comprobaciones (`limpiarComprobacionesDuplicadas()`) que elimina viáticos redundantes provenientes de `viaticos_operadores` cuando ya existen en `gastos_operadores` (75 duplicados eliminados en Empresa 8).
   - Sueldos y anticipos segregados: no se muestran en `/planeaciones/viajes/editar/{id}` ni en listados por cotización para evitar confusión o borrado accidental. Accesibles exclusivamente desde `/gastos` mediante el filtro de tipo "Sueldos" o la categoría "Sueldos de Operadores".
@@ -25,6 +31,8 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Cuentas por Cobrar (CXC `1.1.2.1%`): Al corte 30/09 muestra exactamente $297,650.00.
   - Cuentas por Pagar (CXP `2.1.1%`): $594,357.96 exactos reflejando deuda operativa y gastos devengados.
   - Bancos (`1.1.1.2%`): $432,750.25 (Azteca $12,775.96 + Banorte $419,974.29).
+<<<<<<< HEAD
+=======
   - Activo ($1,328,195.92) = Pasivo ($288,857.96) + Patrimonio ($1,039,337.96). Cuadrado: SI (Diferencia: $0.00).
 - `ContabilidadSyncHistoricoCommand`: acepta argumento posicional `{empresa?}` y opción `--empresa=`. En `syncOperacionesHistoricasPreBanco`, sincroniza la amortización de CxP y CxC al corte 30/09 contra el saldo pendiente real de gastos y cotizaciones, asegurando que Cuentas por Pagar (2.1.1) refleje con exactitud la deuda operativa pendiente ($186,857.96 en producción), manteniendo el Balance General estrictamente cuadrado con Diferencia $0.00.
 - Conciliación de Ingresos por Fletes y Reporte de Utilidad:
@@ -66,6 +74,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Spec 011 (CONAC Pólizas & Verdad Operativa): Balance General conciliado y cuadrado con Diferencia $0.00. Bancos sincronizados de `cat_banco_cuentas_movimientos`. Subcuenta Banorte `1.1.1.2.005` y `1.1.2.3.004`.
 - Stack: Laravel 9 (PHP 8.1/8.2) + MySQL 8 + Docker + Metronic UI.
 - Respaldo de Sistema Completo: Comando Artisan `backup:sistema-completo` (`GenerarRespaldoSistemaCompletoCommand.php`) para generar paquete `.tar.gz` con código fuente + documentos físicos (`public/cotizaciones`, `public/uploads`, `public/equipos`, `public/operador`) + volcado SQL. Excluye `.env`, `.env.*`, `vendor/`, `node_modules/`, cachés y `.git/`. Soporta `--sin-gps`, `--listar` y eliminación con `--eliminar` (o `--archivo=...`). Flag `--skip-ssl` en `mysqldump` para compatibilidad local Docker-Host y servidores de producción.
+>>>>>>> d8e855aa453c43981df9cd4b75c4893816e4fbe7
   - Activo ($1,938,007.88) = Pasivo ($911,327.96) + Patrimonio ($1,026,679.92). Cuadrado: SI (Diferencia: $0.00).
 
 ## Decisiones (y por qué)
