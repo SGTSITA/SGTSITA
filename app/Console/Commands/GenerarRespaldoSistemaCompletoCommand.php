@@ -176,7 +176,6 @@ class GenerarRespaldoSistemaCompletoCommand extends Command
         }
 
         $command[] = '--single-transaction';
-        $command[] = '--skip-ssl';
         $command[] = '--databases';
         $command[] = escapeshellarg($database);
         $command[] = '--result-file=' . escapeshellarg($sqlFilePath);
