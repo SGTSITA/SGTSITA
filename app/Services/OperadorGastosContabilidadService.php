@@ -80,7 +80,7 @@ class OperadorGastosContabilidadService
             $gasto = $this->gastosService->registrar($this->payloadVinculado($asignacion, [
                 'categoria_gasto_id' => $this->categoriaId('Anticipos a Operadores por Comprobar'),
                 'gasto_concepto_id' => $this->conceptoId('ANTICIPO_VIAJE_OPERADOR'),
-                'concepto' => 'Anticipo de viaje por comprobar - ' . ($asignacion->Operador?->nombre ?? 'Operador'),
+                'concepto' => 'Dinero para viaje - ' . ($asignacion->Operador?->nombre ?? 'Operador'),
                 'descripcion' => 'Activo por comprobar. No se reconoce como gasto hasta aceptar los comprobantes.',
                 'monto_total' => $anticipo,
                 'fecha_gasto' => $dinero?->fecha_entrega_monto ?: $asignacion->fecha_inicio ?: now(),
