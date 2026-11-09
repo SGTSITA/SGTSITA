@@ -551,67 +551,170 @@ class PlaneacionService
      */
     public function guardarOtrosGastosPlaneacion(array $filas, string $numContenedor, $idOperadorViaje, int $idEmpresa, $user): array
     {
-        $resultados = [];
-        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+        $respuesta = null;
+        $descripcionGastosPermitidos = [
+            'GCM01' => 'GCM01 - Comisión',
+            'GDI02' => 'GDI02 - Diésel',
+            'GBV01' => 'GBV01 - Burrero Vacío',
+            'GU001' => 'GU001 - Urea',
+            'OTR01' => 'Otros'
+        ];
+
+        $contenedor = DocumCotizacion::where('num_contenedor', $numContenedor)
+            ->where('id_empresa', $idEmpresa)
+            ->first() ?? DocumCotizacion::where('num_contenedor', $numContenedor)->first();
+
         if (!$contenedor) {
-            return $resultados;
+            return [];
         }
 
-        $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
         $asignacion = Asignaciones::where('id_contenedor', $contenedor->id)->first();
+        if (!$asignacion) {
+            return [];
+        }
 
-        foreach ($filas as $f) {
-            $monto = floatval($f['monto'] ?? 0);
+        foreach ($filas as $gastoItem) {
+            $motivo = $gastoItem['motivo'] ?? null;
+            $monto = floatval($gastoItem['monto'] ?? 0);
+            $esPagoInmediato = !empty($gastoItem['pagoInmediato']);
+            $idBanco = !empty($gastoItem['banco']) ? intval($gastoItem['banco']) : null;
+            $fechaAplicacionInput = $gastoItem['fechaAplicacion'] ?? null;
+
+            $fechaAplicacion = null;
+            if (!empty($fechaAplicacionInput)) {
+                try {
+                    $fechaAplicacion = Carbon::createFromFormat('d/m/Y', trim($fechaAplicacionInput))->format('Y-m-d');
+                } catch (\Throwable $e) {
+                    $fechaAplicacion = Carbon::parse($fechaAplicacionInput)->format('Y-m-d');
+                }
+            }
+
+            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
+                continue;
+            }
             if ($monto <= 0) {
                 continue;
             }
 
-            $idBanco = !empty($f['banco']) ? intval($f['banco']) : null;
-            $esPagoInmediato = !empty($f['pagoInmediato']);
-            $fechaAplicacion = !empty($f['fechaAplicacion']) ? Carbon::createFromFormat('d/m/Y', $f['fechaAplicacion'])->format('Y-m-d') : now()->format('Y-m-d');
+            if ($esPagoInmediato && empty($idBanco)) {
+                $respuesta = [
+                    "Titulo" => "Debe seleccionar banco",
+                    "Mensaje" => "Ha seleccionado pago inmediato. Por favor, indique el banco desde el cual se realizará el retiro.",
+                    "TMensaje" => "warning"
+                ];
+                continue;
+            }
+
+            $tipoGasto = $motivo === 'OTR01' ? ($gastoItem['conceptoOtro'] ?? 'Otros') : $descripcionGastosPermitidos[$motivo];
+
+            $categoriaId = null;
+            $conceptoId = null;
+
+            if ($motivo === 'GDI02') {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Combustible%')->first();
+                $categoriaId = $cat?->id ?? 1;
+                $con = DB::table('gasto_conceptos')->where('clave', 'DSL')->first();
+                $conceptoId = $con?->id;
+            } elseif ($motivo === 'GCM01') {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Comisiones de venta%')->first();
+                $categoriaId = $cat?->id ?? 5;
+                $con = DB::table('gasto_conceptos')->where('clave', 'COM_VTA')->first();
+                $conceptoId = $con?->id;
+            } else {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Otros%')->first();
+                $categoriaId = $cat?->id ?? 12;
+
+                $claveConcepto = $motivo === 'GBV01' ? 'OTR_BV' : ($motivo === 'GU001' ? 'OTR_UR' : 'OTR_GEN');
+                $nombreConcepto = $motivo === 'GBV01' ? 'GBV01 - Burrero Vacío' : ($motivo === 'GU001' ? 'GU001 - Urea' : 'Otros');
+
+                $con = \App\Models\GastoConcepto::where('clave', $claveConcepto)->first();
+                if (!$con) {
+                    $con = new \App\Models\GastoConcepto();
+                    $con->categoria_gasto_id = $categoriaId;
+                    $con->clave = $claveConcepto;
+                    $con->nombre = $nombreConcepto;
+                    $con->tipo_default = 'viaje';
+                    $con->afecta_utilidad = true;
+                    $con->is_active = true;
+                    $con->save();
+                }
+                $conceptoId = $con->id;
+            }
+
+            $vinculosData = [
+                [
+                    'tipo_vinculo' => 'cotizacion',
+                    'vinculable_type' => Cotizaciones::class,
+                    'vinculable_id' => $contenedor->id_cotizacion,
+                ],
+                [
+                    'tipo_vinculo' => 'contenedor',
+                    'vinculable_type' => DocumCotizacion::class,
+                    'vinculable_id' => $contenedor->id,
+                ],
+                [
+                    'tipo_vinculo' => 'asignacion',
+                    'vinculable_type' => Asignaciones::class,
+                    'vinculable_id' => $asignacion->id,
+                ],
+            ];
+            if ($asignacion->id_operador) {
+                $vinculosData[] = [
+                    'tipo_vinculo' => 'operador',
+                    'vinculable_type' => Operador::class,
+                    'vinculable_id' => $asignacion->id_operador,
+                ];
+            }
+            if ($asignacion->id_camion) {
+                $vinculosData[] = [
+                    'tipo_vinculo' => 'unidad',
+                    'vinculable_type' => Equipo::class,
+                    'vinculable_id' => $asignacion->id_camion,
+                ];
+            }
 
             $gasto = $this->gastosService->registrar([
                 'id_empresa' => $idEmpresa,
-                'concepto' => $f['concepto'] ?? 'Gasto planeación',
+                'id_equipo' => $asignacion->id_camion,
+                'categoria_gasto_id' => $categoriaId,
+                'gasto_concepto_id' => $conceptoId,
+                'concepto' => $tipoGasto,
                 'monto_total' => $monto,
                 'tipo_gasto' => 'viaje',
                 'estatus' => $esPagoInmediato ? 'pagado' : 'pendiente_pago',
-                'fecha_gasto' => $fechaAplicacion,
-                'origen_modulo' => 'planeacion',
-                'origen_legacy' => 'asignacion_planeacion',
-                'origen_legacy_id' => $asignacion?->id,
+                'fecha_gasto' => Carbon::now(),
+                'origen_legacy' => 'asignacion_planeacion' . $tipoGasto,
+                'origen_legacy_id' => $asignacion->id,
                 'user_id' => $user->id,
-                'vinculos' => array_filter([
-                    $cotizacion ? ['tipo_vinculo' => 'cotizacion', 'vinculable_type' => Cotizaciones::class, 'vinculable_id' => $cotizacion->id] : null,
-                    $asignacion ? ['tipo_vinculo' => 'asignacion', 'vinculable_type' => Asignaciones::class, 'vinculable_id' => $asignacion->id] : null,
-                    $asignacion?->id_camion ? ['tipo_vinculo' => 'unidad', 'vinculable_type' => Equipo::class, 'vinculable_id' => $asignacion->id_camion] : null,
-                ]),
-                'imputaciones' => array_filter([
-                    $asignacion ? [
-                        'fecha_imputacion' => $fechaAplicacion,
+                'vinculos' => $vinculosData,
+                'imputaciones' => [
+                    [
+                        'fecha_imputacion' => Carbon::now(),
                         'tipo_imputacion' => 'viaje',
                         'imputable_type' => Asignaciones::class,
                         'imputable_id' => $asignacion->id,
                         'monto_imputado' => $monto,
                         'origen' => 'directo',
-                    ] : null,
-                ]),
+                    ]
+                ]
             ]);
 
             if ($esPagoInmediato && $idBanco && $gasto) {
-                $this->gastosService->registrarPago([
-                    'gasto_id' => $gasto->id,
+                $this->gastosService->pagar($gasto, [
                     'cuenta_bancaria_id' => $idBanco,
                     'monto' => $monto,
-                    'fecha_pago' => $fechaAplicacion,
-                    'referencia' => 'Planeación ' . $numContenedor,
+                    'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                    'concepto_banco' => BancosService::generarConcepto('gop', $tipoGasto, $numContenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? Operador::find($asignacion->id_operador)?->nombre : null)),
+                    'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
                 ]);
             }
-
-            $resultados[] = $gasto;
         }
 
-        return $resultados;
+        return $respuesta ?? [
+            "Titulo" => "Gasto agregado",
+            "Mensaje" => "Se agregaron los gastos correctamente.",
+            "TMensaje" => "success"
+        ];
     }
 
     /**
@@ -861,47 +964,127 @@ class PlaneacionService
      */
     public function sincronizarOtrosGastosPlaneacion(array $otrosGastos, Asignaciones $asignacion, DocumCotizacion $contenedor, $idOperadorViaje, int $idEmpresa, $user): array
     {
+        $descripcionGastosPermitidos = [
+            'GCM01' => 'GCM01 - Comisión',
+            'GDI02' => 'GDI02 - Diésel',
+            'GBV01' => 'GBV01 - Burrero Vacío',
+            'GU001' => 'GU001 - Urea',
+            'OTR01' => 'Otros'
+        ];
+
         $gastosExistentes = Gasto::with(['pagos.movimientoBancario', 'imputaciones'])
+            ->where(function ($query) use ($asignacion) {
+                $query->where(function ($q) use ($asignacion) {
+                    $q->where('origen_legacy_id', $asignacion->id)
+                      ->where('origen_legacy', 'like', 'asignacion_planeacion%');
+                })->orWhereHas('vinculos', function ($q) use ($asignacion) {
+                    $q->where('vinculable_type', Asignaciones::class)
+                      ->where('vinculable_id', $asignacion->id);
+                });
+            })
             ->where('tipo_gasto', '!=', 'sueldo')
             ->where(function ($q) {
-                $q->whereNull('origen_legacy')
-                    ->orWhereNotIn('origen_legacy', [
-                        'asignacion_sueldo_operador',
-                        'asignacion_anticipo_operador',
-                        'dinero_contenedor_anticipo',
-                    ]);
-            })
-            ->where(function ($query) use ($asignacion) {
-                $query->where('origen_legacy_id', $asignacion->id)
-                    ->where('origen_legacy', 'like', 'asignacion_planeacion%')
-                    ->orWhereHas('vinculos', function ($q) use ($asignacion) {
-                        $q->where('vinculable_type', Asignaciones::class)
-                          ->where('vinculable_id', $asignacion->id);
-                    });
+                $q->whereNull('origen_legacy')->orWhereNotIn('origen_legacy', [
+                    'asignacion_sueldo_operador',
+                    'asignacion_anticipo_operador',
+                    'dinero_contenedor_anticipo',
+                ]);
             })
             ->get();
 
         $gastosProcesadosIds = [];
 
         foreach ($otrosGastos as $gasto) {
-            $motivo = $gasto['motivo'] ?? 'OTR01';
+            $gastoId = !empty($gasto['id']) ? intval($gasto['id']) : null;
+            $motivo = $gasto['motivo'] ?? null;
             $monto = floatval($gasto['monto'] ?? 0);
+            $esPagoInmediato = !empty($gasto['pagoInmediato']);
+            $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
+            $fechaAplicacionInput = $gasto['fechaAplicacion'] ?? null;
+            $conceptoOtro = $gasto['conceptoOtro'] ?? null;
+
+            if (!$motivo || !isset($descripcionGastosPermitidos[$motivo])) {
+                continue;
+            }
             if ($monto <= 0) {
                 continue;
             }
 
-            $idBanco = !empty($gasto['banco']) ? intval($gasto['banco']) : null;
-            $esPagoInmediato = !empty($gasto['pagoInmediato']);
-            $fechaAplicacion = !empty($gasto['fechaAplicacion'])
-                ? Carbon::createFromFormat('d/m/Y', $gasto['fechaAplicacion'])->format('Y-m-d')
-                : now()->format('Y-m-d');
+            $fechaAplicacion = null;
+            if (!empty($fechaAplicacionInput)) {
+                try {
+                    $fechaAplicacion = Carbon::createFromFormat('d/m/Y', trim($fechaAplicacionInput))->format('Y-m-d');
+                } catch (\Throwable $e) {
+                    $fechaAplicacion = Carbon::parse($fechaAplicacionInput)->format('Y-m-d');
+                }
+            }
 
-            $origenLegacyKey = 'asignacion_planeacion' . $motivo;
-            $gastoExistente = $gastosExistentes->first(fn ($g) => $g->origen_legacy === $origenLegacyKey);
+            $tipoGasto = $motivo === 'OTR01' ? ($conceptoOtro ?: 'Otros') : $descripcionGastosPermitidos[$motivo];
+
+            $gastoExistente = null;
+            if ($gastoId) {
+                $gastoExistente = $gastosExistentes->firstWhere('id', $gastoId);
+            }
+            if (!$gastoExistente && $motivo) {
+                $gastoExistente = $gastosExistentes->first(function ($g) use ($motivo, $gastosProcesadosIds) {
+                    if (in_array($g->id, $gastosProcesadosIds)) {
+                        return false;
+                    }
+                    return str_starts_with($g->concepto, $motivo);
+                });
+            }
+
+            $categoriaId = null;
+            $conceptoId = null;
+
+            if ($motivo === 'GDI02') {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Combustible%')->first();
+                $categoriaId = $cat?->id ?? 1;
+                $con = DB::table('gasto_conceptos')->where('clave', 'DSL')->first();
+                $conceptoId = $con?->id;
+            } elseif ($motivo === 'GCM01') {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Comisiones de venta%')->first();
+                $categoriaId = $cat?->id ?? 5;
+                $con = DB::table('gasto_conceptos')->where('clave', 'COM_VTA')->first();
+                $conceptoId = $con?->id;
+            } else {
+                $cat = DB::table('categorias_gastos')->where('categoria', 'like', '%Otros%')->first();
+                $categoriaId = $cat?->id ?? 12;
+
+                $claveConcepto = $motivo === 'GBV01' ? 'OTR_BV' : ($motivo === 'GU001' ? 'OTR_UR' : 'OTR_GEN');
+                $nombreConcepto = $motivo === 'GBV01' ? 'GBV01 - Burrero Vacío' : ($motivo === 'GU001' ? 'GU001 - Urea' : 'Otros');
+
+                $con = \App\Models\GastoConcepto::where('clave', $claveConcepto)->first();
+                if (!$con) {
+                    $con = new \App\Models\GastoConcepto();
+                    $con->categoria_gasto_id = $categoriaId;
+                    $con->clave = $claveConcepto;
+                    $con->nombre = $nombreConcepto;
+                    $con->tipo_default = 'viaje';
+                    $con->afecta_utilidad = true;
+                    $con->is_active = true;
+                    $con->save();
+                }
+                $conceptoId = $con->id;
+            }
 
             if ($gastoExistente) {
                 $gastosProcesadosIds[] = $gastoExistente->id;
+
+                $gastoExistente->concepto = $tipoGasto;
+                $gastoExistente->categoria_gasto_id = $categoriaId;
+                $gastoExistente->gasto_concepto_id = $conceptoId;
                 $gastoExistente->monto_total = $monto;
+                if ($asignacion->id_camion) {
+                    $gastoExistente->id_equipo = $asignacion->id_camion;
+                    if (!$gastoExistente->vinculos()->where('tipo_vinculo', 'unidad')->exists()) {
+                        $gastoExistente->vinculos()->create([
+                            'tipo_vinculo' => 'unidad',
+                            'vinculable_type' => Equipo::class,
+                            'vinculable_id' => $asignacion->id_camion,
+                        ]);
+                    }
+                }
                 $gastoExistente->save();
 
                 foreach ($gastoExistente->imputaciones as $imp) {
@@ -910,101 +1093,240 @@ class PlaneacionService
                 }
 
                 $pagosActivos = $gastoExistente->pagos()->where('estatus', '!=', 'cancelado')->get();
-                if ($pagosActivos->isNotEmpty()) {
-                    $pago = $pagosActivos->first();
-                    $montoIgual = abs(floatval($pago->monto) - $monto) < 0.01;
-                    $bancoIgual = ($pago->cuenta_bancaria_id == $idBanco);
+                $estabaPagado = $pagosActivos->isNotEmpty();
+
+                if ($estabaPagado) {
+                    $pagoPrincipal = $pagosActivos->first();
+                    $montoPagoIgual = abs(floatval($pagoPrincipal->monto) - $monto) < 0.01 && $pagosActivos->count() === 1;
+                    $bancoPagoIgual = ($pagoPrincipal->cuenta_bancaria_id == $idBanco);
+                    $fechaPagoActual = $pagoPrincipal->movimientoBancario?->fecha_movimiento
+                        ? Carbon::parse($pagoPrincipal->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                        : ($pagoPrincipal->fecha_pago ? Carbon::parse($pagoPrincipal->fecha_pago)->format('Y-m-d') : null);
+                    $fechaPagoEsperada = $fechaAplicacion ?? now()->format('Y-m-d');
+                    $fechaPagoIgual = ($fechaPagoActual === $fechaPagoEsperada);
 
                     if (!$esPagoInmediato || empty($idBanco)) {
                         foreach ($pagosActivos as $p) {
-                            $this->gastosService->cancelarPago($p, now()->format('Y-m-d'));
+                            $fechaCancelacion = $p->movimientoBancario?->fecha_movimiento
+                                ? Carbon::parse($p->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                                : ($p->fecha_pago ? Carbon::parse($p->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                            $this->gastosService->cancelarPago($p, $fechaCancelacion);
                         }
                         $gastoExistente->estatus = 'pendiente_pago';
                         $gastoExistente->save();
-                    } elseif (!$montoIgual || !$bancoIgual) {
+                    } elseif (!$montoPagoIgual || !$bancoPagoIgual || !$fechaPagoIgual) {
                         foreach ($pagosActivos as $p) {
-                            $this->gastosService->cancelarPago($p, now()->format('Y-m-d'));
+                            $fechaCancelacion = $p->movimientoBancario?->fecha_movimiento
+                                ? Carbon::parse($p->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                                : ($p->fecha_pago ? Carbon::parse($p->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                            $this->gastosService->cancelarPago($p, $fechaCancelacion);
                         }
-                        $this->gastosService->registrarPago([
-                            'gasto_id' => $gastoExistente->id,
+
+                        $this->gastosService->pagar($gastoExistente, [
                             'cuenta_bancaria_id' => $idBanco,
                             'monto' => $monto,
-                            'fecha_pago' => $fechaAplicacion,
-                            'referencia' => 'Planeación ' . $contenedor->num_contenedor,
+                            'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                            'concepto_banco' => BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? Operador::find($asignacion->id_operador)?->nombre : null)),
+                            'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
                         ]);
-                        $gastoExistente->estatus = 'pagado';
-                        $gastoExistente->save();
                     }
-                } elseif ($esPagoInmediato && $idBanco) {
-                    $this->gastosService->registrarPago([
-                        'gasto_id' => $gastoExistente->id,
-                        'cuenta_bancaria_id' => $idBanco,
-                        'monto' => $monto,
-                        'fecha_pago' => $fechaAplicacion,
-                        'referencia' => 'Planeación ' . $contenedor->num_contenedor,
+                } else {
+                    if ($esPagoInmediato && $idBanco) {
+                        $this->gastosService->pagar($gastoExistente, [
+                            'cuenta_bancaria_id' => $idBanco,
+                            'monto' => $monto,
+                            'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                            'concepto_banco' => BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? Operador::find($asignacion->id_operador)?->nombre : null)),
+                            'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
+                        ]);
+                    }
+                }
+
+                $goTipo = match ($motivo) {
+                    'GDI02' => 'Diesel',
+                    'GU001' => 'Urea',
+                    default => $tipoGasto,
+                };
+                $goExistente = GastosOperadores::withoutGlobalScope('no_eliminados')
+                    ->where('id_asignacion', $asignacion->id)
+                    ->where(function ($q) use ($goTipo, $tipoGasto) {
+                        $q->where('tipo', $goTipo)->orWhere('tipo', $tipoGasto);
+                    })->first();
+
+                if ($goExistente) {
+                    $goExistente->update([
+                        'cantidad' => $monto,
+                        'id_banco' => ($esPagoInmediato && $idBanco) ? $idBanco : null,
+                        'fecha_pago' => ($esPagoInmediato && $idBanco) ? ($fechaAplicacion ?? now()->format('Y-m-d')) : null,
+                        'pago_inmediato' => ($esPagoInmediato && $idBanco) ? 1 : 0,
+                        'estatus' => ($esPagoInmediato && $idBanco) ? 'Pagado' : 'Pago Pendiente',
                     ]);
-                    $gastoExistente->estatus = 'pagado';
-                    $gastoExistente->save();
                 }
             } else {
-                $cotizacion = Cotizaciones::find($contenedor->id_cotizacion);
+                $vinculosData = [
+                    [
+                        'tipo_vinculo' => 'cotizacion',
+                        'vinculable_type' => Cotizaciones::class,
+                        'vinculable_id' => $contenedor->id_cotizacion,
+                    ],
+                    [
+                        'tipo_vinculo' => 'contenedor',
+                        'vinculable_type' => DocumCotizacion::class,
+                        'vinculable_id' => $contenedor->id,
+                    ],
+                    [
+                        'tipo_vinculo' => 'asignacion',
+                        'vinculable_type' => Asignaciones::class,
+                        'vinculable_id' => $asignacion->id,
+                    ],
+                ];
+                if ($asignacion->id_operador) {
+                    $vinculosData[] = [
+                        'tipo_vinculo' => 'operador',
+                        'vinculable_type' => Operador::class,
+                        'vinculable_id' => $asignacion->id_operador,
+                    ];
+                }
+                if ($asignacion->id_camion) {
+                    $vinculosData[] = [
+                        'tipo_vinculo' => 'unidad',
+                        'vinculable_type' => Equipo::class,
+                        'vinculable_id' => $asignacion->id_camion,
+                    ];
+                }
+
                 $nuevoGasto = $this->gastosService->registrar([
                     'id_empresa' => $idEmpresa,
-                    'concepto' => $gasto['concepto'] ?? 'Gasto planeación ' . $motivo,
+                    'id_equipo' => $asignacion->id_camion,
+                    'categoria_gasto_id' => $categoriaId,
+                    'gasto_concepto_id' => $conceptoId,
+                    'concepto' => $tipoGasto,
                     'monto_total' => $monto,
                     'tipo_gasto' => 'viaje',
                     'estatus' => $esPagoInmediato ? 'pagado' : 'pendiente_pago',
-                    'fecha_gasto' => $fechaAplicacion,
-                    'origen_modulo' => 'planeacion',
-                    'origen_legacy' => $origenLegacyKey,
+                    'fecha_gasto' => Carbon::now(),
+                    'origen_legacy' => 'asignacion_planeacion' . $tipoGasto,
                     'origen_legacy_id' => $asignacion->id,
                     'user_id' => $user->id,
-                    'vinculos' => array_filter([
-                        $cotizacion ? ['tipo_vinculo' => 'cotizacion', 'vinculable_type' => Cotizaciones::class, 'vinculable_id' => $cotizacion->id] : null,
-                        ['tipo_vinculo' => 'asignacion', 'vinculable_type' => Asignaciones::class, 'vinculable_id' => $asignacion->id],
-                    ]),
+                    'vinculos' => $vinculosData,
                     'imputaciones' => [
                         [
-                            'fecha_imputacion' => $fechaAplicacion,
+                            'fecha_imputacion' => Carbon::now(),
                             'tipo_imputacion' => 'viaje',
                             'imputable_type' => Asignaciones::class,
                             'imputable_id' => $asignacion->id,
                             'monto_imputado' => $monto,
                             'origen' => 'directo',
                         ]
-                    ],
+                    ]
                 ]);
 
-                if ($nuevoGasto) {
-                    $gastosProcesadosIds[] = $nuevoGasto->id;
-                    if ($esPagoInmediato && $idBanco) {
-                        $this->gastosService->registrarPago([
-                            'gasto_id' => $nuevoGasto->id,
-                            'cuenta_bancaria_id' => $idBanco,
-                            'monto' => $monto,
-                            'fecha_pago' => $fechaAplicacion,
-                            'referencia' => 'Planeación ' . $contenedor->num_contenedor,
-                        ]);
-                    }
+                $gastosProcesadosIds[] = $nuevoGasto->id;
+
+                if ($esPagoInmediato && $idBanco) {
+                    $this->gastosService->pagar($nuevoGasto, [
+                        'cuenta_bancaria_id' => $idBanco,
+                        'monto' => $monto,
+                        'fecha_pago' => $fechaAplicacion ?? now()->format('Y-m-d'),
+                        'concepto_banco' => BancosService::generarConcepto('gop', $tipoGasto, $contenedor->num_contenedor, $asignacion->Operador?->nombre ?? ($asignacion->id_operador ? Operador::find($asignacion->id_operador)?->nombre : null)),
+                        'referencia_banco' => 'GASTO_PLANEACION_VIAJE',
+                    ]);
                 }
+
+                $goTipo = match ($motivo) {
+                    'GDI02' => 'Diesel',
+                    'GU001' => 'Urea',
+                    default => $tipoGasto,
+                };
+                GastosOperadores::updateOrCreate(
+                    [
+                        'id_asignacion' => $asignacion->id,
+                        'tipo' => $goTipo,
+                    ],
+                    [
+                        'id_operador' => $asignacion->id_operador,
+                        'id_cotizacion' => $contenedor->id_cotizacion,
+                        'cantidad' => $monto,
+                        'id_banco' => ($esPagoInmediato && $idBanco) ? $idBanco : null,
+                        'fecha_pago' => ($esPagoInmediato && $idBanco) ? ($fechaAplicacion ?? now()->format('Y-m-d')) : null,
+                        'pago_inmediato' => ($esPagoInmediato && $idBanco) ? 1 : 0,
+                        'estatus' => ($esPagoInmediato && $idBanco) ? 'Pagado' : 'Pago Pendiente',
+                    ]
+                );
             }
         }
 
         // Eliminar gastos que ya no vienen en la solicitud
-        foreach ($gastosExistentes as $ge) {
-            if (!in_array($ge->id, $gastosProcesadosIds)) {
-                foreach ($ge->pagos as $pago) {
-                    if ($pago->estatus !== 'cancelado') {
-                        $this->gastosService->cancelarPago($pago, now()->format('Y-m-d'));
+        foreach ($gastosExistentes as $gastoBorrado) {
+            if (!in_array($gastoBorrado->id, $gastosProcesadosIds)) {
+                foreach ($gastoBorrado->pagos()->where('estatus', '!=', 'cancelado')->get() as $pago) {
+                    $fechaCancelacion = $pago->movimientoBancario?->fecha_movimiento
+                        ? Carbon::parse($pago->movimientoBancario->fecha_movimiento)->format('Y-m-d')
+                        : ($pago->fecha_pago ? Carbon::parse($pago->fecha_pago)->format('Y-m-d') : now()->format('Y-m-d'));
+                    $this->gastosService->cancelarPago($pago, $fechaCancelacion);
+                }
+
+                $goId = ($gastoBorrado->origen_legacy === 'gastos_operadores') ? $gastoBorrado->origen_legacy_id : null;
+                if ($goId) {
+                    $goLegacy = GastosOperadores::withoutGlobalScope('no_eliminados')->find($goId);
+                    if ($goLegacy) {
+                        $goLegacy->update(['estatus' => 'eliminado']);
                     }
                 }
-                $ge->vinculos()->delete();
-                $ge->imputaciones()->delete();
-                $ge->delete();
+
+                $tipoGastoBorrado = $gastoBorrado->concepto;
+                $goAsignados = GastosOperadores::withoutGlobalScope('no_eliminados')
+                    ->where('id_asignacion', $asignacion->id)
+                    ->where(function ($q) use ($tipoGastoBorrado) {
+                        $conceptoB = strtolower($tipoGastoBorrado);
+                        if (str_contains($conceptoB, 'diesel') || str_contains($conceptoB, 'diésel') || str_contains($tipoGastoBorrado, 'GDI02')) {
+                            $q->where('tipo', 'like', '%Diesel%')->orWhere('tipo', 'like', '%diésel%')->orWhere('tipo', 'like', '%GDI02%');
+                        } elseif (str_contains($conceptoB, 'urea') || str_contains($tipoGastoBorrado, 'GU001')) {
+                            $q->where('tipo', 'like', '%Urea%')->orWhere('tipo', 'like', '%GU001%');
+                        } elseif (str_contains($conceptoB, 'burrero') || str_contains($tipoGastoBorrado, 'GBV01')) {
+                            $q->where('tipo', 'like', '%Burrero%')->orWhere('tipo', 'like', '%GBV01%');
+                        } elseif (str_contains($conceptoB, 'comisi') || str_contains($tipoGastoBorrado, 'GCM01')) {
+                            $q->where('tipo', 'like', '%Comisi%')->orWhere('tipo', 'like', '%GCM01%');
+                        } else {
+                            $q->where('tipo', $tipoGastoBorrado);
+                        }
+                    })
+                    ->get();
+
+                foreach ($goAsignados as $itemGo) {
+                    $itemGo->update(['estatus' => 'eliminado']);
+                }
+
+                $cotizacionModel = $contenedor->id_cotizacion ? Cotizaciones::find($contenedor->id_cotizacion) : null;
+                $conceptoB = strtolower($tipoGastoBorrado);
+                if (str_contains($conceptoB, 'diesel') || str_contains($conceptoB, 'diésel') || str_contains($tipoGastoBorrado, 'GDI02')) {
+                    \App\Models\BitacoraViajeOperador::where('id_asignacion', $asignacion->id)
+                        ->update(['costo' => 0, 'litros' => 0]);
+                    if ($cotizacionModel) {
+                        $cotizacionModel->litros_diesel = 0;
+                        $cotizacionModel->save();
+                    }
+                } elseif (str_contains($conceptoB, 'urea') || str_contains($tipoGastoBorrado, 'GU001')) {
+                    \App\Models\BitacoraViajeOperador::where('id_asignacion', $asignacion->id)
+                        ->update(['costo_urea' => 0, 'litros_urea' => 0]);
+                    if ($cotizacionModel) {
+                        $cotizacionModel->litros_urea = 0;
+                        $cotizacionModel->save();
+                    }
+                }
+
+                $gastoBorrado->vinculos()->delete();
+                $gastoBorrado->imputaciones()->delete();
+                $gastoBorrado->update(['estatus' => 'cancelado']);
+                $gastoBorrado->delete();
             }
         }
 
-        return ['success' => true];
+        return [
+            "Titulo" => "Gastos actualizados",
+            "Mensaje" => "Se sincronizaron los gastos correctamente.",
+            "TMensaje" => "success"
+        ];
     }
 
     /**
