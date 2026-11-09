@@ -12,10 +12,12 @@ use Illuminate\Support\Facades\DB;
 class ContabilidadService
 {
     protected PolizaService $polizaService;
+    protected CuentaContableResolverService $cuentaResolver;
 
-    public function __construct(PolizaService $polizaService)
+    public function __construct(PolizaService $polizaService, ?CuentaContableResolverService $cuentaResolver = null)
     {
         $this->polizaService = $polizaService;
+        $this->cuentaResolver = $cuentaResolver ?: app(CuentaContableResolverService::class);
     }
 
     /**
@@ -147,20 +149,33 @@ class ContabilidadService
      * @param string $fechaCorte
      * @return array
      */
-    public function calcularBalanceGeneral(array|int $empresas, ?int $idEquipo = null, string $fechaCorte = ''): array
+    public function calcularBalanceGeneral(array|int $empresas, ?int $idEquipo = null, string $fechaCorte = '', ?string $fechaInicio = null): array
     {
         $empresasIds = is_array($empresas) ? $empresas : [$empresas];
         $empresaPrincipal = $empresasIds[0] ?? auth()->user()?->id_empresa;
         $fechaCorte = !empty($fechaCorte) ? Carbon::parse($fechaCorte)->format('Y-m-d') : now()->format('Y-m-d');
 
-        // Fecha de inicio del ejercicio para el Estado de Resultados
-        $anio = Carbon::parse($fechaCorte)->year;
-        $fechaInicioEjercicio = "{$anio}-01-01";
+        // 0. Verificar si existen pólizas de cierre contable formal aplicadas a la fecha de corte
+        $ultimoCierre = DB::table('polizas')
+            ->whereIn('id_empresa', $empresasIds)
+            ->where('origen_tipo', 'cierre_ejercicio')
+            ->where('estatus', 'aplicada')
+            ->where('fecha', '<=', $fechaCorte)
+            ->orderBy('fecha', 'desc')
+            ->first();
+
+        // Determinar fecha de inicio del ejercicio activo:
+        // Si hay cierre formal, el ejercicio activo inicia el día siguiente al último cierre.
+        // Si no hay cierre previo, acumula desde el origen de operaciones (ej. 2025-01-01 / null).
+        $fechaInicioEjercicioActivo = $ultimoCierre ? Carbon::parse($ultimoCierre->fecha)->addDay()->format('Y-m-d') : null;
+
+        // Fecha para el Estado de Resultados (según selección del usuario o ejercicio activo)
+        $fechaInicioER = $fechaInicio ?: ($fechaInicioEjercicioActivo ?: '2025-01-01');
 
         // Obtener árbol con saldos acumulados al corte
         $arbolAcumulado = $this->obtenerArbolSaldos($empresasIds, $idEquipo, $fechaCorte);
-        // Obtener árbol del ejercicio actual para Estado de Resultados
-        $arbolEjercicio = $this->obtenerArbolSaldos($empresasIds, $idEquipo, $fechaCorte, $fechaInicioEjercicio);
+        // Obtener árbol del periodo seleccionado para Estado de Resultados
+        $arbolEjercicio = $this->obtenerArbolSaldos($empresasIds, $idEquipo, $fechaCorte, $fechaInicioER);
 
         // Obtener configuración de conceptos de balance
         $conceptos = BalanceGeneralConceptoCuenta::paraEmpresa($empresaPrincipal)->get();
@@ -197,6 +212,49 @@ class ContabilidadService
         }
 
         $utilidadEjercicio = round(($ingresosFletes + $interesesGanados) - $gastosTotales, 2);
+
+        // 1.1 Desglose de Estado de Resultados por Ejercicio Anual
+        $desgloseEjercicios = [];
+        $queryEjercicios = DB::table('poliza_movimientos as pm')
+            ->join('polizas as p', 'p.id', '=', 'pm.poliza_id')
+            ->join('cat_cuentas_contables as c', 'c.id', '=', 'pm.cuenta_contable_id')
+            ->whereIn('p.id_empresa', $empresasIds)
+            ->where('p.estatus', 'aplicada')
+            ->where('p.fecha', '>=', $fechaInicioER)
+            ->where('p.fecha', '<=', $fechaCorte)
+            ->where('p.es_apertura', 0);
+
+        if ($idEquipo) {
+            $queryEjercicios->where(function ($q) use ($idEquipo) {
+                $q->where('pm.id_equipo', $idEquipo)->orWhere('p.id_equipo', $idEquipo);
+            });
+        }
+
+        $idCuentaIntereses = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_INGRESOS_INTERESES, $empresasIds[0] ?? 1);
+
+        $desgloseRaw = $queryEjercicios->selectRaw("
+            YEAR(p.fecha) as anio,
+            SUM(CASE WHEN c.id = {$idCuentaIntereses} OR c.cuenta_padre_id = {$idCuentaIntereses} THEN (pm.haber - pm.debe) ELSE 0 END) as intereses,
+            SUM(CASE WHEN c.rubro = 'ingresos' AND c.id != {$idCuentaIntereses} AND (c.cuenta_padre_id IS NULL OR c.cuenta_padre_id != {$idCuentaIntereses}) THEN (pm.haber - pm.debe) ELSE 0 END) as ingresos,
+            SUM(CASE WHEN c.rubro IN ('costos', 'gastos') THEN (pm.debe - pm.haber) ELSE 0 END) as gastos
+        ")
+        ->groupByRaw('YEAR(p.fecha)')
+        ->orderByRaw('YEAR(p.fecha) asc')
+        ->get();
+
+        foreach ($desgloseRaw as $row) {
+            $anio = (int) $row->anio;
+            $ing = round((float) $row->ingresos, 2);
+            $int = round((float) $row->intereses, 2);
+            $gas = round((float) $row->gastos, 2);
+            $desgloseEjercicios[$anio] = [
+                'anio'       => $anio,
+                'ingresos'   => $ing,
+                'intereses'  => $int,
+                'gastos'     => $gas,
+                'utilidad'   => round(($ing + $int) - $gas, 2),
+            ];
+        }
 
         // Construir items de resultados
         foreach ($conceptos->where('seccion', 'estado_resultados') as $c) {
@@ -257,24 +315,46 @@ class ContabilidadService
         }
 
         // 4. Calcular PATRIMONIO
+        // Primer paso: Calcular rubros patrimoniales independientes (capital, resultado ejercicios anteriores cerrados, etc.)
+        $patrimonioFijoTotal = 0.00;
+        $itemsPatrimonioTemp = [];
+
         foreach ($conceptos->where('seccion', 'patrimonio') as $c) {
             $monto = 0.00;
-            if ($c->es_calculado && str_contains(strtolower($c->concepto), 'resultado del ejercicio')) {
-                // Saldo inicial acumulado de apertura más la utilidad neta de operación del periodo
-                $saldoApertura = $c->cuenta_codigo_prefijo ? $this->sumarSaldoPorPrefijo($arbolAcumulado, rtrim($c->cuenta_codigo_prefijo, '%')) : 0.00;
-                $monto = $saldoApertura + $utilidadEjercicio;
-            } elseif ($c->cuenta_codigo_prefijo) {
-                $prefijoLimpio = rtrim($c->cuenta_codigo_prefijo, '%');
-                $monto = $this->sumarSaldoPorPrefijo($arbolAcumulado, $prefijoLimpio);
+            $prefijoLimpio = $c->cuenta_codigo_prefijo ? rtrim($c->cuenta_codigo_prefijo, '%') : '';
 
-                // Si es el concepto de Resultado de Ejercicios Anteriores (3.2.2) y no hay póliza explícita de cierre acumulada
-                if (str_starts_with($prefijoLimpio, '3.2.2')) {
-                    $fechaFinPrevio = Carbon::parse($fechaInicioEjercicio)->subDay()->format('Y-m-d');
-                    $arbolPrevio = $this->obtenerArbolSaldos($empresasIds, $idEquipo, $fechaFinPrevio);
-                    $ingresosPrevios = $this->sumarSaldoPorPrefijo($arbolPrevio, '4.1.1') + $this->sumarSaldoPorPrefijo($arbolPrevio, '4.3.1');
-                    $gastosPrevios = $this->sumarSaldoPorPrefijo($arbolPrevio, '5.1');
-                    $monto = round($monto + ($ingresosPrevios - $gastosPrevios), 2);
+            if ($c->es_calculado && str_contains(strtolower($c->concepto), 'resultado del ejercicio')) {
+                // Se calculará en el segundo paso para cuadratura exacta
+            } elseif ($prefijoLimpio && str_starts_with($prefijoLimpio, '3.2.2')) {
+                // Resultado de Ejercicios Anteriores (3.2.2):
+                // Si no hay cierre contable formal registrado, su saldo es estrictamente $0.00
+                if ($ultimoCierre) {
+                    $monto = $this->sumarSaldoPorPrefijo($arbolAcumulado, $prefijoLimpio);
+                } else {
+                    $monto = 0.00;
                 }
+                $patrimonioFijoTotal += $monto;
+            } elseif ($prefijoLimpio) {
+                $monto = $this->sumarSaldoPorPrefijo($arbolAcumulado, $prefijoLimpio);
+                $patrimonioFijoTotal += $monto;
+            }
+
+            $itemsPatrimonioTemp[$c->id] = [
+                'concepto' => $c,
+                'monto'    => $monto,
+            ];
+        }
+
+        // Segundo paso: Resultado del Ejercicio (3.2.1)
+        // Acumula la totalidad del resultado operativo del ejercicio activo y cuadra la ecuación fundamental Activo = Pasivo + Patrimonio
+        $resultadoEjercicioBalance = round($totalActivo - $totalPasivo - $patrimonioFijoTotal, 2);
+
+        foreach ($itemsPatrimonioTemp as $it) {
+            $c = $it['concepto'];
+            $monto = $it['monto'];
+
+            if ($c->es_calculado && str_contains(strtolower($c->concepto), 'resultado del ejercicio')) {
+                $monto = $resultadoEjercicioBalance;
             }
 
             $totalPatrimonio += $monto;
@@ -293,9 +373,13 @@ class ContabilidadService
         $diferencia = round($totalActivo - $totalPasivoYPatrimonio, 2);
         $cuadrado = abs($diferencia) < 0.01;
 
+        $ajustePatrimonioHistorico = round($resultadoEjercicioBalance - $utilidadEjercicio, 2);
+
         return [
             'fecha_corte'            => $fechaCorte,
-            'fecha_inicio_ejercicio' => $fechaInicioEjercicio,
+            'fecha_inicio_ejercicio' => $fechaInicioER,
+            'fecha_inicio_activo'    => $fechaInicioEjercicioActivo,
+            'hay_cierre'             => !is_null($ultimoCierre),
             'empresas_ids'           => $empresasIds,
             'id_equipo'              => $idEquipo,
             'activo'                 => [
@@ -312,11 +396,14 @@ class ContabilidadService
             ],
             'total_pasivo_patrimonio' => $totalPasivoYPatrimonio,
             'estado_resultados'      => [
-                'items'              => $resultadosItems,
-                'ingresos_fletes'    => $ingresosFletes,
-                'intereses_ganados'  => $interesesGanados,
-                'gastos_totales'     => $gastosTotales,
-                'utilidad_neta'      => $utilidadEjercicio,
+                'items'                        => $resultadosItems,
+                'ingresos_fletes'              => $ingresosFletes,
+                'intereses_ganados'            => $interesesGanados,
+                'gastos_totales'               => $gastosTotales,
+                'utilidad_neta'                => $utilidadEjercicio,
+                'desglose_ejercicios'          => $desgloseEjercicios,
+                'ajuste_patrimonio_historico'  => $ajustePatrimonioHistorico,
+                'resultado_patrimonio_balance' => $resultadoEjercicioBalance,
             ],
             'cuadrado'               => $cuadrado,
             'diferencia'             => $diferencia,
@@ -883,16 +970,16 @@ class ContabilidadService
             } else {
                 $movQuery->where('p.fecha', '<', $fechaInicioEjercicio)
                          ->where(function($q) {
-                             $q->where('c.codigo', 'like', '4%')
-                               ->orWhere('c.codigo', 'like', '5%');
+                             $q->where('c.rubro', 'ingresos')
+                               ->orWhereIn('c.rubro', ['costos', 'gastos']);
                          });
             }
         } elseif ($concepto->seccion === 'patrimonio' && $concepto->es_calculado && str_contains(strtolower($concepto->concepto), 'resultado del ejercicio')) {
-            // Resultado del ejercicio actual: ingresos 4% y gastos 5% del ejercicio
+            // Resultado del ejercicio actual: ingresos y gastos del ejercicio
             $movQuery->where('p.fecha', '>=', $fechaInicioEjercicio)
                      ->where(function($q) {
-                         $q->where('c.codigo', 'like', '4%')
-                           ->orWhere('c.codigo', 'like', '5%');
+                         $q->where('c.rubro', 'ingresos')
+                           ->orWhereIn('c.rubro', ['costos', 'gastos']);
                      });
         } else {
             // Activo o Pasivo estándar
@@ -1222,6 +1309,336 @@ class ContabilidadService
         }
 
         return $mapa;
+    }
+
+    /**
+     * Previsualiza los movimientos de una póliza de cierre de ejercicio contable.
+     *
+     * @param int $idEmpresa
+     * @param string $fechaInicio
+     * @param string $fechaFin
+     * @param string|null $nombreEjercicio
+     * @return array
+     */
+    public function previsualizarCierreContable(int $idEmpresa, string $fechaInicio, string $fechaFin, ?string $nombreEjercicio = null): array
+    {
+        $fechaInicio = Carbon::parse($fechaInicio)->format('Y-m-d');
+        $fechaFin = Carbon::parse($fechaFin)->format('Y-m-d');
+
+        // 1. Validar que no exista ya un cierre aplicado en la fecha fin
+        $cierreExistente = \App\Models\Poliza::where('id_empresa', $idEmpresa)
+            ->where('origen_tipo', 'cierre_ejercicio')
+            ->where('estatus', 'aplicada')
+            ->where('fecha', $fechaFin)
+            ->first();
+
+        // 2. Determinar subcuenta dinámica destino bajo 3.2.2
+        $cuentaPadre = CatCuentaContable::where('codigo', '3.2.2')->first();
+        if (!$cuentaPadre) {
+            throw new \Exception("No se encontró la cuenta de mayor 3.2.2 (Resultado de Ejercicios Anteriores) en el catálogo CONAC.");
+        }
+
+        $subcuentasExistentes = CatCuentaContable::where('codigo', 'like', '3.2.2.%')
+            ->where(function ($q) use ($idEmpresa) {
+                $q->whereNull('id_empresa')->orWhere('id_empresa', $idEmpresa);
+            })
+            ->get();
+
+        $maxConsecutivo = 0;
+        foreach ($subcuentasExistentes as $sub) {
+            if (preg_match('/^3\.2\.2\.(\d{2,})$/', $sub->codigo, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxConsecutivo) {
+                    $maxConsecutivo = $num;
+                }
+            }
+        }
+
+        $siguienteConsecutivo = max(1, $maxConsecutivo + 1);
+        $siguienteCodigo = '3.2.2.' . str_pad($siguienteConsecutivo, 2, '0', STR_PAD_LEFT);
+
+        // Nombre descriptivo del ejercicio si no se proporcionó
+        if (empty($nombreEjercicio)) {
+            $yIni = Carbon::parse($fechaInicio)->year;
+            $yFin = Carbon::parse($fechaFin)->year;
+            $periodoStr = ($yIni === $yFin) ? "{$yFin}" : "{$yIni}-{$yFin}";
+            $nombreEjercicio = "Resultados Ejercicios Anteriores {$periodoStr}";
+        }
+
+        // 3. Consultar movimientos acumulados de ingresos (Clase 4) y gastos (Clase 5) en el periodo
+        $movimientos = DB::table('poliza_movimientos as pm')
+            ->join('polizas as p', 'p.id', '=', 'pm.poliza_id')
+            ->join('cat_cuentas_contables as c', 'c.id', '=', 'pm.cuenta_contable_id')
+            ->where('p.id_empresa', $idEmpresa)
+            ->where('p.estatus', 'aplicada')
+            ->where('p.fecha', '>=', $fechaInicio)
+            ->where('p.fecha', '<=', $fechaFin)
+            ->where('p.origen_tipo', '!=', 'cierre_ejercicio')
+            ->where(function ($q) {
+                $q->where('c.rubro', 'ingresos')
+                  ->orWhereIn('c.rubro', ['costos', 'gastos']);
+            })
+            ->select([
+                'c.id as cuenta_id',
+                'c.codigo',
+                'c.nombre',
+                'c.naturaleza',
+                DB::raw('SUM(pm.debe) as total_debe'),
+                DB::raw('SUM(pm.haber) as total_haber'),
+            ])
+            ->groupBy('c.id', 'c.codigo', 'c.nombre', 'c.naturaleza')
+            ->orderBy('c.codigo', 'asc')
+            ->get();
+
+        $partidasIngresos = [];
+        $partidasGastos = [];
+        $totalIngresos = 0.00;
+        $totalGastos = 0.00;
+
+        foreach ($movimientos as $m) {
+            $esIngreso = str_starts_with($m->codigo, '4');
+            $esGasto = str_starts_with($m->codigo, '5');
+
+            $debe = (float) $m->total_debe;
+            $haber = (float) $m->total_haber;
+
+            if ($esIngreso) {
+                // Ingresos: saldo normal acreedor (haber - debe)
+                $saldo = round($haber - $debe, 2);
+                if (abs($saldo) > 0.001) {
+                    $totalIngresos += $saldo;
+                    $partidasIngresos[] = [
+                        'cuenta_id'  => $m->cuenta_id,
+                        'codigo'     => $m->codigo,
+                        'nombre'     => $m->nombre,
+                        'saldo'      => $saldo,
+                        'debe'       => $saldo > 0 ? $saldo : 0.00,
+                        'haber'      => $saldo < 0 ? abs($saldo) : 0.00,
+                        'accion'     => $saldo > 0 ? 'Cargo (Debe) para cancelar' : 'Abono (Haber) para cancelar',
+                    ];
+                }
+            } elseif ($esGasto) {
+                // Gastos: saldo normal deudor (debe - haber)
+                $saldo = round($debe - $haber, 2);
+                if (abs($saldo) > 0.001) {
+                    $totalGastos += $saldo;
+                    $partidasGastos[] = [
+                        'cuenta_id'  => $m->cuenta_id,
+                        'codigo'     => $m->codigo,
+                        'nombre'     => $m->nombre,
+                        'saldo'      => $saldo,
+                        'debe'       => $saldo < 0 ? abs($saldo) : 0.00,
+                        'haber'      => $saldo > 0 ? $saldo : 0.00,
+                        'accion'     => $saldo > 0 ? 'Abono (Haber) para cancelar' : 'Cargo (Debe) para cancelar',
+                    ];
+                }
+            }
+        }
+
+        $totalIngresos = round($totalIngresos, 2);
+        $totalGastos = round($totalGastos, 2);
+        $resultadoNeto = round($totalIngresos - $totalGastos, 2);
+
+        return [
+            'id_empresa'        => $idEmpresa,
+            'fecha_inicio'      => $fechaInicio,
+            'fecha_fin'         => $fechaFin,
+            'nombre_ejercicio'  => $nombreEjercicio,
+            'codigo_subcuenta'  => $siguienteCodigo,
+            'nombre_subcuenta'  => $nombreEjercicio,
+            'partidas_ingresos' => $partidasIngresos,
+            'partidas_gastos'   => $partidasGastos,
+            'total_ingresos'    => $totalIngresos,
+            'total_gastos'      => $totalGastos,
+            'resultado_neto'    => $resultadoNeto,
+            'tipo_resultado'    => $resultadoNeto >= 0 ? 'utilidad' : 'perdida',
+            'cierre_existente'  => $cierreExistente ? [
+                'id'     => $cierreExistente->id,
+                'numero' => $cierreExistente->numero,
+                'fecha'  => $cierreExistente->fecha,
+            ] : null,
+        ];
+    }
+
+    /**
+     * Ejecuta formalmente el Cierre Contable del Ejercicio generando la póliza de diario correspondiente.
+     *
+     * @param int $idEmpresa
+     * @param string $fechaInicio
+     * @param string $fechaFin
+     * @param string|null $nombreEjercicio
+     * @return array
+     */
+    public function ejecutarCierreContable(int $idEmpresa, string $fechaInicio, string $fechaFin, ?string $nombreEjercicio = null): array
+    {
+        return DB::transaction(function () use ($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio) {
+            $prev = $this->previsualizarCierreContable($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio);
+
+            if (!empty($prev['cierre_existente'])) {
+                throw new \Exception("Ya existe una póliza de cierre contable aplicada al {$fechaFin} ({$prev['cierre_existente']['numero']}). Debe cancelarla o revertirla antes de efectuar un nuevo cierre.");
+            }
+
+            if (empty($prev['partidas_ingresos']) && empty($prev['partidas_gastos'])) {
+                throw new \Exception("No se encontraron movimientos con saldo en cuentas de ingresos (Clase 4) ni gastos (Clase 5) para el periodo {$fechaInicio} al {$fechaFin}.");
+            }
+
+            // 1. Obtener o crear la subcuenta de Resultados de Ejercicios Anteriores (3.2.2.xx)
+            $cuentaPadre = CatCuentaContable::where('codigo', '3.2.2')->firstOrFail();
+            $subcuenta = CatCuentaContable::firstOrCreate(
+                [
+                    'id_empresa' => $idEmpresa,
+                    'codigo'     => $prev['codigo_subcuenta'],
+                ],
+                [
+                    'nombre'          => $prev['nombre_subcuenta'],
+                    'nivel'           => 4,
+                    'cuenta_padre_id' => $cuentaPadre->id,
+                    'rubro'           => 'capital',
+                    'naturaleza'      => 'acreedora',
+                    'es_afectable'    => true,
+                    'activo'          => true,
+                ]
+            );
+
+            // 2. Construir asientos de partida doble para la póliza de cierre
+            $movimientos = [];
+            $totalDebe = 0.00;
+            $totalHaber = 0.00;
+
+            // Asientos de cancelación de ingresos
+            foreach ($prev['partidas_ingresos'] as $item) {
+                $debe = (float) $item['debe'];
+                $haber = (float) $item['haber'];
+                $movimientos[] = [
+                    'cuenta_contable_id' => $item['cuenta_id'],
+                    'referencia'         => 'CIERRE_' . Carbon::parse($fechaFin)->format('Ymd'),
+                    'concepto_detalle'   => "Cancelación de Ingresos para Cierre: {$item['codigo']} - {$item['nombre']}",
+                    'debe'               => $debe,
+                    'haber'              => $haber,
+                ];
+                $totalDebe += $debe;
+                $totalHaber += $haber;
+            }
+
+            // Asientos de cancelación de gastos/costos
+            foreach ($prev['partidas_gastos'] as $item) {
+                $debe = (float) $item['debe'];
+                $haber = (float) $item['haber'];
+                $movimientos[] = [
+                    'cuenta_contable_id' => $item['cuenta_id'],
+                    'referencia'         => 'CIERRE_' . Carbon::parse($fechaFin)->format('Ymd'),
+                    'concepto_detalle'   => "Cancelación de Gastos para Cierre: {$item['codigo']} - {$item['nombre']}",
+                    'debe'               => $debe,
+                    'haber'              => $haber,
+                ];
+                $totalDebe += $debe;
+                $totalHaber += $haber;
+            }
+
+            // Asiento de contrapartida neta al Patrimonio (Subcuenta 3.2.2.xx)
+            $resultadoNeto = $prev['resultado_neto'];
+            if ($resultadoNeto >= 0) {
+                // Utilidad Neta -> Abono (Haber) a la subcuenta acreedora
+                $movimientos[] = [
+                    'cuenta_contable_id' => $subcuenta->id,
+                    'referencia'         => 'CIERRE_' . Carbon::parse($fechaFin)->format('Ymd'),
+                    'concepto_detalle'   => "Utilidad Neta del Ejercicio trasladada a {$subcuenta->codigo} - {$subcuenta->nombre}",
+                    'debe'               => 0.00,
+                    'haber'              => $resultadoNeto,
+                ];
+                $totalHaber += $resultadoNeto;
+            } else {
+                // Pérdida Neta -> Cargo (Debe) a la subcuenta
+                $movimientos[] = [
+                    'cuenta_contable_id' => $subcuenta->id,
+                    'referencia'         => 'CIERRE_' . Carbon::parse($fechaFin)->format('Ymd'),
+                    'concepto_detalle'   => "Pérdida Neta del Ejercicio trasladada a {$subcuenta->codigo} - {$subcuenta->nombre}",
+                    'debe'               => abs($resultadoNeto),
+                    'haber'              => 0.00,
+                ];
+                $totalDebe += abs($resultadoNeto);
+            }
+
+            // 3. Crear cabecera y asientos de la póliza de cierre
+            $poliza = $this->polizaService->crearPoliza([
+                'id_empresa'   => $idEmpresa,
+                'tipo'         => 'diario',
+                'fecha'        => $fechaFin,
+                'concepto'     => "Póliza de Cierre del Ejercicio Contable: {$prev['nombre_ejercicio']} ({$fechaInicio} al {$fechaFin})",
+                'origen_tipo'  => 'cierre_ejercicio',
+                'origen_id'    => $subcuenta->id,
+                'estatus'      => 'aplicada',
+                'movimientos'  => $movimientos,
+            ]);
+
+            return [
+                'poliza'          => $poliza,
+                'subcuenta'       => $subcuenta,
+                'total_ingresos'  => $prev['total_ingresos'],
+                'total_gastos'    => $prev['total_gastos'],
+                'resultado_neto'  => $resultadoNeto,
+                'tipo_resultado'  => $prev['tipo_resultado'],
+            ];
+        });
+    }
+
+    /**
+     * Obtiene el listado de cierres contables aplicados para una empresa.
+     *
+     * @param int $idEmpresa
+     * @return Collection
+     */
+    public function obtenerHistorialCierres(int $idEmpresa): Collection
+    {
+        return \App\Models\Poliza::with(['movimientos.cuentaContable'])
+            ->where('id_empresa', $idEmpresa)
+            ->where('origen_tipo', 'cierre_ejercicio')
+            ->orderBy('fecha', 'desc')
+            ->get()
+            ->map(function ($p) {
+                $subcuentaMov = $p->movimientos->first(function ($m) {
+                    return str_starts_with($m->cuentaContable?->codigo ?? '', '3.2.2.');
+                });
+
+                $esUtilidad = $subcuentaMov && (float)$subcuentaMov->haber > 0;
+                $montoNeto = $subcuentaMov ? ($esUtilidad ? (float)$subcuentaMov->haber : -((float)$subcuentaMov->debe)) : 0.00;
+
+                return [
+                    'id'             => $p->id,
+                    'numero'         => $p->numero,
+                    'fecha'          => $p->fecha,
+                    'concepto'       => $p->concepto,
+                    'estatus'        => $p->estatus,
+                    'total_debe'     => (float) $p->total_debe,
+                    'total_haber'    => (float) $p->total_haber,
+                    'subcuenta'      => $subcuentaMov ? ($subcuentaMov->cuentaContable->codigo . ' - ' . $subcuentaMov->cuentaContable->nombre) : '3.2.2',
+                    'resultado_neto' => $montoNeto,
+                    'tipo'           => $montoNeto >= 0 ? 'Utilidad' : 'Pérdida',
+                    'creado_en'      => $p->created_at ? $p->created_at->format('d/m/Y H:i') : null,
+                ];
+            });
+    }
+
+    /**
+     * Revierte y cancela una póliza de cierre contable.
+     *
+     * @param int $idPoliza
+     * @param int $idEmpresa
+     * @return bool
+     */
+    public function revertirCierreContable(int $idPoliza, int $idEmpresa): bool
+    {
+        return DB::transaction(function () use ($idPoliza, $idEmpresa) {
+            $poliza = \App\Models\Poliza::where('id', $idPoliza)
+                ->where('id_empresa', $idEmpresa)
+                ->where('origen_tipo', 'cierre_ejercicio')
+                ->firstOrFail();
+
+            $poliza->movimientos()->delete();
+            $poliza->delete();
+
+            return true;
+        });
     }
 }
 

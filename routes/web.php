@@ -96,6 +96,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     // pero lo ideal es cambiar tus botones a POST route('logout').
     Route::post('logout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('logout');
     Route::get('signout', [App\Http\Controllers\CustomAuthController::class, 'signOut'])->name('signout');
+    Route::match(['get', 'post'], '/session/keep-alive', function (\Illuminate\Http\Request $request) {
+        session(['last_user_activity_at' => time()]);
+        return response()->json(['ok' => true, 'timestamp' => time()]);
+    })->name('session.keepalive');
 
     Route::post('/cambiar-empresa', [App\Http\Controllers\UserController::class, 'cambiarEmpresa'])
         ->name('usuario.cambiarEmpresa');
@@ -624,6 +628,13 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::get('poliza-apertura/data', [App\Http\Controllers\ContabilidadController::class, 'polizaAperturaData'])->name('poliza-apertura.data');
             Route::post('poliza-apertura/guardar', [App\Http\Controllers\ContabilidadController::class, 'guardarPolizaApertura'])->name('poliza-apertura.store');
             Route::get('manual', [App\Http\Controllers\ContabilidadController::class, 'manual'])->name('manual');
+            Route::get('cierre-ejercicio/previsualizar', [App\Http\Controllers\ContabilidadController::class, 'previsualizarCierre'])->name('cierre.previsualizar');
+            Route::post('cierre-ejercicio', [App\Http\Controllers\ContabilidadController::class, 'ejecutarCierre'])->name('cierre.store');
+            Route::get('cierre-ejercicio/historial', [App\Http\Controllers\ContabilidadController::class, 'historialCierres'])->name('cierre.historial');
+            Route::delete('cierre-ejercicio/{id}', [App\Http\Controllers\ContabilidadController::class, 'revertirCierre'])->name('cierre.destroy');
+            Route::get('mapeo-modulos', [App\Http\Controllers\ContabilidadController::class, 'mapeoModulosIndex'])->name('mapeo-modulos.index');
+            Route::post('mapeo-modulos/desglosar', [App\Http\Controllers\ContabilidadController::class, 'desglosarEntidad'])->name('mapeo-modulos.desglosar');
+            Route::post('mapeo-modulos/revertir', [App\Http\Controllers\ContabilidadController::class, 'revertirEntidad'])->name('mapeo-modulos.revertir');
         });
 
 
@@ -861,6 +872,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
     Route::get('/backups-historiales/descargar/{file}', [App\Http\Controllers\DatabaseController::class, 'descargarBackupHistorial'])->name('backups.historiales.descargar');
     Route::delete('/backups-historiales/eliminar/{file}', [App\Http\Controllers\DatabaseController::class, 'eliminarBackupHistorial'])->name('backups.historiales.eliminar');
     Route::post('/backups-historiales/limpiar-ahora', [App\Http\Controllers\DatabaseController::class, 'ejecutarLimpiezaAhora'])->name('backups.historiales.limpiar');
+    Route::post('/backups-historiales/sistema-completo', [App\Http\Controllers\DatabaseController::class, 'generarRespaldoCompletoSistema'])->name('backups.sistema_completo.generar');
 
 
     // Ruta para la vista principal de correos

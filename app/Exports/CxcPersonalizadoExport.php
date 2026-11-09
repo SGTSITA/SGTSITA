@@ -20,20 +20,26 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
 
     public $cotizaciones;
     public $user;
+    public $empresaCuentaId;
+    public $fechaEnvio;
 
-    public function __construct($cotizaciones, $user = null)
+    public function __construct($cotizaciones, $user = null, $empresaCuentaId = null, $fechaEnvio = null)
     {
         $this->cotizaciones = $cotizaciones;
         $this->user = $user ?? auth()->user();
+        $this->empresaCuentaId = $empresaCuentaId ?? $cotizaciones->first()?->id_empresa;
+        $this->fechaEnvio = $fechaEnvio ?? now()->format('Y-m-d');
     }
 
     public function view(): View
     {
         $cotizaciones = $this->cotizaciones;
         $user = $this->user;
+        $empresaCuentaId = $this->empresaCuentaId;
+        $fechaEnvio = $this->fechaEnvio;
         $isExcel = true;
 
-        return view('reporteria.cxc.excel_personalizado', compact('cotizaciones', 'user', 'isExcel'));
+        return view('reporteria.cxc.excel_personalizado', compact('cotizaciones', 'user', 'empresaCuentaId', 'isExcel'));
     }
 
     public function registerEvents(): array
@@ -42,6 +48,29 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+                $detailLastRow = min($highestRow, 9 + $this->cotizaciones->count());
+
+                // Preserve generous space for beneficiary and bank details.
+                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+                for ($row = 1; $row <= $highestRow; $row++) {
+                    $rowHasBankDetails = false;
+                    for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                        $cell = $sheet->getCellByColumnAndRow($col, $row);
+                        $value = $cell->getValue();
+                        if (is_string($value) && str_contains($value, '##ROW_ALTO##')) {
+                            $cell->setValue(str_replace('##ROW_ALTO##', '', $value));
+                            $rowHasBankDetails = true;
+                        }
+                    }
+                    if ($rowHasBankDetails) {
+                        $sheet->getRowDimension($row)->setRowHeight(80);
+                        $sheet->getStyle("A{$row}:{$highestColumn}{$row}")
+                            ->getAlignment()
+                            ->setWrapText(true)
+                            ->setVertical(Alignment::VERTICAL_CENTER);
+                    }
+                }
 
                 // 1. Unir celdas de la tabla de metadatos (Filas 3 a 6)
                 $sheet->mergeCells('B3:C3');
@@ -59,6 +88,7 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
                 $sheet->mergeCells('B6:C6');
 
                 // 2. Título principal en A1
+                $sheet->mergeCells('A1:T1');
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('1F3864');
                 $sheet->getRowDimension(1)->setRowHeight(26);
 
@@ -79,7 +109,8 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
                 ];
                 $sheet->getStyle('B3:C6')->applyFromArray($styleValue);
                 $sheet->getStyle('G3:H4')->applyFromArray($styleValue);
-                $sheet->getStyle('G3:H4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->getStyle('E3:H4')->getFont()->setBold(true);
+                $sheet->getStyle('E3:H4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                 // Total del periodo (G5:H5)
                 $sheet->getStyle('G5:H5')->applyFromArray([
@@ -103,53 +134,54 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '0F243D']]],
                 ]);
 
-                // 5. Formato de datos (Filas 9 a $highestRow)
-                if ($highestRow >= 9) {
+                // 5. Formato de la tabla de cotizaciones, sin aplicar estilos
+                // monetarios/totales al bloque bancario que se agrega debajo.
+                if ($detailLastRow >= 9) {
                     $currencyFormat = '"$"#,##0.00;("$"#,##0.00);"$0"';
 
                     // Columnas calculadas en gris claro (#F2F4F8)
                     foreach (['M', 'Q', 'R', 'S'] as $calcCol) {
-                        $sheet->getStyle("{$calcCol}9:{$calcCol}{$highestRow}")
+                        $sheet->getStyle("{$calcCol}9:{$calcCol}{$detailLastRow}")
                             ->getFill()
                             ->setFillType(Fill::FILL_SOLID)
                             ->getStartColor()
                             ->setRGB('F2F4F8');
-                        $sheet->getStyle("{$calcCol}9:{$calcCol}{$highestRow}")
+                        $sheet->getStyle("{$calcCol}9:{$calcCol}{$detailLastRow}")
                             ->getFont()
                             ->setBold(true);
                     }
 
                     // Formato de moneda para columnas G a S
-                    $sheet->getStyle("G9:S{$highestRow}")
+                    $sheet->getStyle("G9:S{$detailLastRow}")
                         ->getNumberFormat()
                         ->setFormatCode($currencyFormat);
-                    $sheet->getStyle("G9:S{$highestRow}")
+                    $sheet->getStyle("G9:S{$detailLastRow}")
                         ->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                     // Formato de peso (Col F)
-                    $sheet->getStyle("F9:F{$highestRow}")
+                    $sheet->getStyle("F9:F{$detailLastRow}")
                         ->getNumberFormat()
                         ->setFormatCode('#,##0.00');
-                    $sheet->getStyle("F9:F{$highestRow}")
+                    $sheet->getStyle("F9:F{$detailLastRow}")
                         ->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
 
                     // Centrar Fecha y Contenedor
-                    $sheet->getStyle("A9:B{$highestRow}")
+                    $sheet->getStyle("A9:B{$detailLastRow}")
                         ->getAlignment()
                         ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                     // Bordes en toda la tabla
-                    $sheet->getStyle("A9:T{$highestRow}")
+                    $sheet->getStyle("A9:T{$detailLastRow}")
                         ->getBorders()
                         ->getAllBorders()
                         ->setBorderStyle(Border::BORDER_THIN)
                         ->getColor()
                         ->setRGB('D0D0D0');
 
-                    // Fila de totales (última fila)
-                    $sheet->getStyle("A{$highestRow}:T{$highestRow}")->applyFromArray([
+                    // Fila de totales del reporte personalizado.
+                    $sheet->getStyle("A{$detailLastRow}:T{$detailLastRow}")->applyFromArray([
                         'font' => ['bold' => true, 'name' => 'Calibri'],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E9ECEF']],
                         'borders' => [
@@ -159,17 +191,25 @@ class CxcPersonalizadoExport implements FromView, ShouldAutoSize, WithEvents
                     ]);
                 }
 
-                // 6. Auto-ajuste de columnas
-                for ($col = 1; $col <= 20; $col++) {
-                    $columnLetter = Coordinate::stringFromColumnIndex($col);
-                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
+                // Anchos controlados conforme a la plantilla: textos descriptivos
+                // reciben más espacio y las columnas numéricas permanecen compactas.
+                $columnWidths = [
+                    13, 16, 21, 24, 16, 12, 16, 13, 12, 12,
+                    14, 12, 16, 16, 11, 13, 16, 17, 16, 27,
+                ];
+                foreach ($columnWidths as $index => $width) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($index + 1);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(false);
+                    $sheet->getColumnDimension($columnLetter)->setWidth($width);
                 }
-                $sheet->calculateColumnWidths();
-                for ($col = 1; $col <= 20; $col++) {
-                    $columnLetter = Coordinate::stringFromColumnIndex($col);
-                    $w = $sheet->getColumnDimension($columnLetter)->getWidth();
-                    $sheet->getColumnDimension($columnLetter)->setWidth(max($w + 3, 11));
-                }
+
+                $sheet->getStyle('A8:T8')->getAlignment()->setWrapText(true);
+                $sheet->getStyle('A9:T' . $detailLastRow)->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getStyle('C9:E' . $detailLastRow)->getAlignment()->setWrapText(true);
+                $sheet->getStyle('T9:T' . $detailLastRow)->getAlignment()->setWrapText(true);
+                $sheet->getPageSetup()->setFitToWidth(1);
+                $sheet->getPageSetup()->setFitToHeight(0);
+                $sheet->getPageSetup()->setPrintArea('A1:' . $highestColumn . $highestRow);
 
                 // Configuración de impresión
                 $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);

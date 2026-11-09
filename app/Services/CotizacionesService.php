@@ -24,6 +24,51 @@ use Carbon\Carbon;
 
 class CotizacionesService
 {
+    public const MAX_PESO_CONTENEDOR_TON = 60;
+
+    /**
+     * Normaliza y valida que el peso del contenedor esté en toneladas (0 < peso <= 60)
+     * y calcula el sobrepeso real sobre el peso reglamentario.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function validarYCalcularPesoSobrepeso($pesoContenedorRaw, $pesoReglamentarioRaw = 22): array
+    {
+        if (is_null($pesoContenedorRaw) || trim((string) $pesoContenedorRaw) === '') {
+            throw new \InvalidArgumentException(
+                'El Peso de Contenedor es obligatorio y debe expresarse en toneladas (máximo ' . self::MAX_PESO_CONTENEDOR_TON . ' toneladas).'
+            );
+        }
+
+        $pesoLimpio = str_replace(',', '', trim((string) $pesoContenedorRaw));
+        if (!is_numeric($pesoLimpio)) {
+            throw new \InvalidArgumentException(
+                'El Peso de Contenedor debe ser un valor numérico válido en toneladas.'
+            );
+        }
+
+        $pesoContenedor = round((float) $pesoLimpio, 2);
+        if ($pesoContenedor <= 0 || $pesoContenedor > self::MAX_PESO_CONTENEDOR_TON) {
+            throw new \InvalidArgumentException(
+                'El Peso de Contenedor debe expresarse en toneladas (mayor a 0 y máximo ' . self::MAX_PESO_CONTENEDOR_TON . ' toneladas). Verifique que no esté capturando kilogramos.'
+            );
+        }
+
+        $reglamentarioLimpio = str_replace(',', '', trim((string) ($pesoReglamentarioRaw ?? 22)));
+        $pesoReglamentario = (is_numeric($reglamentarioLimpio) && (float) $reglamentarioLimpio > 0)
+            ? (float) $reglamentarioLimpio
+            : 22.0;
+
+        $sobrepeso = $pesoContenedor > $pesoReglamentario
+            ? round($pesoContenedor - $pesoReglamentario, 2)
+            : 0.0;
+
+        return [
+            'peso_contenedor' => $pesoContenedor,
+            'peso_reglamentario' => $pesoReglamentario,
+            'sobrepeso' => $sobrepeso,
+        ];
+    }
     /**
      * Consulta unificada de cotizaciones / viajes.
      * Soporta filtrado por empresa (internos), id_cliente (externos), estatus, estatus_planeacion, rango de fechas y exclusión de locales.
@@ -447,6 +492,7 @@ class CotizacionesService
             $conceptoDetalle = 'Provisión viaje #' . $cotizacion->id . ($contenedor ? " [{$contenedor}]" : '') . ' Cliente: ' . ($cotizacion->cliente?->nombre ?? 'N/A');
 
             $asientoData = $polizaService->resolverAsientoPorEvento('PROVISION_VIAJE', null, $cotizacion->id_empresa ?? 1, [
+                'id_cliente'  => $cotizacion->id_cliente,
                 'id_equipo'   => $camionId,
                 'monto'       => $precioViaje,
                 'fecha'       => $fecha,
@@ -519,24 +565,38 @@ class CotizacionesService
      */
     public function getPeriodosCotizaciones(): array
     {
-        return Cache::remember('sgt_periodos_cotizaciones', 3600, function () {
-            $minYear = (int) (DB::table('cotizaciones')->min(DB::raw('YEAR(created_at)')) ?? 2024);
-            $maxBd = (int) (DB::table('cotizaciones')->max(DB::raw('YEAR(created_at)')) ?? date('Y'));
-            $maxYear = max($maxBd, (int) date('Y') + 1);
+        try {
+            return Cache::remember('sgt_periodos_cotizaciones', 3600, function () {
+                return $this->calcularPeriodosCotizaciones();
+            });
+        } catch (\Throwable $e) {
+            return $this->calcularPeriodosCotizaciones();
+        }
+    }
 
-            $anios = [];
-            for ($y = $maxYear; $y >= $minYear; $y--) {
-                $anios[] = $y;
-            }
+    /**
+     * Calcula los rangos de años y fechas basados en cotizaciones en BD.
+     *
+     * @return array
+     */
+    protected function calcularPeriodosCotizaciones(): array
+    {
+        $minYear = (int) (DB::table('cotizaciones')->min(DB::raw('YEAR(created_at)')) ?? 2024);
+        $maxBd = (int) (DB::table('cotizaciones')->max(DB::raw('YEAR(created_at)')) ?? date('Y'));
+        $maxYear = max($maxBd, (int) date('Y') + 1);
 
-            return [
-                'ejercicio_ini_bd' => $minYear,
-                'ejercicio_fin_bd' => $maxYear,
-                'anios'            => $anios,
-                'min_date'         => "{$minYear}-01-01",
-                'max_date'         => "{$maxYear}-12-31",
-            ];
-        });
+        $anios = [];
+        for ($y = $maxYear; $y >= $minYear; $y--) {
+            $anios[] = $y;
+        }
+
+        return [
+            'ejercicio_ini_bd' => $minYear,
+            'ejercicio_fin_bd' => $maxYear,
+            'anios'            => $anios,
+            'min_date'         => "{$minYear}-01-01",
+            'max_date'         => "{$maxYear}-12-31",
+        ];
     }
 
     /**
@@ -600,7 +660,12 @@ class CotizacionesService
      */
     public function storeCotizacion(array $data, int $idEmpresa, $user): Cotizaciones
     {
-        return DB::transaction(function () use ($data, $idEmpresa, $user) {
+        $datosPeso = $this->validarYCalcularPesoSobrepeso(
+            $data['peso_contenedor'] ?? null,
+            $data['peso_reglamentario'] ?? 22
+        );
+
+        return DB::transaction(function () use ($data, $idEmpresa, $user, $datosPeso) {
             if (!empty($data['num_contenedor'])) {
                 $numContenedor = str_replace(' ', '', $data['num_contenedor']);
                 $contenedorExistente = DocumCotizacion::where('num_contenedor', $numContenedor)->first();
@@ -620,15 +685,15 @@ class CotizacionesService
             $cotizacion->origen = $data['origen'] ?? null;
             $cotizacion->destino = $data['destino'] ?? null;
             $cotizacion->tamano = $data['tamano'] ?? null;
-            $cotizacion->peso_contenedor = $data['peso_contenedor'] ?? null;
+            $cotizacion->peso_contenedor = $datosPeso['peso_contenedor'];
             $cotizacion->otro = $data['otro'] ?? null;
             $cotizacion->fecha_modulacion = $data['fecha_modulacion'] ?? null;
             $cotizacion->fecha_entrega = $data['fecha_entrega'] ?? null;
             $cotizacion->iva = $data['iva'] ?? null;
             $cotizacion->retencion = $data['retencion'] ?? null;
-            $cotizacion->peso_reglamentario = $data['peso_reglamentario'] ?? null;
+            $cotizacion->peso_reglamentario = $data['peso_reglamentario'] ?? $datosPeso['peso_reglamentario'];
             $cotizacion->precio_sobre_peso = $data['precio_sobre_peso'] ?? null;
-            $cotizacion->sobrepeso = $data['sobrepeso'] ?? null;
+            $cotizacion->sobrepeso = $datosPeso['sobrepeso'];
             $cotizacion->estatus = !empty($data['uuid']) ? 'Documentos Faltantes' : 'Pendiente';
             $cotizacion->precio_viaje = $data['precio_viaje'] ?? 0;
             $cotizacion->burreo = $data['burreo'] ?? 0;
@@ -644,6 +709,12 @@ class CotizacionesService
             $cotizacion->origen_captura = $data['origen_captura'] ?? null;
             $cotizacion->user_id = $user->id;
             $cotizacion->direccion_entrega = $data['direccion_entrega'] ?? null;
+            $cotizacion->latitud = $data['latitud'] ?? null;
+            $cotizacion->longitud = $data['longitud'] ?? null;
+            $cotizacion->direccion_mapa = $data['direccion_mapa'] ?? null;
+            if (array_key_exists('id_proveedor', $data) && !empty($data['id_transportista'])) {
+                $cotizacion->id_proveedor = $data['id_transportista'];
+            }
             $cotizacion->id_empresa = $empresaFinal;
             $cotizacion->save();
 
@@ -927,6 +998,8 @@ class CotizacionesService
                 throw new \DomainException('El contenedor ya existe en la empresa.');
             }
 
+            $datosPesoLocal = $this->validarYCalcularPesoSobrepeso($data['peso_contenedor'] ?? null, 22);
+
             $idEmpresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
             $idTransportista = !empty($data['id_transportista']) ? (int) $data['id_transportista'] : null;
             $normalizarFecha = static function ($valor) {
@@ -949,10 +1022,10 @@ class CotizacionesService
                 'bloque_hora_i_local' => $data['bloque_hora_i'] ?? null,
                 'bloque_hora_f_local' => $data['bloque_hora_f'] ?? null,
                 'peso_reglamentario' => 22,
-                'sobrepeso' => 0,
+                'sobrepeso' => $datosPesoLocal['sobrepeso'],
                 'origen' => $data['origen'] ?? null,
                 'tamano' => $data['tamano'] ?? null,
-                'peso_contenedor' => $data['peso_contenedor'] ?? null,
+                'peso_contenedor' => $datosPesoLocal['peso_contenedor'],
                 'fecha_modulacion' => $data['fecha_modulacion'] ?? null,
                 'origen_local' => $data['origen'] ?? null,
                 'destino_local' => $data['destino'] ?? null,
@@ -996,7 +1069,7 @@ class CotizacionesService
                 'nota' => 'Creación de cotización local',
             ]);
 
-            $naviera = $data['naviera'] ?? null;
+            $naviera = $data['naviera_id'] ?? $data['naviera'] ?? null;
             $doc = DocumCotizacion::create([
                 'id_cotizacion' => $cotizacion->id,
                 'id_empresa' => $idEmpresaFinal,
@@ -1021,7 +1094,7 @@ class CotizacionesService
                 'cita_at' => $normalizarFecha($data['cita_at'] ?? null),
                 'eta' => $normalizarFecha($data['eta'] ?? null),
                 'pedimento_recibido_at' => $normalizarFecha($data['pedimento_recibido_at'] ?? null),
-                'naviera_id' => ($naviera === null || $naviera === '' || $naviera === 'null') ? null : (int) $naviera,
+                'naviera_id' => ($naviera === null || $naviera === '' || strtolower(trim((string) $naviera)) === 'null' || (int) $naviera <= 0) ? null : (int) $naviera,
             ]);
 
             return [
@@ -1149,7 +1222,24 @@ class CotizacionesService
             $cot = Cotizaciones::findOrFail($id);
             $doc = DocumCotizacion::where('id_cotizacion', $id)->firstOrFail();
 
-            $contenedorOriginal = $doc->num_contenedor;
+            $contenedorOriginal = strtoupper(trim(str_replace(' ', '', $doc->num_contenedor ?? '')));
+            $contenedorupdate = strtoupper(trim(str_replace(' ', '', $data['num_contenedor'] ?? '')));
+
+            if (!empty($contenedorupdate) && $contenedorupdate !== $contenedorOriginal) {
+                $contenedorExistente = DocumCotizacion::where('id', '!=', $doc->id)
+                    ->where(function ($query) use ($contenedorupdate) {
+                        $query->whereRaw("UPPER(REPLACE(TRIM(num_contenedor), ' ', '')) = ?", [$contenedorupdate])
+                              ->orWhere('num_contenedor', $contenedorupdate);
+                    })
+                    ->exists();
+
+                if ($contenedorExistente) {
+                    throw new \DomainException("El contenedor $contenedorupdate ya existe en el sistema y no puede duplicarse");
+                }
+            }
+
+            $datosPesoLocalUpd = $this->validarYCalcularPesoSobrepeso($data['peso_contenedor'] ?? $cot->peso_contenedor, 22);
+
             $idEmpresaFinal = !empty($data['id_proveedor']) ? (int) $data['id_proveedor'] : $idEmpresa;
             $idTransportista = !empty($data['id_transportista']) ? (int) $data['id_transportista'] : null;
             $numero = static function ($valor, bool $entero = false) {
@@ -1175,11 +1265,23 @@ class CotizacionesService
             $cot->empresa_local = $idEmpresaFinal;
             $cot->sub_cliente_local = $data['id_subcliente'] ?? null;
             $cot->transportista_local = $idTransportista;
+            $cot->peso_reglamentario = 22;
             $cot->origen = $data['origen'] ?? $cot->origen;
             $cot->tamano = $data['tamano'] ?? $cot->tamano;
-            $cot->peso_contenedor = $data['peso_contenedor'] ?? $cot->peso_contenedor;
+            $cot->peso_contenedor = $datosPesoLocalUpd['peso_contenedor'];
+            $cot->sobrepeso = $datosPesoLocalUpd['sobrepeso'];
             $cot->fecha_modulacion = $fecha($data['fecha_modulacion'] ?? null);
-            $cot->puerto = $data['puerto'] ?? null;
+            $cot->cp_pedimento = $data['num_pedimento'] ?? $cot->cp_pedimento;
+            $cot->cp_clase_ped = $data['cp_clase_ped'] ?? $cot->cp_clase_ped;
+            $cot->bloque_local = $data['bloque'] ?? $cot->bloque_local;
+            $cot->bloque_hora_i_local = $data['bloque_hora_i'] ?? $cot->bloque_hora_i_local;
+            $cot->bloque_hora_f_local = $data['bloque_hora_f'] ?? $cot->bloque_hora_f_local;
+            $cot->origen_local = $data['origen'] ?? $cot->origen_local;
+            $cot->destino_local = $data['destino'] ?? $cot->destino_local;
+            $cot->costo_maniobra_local = $data['Costomaniobra'] ?? $cot->costo_maniobra_local;
+            $cot->estado_contenedor = $data['estado_contenedor'] ?? $cot->estado_contenedor;
+            $cot->fecha_modulacion_local = $fecha($data['fecha_modulacion'] ?? null) ?? $cot->fecha_modulacion_local;
+            $cot->puerto = $data['puerto'] ?? '';
             $cot->fecha_ingreso_puerto = $fecha($data['fecha_ingreso_puerto'] ?? null);
             $cot->fecha_salida_puerto = $fecha($data['fecha_salida_puerto'] ?? null);
             $cot->dias_estadia = $numero($data['dias_estadia'] ?? null, true);
@@ -1194,19 +1296,37 @@ class CotizacionesService
             $cot->fecha_liberacion = $fecha($data['fecha_liberacion'] ?? null);
             $cot->responsable = ($data['responsable'] ?? null) === 'null' ? null : ($data['responsable'] ?? null);
             $cot->observaciones = ($data['observaciones'] ?? null) === 'null' ? null : ($data['observaciones'] ?? null);
+            $cot->nuevo_sello = array_key_exists('nuevo_sello', $data) ? filter_var($data['confirmacion_sello'] ?? $data['nuevo_sello'], FILTER_VALIDATE_BOOLEAN) : null;
+            $cot->confirmacion_sello = array_key_exists('confirmacion_sello', $data) ? filter_var($data['confirmacion_sello'], FILTER_VALIDATE_BOOLEAN) : null;
+            $cot->agente_aduanal = $data['agente_aduanal'] ?? '';
             $cot->save();
 
             $doc->id_empresa = $idEmpresaFinal;
 
-            foreach (['numBoleta' => 'num_boleta_liberacion', 'numDoda' => 'num_doda'] as $campoEntrada => $campoDocumento) {
-                if (array_key_exists($campoEntrada, $data)) {
-                    $folio = trim((string) $data[$campoEntrada]);
-                    $doc->{$campoDocumento} = $folio === '' || strtolower($folio) === 'null' ? null : $folio;
-                }
+            if (!empty($contenedorupdate) && $contenedorupdate !== $contenedorOriginal) {
+                $doc->num_contenedor = $contenedorupdate;
             }
 
-            if (!empty($data['num_contenedor']) && $data['num_contenedor'] != $contenedorOriginal) {
-                $doc->num_contenedor = $data['num_contenedor'];
+            $doc->num_boleta_liberacion = $fecha($data['numBoleta'] ?? $data['num_boleta_liberacion'] ?? null) ?? ($doc->num_boleta_liberacion ?? '');
+            $doc->num_doda = $fecha($data['numDoda'] ?? $data['num_doda'] ?? null) ?? ($doc->num_doda ?? '');
+            if (array_key_exists('terminal_local', $data)) {
+                $doc->terminal = $data['terminal_local'];
+            }
+            if (array_key_exists('num_autorizacion', $data)) {
+                $doc->num_autorizacion = $data['num_autorizacion'];
+            }
+            if (array_key_exists('cita_at', $data)) {
+                $doc->cita_at = $fecha($data['cita_at']);
+            }
+            if (array_key_exists('eta', $data)) {
+                $doc->eta = $fecha($data['eta']);
+            }
+            if (array_key_exists('naviera_id', $data) || array_key_exists('naviera', $data)) {
+                $naviera = $data['naviera_id'] ?? $data['naviera'] ?? null;
+                $doc->naviera_id = ($naviera === null || $naviera === '' || strtolower(trim((string) $naviera)) === 'null' || (int) $naviera <= 0) ? null : (int) $naviera;
+            }
+            if (array_key_exists('pedimento_recibido_at', $data)) {
+                $doc->pedimento_recibido_at = $fecha($data['pedimento_recibido_at']);
             }
             $doc->save();
 
@@ -1276,8 +1396,8 @@ class CotizacionesService
             }
 
             $pesoCont = $cont[7 + $sumarIndex] ?? null;
-            if (is_null($pesoCont) || $pesoCont === '' || !is_numeric($pesoCont) || floatval($pesoCont) <= 0) {
-                throw new \DomainException("El peso del contenedor de la fila {$row} debe ser un número válido mayor a cero.");
+            if (is_null($pesoCont) || $pesoCont === '' || !is_numeric($pesoCont) || floatval($pesoCont) <= 0 || floatval($pesoCont) > self::MAX_PESO_CONTENEDOR_TON) {
+                throw new \InvalidArgumentException("El peso del contenedor de la fila {$row} debe expresarse en toneladas (mayor a 0 y máximo " . self::MAX_PESO_CONTENEDOR_TON . " toneladas).");
             }
 
             $row++;
@@ -1363,7 +1483,6 @@ class CotizacionesService
      */
     public function storeMultipleLocal(array $contenedores, array $params, $user): array
     {
-        $idEmpresa = $user->id_empresa;
         $row = 1;
         $sumarIndex = (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) ? 2 : 0;
 
@@ -1372,36 +1491,123 @@ class CotizacionesService
             if (empty($numContenedor)) {
                 throw new \DomainException("El contenedor en la fila {$row} es requerido.");
             }
+            if (DocumCotizacion::where('num_contenedor', $numContenedor)->exists()) {
+                throw new \DomainException("El contenedor {$numContenedor} ya existe en la empresa");
+            }
+
+            $numSubCliente = substr($cont[0] ?? '', 0, 5);
+            if (!Subclientes::where('id', $numSubCliente)->exists()) {
+                throw new \DomainException("El subcliente de la fila {$row} no es un cliente registrado");
+            }
+
+            if (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) {
+                $numProveedor = substr($cont[1] ?? '', 0, 5);
+                if (!Empresas::where('id', $numProveedor)->exists()) {
+                    throw new \DomainException("El proveedor de la fila {$row} no es un proveedor registrado");
+                }
+                $numTransportista = substr($cont[2] ?? '', 0, 5);
+                if (!Proveedor::where('id', $numTransportista)->exists()) {
+                    throw new \DomainException("El transportista de la fila {$row} no es un transportista registrado");
+                }
+            }
+
+            $pesoContenedorVal = $cont[5 + $sumarIndex] ?? null;
+            if (is_null($pesoContenedorVal) || $pesoContenedorVal === '' || !is_numeric($pesoContenedorVal) || floatval($pesoContenedorVal) <= 0 || floatval($pesoContenedorVal) > self::MAX_PESO_CONTENEDOR_TON) {
+                throw new \InvalidArgumentException("El peso del contenedor de la fila {$row} debe expresarse en toneladas (mayor a 0 y máximo " . self::MAX_PESO_CONTENEDOR_TON . " toneladas).");
+            }
+
             $row++;
         }
 
         return DB::transaction(function () use ($contenedores, $params, $user, $sumarIndex) {
+            $origenInicial = $params['origen_captura'] ?? null;
+            $pesoReglamentario = 22;
+
             foreach ($contenedores as $contenedor) {
-                $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
+                $pesocontenedor = (float) ($contenedor[5 + $sumarIndex] ?? 0);
                 $numSubCliente = substr($contenedor[0], 0, 5);
+                $numContenedor = str_replace(' ', '', $contenedor[3 + $sumarIndex]);
 
-                $doc = DocumCotizacion::create([
-                    'id_cotizacion' => 0,
-                    'id_empresa' => $user->id_empresa,
-                    'num_contenedor' => $numContenedor,
-                ]);
+                $cotizaciones = new Cotizaciones();
+                $cotizaciones->id_cliente = $user->id_cliente;
+                $cotizaciones->id_subcliente = $numSubCliente;
+                if (!empty($params['permiso_proveedor']) && $params['permiso_proveedor'] == 1) {
+                    $numProveedor = substr($contenedor[1], 0, 5);
+                    $numTransportista = substr($contenedor[2], 0, 5);
+                    $cotizaciones->id_empresa = $numProveedor;
+                    $cotizaciones->id_proveedor = $numTransportista;
+                    $cotizaciones->empresa_local = $params['id_proveedor'] ?? null;
+                } else {
+                    $cotizaciones->id_empresa = $user->id_empresa;
+                }
+                if (!empty($params['id_transportista']) && $params['id_transportista'] !== $cotizaciones->id_proveedor) {
+                    $cotizaciones->id_proveedor = $params['id_transportista'];
+                    $cotizaciones->transportista_local = $params['id_transportista'] ?? null;
+                }
+                $cotizaciones->origen = $contenedor[2 + $sumarIndex] ?? null;
+                $cotizaciones->destino = $contenedor[3 + $sumarIndex] ?? null;
+                $cotizaciones->tamano = $contenedor[4 + $sumarIndex] ?? null;
+                $cotizaciones->peso_contenedor = $pesocontenedor;
+                $cotizaciones->bloque = $contenedor[14 + $sumarIndex] ?? null;
+                $cotizaciones->bloque_hora_i = $contenedor[15 + $sumarIndex] ?? null;
+                $cotizaciones->bloque_hora_f = $contenedor[16 + $sumarIndex] ?? null;
+                $cotizaciones->direccion_entrega = $contenedor[17 + $sumarIndex] ?? null;
+                $cotizaciones->otro = 0;
+                $cotizaciones->fecha_modulacion = $contenedor[12 + $sumarIndex] ?? null;
+                $cotizaciones->fecha_entrega = $contenedor[13 + $sumarIndex] ?? null;
+                $cotizaciones->bloque_local = $contenedor[14 + $sumarIndex] ?? null;
+                $cotizaciones->bloque_hora_i_local = $contenedor[15 + $sumarIndex] ?? null;
+                $cotizaciones->bloque_hora_f_local = $contenedor[16 + $sumarIndex] ?? null;
+                $cotizaciones->origen_local = $params['origen'] ?? null;
+                $cotizaciones->destino_local = $params['destino'] ?? null;
+                $cotizaciones->costo_maniobra_local = 0;
+                $cotizaciones->estado_contenedor = 'AMARILLO';
+                $cotizaciones->fecha_modulacion_local = $contenedor[12 + $sumarIndex] ?? null;
+                $cotizaciones->puerto = 'Lazaro';
+                $cotizaciones->fecha_ingreso_puerto = null;
+                $cotizaciones->fecha_salida_puerto = null;
+                $cotizaciones->dias_estadia = 0;
+                $cotizaciones->tarifa_estadia = 0;
+                $cotizaciones->total_estadia = 0;
+                $cotizaciones->dias_pernocta = 0;
+                $cotizaciones->tarifa_pernocta = 0;
+                $cotizaciones->total_pernocta = 0;
+                $cotizaciones->total_general = 0;
+                $cotizaciones->motivo_demora = null;
+                $cotizaciones->liberado = 0;
+                $cotizaciones->fecha_liberacion = null;
+                $cotizaciones->responsable = 'Viaje local';
+                $cotizaciones->observaciones = 'Contenedor cargado desde carga masiva local';
+                $cotizaciones->iva = 0;
+                $cotizaciones->retencion = 0;
+                $cotizaciones->peso_reglamentario = $pesoReglamentario;
+                $cotizaciones->precio_sobre_peso = 0;
+                $cotizaciones->sobrepeso = ($pesocontenedor > $pesoReglamentario) ? $pesocontenedor - $pesoReglamentario : 0;
+                $cotizaciones->estatus = !empty($params['uuid']) ? 'Documentos Faltantes' : 'Pendiente';
+                $cotizaciones->precio_viaje = 0;
+                $cotizaciones->burreo = 0;
+                $cotizaciones->maniobra = 0;
+                $cotizaciones->estadia = 0;
+                $cotizaciones->base_factura = 0;
+                $cotizaciones->base_taref = 0;
+                $cotizaciones->precio_tonelada = 0;
+                $cotizaciones->total = 0;
+                $cotizaciones->restante = 0;
+                $cotizaciones->estatus_pago = '0';
+                $cotizaciones->origen_captura = $origenInicial;
+                $cotizaciones->user_id = $user->id;
+                $cotizaciones->save();
 
-                \App\Models\CotizacionesLocales::create([
-                    'id_contenedor' => $doc->id,
-                    'id_subcliente' => $numSubCliente ?: null,
-                    'id_empresa' => $user->id_empresa,
-                    'id_proveedor' => $user->id_empresa,
-                    'origen' => $contenedor[4 + $sumarIndex] ?? null,
-                    'tamano' => $contenedor[6 + $sumarIndex] ?? null,
-                    'peso_contenedor' => $contenedor[7 + $sumarIndex] ?? null,
-                    'fecha_modulacion' => $contenedor[12 + $sumarIndex] ?? null,
-                    'total_general' => 0,
-                ]);
+                $docucotizaciones = new DocumCotizacion();
+                $docucotizaciones->id_cotizacion = $cotizaciones->id;
+                $docucotizaciones->num_contenedor = $numContenedor;
+                $docucotizaciones->id_empresa = $cotizaciones->id_empresa;
+                $docucotizaciones->save();
             }
 
             return [
                 "Titulo" => "Proceso satisfactorio",
-                "Mensaje" => "Se han guardado las cotizaciones locales con éxito",
+                "Mensaje" => "Cotización creada con exito",
                 "TMensaje" => "success"
             ];
         });

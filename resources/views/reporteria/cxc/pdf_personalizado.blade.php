@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Estado de Cuenta - Transporte</title>
+    <title>{{ ($fechaEnvio ?? date('Y-m-d')) . ' GC TRANSPORTE ' . ($cotizaciones->first()?->estadoCuenta?->numero ?? 'SIN-ESTADO') }}</title>
     <style>
         @page {
             size: letter landscape;
@@ -50,20 +50,20 @@
             font-weight: bold;
             background-color: #f1f3f5;
             color: #2b2b2b;
-            width: 14%;
+            width: 19%;
         }
 
         .meta-value {
             background-color: #ffffff;
             color: #000000;
-            width: 19%;
+            width: 31%;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 6.5px;
-            table-layout: auto;
+            table-layout: fixed;
         }
 
         .data-table th {
@@ -135,7 +135,8 @@
             ?? (request('numero_edo_cuenta') ? optional(\App\Models\Estado_Cuenta::find(request('numero_edo_cuenta')))->numero : 'S/F');
 
         $totalContenedores = $cotizaciones->count();
-        $fechaEnvio = date('Y-m-d');
+        $fechaEnvio = $fechaEnvio ?? date('Y-m-d');
+        $tituloEnvio = "{$fechaEnvio} GC TRANSPORTE {$folioEdoCuenta}";
 
         // Totales acumulados
         $sumPrecioViaje = 0;
@@ -206,7 +207,7 @@
         }
     @endphp
 
-    <div class="header-title">ESTADO DE CUENTA · TRANSPORTE</div>
+    <div class="header-title">{{ $tituloEnvio }}</div>
 
     <!-- Metadata del estado de cuenta -->
     <table class="meta-table">
@@ -215,12 +216,14 @@
             <td class="meta-value">{{ $proveedorHeader }}</td>
             <td class="meta-label">Folio del estado de cuenta / corte</td>
             <td class="meta-value" style="font-weight: bold; color: #0b2545;">{{ $folioEdoCuenta }}</td>
-            <td class="meta-label">Contenedores en este envío</td>
-            <td class="meta-value" style="font-weight: bold;">{{ $totalContenedores }}</td>
         </tr>
         <tr>
             <td class="meta-label">Periodo del</td>
             <td class="meta-value">{{ $periodoDel }}</td>
+            <td class="meta-label">Contenedores en este envío</td>
+            <td class="meta-value" style="font-weight: bold;">{{ $totalContenedores }}</td>
+        </tr>
+        <tr>
             <td class="meta-label">Periodo al</td>
             <td class="meta-value">{{ $periodoAl }}</td>
             <td class="meta-label">TOTAL DEL PERIODO</td>
@@ -231,7 +234,7 @@
         <tr>
             <td class="meta-label">Fecha de envío</td>
             <td class="meta-value">{{ $fechaEnvio }}</td>
-            <td class="meta-value" colspan="4" style="background-color: #ffffff; border-color: #ffffff;"></td>
+            <td colspan="2" style="background-color: #ffffff; border-color: #ffffff;"></td>
         </tr>
     </table>
 
@@ -240,7 +243,7 @@
         <thead>
             <tr>
                 <th style="width: 5%;">Fecha del viaje</th>
-                <th style="width: 7%;">Contenedor</th>
+                <th style="width: 6%;">Contenedor</th>
                 <th style="width: 6%;">Importadora</th>
                 <th style="width: 9%;">Transportista</th>
                 <th style="width: 6%;">Destino</th>
@@ -249,16 +252,16 @@
                 <th style="width: 4%;">Maniobra</th>
                 <th style="width: 4%;">Burreo</th>
                 <th style="width: 4%;">Estadía</th>
-                <th style="width: 4%;">Sobrepeso</th>
+                <th style="width: 5%;">Sobrepeso</th>
                 <th style="width: 4%;">Otros</th>
                 <th style="width: 6%;" class="th-calc">TOTAL SERVICIO</th>
                 <th style="width: 5%;">Base facturada</th>
-                <th style="width: 4%;">IVA</th>
+                <th style="width: 3%;">IVA</th>
                 <th style="width: 4%;">Retención</th>
-                <th style="width: 5%;" class="th-calc">TOTAL FACTURA</th>
-                <th style="width: 5%;" class="th-calc">Resto sin factura</th>
-                <th style="width: 6%;" class="th-calc">TOTAL A PAGAR</th>
-                <th style="width: 9%;">Observaciones</th>
+                <th style="width: 6%;" class="th-calc">TOTAL FACTURA</th>
+                <th style="width: 6%;" class="th-calc">Resto sin factura</th>
+                <th style="width: 7%;" class="th-calc">TOTAL A PAGAR</th>
+                <th style="width: 6%;">Observaciones</th>
             </tr>
         </thead>
         <tbody>
@@ -360,5 +363,7 @@
             </tr>
         </tbody>
     </table>
+
+    @include('reporteria.cxc.partials.cuentas_bancarias', ['empresaCuentaId' => $empresaCuentaId ?? $primera?->id_empresa])
 </body>
 </html>

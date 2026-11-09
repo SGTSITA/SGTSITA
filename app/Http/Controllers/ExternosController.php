@@ -716,14 +716,33 @@ class ExternosController extends Controller
         $Puertos = config('CatAuxiliares.puertos');
         $opcionesPuertos = config('CatAuxiliares.puertosOpciones');
 
-
-        $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
-        ->whereHas('DocCotizacion', function ($query) use ($request) {
-            $query->where('num_contenedor', $request->numContenedor);
-        })
-        ->first();
-
-        // dd($request->numContenedor, $cotizacion);
+        $numContenedorClean = trim((string) $request->numContenedor);
+        $cotizacion = null;
+        if ($request->filled('idCotizacion')) {
+            $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
+                ->where('id', $request->idCotizacion)
+                ->first();
+        }
+        if (!$cotizacion) {
+            $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
+                ->when(auth()->user()->id_cliente, function ($q) {
+                    $q->where('id_cliente', auth()->user()->id_cliente);
+                })
+                ->whereHas('DocCotizacion', function ($query) use ($numContenedorClean) {
+                    $query->where('num_contenedor', $numContenedorClean)
+                        ->orWhereRaw("TRIM(num_contenedor) = ?", [$numContenedorClean]);
+                })
+                ->orderByDesc('id')
+                ->first();
+        }
+        if (!$cotizacion) {
+            $cotizacion = Cotizaciones::with(['cliente', 'DocCotizacion'])
+                ->whereHas('DocCotizacion', function ($query) use ($numContenedorClean) {
+                    $query->where('num_contenedor', $numContenedorClean);
+                })
+                ->orderByDesc('id')
+                ->first();
+        }
         $transportista = Proveedor::CatalogoLocal()->whereIn('id_empresa', $clienteEmpresa)->get();
         // dd($transportista, $clienteEmpresa);
         // $transportista = Proveedor::get();

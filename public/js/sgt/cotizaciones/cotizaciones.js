@@ -3,6 +3,7 @@ let mapex, markerext;
 let cotizacionSaveInProgress = false;
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
+const MAX_PESO_CONTENEDOR_TON = 60;
 const catalogo_clientes = document.querySelector("#txtClientes");
 const formCotizacion = document.querySelector("#cotizacionCreateMultiple");
 const frmMode = formCotizacion
@@ -1242,6 +1243,18 @@ document.addEventListener("DOMContentLoaded", function () {
         var pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
 
         // Calcular sobrepeso
+        if (pesoContenedor > MAX_PESO_CONTENEDOR_TON) {
+            pesoContenedorInput.classList.add("is-invalid");
+            if (sobrepesoInput) {
+                sobrepesoInput.value = "0.0000";
+            }
+            sobrePesoViaje();
+            calcularTotal();
+            return;
+        } else {
+            pesoContenedorInput.classList.remove("is-invalid");
+        }
+
         var sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
 
         // Mostrar sobrepeso en el input correspondiente con dos decimales
@@ -1269,6 +1282,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Calcular sobrepeso inicialmente al cargar la página
+    if (pesoContenedorInput && parseFloat(pesoContenedorInput.value) > MAX_PESO_CONTENEDOR_TON) {
+        Swal.fire(
+            "Peso de Contenedor fuera de rango",
+            `El peso registrado (${pesoContenedorInput.value}) excede el máximo permitido de ${MAX_PESO_CONTENEDOR_TON} toneladas. Por favor corríjalo en toneladas (ej. 24.50) antes de guardar o actualizar el viaje.`,
+            "warning"
+        );
+    }
     calcularSobrepeso();
 
     // Agregar eventos de cambio a los inputs para calcular automáticamente
@@ -1855,6 +1875,16 @@ async function validarContenedores(Contenedor) {
     if (!passValidation) return passValidation;
 
     //Validaciones con condicionantes
+    const pesoContVal = parseFloat(fieldsContenedor["peso_contenedor"]);
+    if (isNaN(pesoContVal) || pesoContVal <= 0 || pesoContVal > MAX_PESO_CONTENEDOR_TON) {
+        Swal.fire(
+            `Peso de Contenedor inválido en "${Contenedor}"`,
+            `El Peso del Contenedor debe expresarse en toneladas (mayor a 0 y máximo ${MAX_PESO_CONTENEDOR_TON} toneladas). Valor capturado: ${fieldsContenedor["peso_contenedor"] || 0}`,
+            "warning"
+        );
+        return false;
+    }
+
     /*let sobrePeso = fieldsContenedor['sobrepeso'];
    let precioSobrePeso = fieldsContenedor['precio_sobre_peso'];
    if(sobrePeso > 0 && precioSobrePeso.length <= 0){
@@ -1937,6 +1967,22 @@ $("#cotizacionCreateMultiple").on("submit", async function (e) {
     if (!passValidation) return passValidation;
 
     //Validaciones con condicionantes
+    const pesoContenedorField = document.getElementById("peso_contenedor");
+    if (pesoContenedorField) {
+        const pesoVal = parseFloat(pesoContenedorField.value);
+        if (isNaN(pesoVal) || pesoVal <= 0 || pesoVal > MAX_PESO_CONTENEDOR_TON) {
+            Swal.fire(
+                "Peso de Contenedor inválido",
+                `El Peso del Contenedor debe expresarse en toneladas (mayor a 0 y máximo ${MAX_PESO_CONTENEDOR_TON} toneladas). Verifique que no haya capturado kilogramos o un número de folio.`,
+                "warning"
+            );
+            pesoContenedorField.classList.add("is-invalid");
+            setTimeout(() => pesoContenedorField.focus(), 300);
+            return false;
+        }
+        pesoContenedorField.classList.remove("is-invalid");
+    }
+
     let sobrePeso = document.getElementById("sobrepeso").value;
     let precioSobrePeso = document.getElementById("precio_sobre_peso").value;
     if (sobrePeso > 0 && precioSobrePeso.length <= 0) {
@@ -2112,6 +2158,22 @@ $("#cotizacionCreate").on("submit", function (e) {
     if (!passValidation) return passValidation;
 
     //Validaciones con condicionantes
+    const pesoContenedorField = document.getElementById("peso_contenedor");
+    if (pesoContenedorField) {
+        const pesoVal = parseFloat(pesoContenedorField.value);
+        if (isNaN(pesoVal) || pesoVal <= 0 || pesoVal > MAX_PESO_CONTENEDOR_TON) {
+            Swal.fire(
+                "Peso de Contenedor inválido",
+                `El Peso del Contenedor debe expresarse en toneladas (mayor a 0 y máximo ${MAX_PESO_CONTENEDOR_TON} toneladas). Verifique que no haya capturado kilogramos o un número de folio.`,
+                "warning"
+            );
+            pesoContenedorField.classList.add("is-invalid");
+            setTimeout(() => pesoContenedorField.focus(), 300);
+            return false;
+        }
+        pesoContenedorField.classList.remove("is-invalid");
+    }
+
     let sobrePeso = document.getElementById("sobrepeso").value;
     let precioSobrePeso = document.getElementById("precio_sobre_peso").value;
     if (sobrePeso > 0 && precioSobrePeso.length <= 0) {
@@ -2474,6 +2536,22 @@ $("#cotizacionesUpdate").on("submit", (e) => {
     if (!passValidation) return passValidation;
 
     //Validaciones con condicionantes
+    const pesoContenedorField = document.getElementById("peso_contenedor");
+    if (pesoContenedorField) {
+        const pesoVal = parseFloat(pesoContenedorField.value);
+        if (isNaN(pesoVal) || pesoVal <= 0 || pesoVal > MAX_PESO_CONTENEDOR_TON) {
+            Swal.fire(
+                "Peso de Contenedor inválido",
+                `El Peso del Contenedor debe expresarse en toneladas (mayor a 0 y máximo ${MAX_PESO_CONTENEDOR_TON} toneladas). Verifique que no haya capturado kilogramos o un número de folio.`,
+                "warning"
+            );
+            pesoContenedorField.classList.add("is-invalid");
+            setTimeout(() => pesoContenedorField.focus(), 300);
+            return false;
+        }
+        pesoContenedorField.classList.remove("is-invalid");
+    }
+
     let sobrePeso = document.getElementById("sobrepeso").value;
     let precioSobrePeso = document.getElementById("precio_sobre_peso").value;
     if (sobrePeso > 0 && precioSobrePeso.length <= 0) {

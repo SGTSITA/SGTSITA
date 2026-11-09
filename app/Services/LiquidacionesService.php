@@ -28,7 +28,8 @@ class LiquidacionesService
     public function __construct(
         protected BancosService $bancosService,
         protected GastosService $gastosService,
-        protected EquipoService $equipoService
+        protected EquipoService $equipoService,
+        protected OperadorGastosContabilidadService $operadorGastosContabilidadService
     ) {
     }
 
@@ -314,7 +315,7 @@ class LiquidacionesService
             $sinJustificar = (float) ($data['sinJustificar'] ?? 0);
             $montoPrincipal = ($data['montoJustificacion'] > $sinJustificar) ? $sinJustificar : $data['montoJustificacion'];
 
-            $this->gastosService->registrar([
+            $gasto = $this->gastosService->registrar([
                 'id_empresa' => $idEmpresa,
                 'concepto' => $data['txtDescripcion'],
                 'monto_total' => $montoPrincipal,
@@ -358,9 +359,10 @@ class LiquidacionesService
                     ]
                 ]
             ]);
+            $this->operadorGastosContabilidadService->sincronizarComprobacion($viaticoEntidad, $gasto);
 
             if ($data['montoJustificacion'] > $sinJustificar) {
-                $this->gastosService->registrar([
+                $excedenteGasto = $this->gastosService->registrar([
                     'id_empresa' => $idEmpresa,
                     'concepto' => $data['txtDescripcion'] . " ** Excedente",
                     'monto_total' => $data['montoJustificacion'] - $sinJustificar,
@@ -404,6 +406,7 @@ class LiquidacionesService
                         ]
                     ]
                 ]);
+                $this->operadorGastosContabilidadService->sincronizarExcedenteComprobacion($viaticoEntidad, $excedenteGasto);
             }
         });
     }
@@ -484,7 +487,7 @@ class LiquidacionesService
                         "concepto" => $item['motivo'],
                     ]);
                 } else {
-                    $this->gastosService->registrar([
+                    $gastoOp = $this->gastosService->registrar([
                         'id_empresa' => $idEmpresa,
                         'concepto' => $item['motivo'],
                         'monto_total' => $montoPrincipal,
@@ -529,6 +532,7 @@ class LiquidacionesService
                         ]
                     ]);
                 }
+                $this->operadorGastosContabilidadService->sincronizarComprobacion($viaticoEntidad, $gastoOp);
 
                 if ($montoJustificacion > $sinJustificar) {
                     $excedenteGasto = Gasto::where('origen_legacy', 'viaticos_operadores_excedente')
@@ -541,7 +545,7 @@ class LiquidacionesService
                             'concepto' => $item['motivo'] . " **Excedente",
                         ]);
                     } else {
-                        $this->gastosService->registrar([
+                        $excedenteGasto = $this->gastosService->registrar([
                             'id_empresa' => $idEmpresa,
                             'concepto' => $item['motivo'] . " **Excedente",
                             'monto_total' => $montoJustificacion - $sinJustificar,
@@ -586,6 +590,7 @@ class LiquidacionesService
                             ]
                         ]);
                     }
+                    $this->operadorGastosContabilidadService->sincronizarExcedenteComprobacion($viaticoEntidad, $excedenteGasto);
                 }
             }
         });
@@ -1077,6 +1082,7 @@ class LiquidacionesService
                             'cuenta_bancaria_id' => $cuentaBancariaId,
                             'fecha_pago' => Carbon::createFromFormat('d/m/Y', $fechaAplicacionDinero)->format('Y-m-d'),
                             'monto' => $gasto->monto_total,
+                            'referencia' => 'LIQUIDACION_' . $liquidacion->id,
                             'estatus' => 'aplicado',
                             'user_id' => $user->id,
                         ]);
@@ -1101,11 +1107,12 @@ class LiquidacionesService
             }
 
             // Registrar movimiento bancario de cargo
+            $movimientoCrear = null;
             if ($bancoId && $contenedores->sum('MontoPago') > 0) {
                 $operadorN = Operador::find($idOperador);
                 $unidadConcepto = count($unidadesLiquidacionMap) === 1 ? reset($unidadesLiquidacionMap) : null;
 
-                $this->bancosService->registrarMovimiento([
+                $movimientoCrear = $this->bancosService->registrarMovimiento([
                     'cuenta_bancaria_id' => $bancoId,
                     'tipo' => 'cargo',
                     'monto' => $totalPagar,
@@ -1118,6 +1125,11 @@ class LiquidacionesService
                     'referenciaable_type' => Liquidaciones::class,
                 ]);
             }
+
+            $this->operadorGastosContabilidadService->sincronizarLiquidacion(
+                $liquidacion,
+                $movimientoCrear->id ?? null
+            );
 
             return $liquidacion->id;
         });

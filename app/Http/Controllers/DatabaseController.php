@@ -74,12 +74,30 @@ class DatabaseController extends Controller
 
         $backups = [];
         foreach ($files as $file) {
-            if (pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if ($ext === 'zip' || $ext === 'gz') {
                 $backups[] = [
                     'name' => basename($file),
                     'path' => $file,
                     'size' => \App\Traits\CommonTrait::calculateFileSize(\Storage::size($file)) ?? (\Storage::size($file) . ' B'),
                     'date' => date('d/m/Y H:i:s', \Storage::lastModified($file)),
+                    'tipo' => 'historial',
+                ];
+            }
+        }
+
+        // Incluir respaldos completos del sistema
+        $completeDirectory = 'backups_completos';
+        $completeFiles = \Storage::exists($completeDirectory) ? \Storage::files($completeDirectory) : [];
+        foreach ($completeFiles as $cFile) {
+            $ext = strtolower(pathinfo($cFile, PATHINFO_EXTENSION));
+            if ($ext === 'gz' || $ext === 'zip') {
+                $backups[] = [
+                    'name' => basename($cFile),
+                    'path' => $cFile,
+                    'size' => \App\Traits\CommonTrait::calculateFileSize(\Storage::size($cFile)) ?? (\Storage::size($cFile) . ' B'),
+                    'date' => date('d/m/Y H:i:s', \Storage::lastModified($cFile)),
+                    'tipo' => 'completo',
                 ];
             }
         }
@@ -94,29 +112,64 @@ class DatabaseController extends Controller
 
     public function descargarBackupHistorial($file)
     {
-        $path = 'historial_backups/' . $file;
-        if (!\Storage::exists($path)) {
-            abort(404, 'El archivo de respaldo no existe.');
+        $cleanFileName = basename($file);
+        $pathHistorial = 'historial_backups/' . $cleanFileName;
+        $pathCompleto = 'backups_completos/' . $cleanFileName;
+
+        if (\Storage::exists($pathCompleto)) {
+            return \Storage::download($pathCompleto);
         }
 
-        return \Storage::download($path);
+        if (\Storage::exists($pathHistorial)) {
+            return \Storage::download($pathHistorial);
+        }
+
+        abort(404, 'El archivo de respaldo no existe.');
     }
 
     public function eliminarBackupHistorial($file)
     {
         $cleanFileName = basename($file);
-        $path = 'historial_backups/' . $cleanFileName;
+        $pathHistorial = 'historial_backups/' . $cleanFileName;
+        $pathCompleto = 'backups_completos/' . $cleanFileName;
 
-        if (!\Storage::exists($path)) {
+        $targetPath = null;
+        if (\Storage::exists($pathCompleto)) {
+            $targetPath = $pathCompleto;
+        } elseif (\Storage::exists($pathHistorial)) {
+            $targetPath = $pathHistorial;
+        }
+
+        if (!$targetPath) {
             return back()->with('error', 'El archivo de respaldo no existe o ya fue eliminado.');
         }
 
         try {
-            \Storage::delete($path);
+            \Storage::delete($targetPath);
             return back()->with('success', 'El archivo de respaldo "' . $cleanFileName . '" se ha eliminado correctamente.');
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Error al eliminar archivo de respaldo: " . $e->getMessage());
             return back()->with('error', 'Ocurrió un error al intentar eliminar el archivo de respaldo.');
+        }
+    }
+
+    public function generarRespaldoCompletoSistema()
+    {
+        try {
+            // Aumentar tiempo límite para respaldo grande
+            set_time_limit(600);
+            ini_set('max_execution_time', '600');
+
+            $exitCode = \Artisan::call('backup:sistema-completo', ['--sin-gps' => true]);
+
+            if ($exitCode === 0) {
+                return redirect()->route('backups.historiales')->with('success', '¡Respaldo completo del sistema generado con éxito! Incluye código, documentos y base de datos (sin .env).');
+            }
+
+            return redirect()->route('backups.historiales')->with('error', 'Ocurrió un detalle al generar el respaldo completo del sistema. Verifique los logs.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Error generando respaldo completo del sistema: " . $e->getMessage());
+            return redirect()->route('backups.historiales')->with('error', 'Error al generar respaldo completo: ' . $e->getMessage());
         }
     }
 

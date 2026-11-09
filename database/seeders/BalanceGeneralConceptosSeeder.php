@@ -28,7 +28,7 @@ class BalanceGeneralConceptosSeeder extends Seeder
             ],
             [
                 'seccion' => 'activo',
-                'concepto' => 'INVERSIONES',
+                'concepto' => 'EFECTIVO Y CAJA',
                 'cuenta_codigo_prefijo' => '1.1.1.1%',
                 'columna' => 1,
                 'orden' => 20,
