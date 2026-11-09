@@ -2,6 +2,8 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Cambio de Proveedor y Transportista en Viaje Planeado (`/viajes/editar` -> `CotizacionesController::singleUpdate`):
+  - Homologado el proceso de deshacer planeación al cambiar `id_proveedor` (empresa) y/o `id_transportista` (proveedor) con `PlaneacionController::anularPlaneacion` y `CotizacionesController::cambiar_empresa`: cancela movimientos bancarios de dinero para viaje (`BancosService::cancelarMovimiento`), cancela pagos y elimina gastos unificados (`origen_legacy like 'asignacion_planeacion%'`), elimina registros dependientes en `GastosOperadores::withoutGlobalScope('no_eliminados')`, `Coordenadas`, `DineroContenedor` y `ViaticosOperador` antes de eliminar la `Asignaciones`, evitando el error `SQLSTATE[23000]: Integrity constraint violation: 1451` en `gastos_operadores_id_asignacion_foreign`.
 - Spec 025 (Validación de Peso de Contenedor y Sobrepeso en Solicitudes de Clientes — `/viajes/solicitud/simple`, `/viajes/solicitud/simple-local`, `/viajes/editar/{id}`, `/viajes/editar-local/{id}` y cargas masivas):
   - En `CotizacionesController::validarYCalcularPesoSobrepeso()`: se valida que `peso_contenedor` esté en toneladas (`> 0` y `<= 60` ton) y se recalcula `sobrepeso = max(peso - peso_reglamentario, 0)` en servidor en `store`, `singleUpdate`, `storelocal`, `singleUpdatelocal`, `storeV2`, `update`, `storeMultiple` y `storeMultiplelocal`, evitando el error `SQLSTATE[22003]: Numeric value out of range` en `sobrepeso`.
   - En `cotizaciones.js` y `cotizaciones-local.js`: homologado `calcularSobrepeso()` con protección contra pesos `> 60` ton y alerta automática al abrir registros con peso corrupto.
