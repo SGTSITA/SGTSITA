@@ -2,6 +2,50 @@ let map, marker;
 let mapex, markerext;
 const tasa_iva = 0.16;
 const tasa_retencion = 0.04;
+const MAX_PESO_CONTENEDOR_TON = 60;
+
+document.addEventListener("DOMContentLoaded", function () {
+    const pesoReglamentarioInput = document.getElementById("peso_reglamentario");
+    const pesoContenedorInput = document.getElementById("peso_contenedor");
+    const sobrepesoInput = document.getElementById("sobrepeso");
+
+    function calcularSobrepesoLocal() {
+        if (!pesoContenedorInput) return;
+        const pesoReglamentario = parseFloat(pesoReglamentarioInput?.value) || 22;
+        const pesoContenedor = parseFloat(pesoContenedorInput.value) || 0;
+
+        if (pesoContenedor > MAX_PESO_CONTENEDOR_TON) {
+            pesoContenedorInput.classList.add("is-invalid");
+            if (sobrepesoInput) {
+                sobrepesoInput.value = "0.0000";
+            }
+            return;
+        } else {
+            pesoContenedorInput.classList.remove("is-invalid");
+        }
+
+        const sobrepeso = Math.max(pesoContenedor - pesoReglamentario, 0);
+        if (sobrepesoInput) {
+            sobrepesoInput.value = sobrepeso.toFixed(4);
+        }
+    }
+
+    if (pesoContenedorInput) {
+        pesoContenedorInput.addEventListener("input", calcularSobrepesoLocal);
+        if (parseFloat(pesoContenedorInput.value) > MAX_PESO_CONTENEDOR_TON) {
+            Swal.fire(
+                "Peso de Contenedor fuera de rango",
+                `El peso registrado (${pesoContenedorInput.value}) excede el máximo permitido de ${MAX_PESO_CONTENEDOR_TON} toneladas. Por favor corríjalo en toneladas (ej. 24.50) antes de guardar o actualizar el viaje.`,
+                "warning"
+            );
+        }
+    }
+    if (pesoReglamentarioInput) {
+        pesoReglamentarioInput.addEventListener("input", calcularSobrepesoLocal);
+    }
+
+    calcularSobrepesoLocal();
+});
 const catalogo_clientes = document.querySelector("#txtClientes");
 const formCotizacion = document.querySelector("#cotizacionCreateMultiple");
 const frmMode = formCotizacion
@@ -471,6 +515,21 @@ function validateFormFields() {
 
             case "numeric":
                 if (value === "" || isNaN(value)) invalid = true;
+                if (!invalid && f.field === "peso_contenedor") {
+                    const pesoNum = parseFloat(value);
+                    if (pesoNum <= 0 || pesoNum > MAX_PESO_CONTENEDOR_TON) {
+                        el.classList.add("is-invalid");
+                        Swal.fire({
+                            icon: "warning",
+                            title: "Peso de Contenedor inválido",
+                            html: `El <strong>Peso del Contenedor</strong> debe expresarse en toneladas (mayor a 0 y máximo <strong>${MAX_PESO_CONTENEDOR_TON} toneladas</strong>).<br><br>Verifique que no haya capturado kilogramos o un número de folio.`,
+                            confirmButtonText: "Entendido",
+                        });
+                        setTimeout(() => el.focus(), 300);
+                        return false;
+                    }
+                    el.classList.remove("is-invalid");
+                }
                 break;
 
             case "time":
@@ -669,7 +728,8 @@ function guardarCotizacionLocal() {
         },
         error: function (err) {
             console.error(err);
-            Swal.fire("Error", "Error al guardar la solicitud local", "error");
+            const msg = err.responseJSON?.message || err.responseJSON?.Mensaje || "Error al guardar la solicitud local";
+            Swal.fire("Error", msg, "error");
         },
     });
 }
@@ -734,7 +794,8 @@ function updateCotizacion(id) {
         },
         error: function (err) {
             console.error(err);
-            Swal.fire("Error", "Error al guardar la solicitud local", "error");
+            const msg = err.responseJSON?.message || err.responseJSON?.Mensaje || "Error al guardar la solicitud local";
+            Swal.fire("Error", msg, "error");
         },
     });
 }

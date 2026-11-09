@@ -149,6 +149,17 @@ function buildHandsOntableLocal() {
                     Swal.fire('Campo faltante', `Falta ${campo.label} en la fila ${i + 1}`, 'warning');
                     return false;
                 }
+                if (campo.field === 'pesoContenedor' && val !== null && val !== '') {
+                    const pesoNum = parseFloat(val);
+                    if (isNaN(pesoNum) || pesoNum <= 0 || pesoNum > 60) {
+                        Swal.fire(
+                            'Peso inválido',
+                            `El Peso del Contenedor en la fila ${i + 1} (${val}) no es válido. Debe expresarse en toneladas (mayor a 0 y máximo 60 toneladas).`,
+                            'warning'
+                        );
+                        return false;
+                    }
+                }
             }
 
             filasValidas.push(r);

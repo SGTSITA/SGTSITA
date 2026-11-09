@@ -2,6 +2,9 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Spec 025 (Validación de Peso de Contenedor y Sobrepeso en Solicitudes de Clientes — `/viajes/solicitud/simple`, `/viajes/solicitud/simple-local`, `/viajes/editar/{id}`, `/viajes/editar-local/{id}` y cargas masivas):
+  - En `CotizacionesController::validarYCalcularPesoSobrepeso()`: se valida que `peso_contenedor` esté en toneladas (`> 0` y `<= 60` ton) y se recalcula `sobrepeso = max(peso - peso_reglamentario, 0)` en servidor en `store`, `singleUpdate`, `storelocal`, `singleUpdatelocal`, `storeV2`, `update`, `storeMultiple` y `storeMultiplelocal`, evitando el error `SQLSTATE[22003]: Numeric value out of range` en `sobrepeso`.
+  - En `cotizaciones.js` y `cotizaciones-local.js`: homologado `calcularSobrepeso()` con protección contra pesos `> 60` ton y alerta automática al abrir registros con peso corrupto.
 - Pantalla Completa en Mis Viajes (`/viajes/mis-viajes` — `viajes_solicitados.blade.php` y `cotizacion-documentacion.js`):
   - Botón **Pantalla completa** en barra superior y menú "Opciones" (`toggleFullscreenMisViajes()`) con soporte de Fullscreen API del navegador y salida con tecla `ESC`.
   - Selector de densidad en pantalla completa (`Auto (Captura)` | `Compacta` | `Normal`): en modo `Auto (Captura)` (activo por defecto al entrar a pantalla completa) calcula dinámicamente el alto de fila (`18px–28px`) según la cantidad de viajes mostrados, fija el ancho de la columna checkbox (`42px`) y de las 8 columnas de documentos, y asigna el espacio horizontal disponible a `Transportista` y `Destino` para que 25–35+ viajes quepan completos en una sola captura.

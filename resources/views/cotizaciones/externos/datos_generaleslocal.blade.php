@@ -208,9 +208,9 @@
             <div class="form-floating">
                 <input type="text"
                     @if ($action == 'editar') value="{{ $cotizacion->peso_contenedor }}" @endif
-                    class="form-control" autocomplete="off" id="peso_contenedor" placeholder=""
+                    class="form-control" autocomplete="off" id="peso_contenedor" placeholder="" min="0.01" max="60" step="0.01" data-max-ton="60"
                     oninput="allowOnlyDecimals(event)" />
-                <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor</label>
+                <label for="peso_contenedor" class="text-gray-700">Peso de Contenedor (Ton)</label>
             </div>
         </div>
     </div>
