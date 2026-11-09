@@ -37,6 +37,14 @@
                                 (frecuencia 30 días) y Activity Log (frecuencia 60 días).</p>
                         </div>
                         <div class="d-flex gap-2">
+                            <form id="formRespaldoCompleto" action="{{ route('backups.sistema_completo.generar') }}"
+                                method="POST" style="display:inline;">
+                                @csrf
+                                <button type="button" class="btn btn-sm bg-gradient-success text-white"
+                                    onclick="confirmarRespaldoCompleto();">
+                                    <i class="fas fa-archive me-1"></i> Respaldo Completo (Código + Docs + BD)
+                                </button>
+                            </form>
                             <form id="formLimpiarHistoriales" action="{{ route('backups.historiales.limpiar') }}"
                                 method="POST" style="display:inline;">
                                 @csrf
@@ -80,10 +88,12 @@
                                                 </div>
                                             </th>
                                             <td>
-                                                @if (str_contains($backup['name'], 'coordenadas'))
-                                                    <span class="badge bg-gradient-success">Coordenadas Historial</span>
+                                                @if (str_contains($backup['name'], 'respaldo_sgtsita_completo'))
+                                                    <span class="badge bg-gradient-success">Sistema Completo (Docs + BD)</span>
+                                                @elseif (str_contains($backup['name'], 'coordenadas'))
+                                                    <span class="badge bg-gradient-info">Coordenadas Historial</span>
                                                 @elseif (str_contains($backup['name'], 'activity_log'))
-                                                    <span class="badge bg-gradient-info">Logs de Actividad</span>
+                                                    <span class="badge bg-gradient-warning text-white">Logs de Actividad</span>
                                                 @elseif (str_contains($backup['name'], 'database_backup'))
                                                     <span class="badge bg-gradient-primary">Base de Datos</span>
                                                 @else
@@ -139,6 +149,31 @@
 
 @push('custom-javascript')
     <script>
+        function confirmarRespaldoCompleto() {
+            Swal.fire({
+                title: '¿Generar respaldo completo del sistema?',
+                text: 'Se empaquetará el código fuente, todos los documentos físicos (cotizaciones, uploads, equipos, operadores) y la base de datos completa (excluyendo datos sensibles como .env). Esto puede tardar 1 o 2 minutos.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#2dce89',
+                cancelButtonColor: '#8898aa',
+                confirmButtonText: 'Sí, generar respaldo completo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Generando respaldo del sistema...',
+                        text: 'Empaquetando documentos, base de datos y código. Por favor espere y no cierre esta página.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    document.getElementById('formRespaldoCompleto').submit();
+                }
+            });
+        }
+
         function confirmarLimpiezaYRespaldo() {
             Swal.fire({
                 title: '¿Iniciar depuración y respaldos?',

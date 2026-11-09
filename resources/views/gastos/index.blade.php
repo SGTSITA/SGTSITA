@@ -93,6 +93,7 @@
                         <option value="cotizacion">Cotización</option>
                         <option value="contenedor">Contenedor</option>
                         <option value="operador">Operador</option>
+                        <option value="sueldo">Sueldos</option>
                     </select>
                 </div>
 
@@ -1135,12 +1136,13 @@
 
                 const saldo = parseFloat(params.data.saldo_pendiente) || 0;
                 const estatus = params.data.estatus;
+                const esSueldoLiquidado = params.data.origen_legacy === 'asignacion_sueldo_operador';
 
                 const totalPagos = params.data.total_pagos || 0;
                 const ultimoPagoId = params.data.ultimo_pago_id;
 
 
-                if (saldo > 0 && estatus !== 'cancelado') {
+                if (saldo > 0 && estatus !== 'cancelado' && !esSueldoLiquidado) {
 
                     const btnPagar = document.createElement('button');
 
@@ -1495,6 +1497,12 @@
             const selectedRows = apiGrid.getSelectedRows();
             if (selectedRows.length === 0) {
                 Swal.fire('Atención', 'Seleccione al menos un gasto para pagar', 'warning');
+                return;
+            }
+
+            const haySueldoOperador = selectedRows.some(r => r.origen_legacy === 'asignacion_sueldo_operador');
+            if (haySueldoOperador) {
+                Swal.fire('Atención', 'El sueldo del operador se liquida desde el flujo de liquidación del viaje.', 'warning');
                 return;
             }
 

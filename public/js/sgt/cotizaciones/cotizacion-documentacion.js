@@ -86,6 +86,9 @@ function applyCurrentFilters() {
 
     if (typeof apiGrid !== "undefined" && apiGrid) {
         apiGrid.setGridOption("rowData", filtered);
+        if (document.body.classList.contains("mis-viajes-fullscreen")) {
+            setTimeout(() => recalcularLayoutFullscreen(), 30);
+        }
     }
     updateRastreoButtonState();
 }
@@ -405,6 +408,9 @@ const ragCellClassRules = {
         params.value === "Cancelada",
 };
 
+window.misViajesFullscreenDensity = "auto";
+window.misViajesComputedRowHeight = 24;
+
 const gridOptions = {
     pagination: true,
     paginationPageSize: 500,
@@ -413,7 +419,36 @@ const gridOptions = {
         mode: "multiRow",
         headerCheckbox: true,
     },
+    selectionColumnDef: {
+        width: 42,
+        minWidth: 42,
+        maxWidth: 45,
+        suppressSizeToFit: true,
+        resizable: false,
+    },
     rowData: [],
+    getRowHeight: (params) => {
+        if (
+            document.body.classList.contains("mis-viajes-fullscreen") &&
+            window.misViajesFullscreenDensity !== "normal"
+        ) {
+            return window.misViajesComputedRowHeight || 24;
+        }
+        if (
+            params.data &&
+            params.data.tipo === "Full" &&
+            params.data.NumContenedor &&
+            params.data.NumContenedor.trim().includes(" ")
+        ) {
+            return 48;
+        }
+        return 42;
+    },
+    onFilterChanged: () => {
+        if (document.body.classList.contains("mis-viajes-fullscreen")) {
+            setTimeout(() => recalcularLayoutFullscreen(), 20);
+        }
+    },
     onSelectionChanged: (event) => {
         const rows = event.api.getSelectedRows();
 
@@ -505,15 +540,17 @@ const gridOptions = {
             sortable: true,
             filter: true,
             minWidth: 150,
-            autoHeight: true, // Permite que la fila se ajuste en altura
             cellStyle: (params) => {
+                const isCompactFs =
+                    document.body.classList.contains("mis-viajes-fullscreen") &&
+                    window.misViajesFullscreenDensity !== "normal";
                 const styles = {
-                    "white-space": "normal",
-                    "line-height": "1.5",
+                    "white-space": isCompactFs ? "nowrap" : "normal",
+                    "line-height": isCompactFs ? "1.1" : "1.5",
                 };
 
                 // Si la cotización es tipo "Full", aplicar fondo
-                if (params.data.tipo === "Full") {
+                if (params.data && params.data.tipo === "Full") {
                     styles["background-color"] = "#ffe5b4";
                 }
 
@@ -1407,5 +1444,285 @@ $(document).ready(function () {
                 toastr.warning("No hay texto para copiar");
             }
         });
+    }
+});
+
+/**
+ * =========================================================================
+ * MODO PANTALLA COMPLETA PARA /viajes/mis-viajes
+ * =========================================================================
+ */
+function ajustarColumnasFullscreen() {
+    if (typeof apiGrid === "undefined" || !apiGrid) return;
+    try {
+        const gridEl = document.getElementById("myGrid");
+        const totalWidth = gridEl ? gridEl.clientWidth : window.innerWidth - 24;
+
+        // Anchos fijos para checkbox, columnas de documentos y columnas cortas
+        const fixedWidths = {
+            checkbox: 42,
+            BoletaLiberacion: 96,
+            DODA: 70,
+            FormatoCartaPorte: 96,
+            cartaPortepdf: 92,
+            carta_porte_xml: 92,
+            PreAlta: 78,
+            foto_patio: 80,
+            docEir: 58,
+            NumContenedor: 215,
+            Estatus: 105,
+            Origen: 130,
+            Peso: 90,
+        };
+
+        const sumFixed = Object.values(fixedWidths).reduce((a, b) => a + b, 0);
+        const remaining = Math.max(360, totalWidth - sumFixed - 16);
+
+        const transportistaWidth = Math.max(190, Math.floor(remaining * 0.46));
+        const destinoWidth = Math.max(200, remaining - transportistaWidth);
+
+        apiGrid.applyColumnState({
+            state: [
+                { colId: "ag-Grid-SelectionColumn", width: fixedWidths.checkbox },
+                { colId: "BoletaLiberacion", width: fixedWidths.BoletaLiberacion },
+                { colId: "DODA", width: fixedWidths.DODA },
+                { colId: "FormatoCartaPorte", width: fixedWidths.FormatoCartaPorte },
+                { colId: "cartaPortepdf", width: fixedWidths.cartaPortepdf },
+                { colId: "carta_porte_xml", width: fixedWidths.carta_porte_xml },
+                { colId: "PreAlta", width: fixedWidths.PreAlta },
+                { colId: "foto_patio", width: fixedWidths.foto_patio },
+                { colId: "docEir", width: fixedWidths.docEir },
+                { colId: "NumContenedor", width: fixedWidths.NumContenedor },
+                { colId: "transportista", width: transportistaWidth },
+                { colId: "Estatus", width: fixedWidths.Estatus },
+                { colId: "Origen", width: fixedWidths.Origen },
+                { colId: "Destino", width: destinoWidth },
+                { colId: "Peso", width: fixedWidths.Peso },
+            ],
+        });
+    } catch (e) {
+        console.warn("Error ajustando columnas en pantalla completa:", e);
+    }
+}
+
+function restaurarColumnasNormal() {
+    if (typeof apiGrid === "undefined" || !apiGrid) return;
+    try {
+        apiGrid.applyColumnState({
+            state: [
+                { colId: "ag-Grid-SelectionColumn", width: 42 },
+                { colId: "BoletaLiberacion", width: 110 },
+                { colId: "DODA", width: 80 },
+                { colId: "FormatoCartaPorte", width: 100 },
+                { colId: "cartaPortepdf", width: 100 },
+                { colId: "carta_porte_xml", width: 100 },
+                { colId: "PreAlta", width: 100 },
+                { colId: "foto_patio", width: 100 },
+                { colId: "docEir", width: 70 },
+                { colId: "NumContenedor", width: 170 },
+                { colId: "transportista", width: 200 },
+                { colId: "Estatus", width: 140 },
+                { colId: "Origen", width: 100 },
+                { colId: "Destino", width: 100 },
+                { colId: "Peso", width: 100 },
+            ],
+        });
+    } catch (e) {
+        console.warn("Error restaurando columnas:", e);
+    }
+}
+
+function recalcularLayoutFullscreen() {
+    if (
+        !document.body.classList.contains("mis-viajes-fullscreen") ||
+        typeof apiGrid === "undefined" ||
+        !apiGrid
+    ) {
+        return;
+    }
+
+    const density = window.misViajesFullscreenDensity || "auto";
+    document.body.classList.remove("mis-viajes-auto", "mis-viajes-compact");
+
+    if (density === "auto") {
+        document.body.classList.add("mis-viajes-auto");
+        const gridEl = document.getElementById("myGrid");
+        const gridHeight = gridEl ? gridEl.clientHeight : window.innerHeight - 100;
+        const headerH = 32;
+        const footerH = 26;
+        const usableHeight = Math.max(220, gridHeight - headerH - footerH - 4);
+        const displayedRows = Math.max(1, apiGrid.getDisplayedRowCount() || 1);
+
+        const calculatedRowH = Math.max(
+            18,
+            Math.min(28, Math.floor(usableHeight / displayedRows)),
+        );
+        window.misViajesComputedRowHeight = calculatedRowH;
+
+        apiGrid.setGridOption("headerHeight", headerH);
+        apiGrid.setGridOption("floatingFiltersHeight", 0);
+        apiGrid.setGridOption("rowHeight", calculatedRowH);
+    } else if (density === "compact") {
+        document.body.classList.add("mis-viajes-compact");
+        window.misViajesComputedRowHeight = 25;
+        apiGrid.setGridOption("headerHeight", 34);
+        apiGrid.setGridOption("floatingFiltersHeight", 28);
+        apiGrid.setGridOption("rowHeight", 25);
+    } else {
+        window.misViajesComputedRowHeight = 42;
+        apiGrid.setGridOption("headerHeight", 48);
+        apiGrid.setGridOption("floatingFiltersHeight", 42);
+        apiGrid.setGridOption("rowHeight", 42);
+    }
+
+    apiGrid.resetRowHeights();
+    apiGrid.redrawRows();
+    ajustarColumnasFullscreen();
+}
+
+function setFullscreenDensity(density) {
+    window.misViajesFullscreenDensity = density;
+    const group = document.getElementById("fullscreenDensityGroup");
+    if (group) {
+        group.querySelectorAll("button[data-density]").forEach((btn) => {
+            if (btn.getAttribute("data-density") === density) {
+                btn.classList.remove("btn-light");
+                btn.classList.add("btn-light-primary", "active", "fw-bold");
+            } else {
+                btn.classList.remove("btn-light-primary", "active", "fw-bold");
+                btn.classList.add("btn-light");
+            }
+        });
+    }
+    recalcularLayoutFullscreen();
+}
+
+function actualizarBotonesFullscreenUI(isActive) {
+    const btn = document.getElementById("btnToggleFullscreenViajes");
+    const icon = document.getElementById("iconFullscreenViajes");
+    const text = document.getElementById("textFullscreenViajes");
+    const menuIcon = document.getElementById("menuIconFullscreenViajes");
+    const menuText = document.getElementById("menuTextFullscreenViajes");
+    const densityGroup = document.getElementById("fullscreenDensityGroup");
+
+    if (isActive) {
+        if (btn) {
+            btn.classList.remove("btn-light-primary");
+            btn.classList.add("btn-danger");
+        }
+        if (icon) {
+            icon.classList.remove("fa-expand");
+            icon.classList.add("fa-compress");
+        }
+        if (text) {
+            text.textContent = "Salir (ESC)";
+        }
+        if (menuIcon) {
+            menuIcon.classList.remove("fa-expand", "text-primary");
+            menuIcon.classList.add("fa-compress", "text-danger");
+        }
+        if (menuText) {
+            menuText.textContent = "Salir de pantalla completa";
+        }
+        if (densityGroup) {
+            densityGroup.classList.remove("d-none");
+        }
+    } else {
+        if (btn) {
+            btn.classList.remove("btn-danger");
+            btn.classList.add("btn-light-primary");
+        }
+        if (icon) {
+            icon.classList.remove("fa-compress");
+            icon.classList.add("fa-expand");
+        }
+        if (text) {
+            text.textContent = "Pantalla completa";
+        }
+        if (menuIcon) {
+            menuIcon.classList.remove("fa-compress", "text-danger");
+            menuIcon.classList.add("fa-expand", "text-primary");
+        }
+        if (menuText) {
+            menuText.textContent = "Pantalla completa";
+        }
+        if (densityGroup) {
+            densityGroup.classList.add("d-none");
+        }
+    }
+}
+
+function entrarFullscreenMisViajes() {
+    document.body.classList.add("mis-viajes-fullscreen");
+    actualizarBotonesFullscreenUI(true);
+
+    if (
+        !document.fullscreenElement &&
+        document.documentElement.requestFullscreen
+    ) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+
+    recalcularLayoutFullscreen();
+    setTimeout(() => recalcularLayoutFullscreen(), 120);
+    setTimeout(() => recalcularLayoutFullscreen(), 300);
+}
+
+function salirFullscreenMisViajes() {
+    document.body.classList.remove(
+        "mis-viajes-fullscreen",
+        "mis-viajes-auto",
+        "mis-viajes-compact",
+    );
+    actualizarBotonesFullscreenUI(false);
+
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+    }
+
+    if (typeof apiGrid !== "undefined" && apiGrid) {
+        apiGrid.setGridOption("headerHeight", 48);
+        apiGrid.setGridOption("floatingFiltersHeight", 42);
+        apiGrid.setGridOption("rowHeight", 42);
+        apiGrid.resetRowHeights();
+        apiGrid.redrawRows();
+        restaurarColumnasNormal();
+    }
+}
+
+function toggleFullscreenMisViajes() {
+    if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        salirFullscreenMisViajes();
+    } else {
+        entrarFullscreenMisViajes();
+    }
+}
+
+document.addEventListener("fullscreenchange", () => {
+    if (
+        !document.fullscreenElement &&
+        document.body.classList.contains("mis-viajes-fullscreen")
+    ) {
+        salirFullscreenMisViajes();
+    } else if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        setTimeout(() => recalcularLayoutFullscreen(), 80);
+    }
+});
+
+document.addEventListener("keydown", (e) => {
+    if (
+        e.key === "Escape" &&
+        document.body.classList.contains("mis-viajes-fullscreen")
+    ) {
+        const openModal = document.querySelector(".modal.show");
+        if (!openModal) {
+            salirFullscreenMisViajes();
+        }
+    }
+});
+
+window.addEventListener("resize", () => {
+    if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        recalcularLayoutFullscreen();
     }
 });

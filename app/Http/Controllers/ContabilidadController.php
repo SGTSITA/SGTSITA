@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Empresas;
 use App\Models\Equipo;
 use App\Services\ContabilidadService;
+use App\Services\CuentaContableResolverService;
 use App\Services\EquipoService;
 use Carbon\Carbon;
 use App\Services\PolizaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ContabilidadController extends Controller
 {
@@ -46,13 +48,21 @@ class ContabilidadController extends Controller
         }
 
         // 2. Parámetros de filtro
+        if ($request->filled('daterange') && (!$request->filled('fecha_inicio') || !$request->filled('fecha_corte'))) {
+            $partes = explode(' AL ', $request->input('daterange'));
+            if (count($partes) === 2) {
+                $fechaInicio = Carbon::parse(trim($partes[0]))->format('Y-m-d');
+                $fechaCorte = Carbon::parse(trim($partes[1]))->format('Y-m-d');
+            }
+        }
+
         $fechaCorte = $request->filled('fecha_corte')
             ? Carbon::parse($request->input('fecha_corte'))->format('Y-m-d')
-            : now()->format('Y-m-d');
+            : ($fechaCorte ?? now()->format('Y-m-d'));
         $anio = Carbon::parse($fechaCorte)->year;
         $fechaInicio = $request->filled('fecha_inicio')
             ? Carbon::parse($request->input('fecha_inicio'))->format('Y-m-d')
-            : "{$anio}-01-01";
+            : ($fechaInicio ?? "{$anio}-01-01");
 
         $idEquipo = $request->filled('id_equipo') ? (int) $request->input('id_equipo') : null;
 
@@ -136,7 +146,7 @@ class ContabilidadController extends Controller
             $libroDiario = $this->contabilidadService->obtenerLibroDiario($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $reportData = $libroDiario;
         } else {
-            $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $balance = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $reportData = $balance;
         }
 
@@ -270,12 +280,12 @@ class ContabilidadController extends Controller
             $tituloReporte = 'LIBRO DIARIO DE PÓLIZAS • CONAC LD-06';
             $filePrefix = 'Libro_Diario_Polizas';
         } elseif ($tipoReporte === 'estado_resultados') {
-            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $tituloReporte = 'ESTADO DE ACTIVIDADES / RESULTADOS • CONAC ERA-02';
             $filePrefix = 'Estado_Resultados';
         } else {
             $tipoReporte = 'balance_general';
-            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte);
+            $reportData = $this->contabilidadService->calcularBalanceGeneral($empresasIds, $idEquipo, $fechaCorte, $fechaInicio);
             $tituloReporte = 'BALANCE GENERAL (ESTADO DE SITUACIÓN FINANCIERA) • CONAC ESF-01';
             $filePrefix = 'Balance_General';
         }
@@ -503,5 +513,272 @@ class ContabilidadController extends Controller
     public function manual()
     {
         return view('contabilidad.manual');
+    }
+
+    /**
+     * Previsualiza los importes y la póliza de cierre de ejercicio.
+     */
+    public function previsualizarCierre(Request $request)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+        $fechaInicio = $request->input('fecha_inicio', '2025-08-01');
+        $fechaFin = $request->input('fecha_fin', now()->format('Y-m-d'));
+        $nombreEjercicio = $request->input('nombre_ejercicio');
+
+        try {
+            $data = $this->contabilidadService->previsualizarCierreContable($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio);
+            return response()->json([
+                'success' => true,
+                'data'    => $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Ejecuta y aplica formalmente el cierre contable de ejercicio.
+     */
+    public function ejecutarCierre(\App\Http\Requests\CierreContableRequest $request)
+    {
+        try {
+            $idEmpresa = (int) $request->input('id_empresa');
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
+            $nombreEjercicio = $request->input('nombre_ejercicio');
+
+            $resultado = $this->contabilidadService->ejecutarCierreContable($idEmpresa, $fechaInicio, $fechaFin, $nombreEjercicio);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Póliza de cierre de ejercicio contable generada y aplicada exitosamente.',
+                'data'    => $resultado,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar el cierre contable: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Consulta el historial de cierres contables aplicados.
+     */
+    public function historialCierres(Request $request)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+        $historial = $this->contabilidadService->obtenerHistorialCierres($idEmpresa);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $historial,
+        ]);
+    }
+
+    /**
+     * Revierte un cierre contable aplicado.
+     */
+    public function revertirCierre(Request $request, int $id)
+    {
+        $idEmpresa = (int) $request->input('id_empresa', auth()->user()?->id_empresa);
+
+        try {
+            $this->contabilidadService->revertirCierreContable($id, $idEmpresa);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Póliza de cierre contable revertida y cancelada correctamente.',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al revertir el cierre: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    /**
+     * Pantalla exclusiva para el contador: Centro de Mapeo y Desglose por Módulos.
+     */
+    public function mapeoModulosIndex(Request $request)
+    {
+        $user = Auth::user();
+        $esAdmin = (bool) ($user->es_admin ?? false);
+
+        if ($esAdmin) {
+            $idEmpresa = (int) $request->input('id_empresa', $user->id_empresa ?: 8);
+            $todasEmpresas = Empresas::select('id', 'nombre')->orderBy('nombre')->get();
+            $puedeCambiarEmpresa = true;
+        } else {
+            $idEmpresa = (int) ($user->id_empresa ?: 1);
+            $todasEmpresas = Empresas::where('id', $idEmpresa)->select('id', 'nombre')->get();
+            $puedeCambiarEmpresa = false;
+        }
+
+        $empresaActual = Empresas::find($idEmpresa) ?: $todasEmpresas->first();
+
+        // 1. Clientes de la empresa (directos, vía client_empresa o con operaciones en cotizaciones)
+        $clientes = \App\Models\Client::where(function ($q) use ($idEmpresa) {
+                $q->where('id_empresa', $idEmpresa)
+                  ->orWhereIn('id', function ($sub) use ($idEmpresa) {
+                      $sub->select('id_client')->from('client_empresa')->where('id_empresa', $idEmpresa);
+                  })
+                  ->orWhereIn('id', function ($sub) use ($idEmpresa) {
+                      $sub->select('id_cliente')->from('cotizaciones')->where('id_empresa', $idEmpresa);
+                  });
+            })
+            ->select('id', 'nombre', 'rfc')
+            ->orderBy('nombre')
+            ->get();
+
+        // 2. Bancos de la empresa
+        $bancos = \App\Models\Bancos::where('id_empresa', $idEmpresa)
+            ->with('catBanco')
+            ->orderBy('id')
+            ->get();
+
+        // 3. Proveedores de la empresa (directos o con asignaciones en la empresa)
+        $proveedores = \App\Models\Proveedor::where(function ($q) use ($idEmpresa) {
+                $q->where('id_empresa', $idEmpresa)
+                  ->orWhereNull('id_empresa')
+                  ->orWhereIn('id', function ($sub) use ($idEmpresa) {
+                      $sub->select('id_proveedor')->from('asignaciones')->where('id_empresa', $idEmpresa)->whereNotNull('id_proveedor');
+                  });
+            })
+            ->select('id', 'nombre', 'rfc', 'tipo')
+            ->orderBy('nombre')
+            ->get();
+
+        // 4. Categorías de Gastos
+        $categoriasGastos = \App\Models\CategoriasGastos::where('is_active', 1)
+            ->orderBy('categoria')
+            ->get();
+
+        // 5. Mapeos analíticos vigentes
+        $mapeos = \App\Models\ContabilidadEntidadCuenta::where('id_empresa', $idEmpresa)
+            ->with('cuentaContable')
+            ->get()
+            ->groupBy('modulo');
+
+        // 6. Cuentas default por rol de la empresa
+        $resolver = app(CuentaContableResolverService::class);
+        $cuentaDefaultClientes = $resolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
+        $cuentaDefaultProveedores = $resolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+        $cuentaDefaultBancos = $resolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_BANCOS_DEFAULT, $idEmpresa);
+
+        return view('contabilidad.mapeo-modulos', [
+            'idEmpresa'                => $idEmpresa,
+            'empresaActual'            => $empresaActual,
+            'todasEmpresas'            => $todasEmpresas,
+            'puedeCambiarEmpresa'      => $puedeCambiarEmpresa,
+            'esAdmin'                  => $esAdmin,
+            'clientes'                 => $clientes,
+            'bancos'                   => $bancos,
+            'proveedores'              => $proveedores,
+            'categoriasGastos'         => $categoriasGastos,
+            'mapeos'                   => $mapeos,
+            'cuentaDefaultClientes'    => $cuentaDefaultClientes,
+            'cuentaDefaultProveedores' => $cuentaDefaultProveedores,
+            'cuentaDefaultBancos'      => $cuentaDefaultBancos,
+        ]);
+    }
+
+    /**
+     * Desglosa una entidad en una subcuenta analítica propia y la vincula en contabilidad_entidades_cuentas.
+     */
+    public function desglosarEntidad(Request $request)
+    {
+        $request->validate([
+            'modulo'     => 'required|in:clientes,bancos,proveedores,categorias_gastos',
+            'entidad_id' => 'required|integer',
+            'id_empresa' => 'nullable|integer',
+        ]);
+
+        $user = Auth::user();
+        $esAdmin = (bool) ($user->es_admin ?? false);
+        $idEmpresa = $esAdmin ? (int) ($request->id_empresa ?: $user->id_empresa) : (int) $user->id_empresa;
+
+        $modulo = $request->modulo;
+        $entidadId = (int) $request->entidad_id;
+
+        return DB::transaction(function () use ($modulo, $entidadId, $idEmpresa) {
+            $resolver = app(CuentaContableResolverService::class);
+            $codigoMayor = null;
+            $nombre = null;
+
+            if ($modulo === 'clientes') {
+                $cliente = \App\Models\Client::findOrFail($entidadId);
+                $codigoMayor = '1.1.2.1';
+                $nombre = $cliente->nombre;
+            } elseif ($modulo === 'bancos') {
+                $banco = \App\Models\Bancos::with('catBanco')->findOrFail($entidadId);
+                $codigoMayor = '1.1.1.2';
+                $bancoNombre = $banco->catBanco?->nombre ?: ($banco->nombre_banco ?: 'Banco');
+                $ultimosDigitos = substr(trim($banco->cuenta_bancaria ?? ''), -5) ?: $banco->id;
+                $nombre = "{$bancoNombre} Cta {$ultimosDigitos}";
+            } elseif ($modulo === 'proveedores') {
+                $proveedor = \App\Models\Proveedor::findOrFail($entidadId);
+                $codigoMayor = '2.1.1.2';
+                $nombre = $proveedor->nombre;
+            } else {
+                return response()->json(['success' => false, 'message' => 'Módulo no soportado para desglose analítico.'], 422);
+            }
+
+            // 1. Crear la subcuenta consecutiva en el catálogo CONAC
+            $subcuenta = $resolver->crearSubcuentaAnalitica($codigoMayor, $nombre, $idEmpresa);
+
+            // 2. Asociar en contabilidad_entidades_cuentas
+            \App\Models\ContabilidadEntidadCuenta::updateOrCreate(
+                [
+                    'id_empresa' => $idEmpresa,
+                    'modulo'     => $modulo,
+                    'entidad_id' => $entidadId,
+                ],
+                [
+                    'cuenta_contable_id' => $subcuenta->id,
+                    'activo'             => true,
+                ]
+            );
+
+            return response()->json([
+                'success'   => true,
+                'message'   => "Subcuenta analítica '{$subcuenta->codigo} - {$subcuenta->nombre}' generada y vinculada exitosamente.",
+                'subcuenta' => [
+                    'id'     => $subcuenta->id,
+                    'codigo' => $subcuenta->codigo,
+                    'nombre' => $subcuenta->nombre,
+                ],
+            ]);
+        });
+    }
+
+    /**
+     * Revierte el desglose analítico para que la entidad regrese a la cuenta concentradora por defecto.
+     */
+    public function revertirEntidad(Request $request)
+    {
+        $request->validate([
+            'modulo'     => 'required|in:clientes,bancos,proveedores,categorias_gastos',
+            'entidad_id' => 'required|integer',
+            'id_empresa' => 'nullable|integer',
+        ]);
+
+        $user = Auth::user();
+        $esAdmin = (bool) ($user->es_admin ?? false);
+        $idEmpresa = $esAdmin ? (int) ($request->id_empresa ?: $user->id_empresa) : (int) $user->id_empresa;
+
+        \App\Models\ContabilidadEntidadCuenta::where('id_empresa', $idEmpresa)
+            ->where('modulo', $request->modulo)
+            ->where('entidad_id', $request->entidad_id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Desglose analítico retirado. La entidad ahora utilizará la cuenta concentradora por defecto.',
+        ]);
     }
 }

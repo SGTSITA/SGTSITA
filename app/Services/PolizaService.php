@@ -7,12 +7,19 @@ use App\Models\PolizaMovimiento;
 use App\Models\CatCuentaContable;
 use App\Models\GuiaContabilizadora;
 use App\Models\Bancos;
+use App\Services\CuentaContableResolverService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class PolizaService
 {
+    protected CuentaContableResolverService $cuentaResolver;
+
+    public function __construct(?CuentaContableResolverService $cuentaResolver = null)
+    {
+        $this->cuentaResolver = $cuentaResolver ?: app(CuentaContableResolverService::class);
+    }
     /**
      * Crea una póliza contable con validación estricta de partida doble y cuentas afectables.
      *
@@ -157,6 +164,123 @@ class PolizaService
             throw new InvalidArgumentException("El monto de la transacción debe ser mayor a 0 para generar la póliza.");
         }
 
+        if ($regla->regla_dinamica === 'sueldo_operador_devengado') {
+            $cuentaGasto = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_GASTOS_SUELDOS_OPERADORES, $idEmpresa);
+            $cuentaPasivo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_SUELDOS_POR_PAGAR, $idEmpresa);
+            $concepto = $contexto['concepto'] ?? $regla->descripcion_asiento;
+            $referencia = $contexto['referencia'] ?? null;
+
+            return [
+                'id_empresa' => $idEmpresa,
+                'id_equipo' => $contexto['id_equipo'] ?? null,
+                'tipo' => 'diario',
+                'fecha' => $contexto['fecha'] ?? now()->format('Y-m-d'),
+                'concepto' => $concepto,
+                'origen_tipo' => $contexto['origen_tipo'] ?? null,
+                'origen_id' => $contexto['origen_id'] ?? null,
+                'movimientos' => [
+                    ['cuenta_contable_id' => $cuentaGasto, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => $monto, 'haber' => 0, 'referencia' => $referencia, 'concepto_detalle' => $concepto],
+                    ['cuenta_contable_id' => $cuentaPasivo, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => 0, 'haber' => $monto, 'referencia' => $referencia, 'concepto_detalle' => 'Sueldo de operador por pagar'],
+                ],
+            ];
+        }
+
+        if ($regla->regla_dinamica === 'gasto_operador_comprobado') {
+            $cuentaGasto = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_GASTOS_VIATICOS_OPERADORES, $idEmpresa);
+            $cuentaAnticipo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_DEUDORES_DIVERSOS, $idEmpresa);
+            $concepto = $contexto['concepto'] ?? $regla->descripcion_asiento;
+
+            return [
+                'id_empresa' => $idEmpresa,
+                'id_equipo' => $contexto['id_equipo'] ?? null,
+                'tipo' => 'diario',
+                'fecha' => $contexto['fecha'] ?? now()->format('Y-m-d'),
+                'concepto' => $concepto,
+                'origen_tipo' => $contexto['origen_tipo'] ?? null,
+                'origen_id' => $contexto['origen_id'] ?? null,
+                'movimientos' => [
+                    ['cuenta_contable_id' => $cuentaGasto, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => $monto, 'haber' => 0, 'referencia' => $contexto['referencia'] ?? null, 'concepto_detalle' => $concepto],
+                    ['cuenta_contable_id' => $cuentaAnticipo, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => 0, 'haber' => $monto, 'referencia' => 'APLICACION_ANTICIPO', 'concepto_detalle' => 'Aplicación de anticipo de viaje comprobado'],
+                ],
+            ];
+        }
+
+        if ($regla->regla_dinamica === 'gasto_operador_excedente') {
+            $cuentaGasto = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_GASTOS_VIATICOS_OPERADORES, $idEmpresa);
+            $cuentaCxp = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+            $concepto = $contexto['concepto'] ?? $regla->descripcion_asiento;
+
+            return [
+                'id_empresa' => $idEmpresa,
+                'id_equipo' => $contexto['id_equipo'] ?? null,
+                'tipo' => 'diario',
+                'fecha' => $contexto['fecha'] ?? now()->format('Y-m-d'),
+                'concepto' => $concepto,
+                'origen_tipo' => $contexto['origen_tipo'] ?? null,
+                'origen_id' => $contexto['origen_id'] ?? null,
+                'movimientos' => [
+                    ['cuenta_contable_id' => $cuentaGasto, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => $monto, 'haber' => 0, 'referencia' => $contexto['referencia'] ?? null, 'concepto_detalle' => $concepto],
+                    ['cuenta_contable_id' => $cuentaCxp->id, 'id_equipo' => $contexto['id_equipo'] ?? null, 'debe' => 0, 'haber' => $monto, 'referencia' => 'CXP_OPERADOR', 'concepto_detalle' => 'Gasto excedente por pagar al operador'],
+                ],
+            ];
+        }
+
+        if ($regla->regla_dinamica === 'anticipo_operador') {
+            $cuentaAnticipo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_DEUDORES_DIVERSOS, $idEmpresa);
+            $cuentaBanco = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
+            $concepto = $contexto['concepto'] ?? $regla->descripcion_asiento;
+
+            return [
+                'id_empresa' => $idEmpresa,
+                'tipo' => 'egreso',
+                'fecha' => $contexto['fecha'] ?? now()->format('Y-m-d'),
+                'concepto' => $concepto,
+                'origen_tipo' => $contexto['origen_tipo'] ?? null,
+                'origen_id' => $contexto['origen_id'] ?? null,
+                'movimientos' => [
+                    ['cuenta_contable_id' => $cuentaAnticipo, 'debe' => $monto, 'haber' => 0, 'referencia' => $contexto['referencia'] ?? 'ANTICIPO_VIAJE', 'concepto_detalle' => 'Anticipo de viaje por comprobar'],
+                    ['cuenta_contable_id' => $cuentaBanco, 'debe' => 0, 'haber' => $monto, 'referencia' => $contexto['referencia'] ?? null, 'concepto_detalle' => $concepto],
+                ],
+            ];
+        }
+
+        if ($regla->regla_dinamica === 'liquidacion_operador') {
+            $montoBanco = round((float) ($contexto['monto_banco'] ?? 0), 2);
+            $montoSueldo = round((float) ($contexto['monto_sueldo'] ?? 0), 2);
+            $montoExcedentes = round((float) ($contexto['monto_excedentes'] ?? 0), 2);
+            $anticipoAplicado = round((float) ($contexto['anticipo_aplicado'] ?? 0), 2);
+            $deducciones = round((float) ($contexto['deducciones'] ?? 0), 2);
+            $cuentaSueldo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_SUELDOS_POR_PAGAR, $idEmpresa);
+            $cuentaBanco = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
+            $lineas = [];
+            if ($montoSueldo > 0) {
+                $lineas[] = ['cuenta_contable_id' => $cuentaSueldo, 'debe' => $montoSueldo, 'haber' => 0, 'referencia' => 'PAGO_SUELDO_OPERADOR', 'concepto_detalle' => 'Liquidación del sueldo bruto de operador'];
+            }
+            if ($montoExcedentes > 0) {
+                $cuentaCxp = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+                $lineas[] = ['cuenta_contable_id' => $cuentaCxp->id, 'debe' => $montoExcedentes, 'haber' => 0, 'referencia' => 'PAGO_GASTO_VIAJE_EXCEDENTE', 'concepto_detalle' => 'Liquidación de gastos de viaje excedentes'];
+            }
+            if ($anticipoAplicado > 0) {
+                $cuentaAnticipo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_DEUDORES_DIVERSOS, $idEmpresa);
+                $lineas[] = ['cuenta_contable_id' => $cuentaAnticipo, 'debe' => 0, 'haber' => $anticipoAplicado, 'referencia' => 'ANTICIPO_NO_COMPROBADO', 'concepto_detalle' => 'Aplicación del anticipo no comprobado contra sueldo'];
+            }
+            if ($deducciones > 0) {
+                $cuentaPrestamo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+                $lineas[] = ['cuenta_contable_id' => $cuentaPrestamo, 'debe' => 0, 'haber' => $deducciones, 'referencia' => 'DESCUENTO_PRESTAMOS_OPERADOR', 'concepto_detalle' => 'Amortización de préstamos/adelantos del operador'];
+            }
+            $lineas[] = ['cuenta_contable_id' => $cuentaBanco, 'debe' => 0, 'haber' => $montoBanco, 'referencia' => 'SALIDA_BANCO', 'concepto_detalle' => $contexto['concepto'] ?? 'Pago de liquidación de operador'];
+
+            return [
+                'id_empresa' => $idEmpresa,
+                'tipo' => 'egreso',
+                'fecha' => $contexto['fecha'] ?? now()->format('Y-m-d'),
+                'concepto' => $contexto['concepto'] ?? $regla->descripcion_asiento,
+                'origen_tipo' => $contexto['origen_tipo'] ?? null,
+                'origen_id' => $contexto['origen_id'] ?? null,
+                'movimientos' => $lineas,
+            ];
+        }
+
         // Resolver cuenta de cargo
         $cuentaCargoId = $regla->cuenta_cargo_id;
         // Resolver cuenta de abono
@@ -168,8 +292,8 @@ class PolizaService
             $montoAnticipo = round((float) ($contexto['monto_anticipo_amortizado'] ?? 0.00), 2);
             $montoBanco = round((float) ($contexto['monto_pago_banco'] ?? max(0, $montoTotal - $montoAnticipo)), 2);
 
-            $cuentaPasivoSocios = $regla->cuenta_cargo_id ?: CatCuentaContable::where('codigo', '2.1.9.1.002')->first()?->id;
-            $cuentaAnticipo = $regla->cuenta_abono_id ?: CatCuentaContable::where('codigo', '1.1.2.3.003')->first()?->id;
+            $cuentaPasivoSocios = $regla->cuenta_cargo_id ?: $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_PASIVO_SOCIOS, $idEmpresa);
+            $cuentaAnticipo = $regla->cuenta_abono_id ?: $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
             $cuentaBanco = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
 
             if (!$cuentaPasivoSocios || !$cuentaAnticipo || !$cuentaBanco) {
@@ -232,6 +356,11 @@ class PolizaService
             $cuentaAbonoId = $this->resolverCuentaBanco($contexto['cuenta_bancaria_id'] ?? null, $idEmpresa);
         }
 
+        if ($evento === 'PROVISION_VIAJE') {
+            $clienteId = $contexto['id_cliente'] ?? ($contexto['cliente_id'] ?? null);
+            $cuentaCargoId = $this->cuentaResolver->resolverCuentaCliente($clienteId, $idEmpresa)->id;
+        }
+
         if (!$cuentaCargoId || !$cuentaAbonoId) {
             throw new InvalidArgumentException("No fue posible resolver las cuentas de cargo y abono para el evento '{$evento}'.");
         }
@@ -272,38 +401,7 @@ class PolizaService
      */
     public function resolverCuentaBanco(?int $bancoId, int $idEmpresa): int
     {
-        if ($bancoId) {
-            $banco = Bancos::with('catBanco')->find($bancoId);
-            if ($banco) {
-                if (!empty($banco->cuenta_contable_id)) {
-                    return (int) $banco->cuenta_contable_id;
-                }
-                $nombreBanco = strtoupper(($banco->catBanco?->nombre ?? '') . ' ' . ($banco->nombre_banco ?? '') . ' ' . ($banco->nombre ?? '') . ' ' . ($banco->banco ?? ''));
-                if (str_contains($nombreBanco, 'AZTECA')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.002')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'BANORTE')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.005')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'BANAMEX') || str_contains($nombreBanco, 'CITI')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.003')->first();
-                    if ($c) return $c->id;
-                } elseif (str_contains($nombreBanco, 'SANTANDER')) {
-                    $c = CatCuentaContable::where('codigo', '1.1.1.2.004')->first();
-                    if ($c) return $c->id;
-                }
-            }
-        }
-
-        // Default: BBVA Bancomer analítica o primera cuenta afectable de bancos
-        $default = CatCuentaContable::where('codigo', '1.1.1.2.001')->first()
-            ?: CatCuentaContable::where('codigo', 'like', '1.1.1.2%')->where('es_afectable', true)->first();
-
-        if (!$default) {
-            throw new InvalidArgumentException("No se encontró una subcuenta analítica afectable para Bancos (1.1.1.2).");
-        }
-
-        return $default->id;
+        return $this->cuentaResolver->resolverCuentaBanco($bancoId, $idEmpresa);
     }
 
     /**
@@ -311,38 +409,7 @@ class PolizaService
      */
     public function resolverCuentaGasto(?int $categoriaGastoId, int $idEmpresa, ?string $concepto = null): int
     {
-        $conceptoStr = strtoupper($concepto ?? '');
-
-        if ($categoriaGastoId) {
-            $cat = \App\Models\CategoriasGastos::find($categoriaGastoId);
-            if ($cat) {
-                $conceptoStr .= ' ' . strtoupper($cat->categoria);
-            }
-        }
-
-        if (str_contains($conceptoStr, 'DIESEL') || str_contains($conceptoStr, 'COMBUSTIBLE') || str_contains($conceptoStr, 'GASOLINA')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.1')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'CASETA') || str_contains($conceptoStr, 'PEAJE') || str_contains($conceptoStr, 'TAG')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.2')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'MANIOBRA') || str_contains($conceptoStr, 'BURREO') || str_contains($conceptoStr, 'CARGA') || str_contains($conceptoStr, 'DESCARGA')) {
-            $c = CatCuentaContable::where('codigo', '5.1.1.3')->first();
-            if ($c) return $c->id;
-        } elseif (str_contains($conceptoStr, 'TALLER') || str_contains($conceptoStr, 'MANTENIMIENTO') || str_contains($conceptoStr, 'LLANTA') || str_contains($conceptoStr, 'REFACCION')) {
-            $c = CatCuentaContable::where('codigo', '5.1.2.1')->first();
-            if ($c) return $c->id;
-        }
-
-        // Default: Gastos Administrativos y Generales (5.1.3.1)
-        $gasto = CatCuentaContable::where('codigo', '5.1.3.1')->first()
-            ?: CatCuentaContable::where('codigo', 'like', '5.1%')->where('es_afectable', true)->first();
-
-        if (!$gasto) {
-            throw new InvalidArgumentException("No se encontró una cuenta analítica afectable de Gastos de Funcionamiento (5.1).");
-        }
-
-        return $gasto->id;
+        return $this->cuentaResolver->resolverCuentaGasto($categoriaGastoId, $idEmpresa, $concepto);
     }
 
     /**
@@ -487,6 +554,92 @@ class PolizaService
         });
     }
 
+    public function contabilizarSueldoOperadorDevengado(\App\Models\Gasto $gasto): ?Poliza
+    {
+        return DB::transaction(function () use ($gasto) {
+            $monto = round((float) $gasto->monto_total, 2);
+            if ($monto <= 0 || $gasto->estatus === 'cancelado') {
+                return null;
+            }
+
+            $origenTipo = 'sueldo_operador_devengado';
+            $existente = Poliza::where('origen_tipo', $origenTipo)->where('origen_id', $gasto->id)->first();
+            if ($existente && abs((float) $existente->total_debe - $monto) < 0.01) {
+                return $existente;
+            }
+            $existente?->delete();
+
+            $asiento = $this->resolverAsientoPorEvento('SUELDO_OPERADOR_DEVENGADO', null, (int) $gasto->id_empresa, [
+                'monto' => $monto,
+                'id_equipo' => $gasto->id_equipo,
+                'fecha' => $gasto->fecha_gasto,
+                'concepto' => 'Devengo de sueldo de operador: ' . $gasto->concepto,
+                'referencia' => $gasto->folio ?: ('GASTO_' . $gasto->id),
+                'origen_tipo' => $origenTipo,
+                'origen_id' => $gasto->id,
+            ]);
+
+            return $this->crearPoliza($asiento);
+        });
+    }
+
+    public function contabilizarGastoComprobadoOperador(\App\Models\Gasto $gasto): ?Poliza
+    {
+        return DB::transaction(function () use ($gasto) {
+            $monto = round((float) $gasto->monto_total, 2);
+            if ($monto <= 0 || $gasto->estatus === 'cancelado') {
+                return null;
+            }
+
+            $origenTipo = 'gasto_comprobacion_operador';
+            Poliza::where('origen_tipo', 'gasto_devengado')->where('origen_id', $gasto->id)->delete();
+            $existente = Poliza::where('origen_tipo', $origenTipo)->where('origen_id', $gasto->id)->first();
+            if ($existente && abs((float) $existente->total_debe - $monto) < 0.01) {
+                return $existente;
+            }
+            $existente?->delete();
+
+            $asiento = $this->resolverAsientoPorEvento('GASTO_COMPROBADO_OPERADOR', null, (int) $gasto->id_empresa, [
+                'monto' => $monto,
+                'id_equipo' => $gasto->id_equipo,
+                'fecha' => $gasto->fecha_gasto,
+                'concepto' => 'Gasto de viaje comprobado: ' . $gasto->concepto,
+                'referencia' => $gasto->folio ?: ('COMPROBACION_' . $gasto->id),
+                'origen_tipo' => $origenTipo,
+                'origen_id' => $gasto->id,
+            ]);
+
+            return $this->crearPoliza($asiento);
+        });
+    }
+
+    public function contabilizarGastoExcedenteOperador(\App\Models\Gasto $gasto): ?Poliza
+    {
+        return DB::transaction(function () use ($gasto) {
+            $monto = round((float) $gasto->monto_total, 2);
+            if ($monto <= 0 || $gasto->estatus === 'cancelado') {
+                return null;
+            }
+            $origenTipo = 'gasto_comprobacion_excedente_operador';
+            Poliza::where('origen_tipo', 'gasto_devengado')->where('origen_id', $gasto->id)->delete();
+            $existente = Poliza::where('origen_tipo', $origenTipo)->where('origen_id', $gasto->id)->first();
+            if ($existente && abs((float) $existente->total_debe - $monto) < 0.01) {
+                return $existente;
+            }
+            $existente?->delete();
+            $asiento = $this->resolverAsientoPorEvento('GASTO_EXCEDENTE_OPERADOR', null, (int) $gasto->id_empresa, [
+                'monto' => $monto,
+                'id_equipo' => $gasto->id_equipo,
+                'fecha' => $gasto->fecha_gasto,
+                'concepto' => 'Gasto excedente comprobado de operador: ' . $gasto->concepto,
+                'referencia' => 'EXCEDENTE_' . $gasto->id,
+                'origen_tipo' => $origenTipo,
+                'origen_id' => $gasto->id,
+            ]);
+            return $this->crearPoliza($asiento);
+        });
+    }
+
     /**
      * Contabiliza un gasto devengado (Cargo a Cuenta de Gasto, Abono a Proveedores CXP).
      */
@@ -509,8 +662,7 @@ class PolizaService
             $idEmpresa = $gasto->id_empresa ?? 1;
             $cuentaGastoId = $this->resolverCuentaGasto($gasto->categoria_gasto_id, $idEmpresa, $gasto->concepto);
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             if (!$cuentaProveedores) {
                 return null;
@@ -573,8 +725,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             $cuentaBancoId = $this->resolverCuentaBanco($pago->cuenta_bancaria_id, $idEmpresa);
 
@@ -642,8 +793,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
+            $cuentaClientes = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
 
             $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
@@ -709,13 +859,8 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
-
-            $cuentaContraObj = CatCuentaContable::where('codigo', '3.2.2.001')->first()
-                ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
-                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
-            $cuentaContra = $cuentaContraObj->id;
+            $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+            $cuentaContra = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_CAJA_OPERATIVA, $idEmpresa);
 
             if (!$cuentaPrestamos) {
                 return null;
@@ -777,14 +922,9 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
-
-            // Los pagos de préstamos a operadores son amortizaciones descontadas de liquidaciones de viaje
-            $cuentaContra = CatCuentaContable::where('codigo', '2.1.1.1.001')->first()
-                ?: (CatCuentaContable::where('codigo', 'like', '2.1.1%')->where('es_afectable', true)->first()
-                ?: (CatCuentaContable::where('codigo', '1.1.1.1')->first() ?: $cuentaPrestamos));
-            $cuentaContraId = $cuentaContra?->id ?? $cuentaPrestamos->id;
+            $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+            $cuentaContra = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+            $cuentaContraId = $cuentaContra->id;
 
             if (!$cuentaPrestamos) {
                 return null;
@@ -837,6 +977,40 @@ class PolizaService
             $cuentaBanco = $mov->cuentaBancaria;
             $idEmpresa = $cuentaBanco?->id_empresa ?? 1;
 
+            if ($mov->referenciaable_type === \App\Models\Liquidaciones::class) {
+                return $this->contabilizarLiquidacionOperadorBancaria($mov, $idEmpresa);
+            }
+
+            if ($mov->tipo === 'cargo' && $mov->referenciaable_type === \App\Models\Asignaciones::class) {
+                $dineroViaje = \App\Models\DineroContenedor::where('id_movimiento_bancario', $mov->id)->first();
+                $esAnticipoViaje = $dineroViaje || str_starts_with(mb_strtolower(trim((string) $mov->concepto)), 'dinero para viaje');
+                if ($esAnticipoViaje) {
+                    $polizaAnterior = Poliza::where('origen_tipo', 'banco_movimiento')->where('origen_id', $mov->id)->first();
+                    if ($polizaAnterior && abs((float) $polizaAnterior->total_debe - $monto) < 0.01) {
+                        $cuentaAnticipo = $this->cuentaResolver->resolverIdPorRol(CuentaContableResolverService::ROL_DEUDORES_DIVERSOS, $idEmpresa);
+                        $tieneContrapartidaCorrecta = $polizaAnterior->movimientos()->where('cuenta_contable_id', $cuentaAnticipo)->where('debe', '>', 0)->exists();
+                        if ($tieneContrapartidaCorrecta) {
+                            return $polizaAnterior;
+                        }
+                    }
+                    if ($polizaAnterior) {
+                        $polizaAnterior->delete();
+                    }
+                    $asiento = $this->resolverAsientoPorEvento('ANTICIPO_OPERADOR', null, $idEmpresa, [
+                        'monto' => $monto,
+                        'cuenta_bancaria_id' => $mov->cuenta_bancaria_id,
+                        'fecha' => $mov->fecha_movimiento,
+                        'concepto' => $mov->concepto ?: 'Anticipo de viaje por comprobar',
+                        'referencia' => $mov->referencia,
+                        'origen_tipo' => 'banco_movimiento',
+                        'origen_id' => $mov->id,
+                    ]);
+                    $poliza = $this->crearPoliza($asiento);
+                    $mov->update(['poliza_id' => $poliza->id]);
+                    return $poliza;
+                }
+            }
+
             $polizaPrevia = Poliza::where('origen_tipo', 'banco_movimiento')
                 ->where('origen_id', $mov->id)
                 ->first();
@@ -856,24 +1030,20 @@ class PolizaService
 
             if ($mov->tipo === 'abono') {
                 if (str_contains($conceptoUpper, 'SALDO INICIAL')) {
-                    $cuentaPatrimonio = CatCuentaContable::where('codigo', '3.2.2.001')->first()
-                        ?: (CatCuentaContable::where('codigo', 'like', '3.2.2%')->where('es_afectable', true)->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '3.1%')->where('es_afectable', true)->first());
-                    $cuentaContraId = $cuentaPatrimonio?->id;
+                    $cuentaPatrimonio = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CAJA_OPERATIVA, $idEmpresa);
+                    $cuentaContraId = $cuentaPatrimonio->id;
                     $refContra = 'APERTURA_BANCO';
                 } elseif (in_array($mov->referenciaable_type, ['App\Models\Asignaciones', 'App\Models\GastosOperadores', 'App\Models\GastosGenerales', 'App\Models\Gasto'])
                     || str_contains($conceptoUpper, 'DEVOLUCIÓN') || str_contains($conceptoUpper, 'DEV GASTOS') || str_contains($conceptoUpper, 'DEV.')) {
-                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaProveedores?->id;
+                    $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+                    $cuentaContraId = $cuentaProveedores->id;
                     $refContra = 'DEV_GASTO_CXP';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
-                    $cuentaClientes = CatCuentaContable::where('codigo', '1.1.2.1.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '1.1.2.1%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaClientes?->id;
+                    $cuentaClientes = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_CLIENTES_CXC, $idEmpresa);
+                    $cuentaContraId = $cuentaClientes->id;
                     $refContra = 'COBRO_CXC';
                 }
 
@@ -919,8 +1089,10 @@ class PolizaService
 
                             $conceptoDetalle = "Cobro viaje #" . ($cot?->id ?? '') . ($cont ? " [{$cont}]" : '') . " Cliente: " . ($cot?->cliente?->nombre ?? 'N/A');
 
+                            $cuentaCxcDestino = $this->cuentaResolver->resolverCuentaCliente($cot?->id_cliente, $idEmpresa)->id;
+
                             $lineasHaber[] = [
-                                'cuenta_contable_id' => $cuentaContraId,
+                                'cuenta_contable_id' => $cuentaCxcDestino,
                                 'debe'               => 0.00,
                                 'haber'              => round((float)$cpc->monto, 2),
                                 'referencia'         => $cont ?: 'COBRO_CXC',
@@ -952,21 +1124,20 @@ class PolizaService
             } else {
                 if ($mov->referenciaable_type === 'App\Models\SocioPago'
                     || str_contains($conceptoUpper, 'UTILIDADES GABRIEL') || str_contains($conceptoUpper, 'SOCIO')) {
-                    $cuentaSocios = CatCuentaContable::where('codigo', '1.1.2.3.003')->first();
-                    $cuentaContraId = $cuentaSocios?->id;
+                    $cuentaSocios = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
+                    $cuentaContraId = $cuentaSocios->id;
                     $refContra = 'ANTICIPO_SOCIO';
                 } elseif ($mov->referenciaable_type === 'App\Models\Prestamo') {
-                    $cuentaPrestamos = CatCuentaContable::where('codigo', '1.1.2.3.001')->first();
-                    $cuentaContraId = $cuentaPrestamos?->id;
+                    $cuentaPrestamos = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PRESTAMOS_OPERADORES, $idEmpresa);
+                    $cuentaContraId = $cuentaPrestamos->id;
                     $refContra = 'PRESTAMO_OPE';
                 } elseif ($mov->origen === 'transferencia') {
                     $cuentaContraId = $this->resolverCuentaBanco(null, $idEmpresa);
                     $refContra = 'TRASPASO';
                 } else {
                     // Todos los pagos operativos cancelan el pasivo devengado en Proveedores CXP
-                    $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                        ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
-                    $cuentaContraId = $cuentaProveedores?->id;
+                    $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
+                    $cuentaContraId = $cuentaProveedores->id;
                     $refContra = 'PAGO_CXP';
                 }
 
@@ -1006,6 +1177,66 @@ class PolizaService
         });
     }
 
+    private function contabilizarLiquidacionOperadorBancaria(\App\Models\CatBancoCuentasMovimientos $mov, int $idEmpresa): ?Poliza
+    {
+        return DB::transaction(function () use ($mov, $idEmpresa) {
+            $liquidacion = \App\Models\Liquidaciones::with('viajes.Contenedores')->find($mov->referenciaable_id);
+            if (!$liquidacion || $mov->tipo !== 'cargo') {
+                return null;
+            }
+
+            $polizaAnterior = Poliza::where('origen_tipo', 'banco_movimiento')->where('origen_id', $mov->id)->first();
+            if ($polizaAnterior && $polizaAnterior->movimientos()->where('referencia', 'PAGO_SUELDO_OPERADOR')->exists()) {
+                return $polizaAnterior;
+            }
+            $polizaAnterior?->delete();
+
+            $asignaciones = \App\Models\Asignaciones::whereIn('id_contenedor', $liquidacion->viajes->pluck('id_contenedor'))->get()->keyBy('id_contenedor');
+            $anticipoPorAplicar = 0.0;
+            $excedenteViaticos = 0.0;
+            foreach ($liquidacion->viajes as $detalle) {
+                $asignacion = $asignaciones->get($detalle->id_contenedor);
+                if (!$asignacion) {
+                    continue;
+                }
+                if ($asignacion->estatus_pagado === 'Pagado') {
+                    $anticipoPorAplicar += max(0, round((float) $detalle->dinero_viaje - (float) $detalle->dinero_justificado, 2));
+                }
+                $excedenteViaticos += (float) \App\Models\Gasto::where('origen_legacy', 'viaticos_operadores_excedente')
+                    ->where('estatus', '!=', 'cancelado')
+                    ->whereHas('pagos', fn ($q) => $q->where('referencia', 'LIQUIDACION_' . $liquidacion->id)->where('estatus', 'aplicado'))
+                    ->whereHas('vinculos', function ($q) use ($asignacion) {
+                        $q->where('tipo_vinculo', 'asignacion')->where('vinculable_id', $asignacion->id);
+                    })
+                    ->sum('monto_total');
+            }
+
+            $pagosDeduccion = round((float) \App\Models\PagoPrestamo::where('id_liquidacion', $liquidacion->id)->sum('monto_pago'), 2);
+            $montoBanco = round((float) $mov->monto, 2);
+            $montoSueldo = round($montoBanco + $anticipoPorAplicar + $pagosDeduccion - $excedenteViaticos, 2);
+            if ($montoSueldo < 0) {
+                throw new InvalidArgumentException('El pago de liquidación no permite conciliar sueldo, anticipo y gastos excedentes.');
+            }
+
+            $asiento = $this->resolverAsientoPorEvento('LIQUIDACION_OPERADOR', null, $idEmpresa, [
+                'monto' => $montoBanco,
+                'monto_banco' => $montoBanco,
+                'monto_sueldo' => $montoSueldo,
+                'monto_excedentes' => $excedenteViaticos,
+                'anticipo_aplicado' => $anticipoPorAplicar,
+                'deducciones' => $pagosDeduccion,
+                'cuenta_bancaria_id' => $mov->cuenta_bancaria_id,
+                'fecha' => $mov->fecha_movimiento,
+                'concepto' => 'Liquidación de sueldo operador #' . $liquidacion->id . ' - ' . ($liquidacion->Operadores?->nombre ?? ''),
+                'origen_tipo' => 'banco_movimiento',
+                'origen_id' => $mov->id,
+            ]);
+            $poliza = $this->crearPoliza($asiento);
+            $mov->update(['poliza_id' => $poliza->id]);
+            return $poliza;
+        });
+    }
+
     /**
      * Contabiliza la provisión de CXP a proveedores de fletes subcontratados (exclusivo GC).
      */
@@ -1034,11 +1265,8 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaGasto = CatCuentaContable::where('codigo', '5.1.1.3')->first()
-                ?: CatCuentaContable::where('codigo', '5.1.3.1')->first();
-
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaGasto = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_GASTOS_MANIOBRAS, $idEmpresa);
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             if (!$cuentaGasto || !$cuentaProveedores) {
                 return null;
@@ -1102,8 +1330,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaProveedores = CatCuentaContable::where('codigo', '2.1.1.2.001')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '2.1.1.2%')->where('es_afectable', true)->first();
+            $cuentaProveedores = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_PROVEEDORES_CXP, $idEmpresa);
 
             $bancoId = $cobroPago?->bancoA_id ?: ($cobroPago?->bancoB_id ?: ($cobroPago?->id_banco ?? null));
             $cuentaBancoId = $this->resolverCuentaBanco($bancoId, $idEmpresa);
@@ -1171,8 +1398,7 @@ class PolizaService
                 $polizaPrevia->delete();
             }
 
-            $cuentaAnticipo = CatCuentaContable::where('codigo', '1.1.2.3.003')->first()
-                ?: CatCuentaContable::where('codigo', 'like', '1.1.2.3%')->where('es_afectable', true)->first();
+            $cuentaAnticipo = $this->cuentaResolver->resolverCuentaPorRol(CuentaContableResolverService::ROL_ANTICIPOS_SOCIOS, $idEmpresa);
 
             $cuentaBancoId = $this->resolverCuentaBanco($socioPago->banco_id, $idEmpresa);
 

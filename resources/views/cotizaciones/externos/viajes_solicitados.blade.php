@@ -127,10 +127,136 @@
             border-radius: 12px;
             font-weight: 700;
         }
+
+        /* Modo Pantalla Completa para Mis Viajes */
+        body.mis-viajes-fullscreen {
+            overflow: hidden !important;
+        }
+
+        body.mis-viajes-fullscreen #cardMisViajes {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            z-index: 1040 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            background: #ffffff !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+        }
+
+        body.mis-viajes-fullscreen .menu-sub-dropdown {
+            z-index: 1060 !important;
+        }
+
+        body.mis-viajes-fullscreen .daterangepicker {
+            z-index: 1065 !important;
+        }
+
+        body.mis-viajes-fullscreen #cardMisViajes > .card-header {
+            padding: 6px 14px !important;
+            min-height: auto !important;
+            border-bottom: 1px solid #eef0f4 !important;
+            flex: 0 0 auto !important;
+        }
+
+        body.mis-viajes-fullscreen #cardMisViajes > .card-body {
+            padding: 6px 12px 8px 12px !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            min-height: 0 !important;
+        }
+
+        body.mis-viajes-fullscreen #statusTabsViajes {
+            margin-bottom: 6px !important;
+            padding: 4px 6px !important;
+            gap: 6px !important;
+            flex: 0 0 auto !important;
+        }
+
+        body.mis-viajes-fullscreen .status-tab-btn {
+            padding: 4px 10px !important;
+            font-size: 12px !important;
+            min-width: 110px !important;
+        }
+
+        body.mis-viajes-fullscreen .status-tab-btn .badge-count {
+            font-size: 11px !important;
+            padding: 1px 6px !important;
+        }
+
+        body.mis-viajes-fullscreen #gridRowContainer {
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+        }
+
+        body.mis-viajes-fullscreen #myGrid {
+            flex: 1 1 auto !important;
+            height: 100% !important;
+            margin-bottom: 0 !important;
+            padding: 0 !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid {
+            --ag-font-size: 11.5px;
+            --ag-cell-horizontal-padding: 5px;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .ag-header-cell,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .ag-header-cell {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+            font-size: 11px !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .ag-header-cell-text,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .ag-header-cell-text {
+            line-height: 1.05 !important;
+            font-size: 10.5px !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .ag-cell,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .ag-cell {
+            display: flex;
+            align-items: center;
+            line-height: 1.1 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .ag-cell img,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .ag-cell img {
+            max-height: 13px !important;
+            width: auto !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .badge,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .badge {
+            font-size: 10px !important;
+            padding: 2px 6px !important;
+            line-height: 1.05 !important;
+        }
+
+        body.mis-viajes-fullscreen.mis-viajes-compact #myGrid .ag-paging-panel,
+        body.mis-viajes-fullscreen.mis-viajes-auto #myGrid .ag-paging-panel {
+            height: 26px !important;
+            min-height: 26px !important;
+            font-size: 11px !important;
+        }
     </style>
     <div class="row gx-5 gx-xl-10">
         <div class="col-sm-12 mb-5 mb-xl-10">
-            <div class="card card-flush h-lg-100">
+            <div class="card card-flush h-lg-100" id="cardMisViajes">
                 <div class="card-header border-0 pt-5 pb-2">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100">
 
@@ -179,6 +305,30 @@
                                 <span class="badge badge-light-success ms-1" id="badgeCountWhatsapp">0</span>
                             </button>
 
+                            <!-- Controles de densidad visibles en Pantalla Completa -->
+                            <div class="btn-group btn-group-sm d-none" id="fullscreenDensityGroup" role="group" aria-label="Ajuste de filas">
+                                <button type="button" class="btn btn-light-primary active fw-bold px-3" data-density="auto"
+                                    onclick="setFullscreenDensity('auto')" title="Ajustar automáticamente el alto de las filas para ver todos los viajes en pantalla">
+                                    Auto (Captura)
+                                </button>
+                                <button type="button" class="btn btn-light px-3" data-density="compact"
+                                    onclick="setFullscreenDensity('compact')" title="Vista compacta manteniendo filtros de columna">
+                                    Compacta
+                                </button>
+                                <button type="button" class="btn btn-light px-3" data-density="normal"
+                                    onclick="setFullscreenDensity('normal')" title="Tamaño de fila estándar">
+                                    Normal
+                                </button>
+                            </div>
+
+                            <!-- Botón Pantalla Completa -->
+                            <button type="button" class="btn btn-light-primary btn-sm px-3 d-inline-flex align-items-center gap-2"
+                                id="btnToggleFullscreenViajes" onclick="toggleFullscreenMisViajes()"
+                                title="Ver tabla en pantalla completa (ESC para salir)">
+                                <i class="fa-solid fa-expand fs-6" id="iconFullscreenViajes"></i>
+                                <span id="textFullscreenViajes">Pantalla completa</span>
+                            </button>
+
                             <!-- Botón Opciones (Al lado del buscador) -->
                             <div class="card-toolbar m-0">
                                 <button class="btn btn-primary btn-sm px-4" data-kt-menu-trigger="click"
@@ -200,6 +350,12 @@
                                     <div class="separator mb-3 opacity-75"></div>
                                     <!--end::Menu separator-->
                                     <!--begin::Menu item-->
+                                    <div class="menu-item px-3">
+                                        <a class="menu-link px-3" onclick="toggleFullscreenMisViajes()">
+                                            <i class="fa-solid fa-expand me-2 text-primary" id="menuIconFullscreenViajes"></i>
+                                            <span id="menuTextFullscreenViajes">Pantalla completa</span>
+                                        </a>
+                                    </div>
                                     <div class="menu-item px-3">
                                         <a class="menu-link px-3" onclick="getFilesCFDI()">Obtener CFDI Carta Porte</a>
                                     </div>
@@ -302,7 +458,7 @@
                         </button>
                     </div>
 
-                    <div class="row">
+                    <div class="row" id="gridRowContainer">
                         <div id="myGrid" class="col-12 ag-theme-quartz mb-6" style="height: 610px"></div>
 
                         <div class="modal fade" id="kt_modal_top_up_wallet" tabindex="-1" aria-hidden="true">

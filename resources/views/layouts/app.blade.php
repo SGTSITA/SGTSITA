@@ -205,7 +205,7 @@
             window.SGT_DATE_CONFIG = @json(app(\App\Services\CotizacionesService::class)->getPeriodosCotizaciones());
         </script>
 
-        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}"></script>
+        <script src="{{ asset('js/sgt/common/sessionAutoLogout.js') }}?v={{ filemtime(public_path('js/sgt/common/sessionAutoLogout.js')) }}"></script>
     @endauth
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Moment.js y soporte de idioma español -->

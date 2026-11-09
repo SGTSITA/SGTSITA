@@ -21,7 +21,8 @@
             ?? (request('numero_edo_cuenta') ? optional(\App\Models\Estado_Cuenta::find(request('numero_edo_cuenta')))->numero : 'S/F');
 
         $totalContenedores = $cotizaciones->count();
-        $fechaEnvio = date('Y-m-d');
+        $fechaEnvio = $fechaEnvio ?? date('Y-m-d');
+        $tituloEnvio = "{$fechaEnvio} GC TRANSPORTE {$folioEdoCuenta}";
 
         // Totales acumulados
         $sumPrecioViaje = 0;
@@ -94,7 +95,7 @@
 
     <!-- Fila 1: Título -->
     <tr>
-        <td>ESTADO DE CUENTA · TRANSPORTE</td>
+        <td>{{ $tituloEnvio }}</td>
         <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
         <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
     </tr>
@@ -302,3 +303,5 @@
         </tr>
     </tbody>
 </table>
+
+@include('reporteria.cxc.partials.cuentas_bancarias', ['empresaCuentaId' => $empresaCuentaId ?? $primera?->id_empresa])

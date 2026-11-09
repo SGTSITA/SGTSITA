@@ -179,7 +179,10 @@ function initSingleFileUploader(config, preloadFile = null) {
 */
 
 async function initFileUploader() {
-    const numContenedor = localStorage.getItem("numContenedor");
+    const numContenedor =
+        window.currentNumContenedor ||
+        document.getElementById("num_contenedor")?.value?.trim() ||
+        localStorage.getItem("numContenedor");
 
     let archivos = [];
 

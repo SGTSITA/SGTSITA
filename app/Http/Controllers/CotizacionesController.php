@@ -48,6 +48,43 @@ class CotizacionesController extends Controller
     protected $CotizacionesService;
     protected $BancosService;
     protected $CostosService;
+    private const MAX_PESO_CONTENEDOR_TON = 60;
+
+    private function validarYCalcularPesoSobrepeso($pesoContenedorRaw, $pesoReglamentarioRaw = 22): array
+    {
+        $pesoLimpio = is_string($pesoContenedorRaw)
+            ? str_replace([',', '$', ' '], '', trim($pesoContenedorRaw))
+            : $pesoContenedorRaw;
+
+        if ($pesoLimpio === null || $pesoLimpio === '' || !is_numeric($pesoLimpio)) {
+            throw new \InvalidArgumentException('El Peso del Contenedor es obligatorio y debe ser un número válido en toneladas.');
+        }
+
+        $peso = round((float) $pesoLimpio, 4);
+        $maxTon = self::MAX_PESO_CONTENEDOR_TON;
+
+        if ($peso <= 0 || $peso > $maxTon) {
+            throw new \InvalidArgumentException(
+                "El Peso del Contenedor ({$pesoContenedorRaw}) está fuera de rango. Debe expresarse en toneladas (mayor a 0 y máximo {$maxTon} toneladas)."
+            );
+        }
+
+        $regLimpio = is_string($pesoReglamentarioRaw)
+            ? str_replace([',', '$', ' '], '', trim($pesoReglamentarioRaw))
+            : $pesoReglamentarioRaw;
+
+        $pesoReglamentario = ($regLimpio !== null && $regLimpio !== '' && is_numeric($regLimpio) && (float) $regLimpio > 0)
+            ? round((float) $regLimpio, 4)
+            : 22.0;
+
+        $sobrepeso = max(round($peso - $pesoReglamentario, 4), 0.0);
+
+        return [
+            'peso_contenedor' => $peso,
+            'peso_reglamentario' => $pesoReglamentario,
+            'sobrepeso' => $sobrepeso,
+        ];
+    }
     protected $GastosService;
 
     public function __construct(BancosService $BancosService, ViajesCostosService $CostosService, GastosService $GastosService, CotizacionesService $CotizacionesService)
@@ -487,7 +524,8 @@ class CotizacionesController extends Controller
                 $cotizaciones->origen = $request->origen;
                 $cotizaciones->destino = $request->destino;
                 $cotizaciones->tamano = $contenedor['tamano'];
-                $cotizaciones->peso_contenedor = $contenedor['peso_contenedor'];
+                $datosPesoCont = $this->validarYCalcularPesoSobrepeso($contenedor['peso_contenedor'] ?? null, $request->peso_reglamentario ?? 22);
+                $cotizaciones->peso_contenedor = $datosPesoCont['peso_contenedor'];
 
                 $cotizaciones->otro = $request->otro;
                 $cotizaciones->fecha_modulacion = $contenedor['fecha_modulacion'];
@@ -496,7 +534,7 @@ class CotizacionesController extends Controller
                 $cotizaciones->retencion = $request->retencion;
                 $cotizaciones->peso_reglamentario = $request->peso_reglamentario;
                 $cotizaciones->precio_sobre_peso = $request->precio_sobre_peso;
-                $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
+                $cotizaciones->sobrepeso = $datosPesoCont['sobrepeso'];
                 $cotizaciones->estatus = ($request->has('uuid')) ? 'Documentos Faltantes' : 'Pendiente';
                 $cotizaciones->precio_viaje = $request->precio_viaje;
                 $cotizaciones->burreo = $request->burreo;
@@ -574,6 +612,14 @@ foreach ($cotizacionesCreadas as $cotizacion) {
                 "TMensaje" => "success",
                 "folio" => $cotizaciones->id,
                 "proveedor" => $cotizaciones->id_empresa
+            ]);        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                "status" => "warning",
+                "Titulo" => "Peso de Contenedor inválido",
+                "Mensaje" => $e->getMessage(),
+                "message" => $e->getMessage(),
+                "TMensaje" => "warning",
+                "success" => false
             ]);
         } catch (\DomainException $e) {
             return response()->json([
@@ -609,7 +655,12 @@ foreach ($cotizacionesCreadas as $cotizacion) {
                 Auth::user()
             );
 
-            return response()->json($res);
+            return response()->json($res);        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                "Titulo" => "Peso no válido",
+                "Mensaje" => $e->getMessage(),
+                "TMensaje" => "warning"
+            ]);
         } catch (\DomainException $e) {
             return response()->json([
                 "Titulo" => "Validación de Contenedores",
@@ -1336,13 +1387,26 @@ $this->CotizacionesService->procesarDocumento(
             $cotizaciones->fecha_entrega = $request['fecha_entrega'];
 
             $cotizaciones->tamano = $request['tamano'];
-            $cotizaciones->peso_contenedor = $request['peso_contenedor'];
+            try {
+                $datosPesoUpdate = $this->validarYCalcularPesoSobrepeso(
+                    $request['peso_contenedor'] ?? null,
+                    $cotizaciones->peso_reglamentario ?? 22
+                );
+            } catch (\InvalidArgumentException $e) {
+                DB::rollBack();
+                return response()->json([
+                    "Titulo" => "Peso de Contenedor inválido",
+                    "Mensaje" => $e->getMessage(),
+                    "TMensaje" => "warning",
+                ]);
+            }
+            $cotizaciones->peso_contenedor = $datosPesoUpdate['peso_contenedor'];
 
             $cotizaciones->bloque = $request['bloque'];
             $cotizaciones->bloque_hora_i = $request['bloque_hora_i'];
             $cotizaciones->bloque_hora_f = $request['bloque_hora_f'];
 
-            $cotizaciones->sobrepeso = $request['sobrepeso'];
+            $cotizaciones->sobrepeso = $datosPesoUpdate['sobrepeso'];
 
             //coordenadas para comparar
             $cotizaciones->latitud =  $request->latitud;
@@ -1651,7 +1715,17 @@ $this->CotizacionesService->procesarDocumento(
             $cotizaciones->fecha_entrega = $contenedor['fecha_entrega'];
 
             $cotizaciones->tamano = $contenedor['tamano'];
-            $cotizaciones->peso_contenedor = $contenedor['peso_contenedor'];
+            try {
+                $datosPesoContUpd = $this->validarYCalcularPesoSobrepeso($contenedor['peso_contenedor'] ?? null, $request->peso_reglamentario ?? 22);
+            } catch (\InvalidArgumentException $e) {
+                DB::rollBack();
+                return response()->json([
+                    "Titulo" => "Peso de Contenedor inválido",
+                    "Mensaje" => $e->getMessage(),
+                    "TMensaje" => "warning",
+                ]);
+            }
+            $cotizaciones->peso_contenedor = $datosPesoContUpd['peso_contenedor'];
 
             $cotizaciones->bloque = $contenedor['bloque'];
             $cotizaciones->bloque_hora_i = $contenedor['bloque_hora_i'];
@@ -1672,7 +1746,7 @@ $this->CotizacionesService->procesarDocumento(
             $cotizaciones->estadia = $request->estadia;
             $cotizaciones->base_factura = $request->base_factura;
             $cotizaciones->base_taref = $request->base_taref;
-            $cotizaciones->sobrepeso = $contenedor['sobrepeso'];
+            $cotizaciones->sobrepeso = $datosPesoContUpd['sobrepeso'];
             $cotizaciones->precio_sobre_peso = $request->precioSobrePeso;
             //coordenadas para comparar
             $cotizaciones->total = $request->total;
@@ -3398,11 +3472,20 @@ $this->CotizacionesService->procesarDocumento(
 
             return response()->json([
                 'success' => true,
+                'status' => 'success',
                 'message' => 'Cotización local guardada correctamente',
                 'id' => $res['docum_cotizacion_id'],
                 'cotizacion_id' => $res['cotizacion_id'],
                 'docum_cotizacion_id' => $res['docum_cotizacion_id'],
                 'num_contenedor' => $res['num_contenedor'],
+            ]);        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                "status" => "warning",
+                "Titulo" => "Peso de Contenedor inválido",
+                "Mensaje" => $e->getMessage(),
+                "message" => $e->getMessage(),
+                "TMensaje" => "warning",
+                "success" => false
             ]);
         } catch (\DomainException $e) {
             return response()->json([
@@ -3432,6 +3515,24 @@ $this->CotizacionesService->procesarDocumento(
                 'cotizacion_id' => $res['cotizacion_id'],
                 'docum_cotizacion_id' => $res['docum_cotizacion_id'],
                 'num_contenedor' => $res['num_contenedor'],
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'status'   => 'warning',
+                'TMensaje' => 'warning',
+                'Titulo'   => 'Peso de Contenedor inválido',
+                'Mensaje'  => $e->getMessage(),
+                'message'  => $e->getMessage(),
+                'success'  => false,
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'status'   => 'warning',
+                'TMensaje' => 'warning',
+                'Titulo'   => 'Contenedor creado previamente',
+                'Mensaje'  => $e->getMessage(),
+                'message'  => $e->getMessage(),
+                'success'  => false,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -3472,7 +3573,12 @@ $this->CotizacionesService->procesarDocumento(
                 Auth::user()
             );
 
-            return response()->json($res);
+            return response()->json($res);        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                "Titulo" => "Peso no válido",
+                "Mensaje" => $e->getMessage(),
+                "TMensaje" => "warning"
+            ]);
         } catch (\DomainException $e) {
             return response()->json([
                 "Titulo" => "Validación local",
