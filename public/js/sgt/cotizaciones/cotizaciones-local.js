@@ -595,9 +595,9 @@ function getFormData() {
     });
 
     //documentos
-    const boletaFile = document.getElementById("BoletaLib")?.files[0];
-    const dodaFile = document.getElementById("Doda")?.files[0];
-    const cBoletaPatioFile = document.getElementById("BoletaPatio")?.files[0];
+    const boletaFile = obtenerArchivoSeleccionado("BoletaLib");
+    const dodaFile = obtenerArchivoSeleccionado("Doda");
+    const cBoletaPatioFile = obtenerArchivoSeleccionado("BoletaPatio");
 
     if (boletaFile) {
         data["boleta_liberacion_file"] = boletaFile;
@@ -616,6 +616,18 @@ function getFormData() {
         .getAttribute("content");
 
     return data;
+}
+
+function obtenerArchivoSeleccionado(idInput) {
+    const input = document.getElementById(idInput);
+    if (!input) return null;
+
+    const uploader = $.fileuploader?.getInstance(input);
+    const archivoElegido = uploader?.getChoosedFiles?.().find((item) =>
+        item.file instanceof File,
+    );
+
+    return archivoElegido?.file || input.files?.[0] || null;
 }
 
 function obtenerCotizacionIdActual() {
@@ -735,6 +747,17 @@ function guardarCotizacionLocal() {
 }
 
 function updateCotizacion(id) {
+    const cotizacionId = Number(id);
+    if (!Number.isInteger(cotizacionId) || cotizacionId <= 0) {
+        console.error("ID de cotización local inválido:", id);
+        Swal.fire(
+            "No se pudo actualizar",
+            "No se encontró el ID de la cotización. Recargue el viaje e inténtelo de nuevo.",
+            "error",
+        );
+        return;
+    }
+
     let formData = new FormData();
     const data = getFormData();
 
@@ -743,7 +766,7 @@ function updateCotizacion(id) {
         formData.append(campo, data[campo] ?? "");
     }
 
-    const url = `/cotizaciones/single/update-local/${id}`;
+    const url = `/cotizaciones/single/update-local/${cotizacionId}`;
 
     $.ajax({
         url: url,
@@ -773,12 +796,20 @@ function updateCotizacion(id) {
             }
 
             // Guardar ID de la cotización
-            const id = res.id;
-            window.cotLocalId = res.cotizacion_id || id;
-            window.currentCotizacionId = res.cotizacion_id || id;
+            const idDocumento = res.docum_cotizacion_id || res.id;
+            const idCotizacionRespuesta = Number(res.cotizacion_id);
+            const idCotizacion =
+                Number.isInteger(idCotizacionRespuesta) &&
+                idCotizacionRespuesta > 0
+                    ? idCotizacionRespuesta
+                    : cotizacionId;
+            window.cotLocalId = idDocumento || idCotizacion || null;
+            window.currentCotizacionId = idCotizacion;
             window.currentNumContenedor = res.num_contenedor;
-            localStorage.setItem("cotizacionId", res.cotizacion_id);
-            localStorage.setItem("numContenedor", res.num_contenedor);
+            localStorage.setItem("cotizacionId", String(idCotizacion));
+            if (res.num_contenedor) {
+                localStorage.setItem("numContenedor", res.num_contenedor);
+            }
 
             // Mostrar file uploader
             $("#noticeFileUploader").addClass("d-none");
@@ -789,8 +820,16 @@ function updateCotizacion(id) {
                 title: "Actualizado correctamente",
                 text: "Ahora puede adjuntar los documentos.",
             });
-            limpiarEstadoDocumentos();
-            // setTimeout(() => initFileUploader(), 300);
+            if (typeof reinicializarFileUploader === "function") {
+                reinicializarFileUploader()
+                    .then(() => limpiarEstadoDocumentos())
+                    .catch((error) => {
+                        console.error("No se pudieron recargar los documentos guardados:", error);
+                        limpiarEstadoDocumentos();
+                    });
+            } else {
+                limpiarEstadoDocumentos();
+            }
         },
         error: function (err) {
             console.error(err);

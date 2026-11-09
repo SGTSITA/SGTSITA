@@ -6,9 +6,20 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Cotizaciones;
 use App\Models\CobroPago;
 use App\Models\CobroPagoCotizacion;
+use App\Models\Estado_Cuenta;
+use App\Models\Estado_Cuenta_Cotizaciones;
+use App\Models\Bancos;
+use App\Models\BancoDinero;
+use App\Models\Client;
+use App\Models\Proveedor;
 
 class CuentasCobrarService
 {
+    public function __construct(
+        protected BancosService $bancosService
+    ) {
+    }
+
     public function basequery($validarRestante = false)
     {
 
@@ -690,5 +701,269 @@ class CuentasCobrarService
             'detalles.cotizacion.DocCotizacion',
             'detalles.cotizacion.estadoCuenta'
         ])->findOrFail($id);
+    }
+
+    /**
+     * Guarda, anexa o edita una asignación de Estado de Cuenta a cotizaciones.
+     */
+    public function guardarEstadoCuenta(array $data, int $idEmpresa, int $userId): array
+    {
+        $numeroEdoCuenta = trim($data['numero'] ?? '');
+        $idsSeleccionados = (array) ($data['cotizacionesId'] ?? []);
+        $modo = $data['modo'] ?? 'crear';
+
+        $estadoCuentaExistente = Estado_Cuenta::where('numero', $numeroEdoCuenta)
+            ->where('id_empresa', $idEmpresa)
+            ->first();
+
+        if ($modo === 'crear' && $estadoCuentaExistente) {
+            return [
+                'ok' => false,
+                'already_exists' => true,
+                'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" ya existe en el sistema.'
+            ];
+        }
+
+        if ($modo === 'anexar' && !$estadoCuentaExistente) {
+            return [
+                'ok' => false,
+                'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" no existe en el sistema para anexar.'
+            ];
+        }
+
+        if ($modo === 'editar' && !empty($data['edo_cuenta_actual_id'])) {
+            $estadoCuentaActualId = $data['edo_cuenta_actual_id'];
+            if ($estadoCuentaExistente && $estadoCuentaExistente->id != $estadoCuentaActualId) {
+                return [
+                    'ok' => false,
+                    'already_exists' => true,
+                    'message' => 'El número de estado de cuenta "' . $numeroEdoCuenta . '" ya pertenece a otro estado de cuenta registrado.'
+                ];
+            }
+        }
+
+        return DB::transaction(function () use ($estadoCuentaExistente, $numeroEdoCuenta, $idEmpresa, $userId, $modo, $data, $idsSeleccionados) {
+            if ($estadoCuentaExistente) {
+                $estadoCuentaTarget = $estadoCuentaExistente;
+            } else {
+                $estadoCuentaTarget = Estado_Cuenta::create([
+                    'numero' => $numeroEdoCuenta,
+                    'id_empresa' => $idEmpresa,
+                    'created_by' => $userId,
+                ]);
+            }
+
+            if ($modo === 'editar') {
+                $estadoCuentaActualId = $data['edo_cuenta_actual_id'] ?? null;
+                $soloEsta = !empty($data['solo_esta']);
+
+                if ($soloEsta) {
+                    Estado_Cuenta_Cotizaciones::whereIn('cotizacion_id', $idsSeleccionados)
+                        ->update([
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
+                            'assigned_by' => $userId,
+                            'updated_at' => now()
+                        ]);
+                } else {
+                    Estado_Cuenta_Cotizaciones::where('estado_cuenta_id', $estadoCuentaActualId)
+                        ->update([
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
+                            'assigned_by' => $userId,
+                            'updated_at' => now()
+                        ]);
+                }
+            } else {
+                foreach ($idsSeleccionados as $idcot) {
+                    Estado_Cuenta_Cotizaciones::updateOrCreate(
+                        ['cotizacion_id' => $idcot],
+                        [
+                            'estado_cuenta_id' => $estadoCuentaTarget->id,
+                            'assigned_by' => $userId,
+                            'id_empresa' => $idEmpresa
+                        ]
+                    );
+                }
+            }
+
+            return [
+                'ok' => true,
+                'message' => $modo === 'anexar'
+                    ? 'Cotizaciones anexadas al estado de cuenta correctamente'
+                    : 'Estado de cuenta guardado correctamente'
+            ];
+        });
+    }
+
+    /**
+     * Elimina un cobro o pago revertiendo saldos en cotizaciones y cancelando movimientos bancarios.
+     */
+    public function eliminarCobroPago(int $id, ?string $fechaCancelacion = null): void
+    {
+        DB::transaction(function () use ($id, $fechaCancelacion) {
+            $cobroPago = CobroPago::with('detalles.cotizacion')->findOrFail($id);
+
+            foreach ($cobroPago->detalles as $detalle) {
+                $cotizacion = $detalle->cotizacion;
+                if ($cotizacion) {
+                    if ($cobroPago->tipo === 'cxc') {
+                        $cotizacion->restante = $cotizacion->restante + $detalle->monto;
+                        $cotizacion->estatus_pago = ($cotizacion->restante == 0);
+                        if ($cotizacion->restante > 0) {
+                            $cotizacion->fecha_pago = null;
+                        }
+                    } elseif ($cobroPago->tipo === 'cxp') {
+                        $cotizacion->prove_restante = $cotizacion->prove_restante + $detalle->monto;
+                        if ($cotizacion->prove_restante > 0) {
+                            $cotizacion->fecha_pago_proveedor = null;
+                        }
+                    }
+                    $cotizacion->save();
+                }
+                $detalle->delete();
+            }
+
+            $movimientos = CatBancoCuentasMovimientos::where('referenciaable_id', $cobroPago->id)
+                ->where('referenciaable_type', CobroPago::class)
+                ->where('cancelado', false)
+                ->get();
+
+            $fechaCanc = $fechaCancelacion ?? now()->format('Y-m-d');
+
+            foreach ($movimientos as $mov) {
+                $this->bancosService->cancelarMovimiento($mov->cuenta_bancaria_id, $mov->id, $fechaCanc);
+
+                if ($mov->tipo === 'abono') {
+                    Bancos::where('id', $mov->cuenta_bancaria_id)
+                        ->update(['saldo' => DB::raw("COALESCE(saldo, 0) - " . floatval($mov->monto))]);
+                } elseif ($mov->tipo === 'cargo') {
+                    Bancos::where('id', $mov->cuenta_bancaria_id)
+                        ->update(['saldo' => DB::raw("COALESCE(saldo, 0) + " . floatval($mov->monto))]);
+                }
+            }
+
+            $cobroPago->delete();
+        });
+    }
+
+    /**
+     * Obtiene los catálogos para el filtro de pagos históricos.
+     */
+    public function getCatalogosHistorico(int $idEmpresa): array
+    {
+        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
+            ->where('ce.id_empresa', $idEmpresa)
+            ->where('is_active', 1)
+            ->orderBy('nombre')
+            ->select('clients.*')
+            ->get();
+
+        $proveedores = Proveedor::where('id_empresa', $idEmpresa)
+            ->orderBy('nombre')
+            ->get();
+
+        return compact('clientes', 'proveedores');
+    }
+
+    /**
+     * Aplica el registro de pago directo legacy para una cotización individual.
+     */
+    public function aplicarPagoDirectoLegacy(int $id, array $data, $request): void
+    {
+        DB::transaction(function () use ($id, $data, $request) {
+            $cotizacion = Cotizaciones::findOrFail($id);
+            $cotizacion->monto1 = $data['monto1'] ?? null;
+            $cotizacion->metodo_pago1 = $data['metodo_pago1'] ?? null;
+            $cotizacion->id_banco1 = $data['id_banco1'] ?? null;
+
+            if ($request->hasFile("comprobante1")) {
+                $file = $request->file('comprobante1');
+                $path = public_path() . '/pagos';
+                $fileName = uniqid() . $file->getClientOriginalName();
+                $file->move($path, $fileName);
+                $cotizacion->comprobante_pago1 = $fileName;
+            }
+
+            $cotizacion->monto2 = $data['monto2'] ?? null;
+            $cotizacion->metodo_pago2 = $data['metodo_pago2'] ?? null;
+            $cotizacion->id_banco2 = $data['id_banco2'] ?? null;
+
+            if ($request->hasFile("comprobante2")) {
+                $file = $request->file('comprobante2');
+                $path = public_path() . '/pagos';
+                $fileName = uniqid() . $file->getClientOriginalName();
+                $file->move($path, $fileName);
+                $cotizacion->comprobante_pago2 = $fileName;
+            }
+
+            $suma = (float) ($data['monto1'] ?? 0) + (float) ($data['monto2'] ?? 0);
+            $resta = (float) $cotizacion->restante - $suma;
+            $cotizacion->restante = $resta;
+            $cotizacion->estatus_pago = 1;
+            $cotizacion->fecha_pago = date('Y-m-d');
+            $cotizacion->save();
+        });
+    }
+
+    /**
+     * Aplica el registro de pagos varios legacy distribuidos entre varias cotizaciones.
+     */
+    public function aplicarPagoVariosLegacy(array $data, $request): void
+    {
+        DB::transaction(function () use ($data, $request) {
+            $cotizacionesData = (array) ($data['id_cotizacion'] ?? []);
+            $abonos = (array) ($data['abono'] ?? []);
+            $contenedoresAbonos = [];
+
+            foreach ($cotizacionesData as $id) {
+                $cotizacion = Cotizaciones::with('DocCotizacion')->findOrFail($id);
+                $abono = isset($abonos[$id]) ? floatval($abonos[$id]) : 0;
+                $nuevoRestante = (float) $cotizacion->restante - $abono;
+
+                if ($nuevoRestante < 0) {
+                    $nuevoRestante = 0;
+                }
+
+                $cotizacion->restante = $nuevoRestante;
+                $cotizacion->estatus_pago = ($nuevoRestante == 0) ? 1 : 0;
+                $cotizacion->fecha_pago = date('Y-m-d');
+                $cotizacion->save();
+
+                $contenedoresAbonos[] = [
+                    'num_contenedor' => $cotizacion->DocCotizacion?->num_contenedor,
+                    'abono' => $abono
+                ];
+            }
+
+            $banco = new BancoDinero();
+            $banco->contenedores = json_encode($contenedoresAbonos);
+            $banco->id_cliente = $data['id_cliente'] ?? null;
+            $banco->monto1 = $data['monto1_varios'] ?? null;
+            $banco->metodo_pago1 = $data['metodo_pago1_varios'] ?? null;
+            $banco->id_banco1 = $data['id_banco1_varios'] ?? null;
+
+            if ($request->hasFile("comprobante1_varios")) {
+                $file = $request->file('comprobante1_varios');
+                $path = public_path() . '/pagos';
+                $fileName = uniqid() . $file->getClientOriginalName();
+                $file->move($path, $fileName);
+                $banco->comprobante_pago1 = $fileName;
+            }
+
+            $banco->monto2 = $data['monto2_varios'] ?? null;
+            $banco->metodo_pago2 = $data['metodo_pago2_varios'] ?? null;
+            $banco->id_banco2 = $data['id_banco2_varios'] ?? null;
+
+            if ($request->hasFile("comprobante2_varios")) {
+                $file = $request->file('comprobante2_varios');
+                $path = public_path() . '/pagos';
+                $fileName = uniqid() . $file->getClientOriginalName();
+                $file->move($path, $fileName);
+                $banco->comprobante_pago2 = $fileName;
+            }
+
+            $banco->fecha_pago = date('Y-m-d');
+            $banco->tipo = 'Entrada';
+            $banco->save();
+        });
     }
 }

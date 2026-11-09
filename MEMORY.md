@@ -1,5 +1,5 @@
 # MEMORY.md — SGTSITA
-Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
+Memoria viva del proyecto entre sesiones (máximo ~60 líneas).
 
 ## Estado actual
 - Cambio de Proveedor y Transportista en Viaje Planeado (`/viajes/editar` -> `CotizacionesController::singleUpdate`):
@@ -31,19 +31,36 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Formatos Oficiales CONAC & Exportación (`/contabilidad/balance-general`): ESF-01, ERA-02, BC-03, AC-07, LD-06 en PDF/Excel y modal drill-down por concepto.
 - Specs operativas activas: Spec 002 (Gastos/Transferencias), Spec 003 (GPS Naanix), Spec 004/005 (Sync Gastos/Móvil/Multi-equipo), Spec 006 (`/socios`), Spec 007 (Gastos indirectos), Spec 010 (`initSgtDateRange`), Spec 015 (GBV01 opcional), Spec 016 (Reporte Personalizado CXC), Spec 017 (`#filtro_unidad` en liquidaciones), Spec 018 (`/liquidaciones/ajustes`).
 - Respaldo de Sistema Completo: Comando Artisan `backup:sistema-completo` (`GenerarRespaldoSistemaCompletoCommand.php`) con `--sin-gps`, `--listar` y `--eliminar`.
+- Plataforma ERP SGTSITA (Gologi Pro) 100% operativa (Metronic UI, Laravel 9, MySQL 8, Docker).
+- **Spec 019 (Thin Controllers & Reusable Services) — COMPLETADA AL 100% (Fases 1 a 6):**
+  * **Fase 1 (Catálogos):** `ClienteService`, `ProveedorService`, `OperadorService`, `PrestamoService`, `EquipoService` + FormRequests.
+  * **Fase 2 (Tesorería & CxC/CxP):** `BancosService`, `GastosService`, `CuentasCobrarService`, `CuentasPagarService`.
+  * **Fase 3 (Liquidaciones & Ajustes):** `LiquidacionesService` centraliza balance real, amortizaciones, bancos y `OperadorGastosContabilidadService`.
+  * **Fase 4 (Operaciones & Planeación):** `CotizacionesService` y `PlaneacionService` (`PlaneacionController` y `CotizacionesLocalesController` delgados).
+  * **Fase 5 (Portales & Monitoreo):** `CostosViajeMepService`, `MepService`, `CoordenadasService`.
+  * **Fase 6 (Validación):** Sintaxis verificada (`php -l`), cachés limpias y rutas resueltas. API móvil protegida sin cambios de contrato.
+- **Spec 025 (Validación de Peso de Contenedor y Sobrepeso):** En `CotizacionesService::validarYCalcularPesoSobrepeso()` y `CotizacionesController` (`> 0` y `<= 60` ton, recalcula `sobrepeso = max(peso - peso_reglamentario, 0)`), homologado en `cotizaciones.js` y `cotizaciones-local.js`.
+- **Pantalla Completa en Mis Viajes (`/viajes/mis-viajes`):** Botón Pantalla completa (`toggleFullscreenMisViajes()`) y selector de densidad (`Auto (Captura)` | `Compacta` | `Normal`).
+- **Cierre de Sesión Automático y Rastreo de Mapas (`CheckUserSessionTimeout.php` y `sessionAutoLogout.js`):** Sincronización multi-pestaña en `localStorage`, keep-alive cada 4 min y pausa automática en pantallas de rastreo/mapas.
+- **Spec 024 (Devengo de sueldos, anticipos y deducciones):** `OperadorGastosContabilidadService` deduplica comprobaciones y registra "Dinero para viaje - [Operador]". En `/reporteria/utilidad`, `pagoOperacion = min($sueldo_viaje, $total_pagado)`. Balance General Empresa 8 cuadrado con Diferencia $0.00.
+- **Spec 020 & 011 (CONAC & Cierre Contable):** Acumulación real en `3.2.1`, formatos ESF-01, ERA-02, BC-03, AC-07, LD-06 y selector `initSgtDateRange`.
+- **Specs operativas activas:** Spec 002–018 (`/liquidaciones/ajustes`, `#filtro_unidad`, Reporte Personalizado CXC, Naanix GPS, Multi-equipo `requiere_unidad_gasto == 1`).
+- **Respaldo de Sistema Completo:** `php artisan backup:sistema-completo` (`--sin-gps`, `--listar`, `--eliminar`).
 
-## Decisiones (y por qué)
-- Deduplicación de Viáticos: Al sincronizar comprobaciones desde `viaticos_operadores`, si ya existe un gasto registrado con `origen_legacy = 'gastos_operadores'` para la misma cotización y monto, se omite la creación de duplicados.
-- Reconciliación Sueldo / Anticipo No Justificado: Cuando un operador no comprueba la totalidad de un anticipo y la diferencia se deduce en su liquidación (`LiquidacionContenedor`), la reportería muestra el sueldo neto efectivamente pagado y el anticipo retenido por separado.
-- Aislamiento de Sueldos en UI: Los sueldos de operadores se protegen de modificaciones incidentales en la planeación y cotizaciones; su consulta y filtro se centraliza en el módulo `/gastos`.
-- Transacciones `DB::transaction`: obligatorias en cotizaciones, viajes, gastos, liquidaciones, ajustes y movimientos bancarios.
+## Decisiones arquitectónicas (y por qué)
+- `PlaneacionService` y `LiquidacionesService`: centralizan la lógica de negocio e integran `OperadorGastosContabilidadService` para mantener sincronizadas las pólizas contables de sueldos, anticipos, comprobaciones y liquidaciones.
+- `CotizacionesService`: unifica creación individual, en lote (`storeMultipleCotizaciones`, `storeMultipleLocal`), locales (`storeLocal`, `singleUpdateLocal`), validación de peso (`<= 60` ton) y conversiones Full / Local-Foráneo.
+- Deduplicación de Viáticos y Aislamiento de Sueldos: `tipo_gasto = 'operador'` con categoría `'Sueldos de Operadores'` y `origen_legacy = 'asignacion_sueldo_operador'` se filtran fuera de otros gastos de planeación.
+- Multi-equipo H00 Global: activado estrictamente con `requiere_unidad_gasto == 1`.
+- Transacciones `DB::transaction()` obligatorias en todo cálculo y mutación de saldo.
 
-## Aprendizajes y errores a evitar
-- NUNCA modificar la respuesta JSON de endpoints en `routes/api.php` sin verificar el impacto en Flutter (`operador_appsgt`).
+## Errores a evitar
+- En `storeLocal`, crear primero `Cotizaciones`, después su bitácora y luego `DocumCotizacion` con el ID real; devolver `id`, `cotizacion_id`, `docum_cotizacion_id` y `num_contenedor`.
+- En ediciones de viajes locales, persistir transportista en `id_proveedor` y `transportista_local`, y empresa en `id_empresa`/`empresa_local` (sincronizando `docum_cotizacion.id_empresa`).
+- Para adjuntos en FileUploader, obtener archivo con `getInstance(input).getChoosedFiles()`.
+- Al renderizar PDFs con `Pdf::loadView`, asegurar compatibilidad dual de variables (`cotizacion`/`cotizaciones`) y blindar blades con operadores null-safe (`?->`) y `try-catch`.
+- NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
-- En Docker vs Host en Windows: para comandos Artisan que interactúan con MySQL o requieren conexión de red del contenedor (`host.docker.internal`), ejecutar `docker compose exec app php artisan <comando>`.
-- `tipo_gasto` en tabla `gastos` es un ENUM de MySQL (`'general','periodo','unidad','viaje','cotizacion','contenedor','operador'`). Para sueldos se mantiene `tipo_gasto = 'operador'` con categoría `'Sueldos de Operadores'` y `origen_legacy = 'asignacion_sueldo_operador'`.
-- En el Balance General, el "Consolidado Global" suma todas las empresas del sistema; se debe revisar por empresa individual (ej. Empresa 8, Oliva).
 
 ## Próximos pasos
 - [ ] Ejecutar en producción `php artisan contabilidad:sync-historico 8 --force` tras desplegar cambios.
