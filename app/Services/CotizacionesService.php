@@ -893,11 +893,27 @@ class CotizacionesService
     }
 
     /**
+     * Normaliza los IDs de viajes asegurando compatibilidad con arrays simples o estructurados.
+     */
+    private function normalizarIdsViajes(array $viajes): array
+    {
+        return collect($viajes)->map(function ($item) {
+            if (is_array($item)) {
+                return $item['id'] ?? null;
+            }
+            if (is_object($item)) {
+                return $item->id ?? null;
+            }
+            return $item;
+        })->filter()->values()->toArray();
+    }
+
+    /**
      * Convierte dos o más cotizaciones en un viaje FULL unificado.
      */
     public function convertirFull(array $viajes, $user): array
     {
-        $ids = collect($viajes)->pluck('id');
+        $ids = $this->normalizarIdsViajes($viajes);
 
         $estatus = Cotizaciones::whereIn('id', $ids)->pluck('estatus')->unique();
         if ($estatus->count() > 1) {
@@ -915,10 +931,10 @@ class CotizacionesService
 
         $fullUUID = Common::generarUuidV4();
 
-        DB::transaction(function () use ($viajes, $fullUUID) {
-            for ($x = 0; $x < sizeof($viajes); $x++) {
+        DB::transaction(function () use ($ids, $fullUUID) {
+            for ($x = 0; $x < sizeof($ids); $x++) {
                 $jerarquia = ($x == 0) ? 'Principal' : 'Secundario';
-                Cotizaciones::where('id', $viajes[$x]['id'])->update([
+                Cotizaciones::where('id', $ids[$x])->update([
                     'tipo_viaje' => 'Full',
                     'referencia_full' => $fullUUID,
                     'jerarquia' => $jerarquia,
@@ -938,16 +954,16 @@ class CotizacionesService
      */
     public function cancelarFull(array $viajes, $user): array
     {
-        $ids = collect($viajes)->pluck('id');
+        $ids = $this->normalizarIdsViajes($viajes);
         $estatus = Cotizaciones::whereIn('id', $ids)->whereIn('estatus', ['Finalizado', 'Cancelada'])->pluck('estatus')->unique();
 
         if ($estatus->count() > 0) {
             throw new \DomainException('Los viajes seleccionados no pueden ser cancelados de tipo Full porque ya están Finalizados o Cancelados.');
         }
 
-        DB::transaction(function () use ($viajes) {
-            for ($x = 0; $x < sizeof($viajes); $x++) {
-                Cotizaciones::where('id', $viajes[$x]['id'])->update([
+        DB::transaction(function () use ($ids) {
+            for ($x = 0; $x < sizeof($ids); $x++) {
+                Cotizaciones::where('id', $ids[$x])->update([
                     'tipo_viaje' => 'Sencillo',
                     'referencia_full' => null,
                     'jerarquia' => 'Principal',
@@ -984,15 +1000,17 @@ class CotizacionesService
      */
     public function convertirLocalForaneo(array $viajes, $user): array
     {
-        DB::transaction(function () use ($viajes) {
-            foreach ($viajes as $v) {
-                $doc = DocumCotizacion::where('id_cotizacion', $v['id'])->first();
+        $ids = $this->normalizarIdsViajes($viajes);
+
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                $doc = DocumCotizacion::where('id_cotizacion', $id)->first();
                 $estatusA = "Documentos Faltantes";
                 if ($doc && $doc->boleta_liberacion != null && $doc->doda != null) {
                     $estatusA = "Pendiente";
                 }
 
-                $cotizacion = Cotizaciones::find($v['id']);
+                $cotizacion = Cotizaciones::find($id);
                 if ($cotizacion) {
                     $cotizacion->tipo_viaje_seleccion = "local_to_foraneo";
                     $cotizacion->en_patio = 0;
@@ -1015,9 +1033,11 @@ class CotizacionesService
      */
     public function revertirForaneo(array $viajes, $user): array
     {
-        DB::transaction(function () use ($viajes) {
-            foreach ($viajes as $v) {
-                $cotizacion = Cotizaciones::find($v['id']);
+        $ids = $this->normalizarIdsViajes($viajes);
+
+        DB::transaction(function () use ($ids) {
+            foreach ($ids as $id) {
+                $cotizacion = Cotizaciones::find($id);
                 if ($cotizacion) {
                     $cotizacion->tipo_viaje_seleccion = "local";
                     $cotizacion->en_patio = 1;
