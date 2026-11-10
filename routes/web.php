@@ -284,6 +284,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::patch('empresas/update/{id}', [App\Http\Controllers\EmpresasController::class, 'update'])->name('update.empresas');
 
         // ==================== C L I E N T E S ====================
+        Route::redirect('clients', '/clientes');
+        Route::redirect('clientes/list', '/clientes');
         Route::resource('clientes', ClientController::class);
         Route::post('clientes/get-list', [App\Http\Controllers\ClientController::class,'get_list'])->name('clientes.get');
         Route::post('clientes/create', [App\Http\Controllers\ClientController::class, 'create'])->name('create.clientes');
