@@ -1,3 +1,13 @@
+@php
+    $saldoAnterior = $saldoAnterior ?? $saldoInicial ?? 0;
+    $saldoActual = $saldoActual ?? $saldoFinal ?? 0;
+    $conteo_depositos = $conteo_depositos ?? 0;
+    $conteo_cargos = $conteo_cargos ?? 0;
+    $total_depositos = $total_depositos ?? 0;
+    $total_cargos = $total_cargos ?? 0;
+    $fecha_inicio = $fecha_inicio ?? ($fechaInicio ?? '');
+    $fecha_fin = $fecha_fin ?? ($fechaFin ?? '');
+@endphp
 <style>
     body {
         font-family: DejaVu Sans, sans-serif;
@@ -129,7 +139,7 @@
                     <img src="{{ public_path($logo) }}" style="width:220px;">
                 @else
                     <div style="font-size:18px; font-weight:bold;">
-                        {{ $cuenta->catBanco->nombre }}
+                        {{ $cuenta->catBanco?->nombre ?? ($cuenta->banco ?? 'Cuenta Bancaria') }}
                     </div>
                 @endif
             </td>

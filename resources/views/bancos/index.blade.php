@@ -112,9 +112,9 @@
 
 @section('datatable')
     <script>
-        const dataTableSearch = new simpleDatatables.DataTable("#datatable-search", {
+        const dataTableSearch = document.querySelector("#datatable-search") ? new simpleDatatables.DataTable("#datatable-search", {
             searchable: true,
             fixedHeight: false
-        });
+        }) : null;
     </script>
 @endsection

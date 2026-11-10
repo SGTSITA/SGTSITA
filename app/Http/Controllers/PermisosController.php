@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\DB;
 
 class PermisosController extends Controller
 {
+    public function index()
+    {
+        return redirect()->route('roles.create');
+    }
+
     public function store(Request $request)
     {
         $request->validate([

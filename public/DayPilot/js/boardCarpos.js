@@ -470,14 +470,8 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                 "datosCompartidosWhatsAppDiv",
             );
             if (divWhatsApp) {
-                if (response.password_temporal) {
+                if (response.wa_text) {
                     divWhatsApp.style.display = "block";
-                    let pwdSpan = document.getElementById(
-                        "passwordTemporalSpan",
-                    );
-                    // if (pwdSpan)
-                    //     pwdSpan.textContent = response.password_temporal;
-
                     let btnReenviar = document.getElementById(
                         "btnReenviarWhatsApp",
                     );
