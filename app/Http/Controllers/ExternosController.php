@@ -1028,6 +1028,11 @@ class ExternosController extends Controller
     }
 
 
+    public function ext_advance_documentos(Request $request)
+    {
+        return $this->ext_index_documentos($request);
+    }
+
     public function ext_index_documentos(Request $request)
     {
         $clientes = Client::where('id_empresa', auth()->user()->id_empresa)

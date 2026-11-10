@@ -43,10 +43,10 @@
                                     <span class="mb-2 text-md">
                                         Viajes Totales:
                                         <span class="text-dark ms-sm-2 font-weight-bold">
-                                            {{ $cotizacion->total_cotizaciones }}
+                                            {{ $cotizacion?->total_cotizaciones ?? 0 }}
                                         </span>
                                     </span>
-                                    <!--span class="text-xs">Saldo actual: <span class="text-dark ms-sm-2 font-weight-bold">${{ number_format($cotizacion->total_restante, 0, '.', ',') }}</span></span-->
+                                    <!--span class="text-xs">Saldo actual: <span class="text-dark ms-sm-2 font-weight-bold">${{ number_format($cotizacion?->total_restante ?? 0, 0, '.', ',') }}</span></span-->
                                 </div>
                             </li>
                         </ul>

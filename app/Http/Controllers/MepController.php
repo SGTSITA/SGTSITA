@@ -27,7 +27,9 @@ class MepController extends Controller
     {
         $empresas = Empresas::get();
         $gpsCompanies = GpsCompany::orderBy('nombre')->get();
-        return view('mep.viajes.index', compact('empresas', 'gpsCompanies'));
+        $user = User::find(auth()->id());
+        $proveedorId = $user?->proveedores()->pluck('proveedor_id')->first();
+        return view('mep.viajes.index', compact('empresas', 'gpsCompanies', 'proveedorId'));
     }
 
     public function getCatalogosMep(Request $request)

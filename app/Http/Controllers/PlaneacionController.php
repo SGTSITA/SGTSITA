@@ -218,7 +218,14 @@ class PlaneacionController extends Controller
         }
 
         return response()->json([
-            "documentos" => $misDocumentos,
+            "nombre" => ($asignaciones?->id_proveedor == null) ? $asignaciones?->Operador?->nombre : $asignaciones?->Proveedor?->nombre,
+            "tipo" => "Viaje " . $documentos->first()?->tipo_contrato,
+            "cotizacion" => $cotizacion,
+            "cliente" => $cotizacion?->Cliente,
+            "subcliente" => $cotizacion?->Subcliente,
+            "documentos" => $documentos->first(),
+            "documents" => $misDocumentos->first(),
+            "password_temporal" => $documentos->first()?->password_temporal ?? $asignaciones?->password_temporal,
             "data" => $documentos->first(),
             "wa_text" => $waText,
             "asignacion_id" => $asignaciones?->id
@@ -227,13 +234,13 @@ class PlaneacionController extends Controller
 
     public function guardarMensajeWhatsApp(Request $request)
     {
-        $asignacion = Asignaciones::find($request->asignacion_id);
+        $asignacion = Asignaciones::find($request->id_asignacion ?? $request->asignacion_id);
         if ($asignacion) {
             $asignacion->mensaje_compartido = $request->mensaje;
             $asignacion->save();
-            return response()->json(['success' => true, 'message' => 'Mensaje guardado correctamente']);
+            return response()->json(['ok' => true, 'success' => true, 'msg' => 'Mensaje guardado correctamente', 'message' => 'Mensaje guardado correctamente']);
         }
-        return response()->json(['success' => false, 'message' => 'Asignación no encontrada'], 404);
+        return response()->json(['ok' => false, 'success' => false, 'msg' => 'Asignación no encontrada', 'message' => 'Asignación no encontrada'], 404);
     }
 
     public function initBoard(Request $request)

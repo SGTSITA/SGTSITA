@@ -158,6 +158,7 @@ function validarDestinoDireccion() {
         "puebla",
     ];
 
+    if (!inputDestino) return true;
     const destino = normalizarTexto(inputDestino.value);
     let direccion = "";
 
@@ -167,14 +168,14 @@ function validarDestinoDireccion() {
 
     // destino obligatorio
     if (!destino) {
-        btnGuardar.disabled = true;
+        if (btnGuardar) btnGuardar.disabled = true;
 
         return false;
     }
 
     // direccion obligatoria
     if (!direccion && btnGuardar) {
-        btnGuardar.disabled = true;
+        if (btnGuardar) btnGuardar.disabled = true;
 
         return false;
     }
@@ -212,7 +213,7 @@ function validarDestinoDireccion() {
     const coincide = porcentaje >= 0.6;
 
     if (!coincide) {
-        btnGuardar.disabled = true;
+        if (btnGuardar) btnGuardar.disabled = true;
 
         if (!alertaDestinoActiva) {
             alertaDestinoActiva = true;
@@ -253,7 +254,7 @@ function validarDestinoDireccion() {
         return false;
     }
 
-    btnGuardar.disabled = false;
+    if (btnGuardar) btnGuardar.disabled = false;
 
     return true;
 }
@@ -268,8 +269,9 @@ function validarConDelay() {
 }
 
 document
-    .getElementById("cotizacionCreate")
-    .addEventListener("keydown", function (e) {
+    ?.getElementById("cotizacionCreate")
+    ?.addEventListener("keydown", function (e) {
+
         if (e.key === "Enter") {
             e.preventDefault();
         }

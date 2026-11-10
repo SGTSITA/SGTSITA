@@ -1446,7 +1446,10 @@ class ReporteriaController extends Controller
         $fechaDe = $request->query('fecha_de');
         $fechaHasta = $request->query('fecha_hasta');
 
-        return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta'));
+        $proveedores = \App\Models\Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('nombre', 'asc')->get();
+        $equipos = $this->equipoService->getTractocamiones();
+
+        return view('reporteria.utilidad.index', compact('asignaciones', 'clientes', 'subclientes', 'contenedores', 'fechaDe', 'fechaHasta', 'proveedores', 'equipos'));
     }
 
     public function getContenedorUtilidad(Request $r)
@@ -1961,7 +1964,9 @@ class ReporteriaController extends Controller
         // Obtener los resultados
         $cotizaciones = $cotizaciones->get();
 
-        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'equipos'));
+        $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
+
+        return view('reporteria.documentos.index', compact('cotizaciones', 'clientes', 'subclientes', 'equipos', 'proveedores'));
     }
 
 
@@ -2254,11 +2259,20 @@ class ReporteriaController extends Controller
             'gasto.vinculos' => function ($q) {
                 $q->whereIn('tipo_vinculo', ['asignacion', 'unidad']);
             },
-            'gasto.vinculos.vinculable',
-            'gasto.vinculos.vinculable.Operador',
-            'gasto.vinculos.vinculable.Camion',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+            'gasto.vinculos.vinculable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Asignaciones::class => [
+                        'Operador',
+                        'Camion',
+                        'Contenedor.Cotizacion.Cliente',
+                        'Contenedor.Cotizacion.Subcliente',
+                    ],
+                ]);
+            },
+
+
+
+
         ]);
 
         $data = $gastos->map(function ($g) {

@@ -1845,7 +1845,9 @@ function showInfoContenedor(Contenedor) {
     });
 
     localStorage.setItem("numContenedor", fieldsContenedor["num_contenedor"]);
-    getFilesContenedor();
+    if (typeof getFilesContenedor === "function") {
+        getFilesContenedor();
+    }
 
     calcularTotal();
     valorSobrePrecioContenedor();

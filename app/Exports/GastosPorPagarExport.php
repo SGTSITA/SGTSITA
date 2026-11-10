@@ -55,10 +55,19 @@ class GastosPorPagarExport implements FromView
             'gasto.vinculos' => function ($q) {
                 $q->where('tipo_vinculo', 'asignacion');
             },
-            'gasto.vinculos.vinculable.Operador',
-            'gasto.vinculos.vinculable.Camion',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+            'gasto.vinculos.vinculable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Asignaciones::class => [
+                        'Operador',
+                        'Camion',
+                        'Contenedor.Cotizacion.Cliente',
+                        'Contenedor.Cotizacion.Subcliente',
+                    ],
+                ]);
+            },
+
+
+
         ]);
 
         if ($this->status === 'por_pagar') {
