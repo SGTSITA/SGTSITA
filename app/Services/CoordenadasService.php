@@ -303,8 +303,21 @@ class CoordenadasService
             ->join('clients as cli', 'cli.id', '=', 'c.id_cliente')
             ->join('empresas as em', 'em.id', '=', 'a.id_empresa')
             ->join('empresas as emc', 'emc.id', '=', 'c.id_empresa')
-            ->leftJoin('viajes_cotizacion', 'viajes_cotizacion.cotizacion_id', '=', 'c.id')
-            ->leftJoin('viajes', 'viajes.id', '=', 'viajes_cotizacion.viaje_id')
+            ->leftJoinSub(
+                DB::table('viajes_cotizacion as vc')
+                    ->join('viajes as v', 'v.id', '=', 'vc.viaje_id')
+                    ->where('v.estado', 'activo')
+                    ->select(
+                        'vc.cotizacion_id',
+                        DB::raw('MAX(v.id) as id'),
+                        DB::raw('MAX(v.tipo) as tipo')
+                    )
+                    ->groupBy('vc.cotizacion_id'),
+                'viajes',
+                'viajes.cotizacion_id',
+                '=',
+                'c.id'
+            )
 
 
             ->leftJoin('equipos as eq', 'eq.id', '=', 'a.id_camion')
