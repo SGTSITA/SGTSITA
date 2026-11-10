@@ -2014,12 +2014,52 @@ class CotizacionesService
 
     public static function obtenerReferencias(string $texto): string
     {
-        preg_match_all('/\[(.*?)\]/', $texto, $coincidencias);
-        return implode(' ', $coincidencias[1] ?? []);
+        if (trim($texto) === '') {
+            return '';
+        }
+
+        $elementos = preg_split('/\s+/', trim($texto));
+        $referencias = [];
+
+        foreach ($elementos as $elem) {
+            $pos = strpos($elem, '-');
+            if ($pos !== false) {
+                $ref = trim(substr($elem, $pos + 1));
+                if ($ref !== '') {
+                    $referencias[] = $ref;
+                }
+            } elseif (preg_match('/\[(.*?)\]/', $elem, $m) && !empty($m[1])) {
+                $referencias[] = trim($m[1]);
+            }
+        }
+
+        return implode(' / ', $referencias);
     }
 
     public static function limpiarNumContenedor(string $texto): string
     {
-        return preg_replace('/\[.*?\]/', '', $texto);
+        if (trim($texto) === '') {
+            return '';
+        }
+
+        $elementos = preg_split('/\s+/', trim($texto));
+        $contenedores = [];
+
+        foreach ($elementos as $elem) {
+            $pos = strpos($elem, '-');
+            if ($pos !== false) {
+                $cont = trim(substr($elem, 0, $pos));
+                if ($cont !== '') {
+                    $contenedores[] = $cont;
+                }
+            } else {
+                $cont = trim(preg_replace('/\[.*?\]/', '', $elem));
+                if ($cont !== '') {
+                    $contenedores[] = $cont;
+                }
+            }
+        }
+
+        return implode(' ', $contenedores);
     }
 }

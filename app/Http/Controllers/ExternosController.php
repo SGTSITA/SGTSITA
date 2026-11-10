@@ -827,16 +827,12 @@ class ExternosController extends Controller
     }
     public function obtenerReferencias($texto)
     {
-        preg_match_all('/-([A-Za-z0-9]+)/', $texto, $matches);
-        return !empty($matches[1])
-            ? implode(' / ', $matches[1])
-            : null;
+        return \App\Services\CotizacionesService::obtenerReferencias((string) $texto);
     }
 
     public function limpiarNumContenedor($texto)
     {
-
-        return trim(preg_replace('/-[A-Za-z0-9]+/', '', $texto));
+        return \App\Services\CotizacionesService::limpiarNumContenedor((string) $texto);
     }
     public function listarDocumentos(Request $request)
     {
