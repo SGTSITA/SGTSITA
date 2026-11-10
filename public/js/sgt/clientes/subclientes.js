@@ -80,11 +80,13 @@ $('#sublienteCreate').on('submit', function (e) {
         success: function (data) {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(function () {
                 if (data.TMensaje == 'success') {
-                    var uuid = localStorage.getItem('uuid');
-                    if (uuid) {
+                    var redirectInput = document.getElementById('redirect_to');
+                    if (redirectInput && redirectInput.value) {
+                        window.location.replace(redirectInput.value);
+                    } else if (window.location.pathname.includes('/clientes/crear-nuevo') || window.location.pathname.includes('/clientes/list')) {
                         window.location.replace('/clientes/list');
                     } else {
-                        window.location.replace('/clients');
+                        window.location.replace('/clientes');
                     }
                 }
             });

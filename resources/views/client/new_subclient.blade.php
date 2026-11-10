@@ -23,6 +23,7 @@
                 id="sublienteCreate" enctype="multipart/form-data" role="form">
                 @csrf
                 <input type="hidden" value="{{ $idClient }}" name="id_cliente" id="id_cliente">
+                <input type="hidden" id="redirect_to" value="/clientes">
                 @if (isset($subCliente))
                     <input type="hidden" value="{{ $subCliente->id }}" name="id_subcliente" id="id_subcliente">
                 @endif
