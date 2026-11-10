@@ -126,7 +126,7 @@ function goToEdit(IdSubCliente) {
     const _cliente = document.querySelector('meta[name="id-cliente"]').getAttribute('content');
 
     const form = $(
-        '<form action="/clientes/edit" method="post">' +
+        '<form action="/subclientes/edit" method="post">' +
             '<input type="hidden" name="id_subcliente" value="' +
             IdSubCliente +
             '" />' +

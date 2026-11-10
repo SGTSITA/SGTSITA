@@ -129,7 +129,12 @@ class ClientController extends Controller
 
     public function edit(Request $request)
     {
-        $cliente = Client::findOrFail($request->id_client);
+        if ($request->filled('id_subcliente')) {
+            return $this->show_edit($request);
+        }
+
+        $idClient = $request->id_client ?? $request->idClient;
+        $cliente = Client::findOrFail($idClient);
 
         if ($request->has('toggle_empresa')) {
             $idEmpresa = (int) $request->toggle_empresa;

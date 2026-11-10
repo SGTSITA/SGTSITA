@@ -299,6 +299,9 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('subclientes/edit/{id}', [App\Http\Controllers\ClientController::class, 'edit_subclientes'])->name('edit_subclientes.clientes');
         Route::patch('subclientes/update/{id}', [App\Http\Controllers\ClientController::class, 'update_subclientes'])->name('update_subclientes.clientes');
         Route::post('clientes/subclientes/create', [App\Http\Controllers\ClientController::class, 'store_subclientes'])->name('store_subclientes.clientes');
+        Route::post('subclientes/edit', [ClientController::class, 'show_edit'])->name('subclientes.show_edit');
+        Route::post('subclientes/update', [ClientController::class, 'update_subclientes'])->name('subclientes.update');
+        Route::post('clientes/update', [ClientController::class, 'update_subclientes'])->name('clientes.update_subcliente');
 
         // ==================== P R O V E E D O R E S ====================
         Route::get('proveedores', [App\Http\Controllers\ProveedorController::class, 'index'])->name('index.proveedores');
