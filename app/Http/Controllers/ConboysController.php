@@ -53,123 +53,18 @@ private $coordenadasService;
 
     public function getconboysFinalizados(Request $request)
     {
-        $idEmpresa = Auth::User()->id_empresa;
-
-        $fechaInicio = $request->query('inicio');
-        $fechaFin = $request->query('fin');
-
-        $infoSubquery = "
-        (
-      select cotizaciones.id as id_union,
-           asig.id as id_asignacion,
-           clients.nombre as cliente,
-           cotizaciones.origen,
-           cotizaciones.destino,
-           asig.num_contenedor as contenedor,
-           cotizaciones.estatus,
-           asig.tipo_contrato,
-           asig.fecha_inicio,
-           asig.fecha_fin,
-           id_equipo,
-           marca,
-           placas,
-           cotizaciones.id_empresa,
-           'Cotizaciones' as tipoConsulta
-        from cotizaciones
-        inner join clients on cotizaciones.id_cliente = clients.id
-        inner join (
-        select docum_cotizacion.id as id_contenedor,
-               asignaciones.id,
-               asignaciones.id_camion,
-               docum_cotizacion.num_contenedor,
-               asignaciones.fecha_inicio,
-               asignaciones.fecha_fin,
-               equipos.id_equipo,
-               equipos.marca,
-               equipos.placas,
-               CASE WHEN asignaciones.id_proveedor IS NULL
-                    THEN asignaciones.id_operador
-                    ELSE asignaciones.id_proveedor END as beneficiario_id,
-               CASE WHEN asignaciones.id_proveedor IS NULL
-                    THEN 'Propio'
-                    ELSE 'Subcontratado' END as tipo_contrato
-        from asignaciones
-        inner join docum_cotizacion on docum_cotizacion.id = asignaciones.id_contenedor
-        inner join equipos on equipos.id = asignaciones.id_camion
-        inner join gps_company on gps_company.id = equipos.gps_company_id
-        left join equipos as eq_chasis on eq_chasis.id = asignaciones.id_chasis
-
-        ) as asig on asig.id_contenedor = cotizaciones.id
-        inner join (
-        select * from (
-            (select id, nombre, telefono, 'Propio' as tipo_contrato, id_empresa from operadores)
-            union
-            (select id, nombre, telefono, 'Subcontratado' as tipo_contrato, id_empresa from proveedores)
-        ) as beneficiarios
-        ) as beneficiarios
-        on asig.beneficiario_id = beneficiarios.id
-        and asig.tipo_contrato = beneficiarios.tipo_contrato
-    where cotizaciones.id_empresa = ?
-    union
-
-    select equipos.id as id_union,
-           0 as id_asignacion,
-           CONCAT(equipos.id_equipo, ' ', COALESCE(equipos.marca,''), ' ', COALESCE(placas, 'SIN PLACA')) as cliente,
-           'NA' as origen,
-           'NA' as destino,
-           equipos.id_equipo as contenedor,
-           case when equipos.activo = 1 then 'Activo' else 'Inactivo' end as estatus,
-           '' as tipo_contrato,
-           NOW() as fecha_inicio,
-           NOW() as fecha_fin,
-           equipos.id_equipo,
-           equipos.marca,
-           equipos.placas,
-           equipos.id_empresa,
-           'Equipos' as tipoConsulta
-    from equipos
-        where  equipos.id_empresa = ?
-    ) as info
-    ";
-
-        $data = DB::table('coordenadas_historial')
-        ->distinct()
-        ->select([
-            'coordenadas_historial.id_convoy',
-            'coordenadas_historial.ubicacionable_type',
-            'coordenadas_historial.ubicacionable_id',
-            'coordenadas_historial.tipo',
-            'coordenadas_historial.user_id',
-            DB::raw("COALESCE(conboys.id,0) as id"),
-            DB::raw("COALESCE(conboys.nombre,'NA') as nombre_convoy"),
-            DB::raw("COALESCE(conboys.no_conboy,'NA') as no_conboy"),
-            DB::raw("COALESCE(conboys.tipo_disolucion,'NA') as tipo_disolucion"),
-            DB::raw("COALESCE(conboys.geocerca_lat,'NA') as geocerca_lat"),
-            DB::raw("COALESCE(conboys.geocerca_lng,'NA') as geocerca_lng"),
-            DB::raw("COALESCE(conboys.geocerca_radio,'NA') as geocerca_radio"),
-            DB::raw("COALESCE(conboys.fecha_disolucion,'NA') as fecha_disolucion"),
-            'info.id_union',
-            'info.cliente',
-            'info.origen',
-            'info.destino',
-            'info.contenedor',
-            'info.fecha_inicio as fecha_inicio_viaje',
-            'info.fecha_fin as fecha_fin_viaje',
-        ])
-        ->leftJoin('conboys', 'conboys.id', '=', 'coordenadas_historial.id_convoy')
-        ->join(DB::raw($infoSubquery), function ($join) use ($idEmpresa) {
-            $join->on('info.id_union', '=', 'coordenadas_historial.ubicacionable_id');
-        })
-        ->setBindings([$idEmpresa, $idEmpresa])
-        ->whereBetween('coordenadas_historial.registrado_en', [$fechaInicio, $fechaFin])
-        ->get();
-
+        $idEmpresa = Auth::user()->id_empresa;
+        $data = $this->coordenadasService->getConboysFinalizados(
+            (int) $idEmpresa,
+            (string) $request->query('inicio'),
+            (string) $request->query('fin')
+        );
 
         return response()->json([
-                'success' => true,
-                'message' => 'lista devuelta.'  ,
-                'data' =>  $data
-            ]);
+            'success' => true,
+            'message' => 'lista devuelta.',
+            'data' => $data
+        ]);
     }
     public function getConboys()
     {
@@ -245,92 +140,23 @@ private $coordenadasService;
 
     public function obtenerIniciales($nombreUser)
     {
-        $palabras = explode(' ', $nombreUser);
-        $iniciales = '';
-
-        foreach ($palabras as $palabra) {
-            if (strlen($palabra) > 0) {
-                $iniciales .= strtoupper($palabra[0]);
-            }
-        }
-
-        return $iniciales;
+        return CoordenadasService::obtenerIniciales((string) $nombreUser);
     }
 
     public function store(Request $request)
     {
-
-        $inicio = $request->input('fecha_inicio');
-        $fin = $request->input('fecha_fin');
-        $items = $request->input('items_selects');
-        $nombre = $request->input('nombre');
-        $tipo_disolucion = $request->input('tipo_disolucion');
-        $fecha_disolucion = $request->input('fecha_disolucion');
-        $geocerca_lat = $request->input('geocerca_lat');
-        $geocerca_lng = $request->input('geocerca_lng');
-        $geocerca_radio = $request->input('geocerca_radio');
-
-        //iniciales cliente + fecha creación formato ddMMyy + consecutivo personalizado(5)
-
-        $userEmp = User::findOrFail(auth()->id());
-
-        $conce =  $userEmp->consecutivo_conboy += 1;
-        $userEmp->save();
-
-        $iniciales = $this->obtenerIniciales($userEmp->name);
-        $fecha = now()->format('dmy');
-        $consecutivo_formateado = str_pad($conce, 5, '0', STR_PAD_LEFT);
-
-        // Generar no_conboy
-        $no_conboy = $iniciales . $fecha . $consecutivo_formateado;
-
         $request->validate([
             'nombre' => 'required|string|max:255',
             'tipo_disolucion' => 'required|string|max:50',
         ]);
 
-        $conboy = Conboys::create([
-            'nombre' => $nombre,
-            'fecha_inicio' => $inicio,
-            'fecha_fin' => $fin,
-            'user_id' => auth()->id(),
-            'no_conboy' => $no_conboy,
-            'tipo_disolucion'  => $tipo_disolucion,
-            'estatus' => 'Activo',
-            'fecha_disolucion'  => $fecha_disolucion ?? null,
-            'geocerca_lat' => $geocerca_lat ?? null,
-            'geocerca_lng'  => $geocerca_lng ?? null,
-            'geocerca_radio'  => $geocerca_radio ?? null
-        ]);
+        $res = $this->coordenadasService->storeConvoy(
+            $request->all(),
+            (array) $request->input('items_selects', []),
+            Auth::user()
+        );
 
-        $mesageDic = "antes de for";
-        if ($conboy) {
-            $mesageDic = "si gurado conboys";
-            if (is_array($items)) {
-                $mesageDic = "si es array";
-                foreach ($items as $item) {
-                    $esPrimero = !conboysContenedores::where('conboy_id', $conboy->id)->exists();
-                    [$contenedor, $id_contenedor,$imei] = explode('|', $item);
-                    conboysContenedores::create([
-                        'conboy_id' => $conboy->id,
-                        'id_contenedor' => $id_contenedor,
-                        'es_primero' =>  $esPrimero,
-                        'usuario' => auth()->id(),
-                        'imei' => $imei
-                        ]);
-                }
-            } else {
-                $mesageDic = "no es array";
-            }
-        }
-
-
-
-        return response()->json([
-                'success' => true,
-                'message' => 'Conboy creado exitosamente.'  ,
-                'no_conboy' => $no_conboy,
-            ]);
+        return response()->json($res);
     }
 
     public function edit(Conboys $conboy)
@@ -438,130 +264,25 @@ private $coordenadasService;
 
     public function guardarCoordenadasseguimintos(Request $request)
     {
-         $request->validate([
-        'latitud' => 'required|numeric',
-        'longitud' => 'required|numeric',
-        'ubicacionable_id' => 'required|integer',
-        'tipo' => 'required|string',
-    ]);
+        $request->validate([
+            'latitud' => 'required|numeric',
+            'longitud' => 'required|numeric',
+            'ubicacionable_id' => 'required|integer',
+            'tipo' => 'required|string',
+        ]);
 
-    $latitud = (float) $request->latitud;
-    $longitud = (float) $request->longitud;
-
-    $ubicacionableType = $request->tipoRastreo;
-    $ubicacionableId = (int) $request->ubicacionable_id;
-    $tipo = $request->tipo;
-    $idConvoy = $request->idProceso;
-    $valorSolicitado = $request->valorSolicitado;
-    $idCompaniaGps = $request->new_id ?? null;
-
-
-    $metrosMinimosCambio = 15;
-    $minutosMaximosSinGuardar = 30;
-
-    $ultimoRegistro = CoordenadasHistorial::query()
-        ->where('ubicacionable_id', $ubicacionableId)
-        ->where('ubicacionable_type', $ubicacionableType)
-        ->where('tipo', $tipo)
-        ->when($idConvoy, function ($q) use ($idConvoy) {
-            $q->where('id_convoy', $idConvoy);
-        })
-        ->when($valorSolicitado, function ($q) use ($valorSolicitado) {
-            $q->where('valorSolicitado', $valorSolicitado);
-        })
-        ->when($idCompaniaGps, function ($q) use ($idCompaniaGps) {
-            $q->where('id_compania_gps', $idCompaniaGps);
-        })
-        ->latest('registrado_en')
-        ->first();
-
-    if ($ultimoRegistro) {
-        $distanciaMetros = $this->calcularDistanciaMetros(
-            (float) $ultimoRegistro->latitud,
-            (float) $ultimoRegistro->longitud,
-            $latitud,
-            $longitud
+        $res = $this->coordenadasService->guardarCoordenadasSeguimientos(
+            $request->all(),
+            Auth::user()
         );
 
-        $mismoStatus = (string) ($ultimoRegistro->status_api ?? 0) === (string) ($request->status_api ?? 0);
-
-        $mismoError = (string) ($ultimoRegistro->error_message ?? '') === (string) ($request->messageAp ?? '');
-
-        $minutosDesdeUltimo = $ultimoRegistro->registrado_en
-            ? now()->diffInMinutes($ultimoRegistro->registrado_en)
-            : $minutosMaximosSinGuardar + 1;
-
-        $esDuplicado =
-            $distanciaMetros < $metrosMinimosCambio &&
-            $mismoStatus &&
-            $mismoError &&
-            $minutosDesdeUltimo < $minutosMaximosSinGuardar;
-
-        if ($esDuplicado) {
-            return response()->json([
-                'success' => true,
-                'skipped' => true,
-                'message' => 'Coordenada duplicada, no se guardó nuevamente.',
-                'distancia_metros' => round($distanciaMetros, 2),
-                'ultimo_registro_id' => $ultimoRegistro->id,
-                'data' => $ultimoRegistro,
-            ]);
-        }
-    }
-
-    $statusApi = $request->status_api ?? 0;
-
-    $responseEncriptado = ($statusApi != 1 && isset($request->data))
-        ? AuditoriaCifrado::encrypt($request->data)
-        : null;
-
-    $coordenada = CoordenadasHistorial::create([
-        'latitud' => $latitud,
-        'longitud' => $longitud,
-        'registrado_en' => now(),
-        'user_id' => auth()->id(),
-
-        'ubicacionable_id' => $ubicacionableId,
-        'ubicacionable_type' => $ubicacionableType,
-        'tipo' => $tipo,
-        'id_convoy' => $idConvoy,
-
-        'status_api' => $statusApi,
-        'id_compania_gps' => $idCompaniaGps,
-        'tiempo_respuesta_ms' => $request->tiempo_respuesta_ms ?? null,
-        'valorSolicitado' => $valorSolicitado,
-
-        'response_json' => $responseEncriptado,
-        'error_message' => $request->messageAp ?? null,
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'skipped' => false,
-        'message' => 'Coordenada registrada correctamente.',
-        'data' => $coordenada,
-    ]);
-
+        return response()->json($res);
     }
 
     private function calcularDistanciaMetros(float $lat1, float $lon1, float $lat2, float $lon2): float
-{
-    $radioTierra = 6371000; // metros
-
-    $lat1Rad = deg2rad($lat1);
-    $lat2Rad = deg2rad($lat2);
-
-    $deltaLat = deg2rad($lat2 - $lat1);
-    $deltaLon = deg2rad($lon2 - $lon1);
-
-    $a = sin($deltaLat / 2) * sin($deltaLat / 2) +
-        cos($lat1Rad) * cos($lat2Rad) *
-        sin($deltaLon / 2) * sin($deltaLon / 2);
-
-    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-    return $radioTierra * $c;
-}
+    {
+        return CoordenadasService::calcularDistanciaMetros($lat1, $lon1, $lat2, $lon2);
+    }
     public function rastreohistorialUbicaciones(Request $request)
     {
         $idSearch = $request->query('idSearch');

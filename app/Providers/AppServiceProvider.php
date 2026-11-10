@@ -33,12 +33,17 @@ class AppServiceProvider extends ServiceProvider
         view()->composer('*', function ($view) {
 
 
-            $user = auth()->user();
+            $configuracion = null;
+            try {
+                $user = auth()->user();
 
-            if (!$user || !$user->Empresa) {
-                $configuracion = Configuracion::first();
-            } else {
-                $configuracion = $user->Empresa->Configuracion ?? Configuracion::first();
+                if (!$user || !$user->Empresa) {
+                    $configuracion = Configuracion::first();
+                } else {
+                    $configuracion = $user->Empresa->Configuracion ?? Configuracion::first();
+                }
+            } catch (\Throwable $t) {
+                $configuracion = null;
             }
 
             $view->with(['configuracion' => $configuracion]);
