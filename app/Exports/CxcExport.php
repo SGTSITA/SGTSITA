@@ -25,9 +25,8 @@ class CxcExport implements FromView, ShouldAutoSize, WithStyles, WithEvents
     public $vBancosNoOficiales;
     public $vCotizacion;
     public $vUser;
-    public $vSepararUnidades;
 
-    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales, $cotizacion, $user, $separarUnidades = false)
+    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales, $cotizacion, $user)
     {
         $this->vCotizaciones = $cotizaciones;
         $this->vFechaCarbon = $fechaCarbon;
@@ -35,7 +34,6 @@ class CxcExport implements FromView, ShouldAutoSize, WithStyles, WithEvents
         $this->vBancosNoOficiales = $bancosNoOficiales;
         $this->vCotizacion = $cotizacion;
         $this->vUser = $user;
-        $this->vSepararUnidades = (bool)$separarUnidades;
     }
 
     public function view(): View
@@ -46,12 +44,10 @@ class CxcExport implements FromView, ShouldAutoSize, WithStyles, WithEvents
         $bancos_no_oficiales = $this->vBancosNoOficiales;
         $cotizacion = $this->vCotizacion;
         $user = $this->vUser;
-        $separarUnidades = $this->vSepararUnidades;
         $isExcel = true;
 
-        return view('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user', 'isExcel', 'separarUnidades'));
+        return view('reporteria.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'cotizacion', 'user', 'isExcel'));
     }
-
 
     public function styles(Worksheet $sheet)
     {

@@ -1,5 +1,4 @@
 let documentosPendientes = false;
-let fileUploaderInitPromise = null;
 var _token = document
     .querySelector('meta[name="csrf-token"]')
     .getAttribute("content");
@@ -134,7 +133,6 @@ function initSingleFileUploader(config, preloadFile = null) {
     }
 
     input.fileuploader({
-        enableApi: true,
         limit: 1,
 
         addMore: false,
@@ -177,58 +175,28 @@ function initSingleFileUploader(config, preloadFile = null) {
 |--------------------------------------------------------------------------
 */
 
-function initFileUploader() {
-    if (fileUploaderInitPromise) return fileUploaderInitPromise;
+async function initFileUploader() {
+    const numContenedor = localStorage.getItem("numContenedor");
 
-    fileUploaderInitPromise = (async () => {
-        const numContenedor = localStorage.getItem("numContenedor");
-        const archivos = numContenedor ? await consultarArchivos(numContenedor) : [];
+    let archivos = [];
 
-        Object.keys(documentosConfig).forEach((key) => {
-            const config = documentosConfig[key];
-            const archivoExistente = archivos.find(
-                (file) => file.fileCode === config.fileCode,
-            );
-            initSingleFileUploader(
-                config,
-                archivoExistente ? generarPreloadArchivo(archivoExistente) : null,
-            );
-        });
-    })().finally(() => {
-        fileUploaderInitPromise = null;
-    });
-
-    return fileUploaderInitPromise;
-}
-
-async function reinicializarFileUploader() {
-    // Esperar cualquier consulta inicial para no dejar varias inicializaciones
-    // compitiendo por el mismo input.
-    if (fileUploaderInitPromise) {
-        await fileUploaderInitPromise;
+    // consultar existentes
+    if (numContenedor) {
+        archivos = await consultarArchivos(numContenedor);
     }
 
-    const numContenedor = localStorage.getItem("numContenedor");
-    const archivos = numContenedor ? await consultarArchivos(numContenedor) : [];
+    Object.keys(documentosConfig).forEach((key) => {
+        const config = documentosConfig[key];
 
-    Object.values(documentosConfig).forEach((config) => {
-        const input = $(config.input);
-        if (!input.length) return;
-
+        // buscar archivo existente
         const archivoExistente = archivos.find(
-            (file) => file.fileCode === config.fileCode,
+            (f) => f.fileCode === config.fileCode,
         );
-        const preload = archivoExistente
-            ? generarPreloadArchivo(archivoExistente)
-            : null;
-        const instance = $.fileuploader.getInstance(input[0]);
 
-        if (instance) {
-            // Mantener el wrapper ya renderizado; solo limpiar la selección
-            // enviada y reemplazar la lista con los archivos persistidos.
-            instance.reset();
-            if (preload) instance.append([preload]);
-            return;
+        let preload = null;
+
+        if (archivoExistente) {
+            preload = generarPreloadArchivo(archivoExistente);
         }
 
         initSingleFileUploader(config, preload);
@@ -242,17 +210,10 @@ async function reinicializarFileUploader() {
 */
 
 function validarDocumentos() {
-    // En una solicitud nueva todavía no se pueden adjuntar documentos. Los
-    // folios solo se validan al editar un viaje y cuando se adjunta su archivo.
-    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") {
-        return true;
-    }
-
     for (const key in documentosConfig) {
         const config = documentosConfig[key];
-        const archivo = document.querySelector(config.input)?.files?.length > 0;
 
-        if (config.requiereFolio && archivo) {
+        if (config.requiereFolio) {
             const folio = getFolioDocumento(key);
 
             if (!folio) {
@@ -301,11 +262,9 @@ function marcarDocumentosPendientes() {
 }
 
 $("#numBoleta, #numDoda").on("input", function () {
-    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") return;
     marcarDocumentosPendientes();
 });
 $("#BoletaLib, #Doda, #CCP").on("change", function () {
-    if (frm?.getAttribute("sgt-cotizacion-action") !== "editar") return;
     marcarDocumentosPendientes();
 });
 

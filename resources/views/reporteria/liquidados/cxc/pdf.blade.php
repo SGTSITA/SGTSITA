@@ -76,7 +76,7 @@
 
         @php
             $empresaActual = $user?->Empresa ?? null;
-            $esEmpresaGlobal = !empty($separarUnidades);
+            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
         @endphp
 
         @foreach($cotizacionesGrouped as $numEdoCuenta => $items)

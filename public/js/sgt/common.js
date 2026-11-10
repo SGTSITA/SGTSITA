@@ -90,7 +90,7 @@ function formatoConsecutivo(folio, lenFormat = 5) {
 
 function changeTag(tagId, value) {
     var tag = document.querySelector("#" + tagId);
-    if (tag) tag.textContent = value;
+    tag.textContent = value;
 }
 
 function obtenerFechaEnLetra(fecha) {

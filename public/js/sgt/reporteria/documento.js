@@ -220,8 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData();
             formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
             formData.append('fileType', fileType);
-            const checkSeparar = document.getElementById('checkSepararUnidadesDocs');
-            formData.append('separar_unidades', checkSeparar && checkSeparar.checked ? '1' : '0');
             selectedIds.forEach((id) => formData.append('selected_ids[]', id));
 
             try {

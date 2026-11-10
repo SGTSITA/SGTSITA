@@ -205,11 +205,11 @@
 @endsection
 
 @push('javascript')
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
+        onload="googleMapsReady()"></script>
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones.js')) }}">
     </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.googleMapsApi.apikey') }}" async defer
-        onload="if (window.googleMapsReady) window.googleMapsReady()"></script>
     <script src="{{ asset('js/sgt/common.js') }}?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
     <link href="/assets/metronic/fileuploader/font/font-fileuploader.css" rel="stylesheet">
     <link href="/assets/metronic/fileuploader/jquery.fileuploader.min.css" media="all" rel="stylesheet">

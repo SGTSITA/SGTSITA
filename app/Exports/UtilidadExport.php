@@ -22,9 +22,8 @@ class UtilidadExport implements FromView, ShouldAutoSize
     protected $vFechaFin;
     protected $vTotalRows;
     protected $vSelectedRows;
-    protected $vSepararUnidades;
 
-    public function __construct($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos, $gastosGenerales, $utilidad, $fechaInicio, $fechaFin, $totalRows, $selectedRows, $separarUnidades = false)
+    public function __construct($cotizaciones, $fechaCarbon, $cotizacion, $user, $gastos, $gastosGenerales, $utilidad, $fechaInicio, $fechaFin, $totalRows, $selectedRows)
     {
         $this->vCotizaciones     = $cotizaciones;
         $this->vFechaCarbon      = $fechaCarbon;
@@ -37,7 +36,6 @@ class UtilidadExport implements FromView, ShouldAutoSize
         $this->vFechaFin         = $fechaFin;
         $this->vTotalRows        = $totalRows;
         $this->vSelectedRows     = $selectedRows;
-        $this->vSepararUnidades  = (bool)$separarUnidades;
     }
 
     public function view() : View
@@ -54,8 +52,6 @@ class UtilidadExport implements FromView, ShouldAutoSize
             'fechaFin'        => $this->vFechaFin,
             'totalRows'       => $this->vTotalRows,
             'selectedRows'    => $this->vSelectedRows,
-            'separarUnidades' => $this->vSepararUnidades,
         ]);
     }
 }
-

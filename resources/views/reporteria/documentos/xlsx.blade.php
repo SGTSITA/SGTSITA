@@ -72,7 +72,7 @@
     <body>
         @php
             $empresaActual = $user?->Empresa ?? null;
-            $esEmpresaGlobal = !empty($separarUnidades);
+            $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
         @endphp
 
         <h4>Empresa: {{ optional($user?->Empresa)->nombre ?? 'SGT' }}</h4>

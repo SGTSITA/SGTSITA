@@ -39,7 +39,7 @@ class Empresas extends Model
 
     public function esGlobalMultiEquipo(): bool
     {
-        return (bool) $this->requiere_unidad_gasto;
+        return (bool) ($this->requiere_unidad_gasto || $this->id == 28);
     }
 
     public function estadosCuenta()

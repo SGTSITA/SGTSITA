@@ -12,13 +12,11 @@ class GastosPorPagarExport implements FromView
 {
     protected $ids;
     protected $status;
-    protected $separarUnidades;
 
-    public function __construct(array $ids = [], $status = 'por_pagar', $separarUnidades = false)
+    public function __construct(array $ids = [], $status = 'por_pagar')
     {
         $this->ids = $ids;
         $this->status = $status;
-        $this->separarUnidades = (bool)$separarUnidades;
     }
 
     public function getGastosData()
@@ -146,10 +144,7 @@ class GastosPorPagarExport implements FromView
 
     public function view(): View
     {
-        $data = $this->getGastosData();
-        $data['separarUnidades'] = $this->separarUnidades;
-        return view('reporteria.gxp.excel', $data);
+        return view('reporteria.gxp.excel', $this->getGastosData());
     }
 }
-
 

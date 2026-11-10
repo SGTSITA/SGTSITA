@@ -1,8 +1,3 @@
-@php
-    $user = $user ?? auth()->user();
-    $cotizacion = $cotizacion ?? null;
-    $cotizaciones = $cotizaciones ?? collect();
-@endphp
 <!DOCTYPE html>
 <html>
 @if (!isset($isExcel))
@@ -219,7 +214,7 @@
 
     @php
         $empresaActualModel = $user?->Empresa ?? ($cotizacion?->Empresa ?? null);
-        $esEmpresaGlobal = !empty($separarUnidades);
+        $esEmpresaGlobal = $empresaActualModel ? $empresaActualModel->esGlobalMultiEquipo() : false;
     @endphp
 
     @if (!$esEmpresaGlobal)

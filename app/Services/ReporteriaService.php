@@ -239,58 +239,15 @@ class ReporteriaService
 
         return $Info;
     }
-    public function getGastosGeneralesPeriodo(string $startDate, string $endDate, int $idEmpresa, ?int $idEquipo = null)
+    public function getGastosGeneralesPeriodo(string $startDate, string $endDate, int $idEmpresa)
     {
-        $query = Gasto::with(['categoria', 'pagos', 'equipo', 'vinculos.vinculable'])
+        return Gasto::with(['categoria', 'pagos'])
             ->join('gasto_imputaciones as gi', 'gastos.id', '=', 'gi.gasto_id')
             ->where('gastos.id_empresa', $idEmpresa)
-            ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa', 'unidad'])
+            ->whereIn('gi.tipo_imputacion', ['periodo', 'empresa'])
             ->whereBetween('gi.fecha_imputacion', [$startDate, $endDate])
-            ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada');
-
-        if (!empty($idEquipo)) {
-            $query->where(function ($q) use ($idEquipo) {
-                $q->where('gastos.id_equipo', $idEquipo)
-                  ->orWhereHas('vinculos', function ($sub) use ($idEquipo) {
-                      $sub->where('tipo_vinculo', 'unidad')
-                          ->where('vinculable_id', $idEquipo);
-                  })
-                  ->orWhere(function ($sub) use ($idEquipo) {
-                      $sub->where('gi.imputable_type', \App\Models\Equipo::class)
-                          ->where('gi.imputable_id', $idEquipo);
-                  });
-            });
-        }
-
-        $gastos = $query->get();
-
-        foreach ($gastos as $gasto) {
-            $eq = $gasto->equipo;
-            if (!$eq && $gasto->id_equipo) {
-                $eq = \App\Models\Equipo::find($gasto->id_equipo);
-            }
-            if (!$eq && $gasto->relationLoaded('vinculos')) {
-                $vUnidad = $gasto->vinculos->firstWhere('tipo_vinculo', 'unidad');
-                if ($vUnidad && $vUnidad->vinculable instanceof \App\Models\Equipo) {
-                    $eq = $vUnidad->vinculable;
-                } elseif ($vUnidad && !empty($vUnidad->vinculable_id)) {
-                    $eq = \App\Models\Equipo::find($vUnidad->vinculable_id);
-                }
-            }
-
-            if ($eq) {
-                $codigo = $eq->id_equipo ?: ($eq->placas ?: 'UNIDAD #' . $eq->id);
-                $marca = $eq->marca ?: 'TRACTO';
-                $placas = $eq->placas ?: 'S/P';
-                $gasto->unidad_texto = trim("{$codigo} - {$marca} [{$placas}]");
-                $gasto->equipo_id_resuelto = $eq->id;
-            } else {
-                $gasto->unidad_texto = 'SIN UNIDAD ASIGNADA';
-                $gasto->equipo_id_resuelto = null;
-            }
-        }
-
-        return $gastos;
+            ->select('gastos.*', 'gi.monto_imputado as monto_aplicado', 'gi.fecha_imputacion as fecha_aplicada')
+            ->get();
     }
 
     /**
@@ -482,7 +439,7 @@ class ReporteriaService
     /**
      * Exportar Liquidados CXC a Excel o PDF
      */
-    public function exportLiquidadosCxc(array $cotizacionIds, string $fileType, bool $separarUnidades = false)
+    public function exportLiquidadosCxc(array $cotizacionIds, string $fileType)
     {
         $fechaCarbon = Carbon::now();
 
@@ -502,10 +459,10 @@ class ReporteriaService
         $fileName = "cxc_{$idCliente}_{$timestamp}.{$fileType}";
 
         if ($fileType == "xlsx") {
-            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion_first, $separarUnidades), $fileName, 'public');
+            Excel::store(new \App\Exports\LiquidadosCxcExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion_first), $fileName, 'public');
             return Response::download(storage_path('app/public/' . $fileName), $fileName)->deleteFileAfterSend(true);
         } else {
-            $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first', 'separarUnidades'))
+            $pdf = PDF::loadView('reporteria.liquidados.cxc.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion_first'))
                 ->setPaper([0, 0, 595, 1200], 'landscape');
 
             $pdf->save(storage_path('app/public/' . $fileName));
@@ -514,7 +471,6 @@ class ReporteriaService
             return Response::download($filePath, $fileName)->deleteFileAfterSend(true);
         }
     }
-
 
     /**
      * Exportar Liquidados CXP a Excel o PDF

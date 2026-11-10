@@ -2,9 +2,6 @@
 <html lang="es">
 
 <head>
-    @php
-        $cotizaciones = $cotizaciones ?? $cotizacion ?? null;
-    @endphp
     <meta charset="utf-8" />
     <title>Orden de Entrega / Datos Carta Porte {{ $numContenedor }}</title>
 
@@ -129,15 +126,15 @@
             <table class="dl-table">
                 <tr>
                     <td>Importador</td>
-                    <td>{{ $subCliente?->nombre ?? 'N/A' }}</td>
+                    <td>{{ $subCliente->nombre }}</td>
                 </tr>
                 <tr>
                     <td>RFC</td>
-                    <td>{{ $subCliente?->rfc ?? 'N/A' }}</td>
+                    <td>{{ $subCliente->rfc }}</td>
                 </tr>
                 <tr>
                     <td>Domicilio de Carta Porte</td>
-                    <td>{{ $subCliente?->direccion ?? 'N/A' }}</td>
+                    <td>{{ $subCliente->direccion }}</td>
                 </tr>
             </table>
         </div>

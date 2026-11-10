@@ -72,36 +72,37 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     const recalcularTotales = () => {
-        const valor = (id) => parseFloat(document.getElementById(id)?.value) || 0;
-        const diasE = valor("dias_estadia");
-        const tarifaE = valor("tarifa_estadia");
-        const diasP = valor("dias_pernocta");
-        const tarifaP = valor("tarifa_pernocta");
-        const costoManiobra = valor("Costomaniobra");
+        const diasE =
+            parseFloat(document.getElementById("dias_estadia").value) || 0;
+        const tarifaE =
+            parseFloat(document.getElementById("tarifa_estadia").value) || 0;
+        const diasP =
+            parseFloat(document.getElementById("dias_pernocta").value) || 0;
+        const tarifaP =
+            parseFloat(document.getElementById("tarifa_pernocta").value) || 0;
+        const costoManiobra =
+            parseFloat(document.getElementById("Costomaniobra").value) || 0;
 
         const totalE = diasE * tarifaE;
         const totalP = diasP * tarifaP;
         const totalG = totalE + totalP;
         const totalConManiobra = totalG + costoManiobra;
 
-        const totalEstadia = document.getElementById("total_estadia");
-        const totalPernocta = document.getElementById("total_pernocta");
-        const totalGeneral = document.getElementById("total_general");
-        if (totalEstadia) totalEstadia.value = totalE.toLocaleString(
+        document.getElementById("total_estadia").value = totalE.toLocaleString(
             "en-US",
             {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             },
         );
-        if (totalPernocta) totalPernocta.value = totalP.toLocaleString(
+        document.getElementById("total_pernocta").value = totalP.toLocaleString(
             "en-US",
             {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
             },
         );
-        if (totalGeneral) totalGeneral.value =
+        document.getElementById("total_general").value =
             totalConManiobra.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,

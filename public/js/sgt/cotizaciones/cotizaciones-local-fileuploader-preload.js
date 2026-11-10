@@ -27,7 +27,7 @@ const documentosConfig = {
         titulo: "boleta Patio",
         folioInput: null,
         requiereFolio: false,
-        fileCode: "Boleta-de-patio",
+        fileCode: "FBoletaPatio",
     },
 };
 
@@ -99,18 +99,16 @@ async function consultarArchivos(numContenedor) {
 */
 
 function generarPreloadArchivo(file) {
-    const fileUrl = file.url || `/cotizaciones/cotizacion${file.folder}/${file.filePath}`;
-
     return {
         name: file.fileName,
         size: file.fileSizeBytes || 0,
         type: file.mimeType || "application/octet-stream",
 
-        file: fileUrl,
+        file: `cotizaciones/cotizacion${file.folder}/${file.filePath}`,
 
         data: {
             readerForce: true,
-            thumbnail: fileUrl,
+            thumbnail: `cotizaciones/cotizacion${file.folder}/${file.filePath}`,
         },
     };
 }
@@ -135,7 +133,6 @@ function initSingleFileUploader(config, preloadFile = null) {
     }
 
     input.fileuploader({
-        enableApi: true,
         limit: 1,
 
         addMore: false,
@@ -203,28 +200,6 @@ async function initFileUploader() {
 
         if (archivoExistente) {
             preload = generarPreloadArchivo(archivoExistente);
-        }
-
-        initSingleFileUploader(config, preload);
-    });
-}
-
-async function reinicializarFileUploader() {
-    const numContenedor = localStorage.getItem("numContenedor");
-    const archivos = numContenedor ? await consultarArchivos(numContenedor) : [];
-
-    Object.values(documentosConfig).forEach((config) => {
-        const input = $(config.input);
-        if (!input.length) return;
-
-        const existente = archivos.find((file) => file.fileCode === config.fileCode);
-        const preload = existente ? generarPreloadArchivo(existente) : null;
-        const instance = $.fileuploader.getInstance(input[0]);
-
-        if (instance) {
-            instance.reset();
-            if (preload) instance.append([preload]);
-            return;
         }
 
         initSingleFileUploader(config, preload);
