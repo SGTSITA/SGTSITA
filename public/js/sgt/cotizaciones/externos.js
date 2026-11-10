@@ -141,6 +141,18 @@ function obtenerPalabras(texto) {
     return normalizarTexto(texto).split(/\s+/).filter(Boolean);
 }
 function validarDestinoDireccion() {
+    // En viajes locales o movimientos en puerto/patio no se compara destino vs ubicación en mapa
+    const esViajeLocal =
+        document.getElementById("id_proveedorlocal") !== null ||
+        document.getElementById("id_transportistalocal") !== null ||
+        document.getElementById("es_viaje_local") !== null ||
+        window.location.pathname.includes("local");
+
+    if (esViajeLocal) {
+        if (btnGuardar) btnGuardar.disabled = false;
+        return true;
+    }
+
     const stopWords = [
         "de",
         "la",
