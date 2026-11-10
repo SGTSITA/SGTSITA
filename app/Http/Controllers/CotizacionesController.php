@@ -1417,131 +1417,114 @@ $this->CotizacionesService->procesarDocumento(
             }
 
 
+            $cambioEmpresa = false;
             if ($request->has('id_proveedor')) {
                 $idProveedorReq = (int) $request->id_proveedor;
                 if ($idProveedorReq !== (int) $cotizaciones->id_empresa) { //checar si se cambio de empresa
                     $cotizaciones->id_empresa = $idProveedorReq;
                     $doc_cotizaciones->id_empresa = $idProveedorReq;
                     $doc_cotizaciones->update();
+                    $cambioEmpresa = true;
+
+                    if ($cotizaciones->id_cliente && $idProveedorReq > 0) {
+                        $clientEmpresa = ClientEmpresa::where('id_client', $cotizaciones->id_cliente)
+                            ->where('id_empresa', $idProveedorReq);
+                        if (!$clientEmpresa->exists()) {
+                            ClientEmpresa::create([
+                                'id_client' => $cotizaciones->id_cliente,
+                                'id_empresa' => $idProveedorReq,
+                            ]);
+                        }
+                    }
                 }
             }
 
-
+            $cambioTransportista = false;
             if ($request->has('id_transportista')) {
                 $idTransportistai = (int) $request->id_transportista;
-
                 if ($idTransportistai !== (int) $cotizaciones->id_proveedor) { //checar si se cambio de proveedor
-                    //validamos planeacion
-                    $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
-                    $statusPlaneacion = $cotizaciones->estatus_planeacion ?? 0;
-                    if ($cotizaciones->estatus !== 'Finalizado' && $statusPlaneacion === 1) { //quitaremos la planeacion
+                    $cotizaciones->id_proveedor = $idTransportistai;
+                    $cambioTransportista = true;
+                }
+            }
 
-                        try {
+            if ($cambioEmpresa || $cambioTransportista) {
+                // Validamos y deshacemos planeación homologado con PlaneacionController::anularPlaneacion
+                $asignaciones = Asignaciones::where('id_contenedor', $doc_cotizaciones->id)->first();
+                if (!$asignaciones && !is_null($cotizaciones->referencia_full)) {
+                    $idsCotFull = Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)->pluck('id');
+                    $idsDocFull = DocumCotizacion::whereIn('id_cotizacion', $idsCotFull)->pluck('id');
+                    $asignaciones = Asignaciones::whereIn('id_contenedor', $idsDocFull)->first();
+                }
 
-                            DB::beginTransaction();
-                            $cotizaciones2 = Cotizaciones::find($id);
+                $statusPlaneacion = (int) ($cotizaciones->estatus_planeacion ?? 0);
+                if ($cotizaciones->estatus !== 'Finalizado' && ($statusPlaneacion === 1 || $asignaciones)) {
+                    if ($asignaciones) {
+                        if (!is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje)) {
+                            $movimientoBanco = $this->BancosService->findMovimiento(
+                                $asignaciones->id,
+                                \App\Models\Asignaciones::class,
+                                $asignaciones->id_banco1_dinero_viaje
+                            );
 
-                            if ($asignaciones && !is_null($asignaciones->id_operador)) {
-                                $afectaBanco = false;
-                                if ($asignaciones->id_banco1_dinero_viaje) {
-                                    Bancos::where('id', '=', $asignaciones->id_banco1_dinero_viaje)->update(["saldo" => DB::raw("saldo + ". $asignaciones->dinero_viaje)]);
-                                    $afectaBanco = true;
+                            if ($movimientoBanco) {
+                                $cancelarMovimientoBanco = $this->BancosService->cancelarMovimiento(
+                                    $asignaciones->id_banco1_dinero_viaje,
+                                    $movimientoBanco->id,
+                                    $movimientoBanco->fecha_movimiento
+                                );
+
+                                if (!$cancelarMovimientoBanco) {
+                                    throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje ');
                                 }
-
-                                /*
-                                $gasto = GastosOperadores::where('id_cotizacion', $id)->get();  //verificar si tuvo un gasto
-                                */
-                                $gasto = \App\Models\GastoImputacion::join('gastos', 'gastos.id', '=', 'gasto_imputaciones.gasto_id')
-                                    ->join('gasto_vinculos', 'gasto_vinculos.gasto_id', '=', 'gastos.id')
-                                    ->leftJoin('gasto_pagos', 'gasto_pagos.gasto_id', '=', 'gastos.id')
-                                    ->whereNull('gastos.deleted_at')
-                                    ->where('gastos.estatus', '!=', 'cancelado')
-                                    ->where('gasto_vinculos.tipo_vinculo', '=', 'cotizacion')
-                                    ->where('gasto_vinculos.vinculable_type', '=', \App\Models\Cotizaciones::class)
-                                    ->where('gasto_vinculos.vinculable_id', '=', $id)
-                                    ->where('gasto_imputaciones.tipo_imputacion', '=', 'operador')
-                                    ->select(
-                                        'gasto_imputaciones.*',
-                                        'gasto_imputaciones.monto_imputado as cantidad',
-                                        'gastos.concepto as tipo',
-                                        'gasto_pagos.cuenta_bancaria_id as id_banco'
-                                    )
-                                    ->get();
-                                foreach ($gasto as $g) {
-                                    if (!is_null($g->id_banco) && $g->cantidad > 0) {//cantidad valida y ya tiene pago
-
-                                        $bancoA = new BancoDineroOpe();
-                                        $bancoA->id_operador = $asignaciones->id_operador;
-
-                                        $bancoA->monto1 = $g->cantidad;
-                                        $bancoA->metodo_pago1 = 'Devolución';
-                                        $bancoA->descripcion_gasto = $g->tipo . " (Devolución)";
-                                        $bancoA->id_banco1 = $g->id_banco;
-
-                                        $contenedoresAbonos1[] = [
-                                            'num_contenedor' => $request->numContenedor,
-                                            'abono' => $g->cantidad
-                                        ];
-                                        $contenedoresAbonosJson1 = json_encode($contenedoresAbonos1);
-
-                                        $bancoA->contenedores = $contenedoresAbonosJson1;
-                                        $bancoA->tipo = 'Entrada';
-                                        $bancoA->fecha_pago = date('Y-m-d');
-                                        $bancoA->save();
-
-                                    }
-
-                                    $g->delete();
-                                }
-
-                                if ($afectaBanco) {
-                                    $banco = new BancoDineroOpe();
-                                    $banco->id_operador = $asignaciones->id_operador;
-
-                                    $banco->monto1 = $asignaciones->dinero_viaje;
-                                    $banco->metodo_pago1 = 'Devolución';
-                                    $banco->descripcion_gasto = "Dinero para Viaje (Devolución)";
-                                    $banco->id_banco1 = $asignaciones->id_banco1_dinero_viaje;
-
-                                    $contenedoresAbonos[] = [
-                                        'num_contenedor' => $request->numContenedor,
-                                        'abono' => $asignaciones->dinero_viaje
-                                    ];
-                                    $contenedoresAbonosJson = json_encode($contenedoresAbonos);
-
-                                    $banco->contenedores = $contenedoresAbonosJson;
-
-                                    $banco->tipo = 'Entrada';
-                                    $banco->fecha_pago = date('Y-m-d');
-                                    $banco->save();
-                                }
-
                             }
-
-                            if (!is_null($cotizaciones->referencia_full)) {
-                                $contenedor2 = Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)->update(["estatus_planeacion" => 0]);
-                            }
-
-                            $cotizaciones2->estatus = 'Aprobada';
-                            $cotizaciones2->estatus_planeacion = 0;
-                            $cotizaciones2->update();
-
-                            Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
-
-                            $asignaciones->delete();
-
-                            DB::commit();
-
-                            // return response()->json(["Titulo" => "Programa cancelado","Mensaje" => "Se canceló el programa del viaje correctamente", "TMensaje" => "success"]);
-                        } catch (\Throwable $t) {
-                            DB::rollback();
-                            return response()->json(["Titulo" => "Error","Mensaje" => "Error 500: ".$t->getMessage(), "TMensaje" => "error"]);
-
                         }
 
-                    }
-                    $cotizaciones->id_proveedor = $idTransportistai;
+                        // Validar si hay gastos operador unificados y eliminarlos, cancelando movimientos bancarios si aplica
+                        $gastosUnified = \App\Models\Gasto::where('origen_legacy', 'like', 'asignacion_planeacion%')
+                            ->where('origen_legacy_id', $asignaciones->id)
+                            ->get();
 
+                        foreach ($gastosUnified as $g) {
+                            foreach ($g->pagos as $pago) {
+                                if ($pago->estatus !== 'cancelado') {
+                                    $movimientoBancoGasto = $this->BancosService->findMovimiento(
+                                        $g->id,
+                                        \App\Models\Gasto::class,
+                                        $pago->cuenta_bancaria_id
+                                    );
+                                    if ($movimientoBancoGasto) {
+                                        $this->BancosService->cancelarMovimiento(
+                                            $pago->cuenta_bancaria_id,
+                                            $movimientoBancoGasto->id,
+                                            $movimientoBancoGasto->fecha_movimiento
+                                        );
+                                    }
+                                    $pago->update(['estatus' => 'cancelado']);
+                                }
+                            }
+                            $g->vinculos()->delete();
+                            $g->imputaciones()->delete();
+                            $g->delete();
+                        }
+
+                        \App\Models\GastosOperadores::withoutGlobalScope('no_eliminados')
+                            ->where('id_asignacion', $asignaciones->id)
+                            ->delete();
+                        Coordenadas::where('id_asignacion', $asignaciones->id)->delete();
+                        $asignaciones->delete();
+                    }
+
+                    \App\Models\DineroContenedor::where('id_contenedor', $doc_cotizaciones->id)->delete();
+                    \App\Models\ViaticosOperador::where('id_cotizacion', $cotizaciones->id)->delete();
+
+                    if (!is_null($cotizaciones->referencia_full)) {
+                        Cotizaciones::where('referencia_full', $cotizaciones->referencia_full)
+                            ->update(['estatus_planeacion' => 0]);
+                    }
+
+                    $cotizaciones->estatus = 'Aprobada';
+                    $cotizaciones->estatus_planeacion = 0;
                 }
             }
             $cotizaciones->direccion_entrega = $request->direccion_entrega;
