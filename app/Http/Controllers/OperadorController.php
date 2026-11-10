@@ -81,10 +81,12 @@ class OperadorController extends Controller
                 'data' => $operador,
             ], 200);
         } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error al guardar operador: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el operador.',
-                'errors' => config('app.debug') ? $e->getMessage() : null,
+                'message' => 'Error al guardar el operador: ' . $e->getMessage(),
+                'errors' => $e->getMessage(),
             ], 500);
         }
     }

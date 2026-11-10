@@ -105,18 +105,28 @@ class OperadorService
         $operador->nss = $data['nss'] ?? null;
         $operador->recomendacion = $data['recomendacion'] ?? null;
 
-        $path = public_path('operador');
-        if (!file_exists($path)) {
-            mkdir($path, 0777, true);
+        $documentosKeys = ['comprobante_domicilio', 'ine', 'cedula_fiscal', 'licencia_conducir', 'foto'];
+        $hasFiles = false;
+        foreach ($documentosKeys as $key) {
+            if (isset($files[$key]) && $files[$key] instanceof \Illuminate\Http\UploadedFile) {
+                $hasFiles = true;
+                break;
+            }
         }
 
-        $documentosKeys = ['comprobante_domicilio', 'ine', 'cedula_fiscal', 'licencia_conducir', 'foto'];
-        foreach ($documentosKeys as $key) {
-            if (isset($files[$key]) && $files[$key] instanceof UploadedFile) {
-                $file = $files[$key];
-                $fileName = uniqid() . '_' . $file->getClientOriginalName();
-                $file->move($path, $fileName);
-                $operador->{$key} = $fileName;
+        if ($hasFiles) {
+            $path = public_path('operador');
+            if (!file_exists($path)) {
+                @mkdir($path, 0777, true);
+            }
+
+            foreach ($documentosKeys as $key) {
+                if (isset($files[$key]) && $files[$key] instanceof \Illuminate\Http\UploadedFile) {
+                    $file = $files[$key];
+                    $fileName = uniqid() . '_' . $file->getClientOriginalName();
+                    $file->move($path, $fileName);
+                    $operador->{$key} = $fileName;
+                }
             }
         }
 

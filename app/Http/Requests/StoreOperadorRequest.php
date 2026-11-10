@@ -72,8 +72,11 @@ class StoreOperadorRequest extends FormRequest
                     ->where('id_empresa', $idEmpresa)
                     ->first();
 
+                $v->errors()->forget('curp');
                 if ($existente) {
-                    $v->errors()->add('curp_duplicada', "El CURP <strong>{$existente->curp}</strong> ya está registrado para el operador <strong>{$existente->nombre}</strong>.");
+                    $v->errors()->add('curp', "El CURP <strong>{$existente->curp}</strong> ya está registrado para el operador <strong>{$existente->nombre}</strong>.");
+                } else {
+                    $v->errors()->add('curp', "El CURP ya está registrado para otro operador.");
                 }
             }
         });
