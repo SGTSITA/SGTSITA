@@ -86,9 +86,6 @@
                                     style="color: #25d366 !important; border-left-color: #25d366 !important;">
                                     <i class="fab fa-whatsapp"></i> Compartir con el Operador
                                 </h6>
-                                <p class="text-sm">
-                                    <b id="passwordTemporalSpan"></b>
-                                </p>
                                 <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp"
                                     style="background-color: #25d366; border-color: #25d366;">
                                     <i class="fab fa-whatsapp"></i> Reenviar a WhatsApp

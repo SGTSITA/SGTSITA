@@ -225,7 +225,7 @@ class PlaneacionController extends Controller
             "subcliente" => $cotizacion?->Subcliente,
             "documentos" => $documentos->first(),
             "documents" => $misDocumentos->first(),
-            "password_temporal" => $documentos->first()?->password_temporal ?? $asignaciones?->password_temporal,
+            "password_temporal" => null,
             "data" => $documentos->first(),
             "wa_text" => $waText,
             "asignacion_id" => $asignaciones?->id
