@@ -72,6 +72,10 @@ class MigrarViajes extends Command
                 continue;
             }
 
+            if ($principal->viajes()->exists()) {
+                continue;
+            }
+
             DB::transaction(function () use ($items, $principal, $mapaCostos) {
 
                 $viaje = Viajes::create([
@@ -124,6 +128,10 @@ class MigrarViajes extends Command
                 DB::transaction(function () use ($sencillos, $mapaCostos) {
 
                     foreach ($sencillos as $cotizacion) {
+
+                        if ($cotizacion->viajes()->exists()) {
+                            continue;
+                        }
 
                         $viaje = Viajes::create([
                             'tipo' => 'sencillo',

@@ -600,36 +600,68 @@ class CotizacionesService
     }
 
     /**
-     * Resuelve o asocia el viaje (sencillo o full) a partir de una cotización.
+     * Resuelve o asocia el viaje (sencillo o full) a partir de una cotización,
+     * garantizando que una cotización nunca tenga más de un id_viaje asignado.
      */
     public function resolverViajeDesdeRequest(string $tipoCotizacion, int $idCotizacion): Viajes
     {
-        if ($tipoCotizacion === "Full") {
+        if (strcasecmp($tipoCotizacion, 'Full') === 0) {
             $referencia = Cotizaciones::find($idCotizacion)?->referencia_full;
-            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)->get();
+            $cotizaciones = Cotizaciones::where('referencia_full', $referencia)
+                ->orderByRaw("CASE WHEN jerarquia = 'Principal' THEN 0 ELSE 1 END")
+                ->get();
 
             if ($cotizaciones->count() < 2) {
                 throw new \DomainException('No es un viaje FULL válido (requiere al menos 2 contenedores vinculados).');
             }
 
-            $viajeExistente = Viajes::where('estado', 'activo')
-                ->where('tipo', 'full')
-                ->whereHas('cotizaciones', function ($q) use ($cotizaciones) {
-                    $q->whereIn('cotizacion_id', $cotizaciones->pluck('id'));
-                })
+            $cotizacionesIds = $cotizaciones->pluck('id')->toArray();
+            $principal = $cotizaciones->firstWhere('jerarquia', 'Principal') ?? $cotizaciones->first();
+
+            // 1. Reutilizar el viaje existente de la cotización Principal (o de cualquiera del grupo Full)
+            $viajeExistente = $principal->viajes()
+                ->orderByRaw("CASE WHEN estado = 'activo' THEN 0 ELSE 1 END")
+                ->orderByRaw("CASE WHEN tipo = 'full' THEN 0 ELSE 1 END")
                 ->first();
 
-            if ($viajeExistente) {
-                return $viajeExistente;
+            if (!$viajeExistente) {
+                $viajeExistente = Viajes::whereHas('cotizaciones', function ($q) use ($cotizacionesIds) {
+                        $q->whereIn('cotizacion_id', $cotizacionesIds);
+                    })
+                    ->orderByRaw("CASE WHEN estado = 'activo' THEN 0 ELSE 1 END")
+                    ->orderByRaw("CASE WHEN tipo = 'full' THEN 0 ELSE 1 END")
+                    ->first();
             }
 
-            $viajesIds = DB::table('viajes_cotizacion')
-                ->whereIn('cotizacion_id', $cotizaciones->pluck('id'))
-                ->pluck('viaje_id')
-                ->unique();
+            if ($viajeExistente) {
+                if ($viajeExistente->tipo !== 'full' || $viajeExistente->estado !== 'activo') {
+                    $viajeExistente->update([
+                        'tipo' => 'full',
+                        'estado' => 'activo',
+                    ]);
+                }
 
-            if ($viajesIds->isNotEmpty()) {
-                Viajes::whereIn('id', $viajesIds)->update(['estado' => 'cancelado']);
+                // Si alguna cotización del Full tenía otro viaje_id distinto (ej. de cuando era sencilla), limpiarlo
+                $otrosViajesIds = DB::table('viajes_cotizacion')
+                    ->whereIn('cotizacion_id', $cotizacionesIds)
+                    ->where('viaje_id', '!=', $viajeExistente->id)
+                    ->pluck('viaje_id')
+                    ->unique();
+
+                if ($otrosViajesIds->isNotEmpty()) {
+                    DB::table('viajes_cotizacion')
+                        ->whereIn('cotizacion_id', $cotizacionesIds)
+                        ->whereIn('viaje_id', $otrosViajesIds)
+                        ->delete();
+
+                    Viajes::whereIn('id', $otrosViajesIds)
+                        ->whereDoesntHave('cotizaciones')
+                        ->update(['estado' => 'cancelado']);
+                }
+
+                $viajeExistente->cotizaciones()->syncWithoutDetaching($cotizacionesIds);
+
+                return $viajeExistente;
             }
 
             $viaje = Viajes::create([
@@ -637,22 +669,55 @@ class CotizacionesService
                 'estado' => 'activo',
             ]);
 
-            $viaje->cotizaciones()->attach($cotizaciones->pluck('id')->toArray());
+            $viaje->cotizaciones()->syncWithoutDetaching($cotizacionesIds);
 
             return $viaje;
         }
 
-        $cotizacion = Cotizaciones::find($idCotizacion);
-        $viaje = $cotizacion?->viajes()->first();
+        $cotizacion = Cotizaciones::findOrFail($idCotizacion);
+        $viaje = $cotizacion->viajes()
+            ->orderByRaw("CASE WHEN estado = 'activo' THEN 0 ELSE 1 END")
+            ->first();
 
         if ($viaje) {
-            return $viaje;
+            // Si el viaje estaba compartido con otra cotización (ej. ex-Full separado),
+            // verificar si otra cotización sigue usándolo
+            $compartidoConOtra = DB::table('viajes_cotizacion')
+                ->where('viaje_id', $viaje->id)
+                ->where('cotizacion_id', '!=', $cotizacion->id)
+                ->exists();
+
+            if (!$compartidoConOtra) {
+                if ($viaje->tipo !== 'sencillo' || $viaje->estado !== 'activo') {
+                    $viaje->update([
+                        'tipo' => 'sencillo',
+                        'estado' => 'activo',
+                    ]);
+                }
+
+                // Limpiar cualquier otro registro duplicado en viajes_cotizacion para esta cotización
+                DB::table('viajes_cotizacion')
+                    ->where('cotizacion_id', $cotizacion->id)
+                    ->where('viaje_id', '!=', $viaje->id)
+                    ->delete();
+
+                return $viaje;
+            }
+
+            // Si estaba compartido con otra cotización tras separar un Full, desvincular esta antes de crear su viaje individual
+            DB::table('viajes_cotizacion')
+                ->where('cotizacion_id', $cotizacion->id)
+                ->delete();
         }
 
-        return Viajes::create([
+        $viaje = Viajes::create([
             'tipo' => 'sencillo',
             'estado' => 'activo',
         ]);
+
+        $viaje->cotizaciones()->syncWithoutDetaching([$cotizacion->id]);
+
+        return $viaje;
     }
 
     /**
