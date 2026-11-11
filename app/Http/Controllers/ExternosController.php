@@ -494,45 +494,65 @@ class ExternosController extends Controller
     {
         $esCliente = auth()->check() && auth()->user()->id_cliente != 0 && request()->query('portal') === 'cliente';
 
-        //dd($esCliente);
-
-        $numContenedor = preg_replace('/\s+/', '*', $numContenedor);
+        $numContenedor = preg_replace('/\s+/', '*', trim((string) $numContenedor));
         $contenedores = explode('*', $numContenedor);
         $documentList = array();
         $doccotiPrincipal = null;
         $num_autorizaciones = '';
 
         foreach ($contenedores as $cont) {
+            $cont = trim($cont);
+            if (empty($cont)) {
+                continue;
+            }
+
             $documentos = DocumCotizacion::with('Cotizacion')
                   ->where('num_contenedor', $cont)
                   ->first();
 
-            if ($documentos->cotizacion->jerarquia == 'Principal') {
-                $doccotiPrincipal =  $documentos;
-                $num_autorizaciones = $documentos->num_autorizacion;
-
-            } else {
-
-                $num_autorizaciones = $num_autorizaciones.' '. $documentos->num_autorizacion;
+            // Si no se encuentra directo por num_contenedor, buscar por id_cotizacion (numérico) o coincidencia limpia
+            if (!$documentos && is_numeric($cont)) {
+                $documentos = DocumCotizacion::with('Cotizacion')
+                    ->where('id_cotizacion', (int) $cont)
+                    ->first();
             }
 
+            if (!$documentos) {
+                $contLimpio = str_replace(' ', '', $cont);
+                $documentos = DocumCotizacion::with('Cotizacion')
+                    ->where('num_contenedor', $contLimpio)
+                    ->first();
+            }
 
-            $folderId = $documentos->id_cotizacion;  //si se guarda con id cotizacion , buscamos con esa clave
+            if (!$documentos) {
+                continue;
+            }
+
+            $cotizacion = $documentos->Cotizacion ?? $documentos->cotizacion;
+            $jerarquia = $cotizacion?->jerarquia ?? 'Principal';
+
+            if ($jerarquia === 'Principal') {
+                $doccotiPrincipal = $documentos;
+                $num_autorizaciones = $documentos->num_autorizacion ?? '';
+            } else {
+                $num_autorizaciones = trim($num_autorizaciones . ' ' . ($documentos->num_autorizacion ?? ''));
+            }
+
+            $folderId = $documentos->id_cotizacion;
 
             if (!is_null($documentos->doda)) {
-                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont,$documentos->num_doda);
+                $doda = self::fileProperties($folderId, $documentos->doda, 'Doda', $cont, $documentos->num_doda);
                 if (sizeof($doda) > 0) {
                     array_push($documentList, $doda);
                 }
             }
 
             if (!is_null($documentos->boleta_liberacion)) {
-                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont,$documentos->num_boleta_liberacion);
+                $boleta_liberacion = self::fileProperties($folderId, $documentos->boleta_liberacion, 'Boleta de liberación', $cont, $documentos->num_boleta_liberacion);
                 if (sizeof($boleta_liberacion) > 0) {
                     array_push($documentList, $boleta_liberacion);
                 }
             }
-
 
             if (!is_null($documentos->doc_ccp)) {
                 $doc_ccp = self::fileProperties($folderId, $documentos->doc_ccp, 'Formato para Carta porte', $cont);
@@ -548,14 +568,12 @@ class ExternosController extends Controller
                 }
             }
             if (!is_null($documentos->foto_patio)) {
-
                 $doc_foto_patio = self::fileProperties($folderId, $documentos->foto_patio, 'Foto patio', $cont);
                 if (sizeof($doc_foto_patio) > 0) {
                     array_push($documentList, $doc_foto_patio);
                 }
             }
             if (!is_null($documentos->boleta_patio)) {
-
                 $doc_boleta_patio = self::fileProperties($folderId, $documentos->boleta_patio, 'Boleta de patio', $cont);
                 if (sizeof($doc_boleta_patio) > 0) {
                     array_push($documentList, $doc_boleta_patio);
@@ -584,25 +602,23 @@ class ExternosController extends Controller
                 }
             }
 
+            $cotizacion = $cotizacion ?? Cotizaciones::where('id', $documentos->id_cotizacion)->first();
 
-
-            $cotizacion = Cotizaciones::where('id', $documentos->id_cotizacion)->first();
-
-            if (!is_null($cotizacion->img_boleta)) {
-                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont,$documentos->fecha_boleta_vacio);
+            if ($cotizacion && !is_null($cotizacion->img_boleta)) {
+                $preAlta = self::fileProperties($folderId, $cotizacion->img_boleta, 'Pre-Alta', $cont, $documentos->fecha_boleta_vacio);
                 if (sizeof($preAlta) > 0) {
                     array_push($documentList, $preAlta);
                 }
             }
 
-            if (!is_null($cotizacion->carta_porte)) {
+            if ($cotizacion && !is_null($cotizacion->carta_porte)) {
                 $cpPDF = self::fileProperties($folderId, $cotizacion->carta_porte, 'Carta Porte', $cont);
                 if (sizeof($cpPDF) > 0) {
                     array_push($documentList, $cpPDF);
                 }
             }
 
-            if (!is_null($cotizacion->carta_porte_xml)) {
+            if ($cotizacion && !is_null($cotizacion->carta_porte_xml)) {
                 $cpXML = self::fileProperties($folderId, $cotizacion->carta_porte_xml, 'Carta Porte XML', $cont);
                 if (sizeof($cpXML) > 0) {
                     array_push($documentList, $cpXML);
@@ -610,7 +626,12 @@ class ExternosController extends Controller
             }
         }
 
-        return ["data" => $documentList,"numContenedor" => $numContenedor,"documentos" => $doccotiPrincipal,'num_autorizaciones' => $num_autorizaciones];
+        return [
+            "data" => $documentList,
+            "numContenedor" => $numContenedor,
+            "documentos" => $doccotiPrincipal,
+            "num_autorizaciones" => $num_autorizaciones
+        ];
     }
 
     public function getOperatorFiles($numContenedor, \App\Services\CotizacionesService $cotizacionesService)
