@@ -12,6 +12,7 @@ Memoria viva del proyecto entre sesiones (máximo ~50 líneas).
     - Creación defensiva de carpetas en `OperadorService` (`@mkdir` solo con archivos) y validación limpia de CURP en `StoreOperadorRequest`.
     - Desacople de `password_temporal` en WhatsApp (`boardCarpos.js`, `modal_info_planeacion.blade.php`), separación limpia de número y referencia en `/viajes/mis-viajes-local`, y bypass de validación destino-ubicación en viajes locales.
     - Soporte completo de edición y guardado de subclientes en panel central (`ClientController::edit`, `routes/web.php`).
+    - Blindaje en `ExternosController::getFilesProperties` con fallback y null-safety (`?->`) al cargar archivos de contenedores.
   - Reporte consolidado en `reporte_pruebas_sgt_demo.md` y 39 reportes PDF/XLSX exportados en escritorio `PRUEBAS SGT DEMO`.
 - **Cambio de Proveedor y Transportista en Viaje Planeado (`CotizacionesController::singleUpdate` y `CotizacionesService::deshacerPlaneacionPorCambioProveedor`):**
   - Cancela movimientos bancarios de dinero para viaje, anula gastos unificados (`origen_legacy like 'asignacion_planeacion%'`), limpia `GastosOperadores::withoutGlobalScope('no_eliminados')`, `Coordenadas`, `DineroContenedor` y `ViaticosOperador` antes de eliminar `Asignaciones`.
