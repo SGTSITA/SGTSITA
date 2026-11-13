@@ -408,7 +408,25 @@ function asignarOperador2(planear = 0) {
         .then((data) => {
             console.log("Respuesta del backend:", data);
 
-            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+            Swal.fire({
+                title: data.Titulo,
+                text: data.Mensaje,
+                icon: data.TMensaje === "success" ? "success" : (data.TMensaje || "info"),
+            }).then(() => {
+                if (data.TMensaje === "success") {
+                    const modalEl = document.getElementById("viajeModal");
+                    if (modalEl) {
+                        if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
+                            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                        } else if (typeof jQuery !== "undefined") {
+                            jQuery(modalEl).modal("hide");
+                        }
+                    }
+                    if (typeof getCotizacionesList === "function") {
+                        getCotizacionesList();
+                    }
+                }
+            });
         })
         .catch((error) => {
             console.error("Error al enviar los datos:", error);

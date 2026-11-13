@@ -2,6 +2,10 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Limpieza y Reseteo de Modal Planear Viaje (`/cotizaciones/index` y `/mep/viajes` — `modal-asignar.blade.php`, `cotizaciones_list.js`, `viajes_list.js`):
+  - Creado `window.limpiarModalViaje()` y suscrito al evento `hidden.bs.modal` de `#viajeModal`.
+  - Al cerrar el modal o abrirlo para un nuevo viaje, se restablecen completamente los campos de Operador (nombre, teléfono, dataset), Unidades y Chasis A/B (selects con placeholder, plates, VIN, IMEI, Select2), Compañías GPS (índice 0), badges de estatus GPS ("Sin asignar GPS"), botones de consulta, fechas (limpieza de Flatpickr), pestañas activas, distancia GPS y `localStorage` (`idContenedor`, `numContenedor`).
+  - Al guardar o planear con éxito, `#viajeModal` se cierra automáticamente y se refresca la lista con `getCotizacionesList()`.
 - Cambio de Proveedor y Transportista en Viaje Planeado (`/viajes/editar` -> `CotizacionesController::singleUpdate`):
   - Homologado el proceso de deshacer planeación al cambiar `id_proveedor` (empresa) y/o `id_transportista` (proveedor) con `PlaneacionController::anularPlaneacion` y `CotizacionesController::cambiar_empresa`: cancela movimientos bancarios de dinero para viaje (`BancosService::cancelarMovimiento`), cancela pagos y elimina gastos unificados (`origen_legacy like 'asignacion_planeacion%'`), elimina registros dependientes en `GastosOperadores::withoutGlobalScope('no_eliminados')`, `Coordenadas`, `DineroContenedor` y `ViaticosOperador` antes de eliminar la `Asignaciones`, evitando el error `SQLSTATE[23000]: Integrity constraint violation: 1451` en `gastos_operadores_id_asignacion_foreign`.
 - Spec 025 (Validación de Peso de Contenedor y Sobrepeso en Solicitudes de Clientes — `/viajes/solicitud/simple`, `/viajes/solicitud/simple-local`, `/viajes/editar/{id}`, `/viajes/editar-local/{id}` y cargas masivas):
