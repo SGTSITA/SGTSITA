@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Equipo;
+use App\Models\Empresas;
 use Illuminate\Database\Eloquent\Collection;
 
 class EquipoService
@@ -52,6 +53,26 @@ class EquipoService
         $query->where('activo', 1);
 
         return $query->orderBy('id_equipo', 'asc')->get();
+    }
+
+    /**
+     * Valida si la empresa actual (o especificada) opera bajo el modelo multi-equipo
+     * (H00-GLOBAL o requiere_unidad_gasto).
+     *
+     * @param int|null $idEmpresa
+     * @return bool
+     */
+    public function esEmpresaGlobal(?int $idEmpresa = null): bool
+    {
+        $idEmpresa = $idEmpresa ?? auth()->user()?->id_empresa;
+
+        if (!$idEmpresa) {
+            return false;
+        }
+
+        $empresa = Empresas::withoutGlobalScopes()->find($idEmpresa);
+
+        return (bool) ($empresa?->esGlobalMultiEquipo() ?? false);
     }
 
     /**

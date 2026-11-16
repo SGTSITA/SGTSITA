@@ -36,7 +36,8 @@ class ViajesCostosService
                 continue;
             }
 
-            $monto = floatval(str_replace(',', '', $request->$input));
+            $rawVal = is_object($request) ? ($request->$input ?? 0) : ($request[$input] ?? 0);
+            $monto = floatval(str_replace(',', '', (string) $rawVal));
 
             if ($monto > 0) {
 
@@ -61,7 +62,8 @@ class ViajesCostosService
     }
     private function procesarSobrepeso($viaje, $request)
     {
-        $precio = floatval($request->precio_sobre_peso ?? 0);
+        $rawPrecio = is_object($request) ? ($request->precio_sobre_peso ?? 0) : ($request['precio_sobre_peso'] ?? 0);
+        $precio = floatval(str_replace(',', '', (string) $rawPrecio));
 
         // Calcular la diferencia exacta con los decimales reales de peso_contenedor
         $pesoExacto = 0;
@@ -78,7 +80,8 @@ class ViajesCostosService
             }
         }
 
-        $peso = $pesoExacto > 0 ? $pesoExacto : floatval($request->sobrePeso ?? 0);
+        $rawSobrepeso = is_object($request) ? ($request->sobrePeso ?? $request->sobrepeso ?? 0) : ($request['sobrePeso'] ?? $request['sobrepeso'] ?? 0);
+        $peso = $pesoExacto > 0 ? $pesoExacto : floatval(str_replace(',', '', (string) $rawSobrepeso));
         $monto = round($precio * $peso, 2);
 
         if ($monto > 0) {
