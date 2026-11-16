@@ -621,6 +621,10 @@ class CotizacionesService
                   ->with('cobroPago:id,tipo');
             },
         ])
+    ->wherehas('Proveedor', function ($q) {
+            $q->whereIn('tipo_viaje', ['foraneo', 'local_foraneo']);
+        })
+
         ->orderBy('cotizaciones.created_at', 'desc')
         ->limit(1000)
         ->get();
