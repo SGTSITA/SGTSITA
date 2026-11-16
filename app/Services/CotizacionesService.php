@@ -7,6 +7,8 @@ use App\Models\Asignaciones;
 use App\Models\BitacoraViajeOperador;
 use App\Models\Cotizaciones;
 use App\Models\User;
+use App\Models\Viajes;
+use App\Models\ViajesCostos;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -419,13 +421,13 @@ class CotizacionesService
 
             $polizaService = app(\App\Services\PolizaService::class);
 
-            // Eliminar previa si existía para evitar duplicidad
-            $polizaPrevia = \App\Models\Poliza::where('origen_tipo', 'cotizacion')
+            // Eliminar previas si existían para evitar duplicidad
+            \App\Models\Poliza::where('origen_tipo', 'cotizacion')
                 ->where('origen_id', $cotizacion->id)
-                ->first();
-            if ($polizaPrevia) {
-                $polizaPrevia->delete();
-            }
+                ->get()
+                ->each(function ($pol) {
+                    $pol->delete();
+                });
 
             $fecha = !empty($cotizacion->fecha_entrega)
                 ? Carbon::parse($cotizacion->fecha_entrega)->format('Y-m-d')
@@ -541,5 +543,429 @@ class CotizacionesService
             'min_date'         => "{$minYear}-01-01",
             'max_date'         => "{$maxYear}-12-31",
         ];
+    }
+
+    /**
+     * Consulta las cotizaciones en seguimiento para el módulo de captura múltiple de costos.
+     * Carga costos de cotización desde viajes->costos y costos de proveedor desde asignaciones.
+     *
+     * @param int $idEmpresa
+     * @param int|null $idCliente
+     * @param int|null $idCamion
+     * @param string $estadoCosto 'no_capturados' | 'capturados' | 'todos'
+     * @return array
+     */
+    public function obtenerViajesParaCapturaCostos(
+        int $idEmpresa,
+        ?int $idCliente = null,
+        ?int $idCamion = null,
+        string $estadoCosto = 'todos'
+    ): array
+    {
+        $query = Cotizaciones::query()
+            ->select([
+                'cotizaciones.id',
+                'cotizaciones.id_empresa',
+                'cotizaciones.id_cliente',
+                'cotizaciones.id_proveedor',
+                'cotizaciones.destino',
+                'cotizaciones.peso_contenedor',
+                'cotizaciones.peso_reglamentario',
+                'cotizaciones.precio_viaje',
+                'cotizaciones.burreo',
+                'cotizaciones.maniobra',
+                'cotizaciones.estadia',
+                'cotizaciones.otro',
+                'cotizaciones.precio_sobre_peso',
+                'cotizaciones.precio_tonelada',
+                'cotizaciones.base_factura',
+                'cotizaciones.base_taref',
+                'cotizaciones.iva',
+                'cotizaciones.retencion',
+                'cotizaciones.total',
+                'cotizaciones.restante',
+                'cotizaciones.prove_restante',
+                'cotizaciones.retencion_automatica',
+                'cotizaciones.latitud',
+                'cotizaciones.longitud',
+                'cotizaciones.direccion_mapa',
+                'cotizaciones.direccion_entrega',
+                'cotizaciones.estatus',
+                'cotizaciones.referencia_full',
+                'cotizaciones.created_at',
+            ])
+            ->when($idEmpresa != 0, function ($q) use ($idEmpresa) {
+                $q->where('cotizaciones.id_empresa', $idEmpresa);
+            })
+            ->where('cotizaciones.jerarquia', '!=', 'Secundario')
+            ->where('cotizaciones.estatus', '!=', 'Cancelada');
+
+        if (!empty($idCliente)) {
+            $query->where('cotizaciones.id_cliente', $idCliente);
+        }
+
+        if (!empty($idCamion)) {
+            $query->whereHas('DocCotizacion.Asignaciones', function ($q) use ($idCamion) {
+                $q->where('id_camion', $idCamion);
+            });
+        }
+
+        $cotizaciones = $query->with([
+            'DocCotizacion:id,id_cotizacion,num_contenedor',
+            'DocCotizacion.Asignaciones:id,id_contenedor,id_proveedor,id_camion,precio,burreo,maniobra,estadia,sobrepeso_proveedor,total_tonelada,base1_proveedor,base2_proveedor,otro,iva,retencion,total_proveedor',
+            'DocCotizacion.Asignaciones.Proveedor:id,nombre,tipo_viaje',
+            'Proveedor:id,nombre,tipo_viaje',
+            'viajes.costos',
+            'movimientos' => function ($q) {
+                $q->select('id', 'cobro_pago_id', 'cotizacion_id', 'monto')
+                  ->with('cobroPago:id,tipo');
+            },
+        ])
+        ->orderBy('cotizaciones.created_at', 'desc')
+        ->limit(1000)
+        ->get();
+
+        $rowsCotizacion = [];
+        $rowsProveedor = [];
+
+        foreach ($cotizaciones as $cot) {
+            $doc = $cot->DocCotizacion;
+            $asignacion = $doc?->Asignaciones;
+            $viaje = $cot->viajes->sortByDesc('id')->first();
+            $costos = $viaje?->costos ?? collect();
+
+            // Link de mapas
+            $mapaUrl = '';
+            if (!empty($cot->latitud) && !empty($cot->longitud)) {
+                $mapaUrl = "https://www.google.com/maps/search/?api=1&query={$cot->latitud},{$cot->longitud}";
+            } elseif (!empty($cot->direccion_mapa)) {
+                $mapaUrl = "https://www.google.com/maps/search/?api=1&query=" . urlencode($cot->direccion_mapa);
+            } elseif (!empty($cot->direccion_entrega)) {
+                $mapaUrl = "https://www.google.com/maps/search/?api=1&query=" . urlencode($cot->direccion_entrega);
+            }
+
+            $numContenedor = $doc?->num_contenedor ?? 'S/C';
+            $destino = $cot->destino ?? '';
+            $pesoContenedor = floatval($cot->peso_contenedor ?? 0);
+            $pesoReglamentario = floatval($cot->peso_reglamentario ?: 22);
+            $sobrepesoTon = max($pesoContenedor - $pesoReglamentario, 0);
+
+            // Cobros CXC (clientes) y Pagos CXP (proveedores) desde pagos_cobros / cobros_pagos_cotizaciones
+            $cobrosCXC = floatval($cot->movimientos->filter(function ($m) {
+                return $m->cobroPago && $m->cobroPago->tipo === 'cxc';
+            })->sum('monto'));
+
+            $pagosCXP = floatval($cot->movimientos->filter(function ($m) {
+                return $m->cobroPago && $m->cobroPago->tipo === 'cxp';
+            })->sum('monto'));
+
+            // --- Costos Cotización (desde viajes->costos con fallback a cotizaciones) ---
+            $costoViaje = floatval($costos->firstWhere('concepto', 'viaje')?->monto ?? $cot->precio_viaje ?? 0);
+            $costoBurreo = floatval($costos->firstWhere('concepto', 'burreo')?->monto ?? $cot->burreo ?? 0);
+            $costoManiobra = floatval($costos->firstWhere('concepto', 'maniobra')?->monto ?? $cot->maniobra ?? 0);
+            $costoEstadia = floatval($costos->firstWhere('concepto', 'estadia')?->monto ?? $cot->estadia ?? 0);
+            $costoOtro = floatval($costos->firstWhere('concepto', 'otro')?->monto ?? $cot->otro ?? 0);
+            $costoBaseFactura = floatval($costos->firstWhere('concepto', 'base_factura')?->monto ?? $cot->base_factura ?? 0);
+            $costoBaseTaref = floatval($costos->firstWhere('concepto', 'base_taref')?->monto ?? $cot->base_taref ?? 0);
+            $costoIva = floatval($costos->firstWhere('concepto', 'iva')?->monto ?? $cot->iva ?? 0);
+            $costoRetencion = floatval($costos->firstWhere('concepto', 'retencion')?->monto ?? $cot->retencion ?? 0);
+
+            $costoSobrepesoObj = $costos->firstWhere('concepto', 'sobrepeso');
+            $precioSobrepeso = floatval($costoSobrepesoObj?->meta['precio_sobre_peso'] ?? $cot->precio_sobre_peso ?? 0);
+            $totalSobrepeso = floatval($costoSobrepesoObj?->monto ?? $cot->precio_tonelada ?? round($sobrepesoTon * $precioSobrepeso, 2));
+            $totalCotizacion = floatval($cot->total ?? 0);
+
+            // Validación de saldo pendiente por cobrar para Cotización (CXC):
+            // Solo debe aparecer si el contenedor aún no ha sido cobrado completamente
+            $tieneSaldoPendienteCot = ($totalCotizacion > 0)
+                ? (round($totalCotizacion - $cobrosCXC, 2) > 0)
+                : ($cobrosCXC == 0);
+
+            if ($tieneSaldoPendienteCot) {
+                $tieneCostoCotizacion = ($costoViaje > 0 || $totalCotizacion > 0 || $costoBaseFactura > 0);
+
+                $incluirCot = match ($estadoCosto) {
+                    'no_capturados' => !$tieneCostoCotizacion,
+                    'capturados' => $tieneCostoCotizacion,
+                    default => true,
+                };
+
+                if ($incluirCot) {
+                    $rowsCotizacion[] = [
+                        'id' => $cot->id,
+                        'contenedor' => $numContenedor,
+                        'destino' => $destino,
+                        'mapas' => $mapaUrl,
+                        'peso_contenedor' => $pesoContenedor,
+                        'peso_reglamentario' => $pesoReglamentario,
+                        'sobrepeso' => $sobrepesoTon,
+                        'precio_viaje' => $costoViaje,
+                        'burreo' => $costoBurreo,
+                        'maniobra' => $costoManiobra,
+                        'estadia' => $costoEstadia,
+                        'otro' => $costoOtro,
+                        'precio_sobre_peso' => $precioSobrepeso,
+                        'total_sobrepeso' => $totalSobrepeso,
+                        'base_factura' => $costoBaseFactura,
+                        'base_taref' => $costoBaseTaref,
+                        'iva' => $costoIva,
+                        'retencion' => $costoRetencion,
+                        'total' => $totalCotizacion,
+                        'retencion_automatica' => (bool) ($cot->retencion_automatica ?? true),
+                    ];
+                }
+            }
+
+            // --- Costos Proveedor (directo en asignaciones) ---
+            $proveedorObj = $asignacion?->Proveedor ?? $cot->Proveedor;
+            $tipoViajeProv = strtolower(trim((string) ($proveedorObj?->tipo_viaje ?? '')));
+
+            // Regla de Negocio: En la pestaña Proveedor solo deben mostrarse viajes/contenedores
+            // asignados a un proveedor de tipo foráneo o local_foráneo (ambos).
+            $esProveedorValido = $proveedorObj && in_array($tipoViajeProv, ['foraneo', 'local_foraneo']);
+
+            if ($esProveedorValido) {
+                $proveedorNombre = $proveedorObj->nombre ?? 'Sin proveedor';
+                $precioProveedor = floatval($asignacion?->precio ?? 0);
+                $burreoProveedor = floatval($asignacion?->burreo ?? 0);
+                $maniobraProveedor = floatval($asignacion?->maniobra ?? 0);
+                $estadiaProveedor = floatval($asignacion?->estadia ?? 0);
+                $sobrepesoProveedor = floatval($asignacion?->sobrepeso_proveedor ?? 0);
+                $totalTonelada = floatval($asignacion?->total_tonelada ?? round($sobrepesoTon * $sobrepesoProveedor, 2));
+                $base1Proveedor = floatval($asignacion?->base1_proveedor ?? 0);
+                $base2Proveedor = floatval($asignacion?->base2_proveedor ?? 0);
+                $otroProveedor = floatval($asignacion?->otro ?? 0);
+                $ivaProveedor = floatval($asignacion?->iva ?? 0);
+                $retencionProveedor = floatval($asignacion?->retencion ?? 0);
+                $totalProveedor = floatval($asignacion?->total_proveedor ?? 0);
+
+                // Validación de saldo pendiente por pagar a Proveedor (CXP):
+                // Solo debe aparecer si (total del proveedor - lo que ya se pagó) aún queda saldo pendiente
+                $tieneSaldoPendienteProv = ($totalProveedor > 0)
+                    ? (round($totalProveedor - $pagosCXP, 2) > 0)
+                    : ($pagosCXP == 0);
+
+                if ($tieneSaldoPendienteProv) {
+                    $tieneCostoProveedor = ($precioProveedor > 0 || $totalProveedor > 0 || $base1Proveedor > 0);
+
+                    $incluirProv = match ($estadoCosto) {
+                        'no_capturados' => !$tieneCostoProveedor,
+                        'capturados' => $tieneCostoProveedor,
+                        default => true,
+                    };
+
+                    if ($incluirProv) {
+                        $rowsProveedor[] = [
+                            'id' => $cot->id,
+                            'id_asignacion' => $asignacion?->id,
+                            'id_proveedor' => $asignacion?->id_proveedor ?? $cot->id_proveedor,
+                            'contenedor' => $numContenedor,
+                            'destino' => $destino,
+                            'mapas' => $mapaUrl,
+                            'peso_contenedor' => $pesoContenedor,
+                            'sobrepeso' => $sobrepesoTon,
+                            'proveedor' => $proveedorNombre,
+                            'precio_proveedor' => $precioProveedor,
+                            'burreo_proveedor' => $burreoProveedor,
+                            'maniobra_proveedor' => $maniobraProveedor,
+                            'estadia_proveedor' => $estadiaProveedor,
+                            'sobrepeso_proveedor' => $sobrepesoProveedor,
+                            'total_tonelada' => $totalTonelada,
+                            'base1_proveedor' => $base1Proveedor,
+                            'base2_proveedor' => $base2Proveedor,
+                            'otro_proveedor' => $otroProveedor,
+                            'iva_proveedor' => $ivaProveedor,
+                            'retencion_proveedor' => $retencionProveedor,
+                            'total_proveedor' => $totalProveedor,
+                        ];
+                    }
+                }
+            }
+        }
+
+        return [
+            'cotizaciones' => $rowsCotizacion,
+            'proveedores' => $rowsProveedor,
+            'total_registros' => max(count($rowsCotizacion), count($rowsProveedor)),
+        ];
+    }
+
+    /**
+     * Guarda en lote los costos de cotización en viajes->costos y actualiza cotizaciones bajo transacción.
+     *
+     * @param array $items
+     * @param int $idEmpresa
+     * @return int Cantidad de registros actualizados
+     */
+    public function guardarCostosCotizacionMultiple(array $items, int $idEmpresa): int
+    {
+        return DB::transaction(function () use ($items, $idEmpresa) {
+            $costosService = app(ViajesCostosService::class);
+            $actualizados = 0;
+            $cotizacionesActualizadas = [];
+
+            foreach ($items as $item) {
+                if (empty($item['id'])) {
+                    continue;
+                }
+
+                $cot = Cotizaciones::where('id_empresa', $idEmpresa)->findOrFail($item['id']);
+
+                $pesoContenedor = floatval($item['peso_contenedor'] ?? $cot->peso_contenedor ?? 0);
+                $pesoReglamentario = floatval($item['peso_reglamentario'] ?? $cot->peso_reglamentario ?: 22);
+                $sobrepeso = max($pesoContenedor - $pesoReglamentario, 0);
+
+                $precioSobrepeso = floatval(str_replace(',', '', (string) ($item['precio_sobre_peso'] ?? 0)));
+                $totalSobrepeso = round($sobrepeso * $precioSobrepeso, 2);
+
+                $precioViaje = floatval(str_replace(',', '', (string) ($item['precio_viaje'] ?? 0)));
+                $burreo = floatval(str_replace(',', '', (string) ($item['burreo'] ?? 0)));
+                $maniobra = floatval(str_replace(',', '', (string) ($item['maniobra'] ?? 0)));
+                $estadia = floatval(str_replace(',', '', (string) ($item['estadia'] ?? 0)));
+                $otro = floatval(str_replace(',', '', (string) ($item['otro'] ?? 0)));
+                $baseFactura = floatval(str_replace(',', '', (string) ($item['base_factura'] ?? 0)));
+                $baseTaref = floatval(str_replace(',', '', (string) ($item['base_taref'] ?? 0)));
+                $iva = floatval(str_replace(',', '', (string) ($item['iva'] ?? 0)));
+                $retencion = floatval(str_replace(',', '', (string) ($item['retencion'] ?? 0)));
+                $total = floatval(str_replace(',', '', (string) ($item['total'] ?? 0)));
+
+                // Actualizar cotización
+                $cot->peso_contenedor = $pesoContenedor;
+                $cot->peso_reglamentario = $pesoReglamentario;
+                $cot->sobrepeso = $sobrepeso;
+                $cot->precio_sobre_peso = $precioSobrepeso;
+                $cot->precio_tonelada = $totalSobrepeso;
+                $cot->precio_viaje = $precioViaje;
+                $cot->burreo = $burreo;
+                $cot->maniobra = $maniobra;
+                $cot->estadia = $estadia;
+                $cot->otro = $otro;
+                $cot->base_factura = $baseFactura;
+                $cot->base_taref = $baseTaref;
+                $cot->iva = $iva;
+                $cot->retencion = $retencion;
+                $cot->total = $total;
+
+                $totalCobrado = method_exists($cot, 'cobros') && $cot->cobros()->exists() ? floatval($cot->cobros()->sum('monto')) : 0;
+                $nuevoRestante = max(round($total - $totalCobrado, 2), 0);
+                $cot->restante = $nuevoRestante;
+                $cot->estatus_pago = ($nuevoRestante <= 0) ? '1' : '0';
+                $cot->save();
+
+                // Resolver viaje y sincronizar en viajes->costos (viajes_costos)
+                $viaje = $cot->viajes()->orderByRaw("CASE WHEN estado = 'activo' THEN 0 ELSE 1 END")->first();
+                if (!$viaje) {
+                    $esFull = (!empty($cot->referencia_full) || (isset($cot->tipo_viaje) && strcasecmp((string) $cot->tipo_viaje, 'Full') === 0));
+                    $viaje = Viajes::create([
+                        'tipo' => $esFull ? 'full' : 'sencillo',
+                        'estado' => 'activo',
+                    ]);
+                    $viaje->cotizaciones()->syncWithoutDetaching([$cot->id]);
+                }
+
+                $costosService->syncDesdeRequest($viaje, [
+                    'precio_viaje' => $precioViaje,
+                    'burreo' => $burreo,
+                    'maniobra' => $maniobra,
+                    'estadia' => $estadia,
+                    'otro' => $otro,
+                    'base_factura' => $baseFactura,
+                    'base_taref' => $baseTaref,
+                    'iva' => $iva,
+                    'retencion' => $retencion,
+                    'precio_sobre_peso' => $precioSobrepeso,
+                    'sobrePeso' => $sobrepeso,
+                ]);
+
+                $actualizados++;
+                $cotizacionesActualizadas[] = $cot;
+            }
+
+            // Sincronizar pólizas contables de provisión (CxC vs Ingresos por fletes)
+            $principalesProcesadas = [];
+            foreach ($cotizacionesActualizadas as $cotActualizada) {
+                try {
+                    $cotActualizada->refresh();
+
+                    if (!empty($cotActualizada->referencia_full)) {
+                        $cotPrincipal = ($cotActualizada->jerarquia === 'Principal')
+                            ? $cotActualizada
+                            : Cotizaciones::where('referencia_full', $cotActualizada->referencia_full)
+                                ->where('jerarquia', 'Principal')
+                                ->first();
+
+                        if ($cotPrincipal && !in_array($cotPrincipal->id, $principalesProcesadas)) {
+                            $cotPrincipal->refresh();
+                            $this->contabilizarProvisionViaje($cotPrincipal);
+                            $principalesProcesadas[] = $cotPrincipal->id;
+                        } elseif (!$cotPrincipal) {
+                            $this->contabilizarProvisionViaje($cotActualizada);
+                        }
+                    } else {
+                        $this->contabilizarProvisionViaje($cotActualizada);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning("Error actualizando provisión contable de cotización #{$cotActualizada->id}: " . $e->getMessage());
+                }
+            }
+
+            return $actualizados;
+        });
+    }
+
+    /**
+     * Guarda en lote los costos de proveedor directamente en la tabla asignaciones y recalcula prove_restante.
+     *
+     * @param array $items
+     * @param int $idEmpresa
+     * @return int Cantidad de registros actualizados
+     */
+    public function guardarCostosProveedorMultiple(array $items, int $idEmpresa): int
+    {
+        return DB::transaction(function () use ($items, $idEmpresa) {
+            $actualizados = 0;
+
+            foreach ($items as $item) {
+                if (empty($item['id'])) {
+                    continue;
+                }
+
+                $cot = Cotizaciones::where('id_empresa', $idEmpresa)->findOrFail($item['id']);
+                $asignacion = $cot->DocCotizacion?->Asignaciones;
+
+                if (!$asignacion) {
+                    continue;
+                }
+
+                $asignacion->precio = floatval(str_replace(',', '', (string) ($item['precio_proveedor'] ?? 0)));
+                $asignacion->burreo = floatval(str_replace(',', '', (string) ($item['burreo_proveedor'] ?? 0)));
+                $asignacion->maniobra = floatval(str_replace(',', '', (string) ($item['maniobra_proveedor'] ?? 0)));
+                $asignacion->estadia = floatval(str_replace(',', '', (string) ($item['estadia_proveedor'] ?? 0)));
+                $asignacion->otro = floatval(str_replace(',', '', (string) ($item['otro_proveedor'] ?? 0)));
+                $asignacion->sobrepeso_proveedor = floatval(str_replace(',', '', (string) ($item['sobrepeso_proveedor'] ?? 0)));
+                $asignacion->total_tonelada = floatval(str_replace(',', '', (string) ($item['total_tonelada'] ?? 0)));
+                $asignacion->base1_proveedor = floatval(str_replace(',', '', (string) ($item['base1_proveedor'] ?? 0)));
+                $asignacion->base2_proveedor = floatval(str_replace(',', '', (string) ($item['base2_proveedor'] ?? 0)));
+                $asignacion->iva = floatval(str_replace(',', '', (string) ($item['iva_proveedor'] ?? 0)));
+                $asignacion->retencion = floatval(str_replace(',', '', (string) ($item['retencion_proveedor'] ?? 0)));
+                $asignacion->total_proveedor = floatval(str_replace(',', '', (string) ($item['total_proveedor'] ?? 0)));
+
+                if (!empty($item['id_proveedor'])) {
+                    $asignacion->id_proveedor = $item['id_proveedor'];
+                    $cot->id_proveedor = $item['id_proveedor'];
+                }
+
+                $asignacion->save();
+
+                // Recalcular saldo proveedor en cotización
+                $totalPagadoProv = method_exists($cot, 'pagos') && $cot->pagos()->exists() ? floatval($cot->pagos()->sum('monto')) : 0;
+                $cot->prove_restante = max(round($asignacion->total_proveedor - $totalPagadoProv, 2), 0);
+                $cot->save();
+
+                $actualizados++;
+            }
+
+            return $actualizados;
+        });
     }
 }

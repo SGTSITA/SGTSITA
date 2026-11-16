@@ -351,6 +351,10 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
         // ==================== C O T I Z A C I O N E S ====================
         Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
+        Route::get('/cotizaciones/costos-multiple', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'index'])->name('cotizaciones.costos_multiple');
+        Route::get('/cotizaciones/costos-multiple/datos', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'datos'])->name('cotizaciones.costos_multiple.datos');
+        Route::post('/cotizaciones/costos-multiple/guardar-cotizacion', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarCotizacion'])->name('cotizaciones.costos_multiple.guardar_cotizacion');
+        Route::post('/cotizaciones/costos-multiple/guardar-proveedor', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarProveedor'])->name('cotizaciones.costos_multiple.guardar_proveedor');
         Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
         Route::get('/cotizaciones/by-status', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesByStatus'])->name('cotizaciones.byStatus');
         Route::get('/sgt/fechas/periodos-cotizaciones', [App\Http\Controllers\CotizacionesController::class, 'getPeriodosCotizaciones'])->name('sgt.fechas.periodos_cotizaciones');

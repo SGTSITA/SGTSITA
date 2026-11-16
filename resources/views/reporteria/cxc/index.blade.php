@@ -354,8 +354,8 @@
 
                     <div class="form-check d-none" id="opcionesCambio">
                         <input class="form-check-input" type="checkbox" id="soloEstaCotizacion" checked>
-                        <label class="form-check-label">
-                            Aplicar cambio solo a esta cotización
+                        <label class="form-check-label" id="lblSoloEstaCotizacion">
+                            Aplicar cambio solo a las cotizaciones seleccionadas
                         </label>
                     </div>
                 </div>
@@ -447,6 +447,16 @@
                         $('#datatable-search tbody').html(
                             $(html).find('#datatable-search tbody').html()
                         );
+
+                        // Sincronizar las opciones del filtro de estados de cuenta
+                        const nuevoSelectEdo = $(html).find('#numero_edo_cuenta').html();
+                        if (nuevoSelectEdo) {
+                            const valActual = $('#numero_edo_cuenta').val();
+                            $('#numero_edo_cuenta').html(nuevoSelectEdo);
+                            if (valActual && $('#numero_edo_cuenta option[value="' + valActual + '"]').length) {
+                                $('#numero_edo_cuenta').val(valActual);
+                            }
+                        }
 
                         table = initDataTable();
                     }
@@ -797,21 +807,32 @@
                     },
                     error: (xhr) => {
                         const resp = xhr.responseJSON;
-                        if (resp && resp.already_exists && payload.modo === 'crear') {
+                        if (resp && resp.already_exists) {
+                            const esEdicion = payload.modo === 'editar';
+                            const tituloAlerta = 'Estado de Cuenta Ya Existe';
+                            const textoPregunta = esEdicion
+                                ? '¿Deseas transferir las cotizaciones seleccionadas a este estado de cuenta existente?'
+                                : '¿Deseas anexar las cotizaciones seleccionadas a este estado de cuenta existente?';
+                            const textoBoton = esEdicion ? 'Sí, Transferir' : 'Sí, Anexar';
+
                             Swal.fire({
                                 icon: 'warning',
-                                title: 'Estado de Cuenta Ya Existe',
-                                html: (resp.message || 'El número de estado de cuenta ya existe.') + '<br><br><b>¿Deseas anexar las cotizaciones seleccionadas a este estado de cuenta existente?</b>',
+                                title: tituloAlerta,
+                                html: (resp.message || 'El número de estado de cuenta ya existe.') + '<br><br><b>' + textoPregunta + '</b>',
                                 showCancelButton: true,
-                                confirmButtonText: 'Sí, Anexar',
+                                confirmButtonText: textoBoton,
                                 cancelButtonText: 'Cancelar',
                                 confirmButtonColor: '#3085d6',
                                 cancelButtonColor: '#d33'
                             }).then((result) => {
                                 if (result.isConfirmed) {
-                                    payload.modo = 'anexar';
-                                    $('#modoEdoCuenta').val('anexar');
-                                    $('#selectModoAccionEdoCuenta').val('anexar');
+                                    if (esEdicion) {
+                                        payload.confirmar_transferencia = true;
+                                    } else {
+                                        payload.modo = 'anexar';
+                                        $('#modoEdoCuenta').val('anexar');
+                                        $('#selectModoAccionEdoCuenta').val('anexar');
+                                    }
                                     ejecutarGuardarEdoCuenta(payload);
                                 }
                             });
@@ -902,6 +923,12 @@
 
             $('#edoCuentaWarning').addClass('d-none');
             $('#opcionesCambio').removeClass('d-none');
+
+            const totalSeleccionadas = (typeof table !== 'undefined' && table) ? table.rows('.selected').data().length : 1;
+            const textoLabel = totalSeleccionadas > 1 
+                ? `Aplicar cambio solo a las ${totalSeleccionadas} cotizaciones seleccionadas` 
+                : 'Aplicar cambio solo a esta cotización';
+            $('#lblSoloEstaCotizacion').text(textoLabel);
             $('#soloEstaCotizacion').prop('checked', true);
         }
 
@@ -940,6 +967,11 @@
 
             if (modo === 'editar') {
                 $('#opcionesCambio').removeClass('d-none');
+                const totalSeleccionadas = (typeof table !== 'undefined' && table) ? table.rows('.selected').data().length : 1;
+                const textoLabel = totalSeleccionadas > 1 
+                    ? `Aplicar cambio solo a las ${totalSeleccionadas} cotizaciones seleccionadas` 
+                    : 'Aplicar cambio solo a esta cotización';
+                $('#lblSoloEstaCotizacion').text(textoLabel);
                 $('#soloEstaCotizacion').prop('checked', true);
             } else {
                 $('#opcionesCambio').addClass('d-none');
