@@ -598,8 +598,8 @@ class CotizacionesService
                 $q->where('cotizaciones.id_empresa', $idEmpresa);
             })
             ->where('cotizaciones.jerarquia', '!=', 'Secundario')
-            ->where('cotizaciones.estatus', '!=', 'Cancelada');
-
+            ->where('cotizaciones.estatus', '!=', 'Cancelada')
+            ->where('cotizaciones.id_proveedor', '!=', 59); //tEMPORAL EXCLUI ESTE VAMOS A PONERLE ALGUN CANDADO "Transporte XYZ" (id_proveedor=59) from cost capture
         if (!empty($idCliente)) {
             $query->where('cotizaciones.id_cliente', $idCliente);
         }

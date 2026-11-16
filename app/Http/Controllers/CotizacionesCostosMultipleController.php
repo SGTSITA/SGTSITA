@@ -11,6 +11,7 @@ use App\Services\EquipoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class CotizacionesCostosMultipleController extends Controller
 {
@@ -94,7 +95,7 @@ class CotizacionesCostosMultipleController extends Controller
                 'total_registros' => $datos['total_registros'],
             ]);
         } catch (\Throwable $e) {
-            \Log::error("Error en CotizacionesCostosMultipleController@datos: " . $e->getMessage(), [
+            Log::error("Error en CotizacionesCostosMultipleController@datos: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
 
