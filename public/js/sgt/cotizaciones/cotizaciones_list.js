@@ -397,8 +397,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
                 return false;
             }
+
+            // Limpiar datos previos del modal para evitar que se arrastren a viajes sin asignación
+            if (typeof window.limpiarModalViaje === "function") {
+                window.limpiarModalViaje();
+            }
+
             const card = document.getElementById("cardGpsMapa");
-            card.classList.add("d-none");
+            if (card) card.classList.add("d-none");
 
             btnPlanear.classList.add("d-none");
             seccionPlanearViaje.classList.add("d-none");
@@ -423,6 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 .querySelector('meta[name="csrf-token"]')
                 .getAttribute("content");
             let idContenedor = seleccion[0].id;
+            localStorage.setItem("idContenedor", idContenedor);
+            localStorage.setItem("numContenedor", seleccion[0].contenedor);
 
             let payload = { _token, idContenedor };
 
@@ -441,12 +449,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         planeacionEstatus =
                             data.contenedor?.cotizacion?.estatus_planeacion ??
                             0;
-                        statusViaje =
-                            data.contenedor?.cotizacion?.estatus_planeacion ??
-                            "NO ASIGNADA";
+                        const cotEstatus =
+                            data.contenedor?.cotizacion?.estatus ?? statusViaje;
+                        statusViaje = cotEstatus;
+
+                        document.getElementById("estatusViaje").textContent =
+                            planeacionEstatus == 1 ? "Planeada" : statusViaje;
 
                         // ----- OPERADOR -----
                         txtOperador.value = data.operador?.nombre ?? "";
+                        txtOperador.dataset.mepOperador =
+                            data.operador?.id ?? "0";
                         txtTelefono.value = data.operador?.telefono ?? "";
 
                         // Helper para asegurar opción de equipo y actualizar visualmente Select2 sin disparar limpieza destructiva
@@ -577,8 +590,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
 
                         //FECHAS -- AGREGADO NUEVO
-                        dtpFechaSalida.value = data.fecha_inicio;
-                        dtpFechaEntrega.value = data.fecha_fin;
+                        dtpFechaSalida.value = data.fecha_inicio ?? "";
+                        if (dtpFechaSalida._flatpickr && data.fecha_inicio) {
+                            dtpFechaSalida._flatpickr.setDate(data.fecha_inicio, true);
+                        }
+                        dtpFechaEntrega.value = data.fecha_fin ?? "";
+                        if (dtpFechaEntrega._flatpickr && data.fecha_fin) {
+                            dtpFechaEntrega._flatpickr.setDate(data.fecha_fin, true);
+                        }
+
+                        if (statusViaje == "Aprobada" && planeacionEstatus != 1) {
+                            btnPlanear.classList.remove("d-none");
+                            seccionPlanearViaje.classList.remove("d-none");
+                        } else {
+                            btnPlanear.classList.add("d-none");
+                            seccionPlanearViaje.classList.add("d-none");
+                        }
 
                         const equipoIdUnidad =
                             data.camion?.id || data.id_camion;
@@ -611,18 +638,27 @@ document.addEventListener("DOMContentLoaded", function () {
                         ]);
 
                         actualizarDistanciaEquipos();
+                    } else {
+                        // Viaje sin asignación previa: el formulario permanece limpio
+                        if (statusViaje == "Aprobada") {
+                            btnPlanear.classList.remove("d-none");
+                            seccionPlanearViaje.classList.remove("d-none");
+                        } else {
+                            btnPlanear.classList.add("d-none");
+                            seccionPlanearViaje.classList.add("d-none");
+                        }
                     }
                 },
                 error: (err) => {},
             });
 
-            if (statusViaje == "Aprobada" && planeacionEstatus != 1) {
+            if (statusViaje == "Aprobada") {
                 btnPlanear.classList.remove("d-none");
                 seccionPlanearViaje.classList.remove("d-none");
             }
 
             if (!modal1) {
-                modal1 = new bootstrap.Modal(modalEl);
+                modal1 = bootstrap.Modal.getOrCreateInstance(modalEl);
             }
 
             modal1.show();

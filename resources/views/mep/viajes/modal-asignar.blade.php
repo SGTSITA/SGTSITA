@@ -541,3 +541,179 @@
         </div>
     </div>
 </div>
+
+<script>
+    function limpiarModalViaje() {
+        // 1. Operador
+        const txtOperador = document.querySelector("#txtOperador");
+        const txtTelefono = document.querySelector("#txtTelefono");
+        const boxOperador = document.getElementById("sugerenciasOperador");
+        if (txtOperador) {
+            txtOperador.value = "";
+            txtOperador.dataset.mepOperador = "0";
+        }
+        if (txtTelefono) {
+            txtTelefono.value = "";
+        }
+        if (boxOperador) {
+            boxOperador.innerHTML = "";
+            boxOperador.style.display = "none";
+        }
+
+        // 2. Unidad y Chasis - Inputs de texto
+        const inputsTexto = [
+            "txtPlacas", "txtSerie", "txtImei",
+            "txtPlacasA", "txtSerieChasisA", "txtImeiChasisA",
+            "txtPlacasB", "txtSerieChasisB", "txtImeiChasisB"
+        ];
+        inputsTexto.forEach(function (id) {
+            const inp = document.getElementById(id);
+            if (inp) inp.value = "";
+        });
+
+        const selectsGps = ["selectGPS", "selectChasisAGPS", "selectChasisBGPS"];
+        selectsGps.forEach(function (id) {
+            const sel = document.getElementById(id);
+            if (sel) {
+                sel.selectedIndex = 0;
+                sel.value = "";
+            }
+        });
+
+        // Re-popular catálogos de unidades/chasis si la función está disponible
+        if (typeof populateUnidadesSelects === "function") {
+            try {
+                populateUnidadesSelects();
+            } catch (e) {
+                console.warn("Error al re-popular selects de unidades:", e);
+            }
+        }
+
+        const selectsEquipos = ["txtNumUnidad", "txtNumChasisA", "txtNumChasisB"];
+        selectsEquipos.forEach(function (id) {
+            const sel = document.getElementById(id);
+            if (sel) {
+                sel.value = "";
+                sel.selectedIndex = 0;
+                sel.dataset.mepUnidad = "0";
+                if (typeof jQuery !== "undefined" && typeof jQuery.fn.select2 !== "undefined") {
+                    jQuery(sel).val("").trigger("change.select2");
+                }
+            }
+        });
+
+        // Estatus de GPS y botones de actualización
+        const statusGpsIds = ["gpsStatusUnidad", "gpsStatusChasisA", "gpsStatusChasisB"];
+        statusGpsIds.forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.className = "small fw-bold text-muted";
+                el.textContent = "Sin asignar GPS";
+            }
+        });
+
+        const btnsGps = ["btnActualizarGPSUnidad", "btnActualizarGPSChasisA", "btnActualizarGPSChasisB"];
+        btnsGps.forEach(function (id) {
+            const btn = document.getElementById(id);
+            if (btn) btn.style.display = "none";
+        });
+
+        // 3. Chasis Tabs - volver a pestaña Chasis A
+        const chasisATab = document.getElementById("chasisA-tab");
+        const chasisBTab = document.getElementById("chasisB-tab");
+        const chasisAPane = document.getElementById("chasisA");
+        const chasisBPane = document.getElementById("chasisB");
+        if (chasisATab && chasisBTab && chasisAPane && chasisBPane) {
+            chasisATab.classList.add("active");
+            chasisATab.setAttribute("aria-selected", "true");
+            chasisBTab.classList.remove("active");
+            chasisBTab.setAttribute("aria-selected", "false");
+            chasisAPane.classList.add("show", "active");
+            chasisBPane.classList.remove("show", "active");
+        }
+
+        // 4. Fechas
+        const dtpFechaSalida = document.querySelector("#txtFechaInicio");
+        const dtpFechaEntrega = document.querySelector("#txtFechaFinal");
+        if (dtpFechaSalida) {
+            if (dtpFechaSalida._flatpickr) {
+                dtpFechaSalida._flatpickr.clear();
+            } else {
+                dtpFechaSalida.value = "";
+            }
+        }
+        if (dtpFechaEntrega) {
+            if (dtpFechaEntrega._flatpickr) {
+                dtpFechaEntrega._flatpickr.clear();
+            } else {
+                dtpFechaEntrega.value = "";
+            }
+        }
+
+        // 5. Estado de coordenadas y mapas
+        if (typeof mapInputs !== "undefined") {
+            Object.keys(mapInputs).forEach(function (k) {
+                if (mapInputs[k]) {
+                    mapInputs[k].latitud = null;
+                    mapInputs[k].longitud = null;
+                }
+            });
+        }
+        if (typeof distanciaEquipos !== "undefined") {
+            distanciaEquipos = 0;
+        }
+
+        const cardGpsMapa = document.getElementById("cardGpsMapa");
+        if (cardGpsMapa) cardGpsMapa.classList.add("d-none");
+
+        const lblDistancia = document.getElementById("lblDistanciaEquipos");
+        if (lblDistancia) {
+            lblDistancia.innerHTML = '<span class="text-muted small"><i class="fas fa-info-circle me-1"></i> Sin datos GPS</span>';
+        }
+
+        const seccionMapa = document.getElementById("seccionMapa");
+        if (seccionMapa) seccionMapa.classList.add("d-none");
+
+        const formPlaneacion = document.getElementById("formPlaneacion");
+        if (formPlaneacion) formPlaneacion.classList.remove("d-none");
+
+        // 6. Datos del viaje
+        const elContenedor = document.getElementById("numeroContenedor");
+        const elEstatus = document.getElementById("estatusViaje");
+        const elOrigen = document.getElementById("origenViaje");
+        const elDestino = document.getElementById("destinoViaje");
+        const txtTipoViaje = document.getElementById("txtTipoViaje");
+        if (elContenedor) elContenedor.textContent = "";
+        if (elEstatus) elEstatus.textContent = "";
+        if (elOrigen) elOrigen.textContent = "";
+        if (elDestino) elDestino.textContent = "";
+        if (txtTipoViaje) txtTipoViaje.value = "";
+
+        // 7. Botones de acción y secciones
+        const btnPlanear = document.querySelector("#btnPlanearViaje");
+        const seccionPlanearViaje = document.querySelector("#seccionProgramarViaje");
+        if (btnPlanear) btnPlanear.classList.add("d-none");
+        if (seccionPlanearViaje) seccionPlanearViaje.classList.add("d-none");
+
+        // 8. Limpiar LocalStorage para evitar enviar contenedor equivocado si no está seleccionado
+        localStorage.removeItem("idContenedor");
+        localStorage.removeItem("numContenedor");
+    }
+    window.limpiarModalViaje = limpiarModalViaje;
+
+    function initLimpiarModalViajeEvents() {
+        const modalViajeEl = document.getElementById("viajeModal");
+        if (modalViajeEl && !modalViajeEl.dataset.cleanListenerAttached) {
+            modalViajeEl.dataset.cleanListenerAttached = "true";
+            modalViajeEl.addEventListener("hidden.bs.modal", function () {
+                limpiarModalViaje();
+            });
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initLimpiarModalViajeEvents);
+    } else {
+        initLimpiarModalViajeEvents();
+    }
+</script>
