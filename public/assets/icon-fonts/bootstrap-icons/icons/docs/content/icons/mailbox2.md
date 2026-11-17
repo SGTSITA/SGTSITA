@@ -1,10 +1,10 @@
 ---
 title: Mailbox2
 categories:
-  - Real world
+    - Real world
 tags:
-  - post
-  - postal
-  - postbox
-  - letterbox
+    - post
+    - postal
+    - postbox
+    - letterbox
 ---

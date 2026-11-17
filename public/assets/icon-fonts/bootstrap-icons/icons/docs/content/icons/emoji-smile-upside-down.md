@@ -1,8 +1,8 @@
 ---
 title: Emoji smile upside down
 categories:
-  - Emoji
+    - Emoji
 tags:
-  - emoticon
-  - sarcasm
+    - emoticon
+    - sarcasm
 ---

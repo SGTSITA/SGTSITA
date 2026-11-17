@@ -1,7 +1,7 @@
 ---
 title: Arrows angle expand
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
+    - arrow
 ---

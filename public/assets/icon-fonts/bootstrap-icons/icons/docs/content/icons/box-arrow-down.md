@@ -1,9 +1,9 @@
 ---
 title: Box arrow down
 categories:
-  - Box arrows
+    - Box arrows
 tags:
-  - arrow
-  - download
-  - save
+    - arrow
+    - download
+    - save
 ---

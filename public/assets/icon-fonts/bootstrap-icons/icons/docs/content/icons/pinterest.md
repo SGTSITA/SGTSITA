@@ -1,7 +1,7 @@
 ---
 title: Pinterest
 categories:
-  - Brand
+    - Brand
 tags:
-  - social
+    - social
 ---

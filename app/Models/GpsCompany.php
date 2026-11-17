@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Auditable;
 
 class GpsCompany extends Model
 {
     use SoftDeletes;
+    use Auditable;
 
     protected $table = 'gps_company';
 
@@ -17,11 +19,20 @@ class GpsCompany extends Model
         'url_conexion',
         'telefono',
         'correo',
-        'contacto'
+        'contacto',
+        'icono'
     ];
 
     public function serviciosGps()
     {
         return $this->hasMany(ServicioGps::class, 'id_gps_company');
+    }
+
+    public function empresas()
+    {
+        return $this->hasMany(
+            GpsCompanyProveedor::class,
+            'id_gps_company'
+        );
     }
 }

@@ -1,11 +1,11 @@
 ---
 title: Person
 categories:
-  - People
+    - People
 tags:
-  - human
-  - individual
-  - avatar
-  - user
-  - account
+    - human
+    - individual
+    - avatar
+    - user
+    - account
 ---

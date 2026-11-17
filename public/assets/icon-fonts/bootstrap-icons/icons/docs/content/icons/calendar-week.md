@@ -1,10 +1,10 @@
 ---
 title: Calendar week
 categories:
-  - Date and time
+    - Date and time
 tags:
-  - dates
-  - timeline
-  - duration
-  - week
+    - dates
+    - timeline
+    - duration
+    - week
 ---

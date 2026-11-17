@@ -1,8 +1,8 @@
 ---
 title: HDMI
 categories:
-  - Devices
+    - Devices
 tags:
-  - video
-  - input
+    - video
+    - input
 ---

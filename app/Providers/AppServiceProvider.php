@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-//
+        //
     }
 
     /**
@@ -33,12 +33,12 @@ class AppServiceProvider extends ServiceProvider
         view()->composer('*', function ($view) {
 
 
-            if( auth()->user() == null){
+            $user = auth()->user();
+
+            if (!$user || !$user->Empresa) {
                 $configuracion = Configuracion::first();
-
-            }else{
-                $configuracion = auth()->user()->Empresa->Configuracion;
-
+            } else {
+                $configuracion = $user->Empresa->Configuracion ?? Configuracion::first();
             }
 
             $view->with(['configuracion' => $configuracion]);

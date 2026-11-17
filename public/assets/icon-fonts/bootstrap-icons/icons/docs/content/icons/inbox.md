@@ -1,9 +1,9 @@
 ---
 title: Inbox
 categories:
-  - Communications
+    - Communications
 tags:
-  - mail
-  - email
-  - letter tray
+    - mail
+    - email
+    - letter tray
 ---

@@ -1,8 +1,8 @@
 ---
 title: Asterisk
 categories:
-  - Typography
+    - Typography
 tags:
-  - asterisks
-  - star
+    - asterisks
+    - star
 ---

@@ -1,9 +1,9 @@
 ---
 title: Graph down
 categories:
-  - Data
+    - Data
 tags:
-  - chart
-  - graph
-  - analytics
+    - chart
+    - graph
+    - analytics
 ---

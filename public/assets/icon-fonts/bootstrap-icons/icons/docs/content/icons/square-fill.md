@@ -1,8 +1,8 @@
 ---
 title: Square fill
 categories:
-  - Shapes
+    - Shapes
 tags:
-  - shape
-  - rectangle
+    - shape
+    - rectangle
 ---

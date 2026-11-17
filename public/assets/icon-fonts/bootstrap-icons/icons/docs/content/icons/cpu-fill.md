@@ -1,9 +1,9 @@
 ---
 title: Cpu fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - processor
-  - chip
-  - computer
+    - processor
+    - chip
+    - computer
 ---

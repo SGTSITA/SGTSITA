@@ -1,13 +1,13 @@
 ---
 title: X lg
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - x
-  - delete
-  - reset
-  - clear
-  - cancel
-  - close
-  - exit
+    - x
+    - delete
+    - reset
+    - clear
+    - cancel
+    - close
+    - exit
 ---

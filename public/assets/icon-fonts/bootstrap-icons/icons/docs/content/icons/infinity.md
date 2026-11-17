@@ -1,8 +1,8 @@
 ---
 title: Infinity
 categories:
-  - Typography
+    - Typography
 tags:
-  - math
-  - infinite
+    - math
+    - infinite
 ---

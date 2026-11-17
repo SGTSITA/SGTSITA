@@ -1,12 +1,12 @@
 ---
 title: Truck
 categories:
-  - Commerce
+    - Commerce
 tags:
-  - trucking
-  - shipping
-  - shipment
-  - transport
-  - deliver
-  - delivery
+    - trucking
+    - shipping
+    - shipment
+    - transport
+    - deliver
+    - delivery
 ---

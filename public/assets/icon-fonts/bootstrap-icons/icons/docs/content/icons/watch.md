@@ -1,8 +1,8 @@
 ---
 title: Watch
 categories:
-  - Devices
+    - Devices
 tags:
-  - wearables
-  - clock
+    - wearables
+    - clock
 ---

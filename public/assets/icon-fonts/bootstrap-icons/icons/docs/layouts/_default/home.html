@@ -1,20 +1,13 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    {{ partial "head" . }}
-  </head>
-  <body id="icons-body">
-    {{ partialCached "skippy" . }}
-    {{ partialCached "navbar" . }}
-    {{ partialCached "home/hero" . }}
+    <head>
+        {{ partial "head" . }}
+    </head>
+    <body id="icons-body">
+        {{ partialCached "skippy" . }} {{ partialCached "navbar" . }} {{ partialCached "home/hero" . }}
 
-    <main class="container" id="content">
-      {{ partialCached "icons" . }}
+        <main class="container" id="content">{{ partialCached "icons" . }} {{ .Content }}</main>
 
-      {{ .Content }}
-    </main>
-
-    {{- partialCached "footer" . }}
-    {{- partialCached "scripts" . "home" }}
-  </body>
+        {{- partialCached "footer" . }} {{- partialCached "scripts" . "home" }}
+    </body>
 </html>

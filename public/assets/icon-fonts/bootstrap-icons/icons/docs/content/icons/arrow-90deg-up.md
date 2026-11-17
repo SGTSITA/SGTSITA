@@ -1,8 +1,8 @@
 ---
 title: Arrow 90deg up
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
-  - right-angle
+    - arrow
+    - right-angle
 ---

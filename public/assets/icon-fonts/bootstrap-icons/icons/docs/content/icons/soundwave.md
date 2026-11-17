@@ -1,9 +1,9 @@
 ---
 title: Soundwave
 categories:
-  - Media
+    - Media
 tags:
-  - audio
-  - sound
-  - wave
+    - audio
+    - sound
+    - wave
 ---

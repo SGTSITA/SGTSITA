@@ -1,8 +1,8 @@
 ---
 title: Newspaper
 categories:
-  - Real world
+    - Real world
 tags:
-  - news
-  - paper
+    - news
+    - paper
 ---

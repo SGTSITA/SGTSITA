@@ -1,7 +1,7 @@
 ---
 title: Tsunami
 categories:
-  - Weather
+    - Weather
 tags:
-  - wave
+    - wave
 ---

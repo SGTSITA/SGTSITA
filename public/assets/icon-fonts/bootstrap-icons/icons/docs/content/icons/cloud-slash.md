@@ -1,7 +1,7 @@
 ---
 title: Cloud slash
 categories:
-  - Clouds
+    - Clouds
 tags:
-  - cloud
+    - cloud
 ---

@@ -1,8 +1,8 @@
 ---
 title: Plus square dotted
 categories:
-  - Alerts, warnings, and signs
+    - Alerts, warnings, and signs
 tags:
-  - add
-  - new
+    - add
+    - new
 ---

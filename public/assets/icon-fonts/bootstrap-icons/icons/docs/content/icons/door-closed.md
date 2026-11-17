@@ -1,9 +1,9 @@
 ---
 title: Door closed
 categories:
-  - Real world
+    - Real world
 tags:
-  - door
-  - logout
-  - signout
+    - door
+    - logout
+    - signout
 ---

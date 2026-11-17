@@ -1,10 +1,10 @@
 ---
 title: People
 categories:
-  - People
+    - People
 tags:
-  - humans
-  - organization
-  - avatar
-  - users
+    - humans
+    - organization
+    - avatar
+    - users
 ---

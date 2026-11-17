@@ -1,7 +1,7 @@
 ---
 title: Chevron bar expand
 categories:
-  - Chevrons
+    - Chevrons
 tags:
-  - chevron
+    - chevron
 ---

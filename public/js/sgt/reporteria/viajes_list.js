@@ -1,48 +1,199 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const gridDiv = document.querySelector('#viajesGrid');
-    let gridApi = null;
+let fechaInicioViajes;
+let fechaFinViajes;
+let gridApi = null;
+
+function searchviajesGet(inicio, fin) {
+    fechaInicioViajes = inicio;
+    fechaFinViajes = fin;
+    const idEquipo = document.getElementById("selEquipoViajes")?.value || "";
+    fetch(`/reporteria/viajes/data?fecha_inicio=${inicio}&fecha_fin=${fin}&id_equipo=${encodeURIComponent(idEquipo)}`)
+        .then((response) => response.json())
+        .then((data) => {
+            window.viajesData = data;
+
+            if (gridApi) {
+                gridApi.setGridOption("rowData", data);
+            }
+
+            document.getElementById("txtDataGenericExcel").value =
+                JSON.stringify(data);
+        })
+        .catch((error) => {
+            console.error("Error cargando viajes:", error);
+        });
+}
+document.addEventListener("DOMContentLoaded", () => {
+    const startDate = moment().subtract(7, "days");
+    const endDate = moment();
+
+    searchviajesGet(
+        startDate.format("YYYY-MM-DD"),
+        endDate.format("YYYY-MM-DD"),
+    );
+
+    document.getElementById("selEquipoViajes")?.addEventListener("change", () => {
+        if (fechaInicioViajes && fechaFinViajes) {
+            searchviajesGet(fechaInicioViajes, fechaFinViajes);
+        }
+    });
+
+    const gridDiv = document.querySelector("#viajesGrid");
 
     const columnDefs = [
-        { 
-            headerName: "ID", 
-            field: "id", 
-            checkboxSelection: true, 
-            headerCheckboxSelection: true, 
-            headerCheckboxSelectionFilteredOnly: true, 
-            width: 100, 
-            cellClass: 'text-center' 
-          },
-        { headerName: "Contenedor", field: "contenedor", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Proveedor", field: "proveedor", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Cliente", field: "cliente", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Subcliente", field: "subcliente", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Origen", field: "origen", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Destino", field: "destino", filter: 'agTextColumnFilter', floatingFilter: true, flex: 1 },
-        { headerName: "Estatus", field: "estatus", filter: 'agTextColumnFilter', floatingFilter: true, width: 150 }
+        {
+            headerName: "ID",
+            field: "id",
+            checkboxSelection: true,
+            headerCheckboxSelection: true,
+            headerCheckboxSelectionFilteredOnly: true,
+            width: 100,
+            cellClass: "text-center",
+        },
+        {
+            headerName: "Contenedor",
+            field: "contenedor",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Peso Contenedor",
+            field: "peso_contenedor",
+            filter: "agNumberColumnFilter",
+            floatingFilter: true,
+            filterParams: {
+                buttons: ["reset", "apply"],
+                debounceMs: 300,
+                allowedCharPattern: "\\d\\-\\.,",
+            },
+            filterValueGetter: (params) => {
+                const val = params.data?.peso_contenedor;
+                if (!val || val === "-" || val === "") return null;
+                const num = parseFloat(String(val).replace(",", ".").split("/")[0].trim());
+                return isNaN(num) ? null : num;
+            },
+            comparator: (valueA, valueB) => {
+                const numA = (!valueA || valueA === "-" || valueA === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueA).replace(",", ".").split("/")[0].trim()) || 0);
+                const numB = (!valueB || valueB === "-" || valueB === "")
+                    ? -Infinity
+                    : (parseFloat(String(valueB).replace(",", ".").split("/")[0].trim()) || 0);
+                return numA - numB;
+            },
+            width: 160,
+            cellClass: "text-center",
+        },
+        {
+            headerName: "Unidad",
+            field: "camion",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 130,
+        },
+        {
+            headerName: "Proveedor",
+            field: "proveedor",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Operador",
+            field: "operador",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+
+        {
+            headerName: "Cliente",
+            field: "cliente",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Subcliente",
+            field: "subcliente",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Origen",
+            field: "origen",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Destino",
+            field: "destino",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            flex: 1,
+        },
+        {
+            headerName: "Estatus",
+            field: "estatus",
+            filter: "agTextColumnFilter",
+            floatingFilter: true,
+            width: 150,
+        },
     ];
 
     const gridOptions = {
         columnDefs,
-        rowData: (window.viajesData || []).filter(item => {
-            const fecha = moment(item.fecha_salida, 'DD-MM-YYYY');
-            return fecha.isValid() && fecha.isBetween(moment().subtract(7, 'days'), moment(), 'day', '[]');
+        rowData: (window.viajesData || []).filter((item) => {
+            const fecha = moment(item.fecha_salida, "DD-MM-YYYY");
+            return (
+                fecha.isValid() &&
+                fecha.isBetween(
+                    moment().subtract(7, "days"),
+                    moment(),
+                    "day",
+                    "[]",
+                )
+            );
         }),
         suppressRowClickSelection: false,
-        rowSelection: 'multiple',
+        rowSelection: "multiple",
         groupSelectsFiltered: true,
         pagination: true,
         paginationPageSize: 30,
         defaultColDef: {
             sortable: true,
             filter: true,
-            resizable: true
+            resizable: true,
         },
         animateRows: true,
         onGridReady: (params) => {
             gridApi = params.api;
         },
         onFilterChanged: () => {
-            gridApi.deselectAll(); 
+            gridApi.deselectAll();
+        },
+        localeText: {
+            equals: "Igual a",
+            notEqual: "Diferente de",
+            lessThan: "Menor que",
+            lessThanOrEqual: "Menor o igual que",
+            greaterThan: "Mayor que",
+            greaterThanOrEqual: "Mayor o igual que",
+            inRange: "En rango",
+            inRangeStart: "Desde",
+            inRangeEnd: "Hasta",
+            filterOoo: "Filtrar...",
+            applyFilter: "Aplicar",
+            resetFilter: "Limpiar",
+            clearFilter: "Borrar",
+            contains: "Contiene",
+            notContains: "No contiene",
+            startsWith: "Empieza con",
+            endsWith: "Termina con",
+            blank: "En blanco",
+            notBlank: "No en blanco",
         },
     };
 
@@ -50,31 +201,46 @@ document.addEventListener('DOMContentLoaded', () => {
     gridApi = grid.api;
 
     // ========== Exportar seleccionados ==========
-    document.querySelectorAll('.exportButton').forEach(button => {
-        button.addEventListener('click', async function () {
+    document.querySelectorAll(".exportButton").forEach((button) => {
+        button.addEventListener("click", async function () {
             if (!gridApi) return;
 
             const fileType = this.dataset.filetype;
             const selectedRows = gridApi.getSelectedRows();
-            const selectedIds = selectedRows.map(row => row.id);
+            const selectedIds = selectedRows.map((row) => row.id);
 
             if (selectedIds.length === 0) {
-                Swal.fire({ icon: 'warning', title: 'Sin selección', text: 'Selecciona al menos un viaje para exportar.' });
+                Swal.fire({
+                    icon: "warning",
+                    title: "Sin selección",
+                    text: "Selecciona al menos un viaje para exportar.",
+                });
                 return;
             }
 
             const formData = new FormData();
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-            formData.append('fileType', fileType);
-            selectedIds.forEach(id => formData.append('cotizacion_ids[]', id));
+            formData.append(
+                "_token",
+                document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
+            );
+            formData.append("fileType", fileType);
+            selectedIds.forEach((id) =>
+                formData.append("cotizacion_ids[]", id),
+            );
 
             try {
-                const response = await fetch(exportUrl, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error("Error al generar el archivo.");
+                const response = await fetch(exportUrl, {
+                    method: "POST",
+                    body: formData,
+                });
+                if (!response.ok)
+                    throw new Error("Error al generar el archivo.");
 
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
+                const a = document.createElement("a");
                 a.href = downloadUrl;
                 a.download = `viajes_seleccionados.${fileType}`;
                 document.body.appendChild(a);
@@ -82,78 +248,92 @@ document.addEventListener('DOMContentLoaded', () => {
                 a.remove();
                 window.URL.revokeObjectURL(downloadUrl);
 
-                Swal.fire({ icon: 'success', title: 'Descarga completa', text: 'El archivo se descargó correctamente.' });
+                Swal.fire({
+                    icon: "success",
+                    title: "Descarga completa",
+                    text: "El archivo se descargó correctamente.",
+                });
             } catch (error) {
-                Swal.fire({ icon: 'error', title: 'Error', text: error.message });
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: error.message,
+                });
             }
         });
     });
 
     // ========== Exportar TODO ==========
-    document.getElementById('exportButtonGenericExcel')?.addEventListener('click', async function () {
-        const data = document.getElementById('txtDataGenericExcel')?.value;
-        if (!data || JSON.parse(data).length === 0) {
-            Swal.fire({ icon: 'warning', title: 'Sin datos', text: 'No hay información para exportar.' });
-            return;
-        }
+    document
+        .getElementById("exportButtonGenericExcel")
+        ?.addEventListener("click", async function () {
+            const data = document.getElementById("txtDataGenericExcel")?.value;
+            if (!data || JSON.parse(data).length === 0) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Sin datos",
+                    text: "No hay información para exportar.",
+                });
+                return;
+            }
 
-        const formData = new FormData();
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-        formData.append('fileType', 'xlsx');
-        formData.append('exportAll', 'true');
+            const formData = new FormData();
+            formData.append(
+                "_token",
+                document
+                    .querySelector('meta[name="csrf-token"]')
+                    .getAttribute("content"),
+            );
+            formData.append("fileType", "xlsx");
+            formData.append("exportAll", "true");
 
-        try {
-            const response = await fetch(exportUrl, { method: 'POST', body: formData });
-            if (!response.ok) throw new Error("Error al generar el archivo.");
+            try {
+                const response = await fetch(exportUrl, {
+                    method: "POST",
+                    body: formData,
+                });
+                if (!response.ok)
+                    throw new Error("Error al generar el archivo.");
 
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = `viajes_tablero_completo.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(downloadUrl);
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = `viajes_tablero_completo.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
 
-            Swal.fire({ icon: 'success', title: 'Descarga completa', text: 'El archivo se descargó correctamente.' });
-        } catch (error) {
-            Swal.fire({ icon: 'error', title: 'Error', text: error.message });
-        }
-    });
+                Swal.fire({
+                    icon: "success",
+                    title: "Descarga completa",
+                    text: "El archivo se descargó correctamente.",
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: error.message,
+                });
+            }
+        });
 
     // ========== Filtro local por fecha ==========
 
-    const startDate = moment().subtract(7, 'days');
-    const endDate = moment();
-
-    $('#daterange').daterangepicker({
-        startDate,
-        endDate,
-        maxDate: moment().endOf('month'),
-        opens: 'right',
-        locale: {
-            format: 'YYYY-MM-DD',
-            separator: ' al ',
-            applyLabel: 'Aplicar',
-            cancelLabel: 'Cancelar',
-            fromLabel: 'Desde',
-            toLabel: 'Hasta',
-            daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-            monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
-                'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-            firstDay: 1
-        }
-    }, function (start, end) {
-        // ⚡ Filtro local sin fetch
-        const filtrado = (window.viajesData || []).filter(item => {
-            const fecha = moment(item.fecha_salida, 'DD-MM-YYYY'); // Asegúrate del formato
-            return fecha.isValid() && fecha.isBetween(start, end, 'day', '[]'); // incluye extremos
-        });
-
-        if (gridApi) {
-            gridApi.setGridOption('rowData', filtrado);
-            document.getElementById('txtDataGenericExcel').value = JSON.stringify(filtrado);
-        }
-    });
+    initSgtDateRange(
+        "#daterange",
+        {
+            startDate,
+            endDate,
+            locale: {
+                separator: " al ",
+            },
+        },
+        function (start, end) {
+            fechaInicioViajes = start.format("YYYY-MM-DD");
+            fechaFinViajes = end.format("YYYY-MM-DD");
+            searchviajesGet(fechaInicioViajes, fechaFinViajes);
+        },
+    );
 });

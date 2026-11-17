@@ -1,16 +1,16 @@
 ---
 title: Arrow clockwise
 categories:
-  - Arrows
+    - Arrows
 tags:
-  - arrow
-  - right
-  - spin
-  - turn
-  - around
-  - round
-  - rotate
-  - refresh
-  - reload
-  - redo
+    - arrow
+    - right
+    - spin
+    - turn
+    - around
+    - round
+    - rotate
+    - refresh
+    - reload
+    - redo
 ---

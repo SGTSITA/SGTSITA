@@ -1,9 +1,9 @@
 ---
 title: Binoculars fill
 categories:
-  - Real world
+    - Real world
 tags:
-  - distance
-  - view
-  - search
+    - distance
+    - view
+    - search
 ---

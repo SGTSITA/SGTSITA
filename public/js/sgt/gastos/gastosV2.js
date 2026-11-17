@@ -1,132 +1,195 @@
 const gastosFormFields = [
-    {'field':'motivo', 'id':'motivo','label':'Descripción','required': true, "type":"text"},
-    {'field':'monto1', 'id':'monto1','label':'Monto','required': true, "type":"money"},
-    {'field':'categoria_movimiento', 'id':'categoria_movimiento','label':'Categoría','required': true, "type":"text"},
-    {'field':'fecha_movimiento', 'id':'fecha_movimiento','label':'Fecha movimiento','required': true, "type":"text"},
-    {'field':'fecha_aplicacion', 'id':'fecha_aplicacion','label':'Fecha aplicación','required': false, "type":"text"},
-    {'field':'id_banco1', 'id':'id_banco1','label':'Fecha aplicación','required': true, "type":"text"},
-    {'field':'tipoPago', 'id':'tipoPago','label':'Tipo de Pago','required': true, "type":"select"},
+    {
+        field: "motivo",
+        id: "motivo",
+        label: "Descripción",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "monto1",
+        id: "monto1",
+        label: "Monto",
+        required: true,
+        type: "money",
+    },
+    {
+        field: "categoria_movimiento",
+        id: "categoria_movimiento",
+        label: "Categoría",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "fecha_movimiento",
+        id: "fecha_movimiento",
+        label: "Fecha movimiento",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "fecha_aplicacion",
+        id: "fecha_aplicacion",
+        label: "Fecha aplicación",
+        required: false,
+        type: "text",
+    },
+    {
+        field: "id_banco1",
+        id: "id_banco1",
+        label: "Fecha aplicación",
+        required: true,
+        type: "text",
+    },
+    {
+        field: "tipoPago",
+        id: "tipoPago",
+        label: "Tipo de Pago",
+        required: true,
+        type: "select",
+    },
 ];
 
 const formFieldsDiferir = [
-  {'field':'txtDiferirFechaInicia','id':'txtDiferirFechaInicia','label':'Fecha inicio Pago Diferido','required': false, "type":"text", "trigger":"tipoPago"},
-  {'field':'txtDiferirFechaTermina','id':'txtDiferirFechaTermina','label':'Fecha Finalización Pago Diferido','required': false, "type":"text", "trigger":"tipoPago"},
-  
-]
+    {
+        field: "txtDiferirFechaInicia",
+        id: "txtDiferirFechaInicia",
+        label: "Fecha inicio Pago Diferido",
+        required: false,
+        type: "text",
+        trigger: "tipoPago",
+    },
+    {
+        field: "txtDiferirFechaTermina",
+        id: "txtDiferirFechaTermina",
+        label: "Fecha Finalización Pago Diferido",
+        required: false,
+        type: "text",
+        trigger: "tipoPago",
+    },
+];
 
 function handleSelection(input) {
-    
-  document.querySelectorAll('.custom-option').forEach(opt =>{
-      opt.classList.remove('selected') 
-  });
-  
-  input.parentElement.classList.add('selected');
+    document.querySelectorAll(".custom-option").forEach((opt) => {
+        opt.classList.remove("selected");
+    });
 
-  document.querySelectorAll(".aplicacion-gastos").forEach( opt => {
-      opt.classList.add('d-none')
-  })
+    input.parentElement.classList.add("selected");
 
-  if(input.parentElement.innerText == "Viaje") document.querySelector("#aplicacion-viaje").classList.remove('d-none');
-  if(input.parentElement.innerText == "Equipo") document.querySelector("#aplicacion-equipo").classList.remove('d-none');
-  
-  
+    document.querySelectorAll(".aplicacion-gastos").forEach((opt) => {
+        opt.classList.add("d-none");
+    });
+
+    if (input.parentElement.innerText == "Viaje")
+        document.querySelector("#aplicacion-viaje").classList.remove("d-none");
+    if (input.parentElement.innerText == "Equipo")
+        document.querySelector("#aplicacion-equipo").classList.remove("d-none");
 }
 
 document.getElementById("tipoPago").addEventListener("change", function () {
-  const seccion = document.getElementById("seccionDiferido");
-  if (this.value === "1") {
-    const bsCollapse = new bootstrap.Collapse(seccion, { show: true });
-  } else {
-    const bsCollapse = bootstrap.Collapse.getInstance(seccion);
-    if (bsCollapse) bsCollapse.hide();
-  }
+    const seccion = document.getElementById("seccionDiferido");
+    if (this.value === "1") {
+        const bsCollapse = new bootstrap.Collapse(seccion, { show: true });
+    } else {
+        const bsCollapse = bootstrap.Collapse.getInstance(seccion);
+        if (bsCollapse) bsCollapse.hide();
+    }
 });
 
+const currencyFormatter = (value) => {
+    return new Intl.NumberFormat("es-MX", {
+        style: "currency",
+        currency: "MXN",
+    }).format(value);
+};
 
-  const currencyFormatter = (value) => {
-    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(value);
-  };
-
-  const formatFecha = params => {
+const formatFecha = (params) => {
     if (!params) return "";
     const [year, month, day] = params.split("-"); // Divide YYYY-MM-DD
     return `${day}/${month}/${year}`; // Retorna en formato d/m/Y
-  };
+};
 
-  
+let monto1 = document.querySelector("#monto1");
+let labelMontoGasto = document.querySelector("#labelMontoGasto");
+let labelGastoDiario = document.querySelector("#labelGastoDiario");
+let labelDiasPeriodo = document.querySelector("#labelDiasPeriodo");
+let btnConfirmacion = document.querySelector("#btnConfirmacion");
 
-  
-  
-  let monto1 = document.querySelector('#monto1')
-  let labelMontoGasto = document.querySelector('#labelMontoGasto')
-  let labelGastoDiario = document.querySelector('#labelGastoDiario')
-  let labelDiasPeriodo = document.querySelector('#labelDiasPeriodo')
-    let btnConfirmacion = document.querySelector('#btnConfirmacion')
+let fromDate = null;
+let toDate = null;
 
-  let fromDate = null;
-  let toDate = null;
+monto1.addEventListener(
+    "input",
+    async (e) =>
+        (labelMontoGasto.textContent = await moneyFormat(e.target.value)),
+    calcDays(),
+);
 
-  monto1.addEventListener('input', async (e) => labelMontoGasto.textContent = await moneyFormat(e.target.value), calcDays())
-
-  
-  document.querySelectorAll(".fechasDiferir").forEach(elemento => {
+document.querySelectorAll(".fechasDiferir").forEach((elemento) => {
     elemento.addEventListener("focus", () => calcDays());
     elemento.addEventListener("blur", () => calcDays());
     elemento.addEventListener("change", () => calcDays());
 });
 
-  let IdGasto = null;
+let IdGasto = null;
 
-  function diferenciaEnDias(fecha1, fecha2) {
-    fecha1ToTime = new Date(fecha1)
-    fecha2Totme = new Date(fecha2)
+function diferenciaEnDias(fecha1, fecha2) {
+    fecha1ToTime = new Date(fecha1);
+    fecha2Totme = new Date(fecha2);
     const unDia = 1000 * 60 * 60 * 24; // Milisegundos en un día
-    const diferenciaMs = Math.abs(fecha2Totme.getTime() - fecha1ToTime.getTime());
+    const diferenciaMs = Math.abs(
+        fecha2Totme.getTime() - fecha1ToTime.getTime(),
+    );
     return Math.floor(diferenciaMs / unDia);
- }
+}
 
- function diferenciaEnMeses(fecha1, fecha2) {
-  let inicio = new Date(fecha1+ "T00:00:00");
-  let fin = new Date(fecha2+ "T00:00:00");
-  
+function diferenciaEnMeses(fecha1, fecha2) {
+    let inicio = new Date(fecha1 + "T00:00:00");
+    let fin = new Date(fecha2 + "T00:00:00");
+
     let periodos = 1; // Siempre hay al menos un periodo
 
-    if (inicio.getFullYear() === fin.getFullYear() && inicio.getMonth() === fin.getMonth()) {
-      return periodos;
+    if (
+        inicio.getFullYear() === fin.getFullYear() &&
+        inicio.getMonth() === fin.getMonth()
+    ) {
+        return periodos;
     }
 
     // Mientras no lleguemos al mes y año de la fecha final
-    while (inicio.getFullYear() < fin.getFullYear() || inicio.getMonth() < fin.getMonth()) {
-      periodos++;
-      inicio.setMonth(inicio.getMonth() + 1);
+    while (
+        inicio.getFullYear() < fin.getFullYear() ||
+        inicio.getMonth() < fin.getMonth()
+    ) {
+        periodos++;
+        inicio.setMonth(inicio.getMonth() + 1);
     }
 
     return periodos;
 }
 
-  function calcDays(){
-    let fechaI = document.getElementById('txtDiferirFechaInicia');
-    let fechaF = document.getElementById('txtDiferirFechaTermina');
+function calcDays() {
+    let fechaI = document.getElementById("txtDiferirFechaInicia");
+    let fechaF = document.getElementById("txtDiferirFechaTermina");
 
-    if(fechaI.value.length > 0 && fechaF.value.length > 0){
-     let diasContados = diferenciaEnMeses(fechaI.value, fechaF.value)
-     labelDiasPeriodo.textContent = diasContados
+    if (fechaI.value.length > 0 && fechaF.value.length > 0) {
+        let diasContados = diferenciaEnMeses(fechaI.value, fechaF.value);
+        labelDiasPeriodo.textContent = diasContados;
 
-     let amount = (monto1.value.length > 0) ? reverseMoneyFormat(monto1.value) : 0
-     let dailyAmount = parseFloat(amount) / diasContados
-     labelGastoDiario.textContent = moneyFormat(dailyAmount)
+        let amount =
+            monto1.value.length > 0 ? reverseMoneyFormat(monto1.value) : 0;
+        let dailyAmount = parseFloat(amount) / diasContados;
+        labelGastoDiario.textContent = moneyFormat(dailyAmount);
     }
-  }
+}
 
-  
-
-  /*btnDiferir.addEventListener('click',()=>{
+/*btnDiferir.addEventListener('click',()=>{
     let gasto = apiGrid.getSelectedRows();
 
     if(gasto.length <= 0 || gasto.length > 1){
       Swal.fire('Seleccionar UN Gasto','Debe seleccionar el gasto que desea diferir','warning');
       return;
-    } 
+    }
 
     if(gasto[0].GastoAplicado == true){
       Swal.fire('Gasto Previamente aplicado','Lo sentimos, el gastos que está intentado APLICAR, ha sido utilizado previamente','warning');
@@ -142,131 +205,287 @@ document.getElementById("tipoPago").addEventListener("change", function () {
     bootstrapModal.show();
 
   })*/
-   
 
-
-  $("#frmCrearGasto").on('submit',(e)=>{
+$("#frmCrearGasto").on("submit", (e) => {
     e.preventDefault();
     var form = $(this);
-   
+
     var passValidation = gastosFormFields.every((item) => {
         var field = document.getElementById(item.field);
-        if(field){
-            if(item.required === true && field.value.length == 0){
-                Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
+        if (field) {
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
                 return false;
             }
         }
         return true;
-    })
+    });
 
-   if(!passValidation) return passValidation;
+    if (!passValidation) return passValidation;
 
-   const formData = {};
+    const formData = {};
 
-   gastosFormFields.forEach((item) =>{
-    var input = item.field;
-    var inputValue = document.getElementById(input);
-    if(inputValue){
-        if(item.type == "money"){
-            formData[input] = (inputValue.value.length > 0) ? parseFloat(reverseMoneyFormat(inputValue.value)) : 0;
-        }else{
-            formData[input] = inputValue.value;
+    gastosFormFields.forEach((item) => {
+        var input = item.field;
+        var inputValue = document.getElementById(input);
+        if (inputValue) {
+            if (item.type == "money") {
+                formData[input] =
+                    inputValue.value.length > 0
+                        ? parseFloat(reverseMoneyFormat(inputValue.value))
+                        : 0;
+            } else {
+                formData[input] = inputValue.value;
+            }
         }
+    });
+
+    passValidation = formFieldsDiferir.every((item) => {
+        let trigger = item.trigger;
+        let field = document.getElementById(item.field);
+
+        if (trigger != "none") {
+            let primaryField = document.getElementById(trigger);
+            if (primaryField.value == 1 && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        if (field) {
+            if (item.required === true && field.value.length == 0) {
+                Swal.fire(
+                    "El campo " + item.label + " es obligatorio",
+                    "Parece que no ha proporcionado información en el campo " +
+                        item.label,
+                    "warning",
+                );
+                return false;
+            }
+        }
+
+        formData[item.field] = field.value;
+        return true;
+    });
+
+    if (!passValidation) return passValidation;
+    let input = document.querySelector('input[name="formasAplicar"]:checked');
+    let fechaAplicacion = formData["fecha_aplicacion"];
+    //  debugger;
+    if (
+        input.value == "Periodo" &&
+        (fechaAplicacion < window.mesinicio || fechaAplicacion > window.mesfin)
+    ) {
+        const inputFecha = document.querySelector('[name="fecha_aplicacion"]');
+
+        if (inputFecha) {
+            inputFecha.blur();
+
+            inputFecha.type = "text";
+
+            setTimeout(() => {
+                inputFecha.type = "date";
+            }, 300);
+        }
+
+        setTimeout(() => {
+            Swal.fire(
+                "Fecha inválida",
+                "La fecha de aplicación debe estar dentro del periodo seleccionado.",
+                "warning",
+            );
+        }, 150);
+
+        return;
     }
-   });
 
-   
-   passValidation = formFieldsDiferir.every((item) => {
-      let trigger = item.trigger;
-      let field = document.getElementById(item.field);
+    Swal.fire({
+        title: "Procesando...",
+        text: "Registrando gasto, por favor espere.",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        },
+    });
 
-      if(trigger != "none"){
-          let primaryField = document.getElementById(trigger);
-          if(primaryField.value == 1 && field.value.length == 0){
-              Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
-              return false;
-          }
-      }
-      
-      if(field){
-          if(item.required === true && field.value.length == 0){
-              Swal.fire("El campo "+item.label+" es obligatorio","Parece que no ha proporcionado información en el campo "+item.label,"warning");
-              return false;
-          }
-      }
-      
-      formData[item.field] = field.value;
-      return true;
+    formData["_token"] = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    formData["gastoDiario"] = labelGastoDiario.textContent;
+    formData["numPeriodos"] = labelDiasPeriodo.textContent;
 
-  });
+    const select = document.getElementById("selectUnidades");
+    const unidades = Array.from(select.selectedOptions).map(
+        (option) => option.value,
+    );
+    formData["unidades"] = unidades;
 
-if(!passValidation) return passValidation;
+    const selectViaje = document.getElementById("selectViajes");
+    const viajes = Array.from(selectViaje.selectedOptions).map(
+        (option) => option.value,
+    );
+    formData["viajes"] = viajes;
 
-   formData["_token"] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-   formData["gastoDiario"] = labelGastoDiario.textContent
-   formData["numPeriodos"] = labelDiasPeriodo.textContent
+    formData["formasAplicar"] = input.value;
 
-   const select = document.getElementById("selectUnidades");
-   const unidades = Array.from(select.selectedOptions).map(option => option.value);
-   formData["unidades"] = unidades
+    formData["fechaInicioSeleccionado"] = $("#daterange").attr("data-start");
+    formData["fechaFinalSeleccionado"] = $("#daterange").attr("data-end");
 
-   const selectViaje = document.getElementById("selectViajes");
-   const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value);
-   formData["viajes"] = viajes
-
-   let input = document.querySelector('input[name="formasAplicar"]:checked');
-   formData["formasAplicar"] = input.value
-
-   formData['fechaInicioSeleccionado'] = $('#daterange').attr('data-start');
-   formData['fechaFinalSeleccionado'] = $('#daterange').attr('data-end');
-
-   $.ajax({
-        url: '/gastos/generales/create',
+    $.ajax({
+        url: "/gastos/generales/create",
         type: "post",
         data: formData,
-        beforeSend:function(){
-        
-        },
-        success:function(data){
-                Swal.fire(data.Titulo,data.Mensaje,data.TMensaje).then(function() {
-                    if(data.TMensaje == "success"){
-                      $('#exampleModal').modal('hide')
-                      getGastos(fromDate,toDate);
+        beforeSend: function () {},
+        success: function (data) {
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje).then(
+                function () {
+                    if (data.TMensaje == "success") {
+                        limpiarModalAgregarGasto();
 
-                      gastosFormFields.forEach((item) =>{
-                          var input = item.field;
-                          var inputValue = document.getElementById(input);
-                          if(inputValue && item.type != 'select'){
-                            inputValue.value = "";
-                          }
-                       });
+                        // getGastos(fromDate, toDate);
 
-                       formFieldsDiferir.forEach((item) =>{
-                          var input = item.field;
-                          var inputValue = document.getElementById(input);
-                          if(inputValue){
-                            inputValue.value = "";
-                          }
-                       });
-                    
+                        gastosFormFields.forEach((item) => {
+                            var input = item.field;
+                            var inputValue = document.getElementById(input);
+                            if (inputValue && item.type != "select") {
+                                inputValue.value = "";
+                            }
+                        });
+
+                        formFieldsDiferir.forEach((item) => {
+                            var input = item.field;
+                            var inputValue = document.getElementById(input);
+                            if (inputValue) {
+                                inputValue.value = "";
+                            }
+                        });
+
+                        const modal = bootstrap.Modal.getInstance(
+                            document.getElementById("modalAgregarGasto"),
+                        );
+
+                        modal?.hide();
                     }
-                });
+                },
+            );
         },
-        error:function(){       
-        Swal.fire("Error","Ha ocurrido un error, intentelo nuevamente","error");
-        }
-    })
-  })
+        error: function () {
+            Swal.fire(
+                "Error",
+                "Ha ocurrido un error, intentelo nuevamente",
+                "error",
+            );
+        },
+    });
+});
+function limpiarModalAgregarGasto() {
+    const form = document.getElementById("frmCrearGasto");
 
-  function diferirGasto(){
+    if (!form) return;
+
+    form.reset();
+
+    form.querySelectorAll(".is-invalid").forEach((el) => {
+        el.classList.remove("is-invalid");
+    });
+
+    form.querySelectorAll(".invalid-feedback").forEach((el) => {
+        el.textContent = "";
+    });
+
+    form.querySelectorAll(".custom-option").forEach((label) => {
+        label.classList.remove("selected");
+    });
+
+    const radioPeriodo = form.querySelector(
+        'input[name="formasAplicar"][value="Periodo"]',
+    );
+
+    if (radioPeriodo) {
+        radioPeriodo.checked = true;
+        radioPeriodo.closest(".custom-option")?.classList.add("selected");
+    }
+
+    document.querySelectorAll(".aplicacion-gastos").forEach((el) => {
+        el.classList.add("d-none");
+    });
+
+    const selectViajes = document.getElementById("selectViajes");
+    const selectUnidades = document.getElementById("selectUnidades");
+
+    if (selectViajes) {
+        Array.from(selectViajes.options).forEach((option) => {
+            option.selected = false;
+        });
+    }
+
+    if (selectUnidades) {
+        Array.from(selectUnidades.options).forEach((option) => {
+            option.selected = false;
+        });
+    }
+
+    const tipoPago = document.getElementById("tipoPago");
+
+    if (tipoPago) {
+        tipoPago.value = "0";
+    }
+
+    const seccionDiferido = document.getElementById("seccionDiferido");
+
+    if (seccionDiferido) {
+        seccionDiferido.classList.remove("show");
+    }
+
+    [
+        "txtDiferirFechaInicia",
+        "txtDiferirFechaTermina",
+        "txtDiferirFechaInicia1",
+        "txtDiferirFechaTermina1",
+        "fecha_aplicacion",
+    ].forEach((id) => {
+        const input = document.getElementById(id);
+
+        if (input) {
+            input.value = "";
+        }
+    });
+
+    const labelDiasPeriodo = document.getElementById("labelDiasPeriodo");
+    const labelGastoDiario = document.getElementById("labelGastoDiario");
+
+    if (labelDiasPeriodo) {
+        labelDiasPeriodo.textContent = "0";
+    }
+
+    if (labelGastoDiario) {
+        labelGastoDiario.textContent = "$ 0.00";
+    }
+
+    document.querySelectorAll("#labelMontoGasto").forEach((el) => {
+        el.textContent = "$0.00";
+    });
+}
+function diferirGasto() {
     /*let fechaDesde = document.getElementById('txtDiferirFechaInicia')
     let fechaHasta = document.getElementById('txtDiferirFechaTermina')
 
     let gastoDiario = labelGastoDiario.textContent
     let diasContados = labelDiasPeriodo.textContent*/
 
-    let _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
 
     /*if(fechaDesde.value.length == 0 || fechaHasta.value.length == 0){
       Swal.fire('Definir periodo','Por favor seleccione la fecha inicial y final del periodo','warning');
@@ -274,48 +493,49 @@ if(!passValidation) return passValidation;
     }*/
 
     const select = document.getElementById("selectUnidades");
-    const unidades = Array.from(select.selectedOptions).map(option => option.value);
+    const unidades = Array.from(select.selectedOptions).map(
+        (option) => option.value,
+    );
 
     const selectViaje = document.getElementById("selectViajes");
-    const viajes = Array.from(selectViaje.selectedOptions).map(option => option.value);
-
+    const viajes = Array.from(selectViaje.selectedOptions).map(
+        (option) => option.value,
+    );
 
     let input = document.querySelector('input[name="formasAplicar"]:checked');
-    let formasAplicar = input.value
+    let formasAplicar = input.value;
 
-    let _IdGasto = IdGasto
+    let _IdGasto = IdGasto;
 
     $.ajax({
-      url: '/gastos/diferir',
-      type:'post',
-      data:{_token,_IdGasto,unidades,viajes, formasAplicar},
-      beforeSend:()=>{},
-      success:(response)=>{
-        if(response.TMensaje == 'success'){
-    
-          $('#modalDiferir').modal('hide')
-          getGastos(fromDate,toDate);
-
-        }
-        Swal.fire(response.Titulo,response.Mensaje,response.TMensaje)
-      },
-      error:()=>{
-        Swal.fire('Error','Ocurrió un error','error')
-      }
+        url: "/gastos/diferir",
+        type: "post",
+        data: { _token, _IdGasto, unidades, viajes, formasAplicar },
+        beforeSend: () => {},
+        success: (response) => {
+            if (response.TMensaje == "success") {
+                $("#modalDiferir").modal("hide");
+                getGastos(fromDate, toDate);
+            }
+            Swal.fire(response.Titulo, response.Mensaje, response.TMensaje);
+        },
+        error: () => {
+            Swal.fire("Error", "Ocurrió un error", "error");
+        },
     });
-  }
+}
 
-  /*
+/*
   btnConfirmacion.addEventListener('click',()=>{
     diferirGasto()
   })*/
 
-   $(".moneyformat").on("focus",(e)=>{
+$(".moneyformat").on("focus", (e) => {
     var val = e.target.value;
     e.target.value = reverseMoneyFormat(val);
-    })
-    
-    $(".moneyformat").on("blur",(e) =>{
+});
+
+$(".moneyformat").on("blur", (e) => {
     var val = e.target.value;
-    e.target.value =  moneyFormat(val);
-    })
+    e.target.value = moneyFormat(val);
+});

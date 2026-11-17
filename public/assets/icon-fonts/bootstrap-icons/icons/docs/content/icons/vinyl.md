@@ -2,7 +2,7 @@
 title: Vinyl
 categories:
 tags:
-  - audio
-  - music
-  - record
+    - audio
+    - music
+    - record
 ---

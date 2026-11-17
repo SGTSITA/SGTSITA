@@ -1,8 +1,8 @@
 ---
 title: Textarea resize
 categories:
-  - Graphics
+    - Graphics
 tags:
-  - text
-  - form
+    - text
+    - form
 ---

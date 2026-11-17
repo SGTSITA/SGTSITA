@@ -1,8 +1,8 @@
 ---
 title: Code slash
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

@@ -1,8 +1,8 @@
 ---
 title: Type italic
 categories:
-  - Typography
+    - Typography
 tags:
-  - text
-  - type
+    - text
+    - type
 ---

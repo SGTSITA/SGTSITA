@@ -1,11 +1,11 @@
 ---
 title: Filetype py
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - file
-  - "file type"
-  - extension
-  - code
-  - python
+    - file
+    - 'file type'
+    - extension
+    - code
+    - python
 ---

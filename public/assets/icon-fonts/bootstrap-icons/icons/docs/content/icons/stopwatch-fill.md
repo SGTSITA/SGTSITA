@@ -1,9 +1,9 @@
 ---
 title: Stopwatch fill
 categories:
-  - Devices
+    - Devices
 tags:
-  - time
-  - timer
-  - clock
+    - time
+    - timer
+    - clock
 ---

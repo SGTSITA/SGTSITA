@@ -1,10 +1,10 @@
 ---
 title: Chat quote fill
 categories:
-  - Communications
+    - Communications
 tags:
-  - chat bubble
-  - text
-  - message
-  - quote
+    - chat bubble
+    - text
+    - message
+    - quote
 ---

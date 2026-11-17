@@ -1,7 +1,7 @@
 ---
 title: Umbrella
 categories:
-  - Weather
+    - Weather
 tags:
-  - rain
+    - rain
 ---

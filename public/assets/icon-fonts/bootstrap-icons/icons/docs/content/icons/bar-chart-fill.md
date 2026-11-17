@@ -1,9 +1,9 @@
 ---
 title: Bar chart fill
 categories:
-  - Data
+    - Data
 tags:
-  - chart
-  - graph
-  - analytics
+    - chart
+    - graph
+    - analytics
 ---

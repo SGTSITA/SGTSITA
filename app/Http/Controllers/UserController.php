@@ -6,10 +6,11 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
-use DB;
-use Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Arr;
-use Session;
+use Illuminate\Support\Facades\Session;
 use App\Models\Empresas;
 use App\Models\Client;
 
@@ -21,39 +22,47 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
-{
-    // Si viene la petición con ?json=1 (desde AG Grid)
-    if ($request->has('json')) {
-        $users = User::with(['Empresa'])
-            ->where('id_empresa', auth()->user()->Empresa->id)
-            ->orderBy('id', 'DESC')
-            ->get();
+    {
 
-        return response()->json($users->map(function ($user) {
-            return [
-                'id'      => $user->id,
-                'name'    => $user->name,
-                'email'   => $user->email,
-                'empresa' => ['nombre' => optional($user->Empresa)->nombre],
-                'roles'   => $user->getRoleNames()
-            ];
-        }));
+        $user = auth()->user();
+
+
+        $query = User::with('Empresa')
+            ->orderBy('id', 'DESC');
+
+        if (!$user->es_admin) {
+
+            $query->where('id_empresa', $user->id_empresa);
+        }
+
+
+        if ($request->has('json')) {
+            $users = $query->get();
+
+            return response()->json($users->map(function ($user) {
+                return [
+                    'id'      => $user->id,
+                    'name'    => $user->name,
+                    'email'   => $user->email,
+                    'empresa' => ['nombre' => optional($user->Empresa)->nombre],
+                    'roles'   => $user->getRoleNames()
+                ];
+            }));
+        }
+
+
+        $data = $query->paginate(10);
+
+        return view('users.index', compact('data'))
+            ->with('i', ($request->input('page', 1) - 1) * 10);
     }
 
-    // Si NO viene ?json, entonces renderiza la vista como siempre
-    $data = User::where('id_empresa', auth()->user()->Empresa->id)
-        ->orderBy('id', 'DESC')
-        ->paginate(10);
 
-    return view('users.index', compact('data'))
-        ->with('i', ($request->input('page', 1) - 1) * 10);
-}
+    public function index_externos()
+    {
+        $clientes = Client::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-
-    public function index_externos(){
-        $clientes = Client::where('id_empresa' ,'=',auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
-
-        return view('manager.usuarios.crear-usuario-externo',["clientes" => $clientes]);
+        return view('manager.usuarios.crear-usuario-externo', ["clientes" => $clientes]);
     }
 
     /**
@@ -61,19 +70,28 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-   public function create()
-{
-    $roles = Role::pluck('name', 'name')->all();
+    public function create()
+    {
+        $roles = Role::pluck('name', 'name')->all();
 
-    // Lista de todas las empresas para el selector manual
-    $listaEmpresas = Empresas::orderBy('nombre')->get();
+        $user = auth()->user();
 
-    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
 
-    return view('users.create', compact('roles', 'listaEmpresas', 'clientes'));
-}
+        $listaEmpresas = $user->es_admin
+            ? Empresas::orderBy('nombre')->get()
+            : Empresas::where('id', $user->id_empresa)
+                ->orderBy('nombre')
+                ->get();
+
+
+        $clientes = $user->es_admin
+            ? Client::orderBy('created_at', 'desc')->get()
+            : Client::where('id_empresa', $user->id_empresa)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+        return view('users.create', compact('roles', 'listaEmpresas', 'clientes'));
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -82,37 +100,39 @@ class UserController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-{
-    $this->validate($request, [
-        'name' => 'required',
-        'email' => 'required|email|unique:users,email',
-        'password' => 'required|same:confirm-password',
-        'roles' => 'required|array',
-        'id_empresa' => 'required|exists:empresas,id',
-        'id_cliente' => 'nullable|integer|min:0',
-    ]);
+    {
+        $this->validate($request, [
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|same:confirm-password',
+            'roles' => 'required',
+            'id_empresa' => 'required|exists:empresas,id',
+            'id_cliente' => 'nullable|integer|min:0',
+        ]);
 
-    $input = $request->only(['name', 'email', 'password', 'id_empresa', 'id_cliente']);
-    $input['password'] = Hash::make($input['password']);
+        $input = $request->only(['name', 'email', 'password', 'id_empresa', 'id_cliente']);
+        $input['password'] = Hash::make($input['password']);
 
-    $roles = $request->input('roles');
+        $input['es_admin'] = $request->has('es_admin');
+        $rolesInput = $request->input('roles');
+        $roles = is_array($rolesInput) ? $rolesInput : [$rolesInput];
 
-    // Si no es cliente, se borra el id_cliente
-    if (!in_array('CLIENTE', $roles)) {
-        $input['id_cliente'] = 0;
+        // Si no es cliente, se borra el id_cliente
+        if (!in_array('CLIENTE', $roles)) {
+            $input['id_cliente'] = 0;
+        }
+
+        $user = User::create($input);
+        $user->assignRole($roles);
+
+        if ($request->has('uuid')) {
+            return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
+        }
+
+        Session::flash('success', 'Se ha guardado sus datos con éxito');
+        return redirect()->route('users.index')
+                        ->with('success', 'Usuario creado con éxito');
     }
-
-    $user = User::create($input);
-    $user->assignRole($roles);
-
-    if ($request->has('uuid')) {
-        return response()->json(["TMensaje" => "success", "Mensaje" => "Usuario creado correctamente"]);
-    }
-
-    Session::flash('success', 'Se ha guardado sus datos con éxito');
-    return redirect()->route('users.index')
-                    ->with('success', 'Usuario creado con éxito');
-}
 
     /**
      * Display the specified resource.
@@ -123,7 +143,7 @@ class UserController extends Controller
     public function show($id)
     {
         $user = User::find($id);
-        return view('users.show',compact('user'));
+        return view('users.show', compact('user'));
     }
 
     /**
@@ -132,23 +152,28 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-   public function edit($id)
-{
-    $user = User::find($id);
-    $roles = Role::pluck('name','name')->all();
-    $userRole = $user->roles->pluck('name','name')->all();
+    public function edit($id)
+    {
+        $user = User::find($id);
+        $roles = Role::pluck('name', 'name')->all();
+        $userRole = $user->roles->pluck('name', 'name')->all();
 
-    // 🔁 Aquí unificamos en una sola variable como en create()
-    $listaEmpresas = auth()->user()->Empresa->id == 1
-        ? Empresas::orderBy('id', 'DESC')->get()   // Si es administrador, muestra todas
-        : Empresas::where('id', auth()->user()->Empresa->id)->get(); // Si no, solo su empresa
+        $userAuth = auth()->user();
 
-    $clientes = Client::where('id_empresa', auth()->user()->id_empresa)
-                    ->orderBy('created_at', 'desc')
-                    ->get();
+        /* EMPRESAS */
+        $listaEmpresas = $userAuth->es_admin
+            ? Empresas::orderBy('id', 'DESC')->get()
+            : Empresas::where('id', $userAuth->id_empresa)->get();
+        /* CLIENTES */
+        $clientes = $userAuth->es_admin
+            ? Client::orderBy('created_at', 'desc')->get()
+            : Client::where('id_empresa', $userAuth->id_empresa)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-    return view('users.edit', compact('user', 'roles', 'userRole', 'listaEmpresas', 'clientes'));
-}
+
+        return view('users.edit', compact('user', 'roles', 'userRole', 'listaEmpresas', 'clientes'));
+    }
 
     /**
      * Update the specified resource in storage.
@@ -166,53 +191,111 @@ class UserController extends Controller
             'roles' => 'required'
         ]);
 
-
         $input = $request->all();
-        if(!empty($input['password'])){
+        if (!empty($input['password'])) {
             $input['password'] = Hash::make($input['password']);
-        }else{
-            $input = Arr::except($input,array('password'));
+        } else {
+            $input = Arr::except($input, array('password'));
         }
 
-        $user = User::find($id);
-
+        $user = User::findOrFail($id);
+        $input['id_cliente'] = $user->id_cliente;
         $user->update($input);
-        DB::table('model_has_roles')->where('model_id',$id)->delete();
+        DB::table('model_has_roles')->where('model_id', $id)->delete();
 
-        $user->assignRole($request->input('roles'));
-
+        $rolesInput = $request->input('roles');
+        $roles = is_array($rolesInput) ? $rolesInput : [$rolesInput];
+        $user->assignRole($roles);
 
         return redirect()->route('users.index')
-                        ->with('success','Usuario actualizado con exito');
+                        ->with('success', 'Usuario actualizado con exito');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (Soft delete).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        if (auth()->id() == $user->id) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'No puedes dar de baja tu propio usuario.'], 422);
+            }
+            Session::flash('error', 'No puedes dar de baja tu propio usuario.');
+            return redirect()->back()->with('error', 'No puedes dar de baja tu propio usuario.');
+        }
+
+        $user->delete();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Usuario dado de baja con éxito']);
+        }
+
+        Session::flash('delete', 'Se ha dado de baja el usuario con éxito');
+        return redirect()->route('users.index')
+                        ->with('success', 'Usuario dado de baja con éxito');
+    }
+
+    /**
+     * Restore a soft deleted user.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function restore($id)
     {
-        User::find($id)->delete();
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
 
-        Session::flash('delete', 'Se ha eliminado sus datos con exito');
+        Session::flash('success', 'Usuario reactivado con éxito');
         return redirect()->route('users.index')
-                        ->with('success','User deleted successfully');
+                        ->with('success', 'Usuario reactivado con éxito');
     }
 
 
-   public function cambiarEmpresa(Request $request)
+    public function cambiarEmpresa(Request $request)
     {
         $request->validate([
             'empresa_id' => 'required|exists:empresas,id',
         ]);
 
-    
-         $user = auth()->user();
+
+        $user = User::findOrFail(auth()->id());
         $user->id_empresa = $request->empresa_id;
         $user->save();
 
         return redirect()->back()->with('success', 'Empresa cambiada correctamente.');
+    }
+
+    public function resetPassword($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+
+            // Generar una contraseña temporal
+            $tempPassword = Str::random(8);
+
+            // Guardar en BD
+            $user->password = Hash::make($tempPassword);
+            $user->save();
+
+            // Responder JSON
+            return response()->json([
+                'success' => true,
+                'temp_password' => $tempPassword,
+                'email' => $user->email,
+                'name' => $user->name,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar la contraseña: ' . $e->getMessage()
+            ]);
+        }
     }
 }

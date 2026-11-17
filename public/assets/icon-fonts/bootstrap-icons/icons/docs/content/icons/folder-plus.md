@@ -1,10 +1,10 @@
 ---
 title: Folder plus
 categories:
-  - Files and folders
+    - Files and folders
 tags:
-  - directory
-  - delete
-  - add
-  - new
+    - directory
+    - delete
+    - add
+    - new
 ---

@@ -1,7 +1,7 @@
 ---
 title: House
 categories:
-  - Real world
+    - Real world
 tags:
-  - home
+    - home
 ---

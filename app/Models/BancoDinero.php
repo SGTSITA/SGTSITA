@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\Auditable;
 
 class BancoDinero extends Model
 {
+    use Auditable;
     use HasFactory;
     protected $table = 'banco_dinero';
 

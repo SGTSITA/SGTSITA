@@ -1,9 +1,9 @@
 ---
 title: PC
 categories:
-  - Devices
+    - Devices
 tags:
-  - computer
-  - workstation
-  - desktop
+    - computer
+    - workstation
+    - desktop
 ---

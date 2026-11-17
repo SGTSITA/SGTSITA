@@ -1,10 +1,10 @@
 ---
 title: Aspect ratio
 categories:
-  - Media
+    - Media
 tags:
-  - size
-  - resize
-  - crop
-  - dimensions
+    - size
+    - resize
+    - crop
+    - dimensions
 ---

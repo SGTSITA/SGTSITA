@@ -10,7 +10,7 @@ Package.describe({
     // Brief, one-line summary of the package.
     summary: 'Cross-browser CSS customizable scrollbar with advanced features.',
     // URL to the Git repository containing the source code for this package.
-    git: 'git@github.com:gromo/jquery.scrollbar.git'
+    git: 'git@github.com:gromo/jquery.scrollbar.git',
 });
 
 Package.onUse(function (api) {
@@ -21,6 +21,6 @@ Package.onUse(function (api) {
 
 Package.onTest(function (api) {
     api.use([packageName, 'sanjo:jasmine'], where);
-    api.use(['webapp','tinytest'], where);
+    api.use(['webapp', 'tinytest'], where);
     api.addFiles('meteor/tests.js', where); // testing specific files
 });
