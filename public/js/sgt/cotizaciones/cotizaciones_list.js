@@ -589,17 +589,74 @@ document.addEventListener("DOMContentLoaded", function () {
                                     : "none";
                         }
 
-                        //FECHAS -- AGREGADO NUEVO
-                        dtpFechaSalida.value = data.fecha_inicio ?? "";
-                        if (dtpFechaSalida._flatpickr && data.fecha_inicio) {
-                            dtpFechaSalida._flatpickr.setDate(data.fecha_inicio, true);
-                        }
-                        dtpFechaEntrega.value = data.fecha_fin ?? "";
-                        if (dtpFechaEntrega._flatpickr && data.fecha_fin) {
-                            dtpFechaEntrega._flatpickr.setDate(data.fecha_fin, true);
+                        // Helper para parsear fecha (SQL YYYY-MM-DD..., ISO o DD/MM/YYYY) a Date
+                        const parsearFechaParaFlatpickr = (fechaStr) => {
+                            if (!fechaStr) return null;
+                            if (fechaStr instanceof Date) return fechaStr;
+                            const str = String(fechaStr).trim();
+
+                            const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (matchIso) {
+                                return new Date(
+                                    parseInt(matchIso[1], 10),
+                                    parseInt(matchIso[2], 10) - 1,
+                                    parseInt(matchIso[3], 10),
+                                );
+                            }
+
+                            const matchDmy = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+                            if (matchDmy) {
+                                return new Date(
+                                    parseInt(matchDmy[3], 10),
+                                    parseInt(matchDmy[2], 10) - 1,
+                                    parseInt(matchDmy[1], 10),
+                                );
+                            }
+
+                            const d = new Date(str);
+                            return isNaN(d.getTime()) ? null : d;
+                        };
+
+                        //FECHAS
+                        if (data.fecha_inicio) {
+                            const dInicio = parsearFechaParaFlatpickr(data.fecha_inicio);
+                            if (dInicio && dtpFechaSalida._flatpickr) {
+                                dtpFechaSalida._flatpickr.setDate(dInicio, true);
+                            } else if (dInicio) {
+                                const dia = String(dInicio.getDate()).padStart(2, "0");
+                                const mes = String(dInicio.getMonth() + 1).padStart(2, "0");
+                                dtpFechaSalida.value = `${dia}/${mes}/${dInicio.getFullYear()}`;
+                            } else {
+                                dtpFechaSalida.value = data.fecha_inicio;
+                            }
+                        } else {
+                            if (dtpFechaSalida._flatpickr) dtpFechaSalida._flatpickr.clear();
+                            dtpFechaSalida.value = "";
                         }
 
-                        if (statusViaje == "Aprobada" && planeacionEstatus != 1) {
+                        if (data.fecha_fin) {
+                            const dFin = parsearFechaParaFlatpickr(data.fecha_fin);
+                            if (dFin && dtpFechaEntrega._flatpickr) {
+                                dtpFechaEntrega._flatpickr.setDate(dFin, true);
+                            } else if (dFin) {
+                                const dia = String(dFin.getDate()).padStart(2, "0");
+                                const mes = String(dFin.getMonth() + 1).padStart(2, "0");
+                                dtpFechaEntrega.value = `${dia}/${mes}/${dFin.getFullYear()}`;
+                            } else {
+                                dtpFechaEntrega.value = data.fecha_fin;
+                            }
+                        } else {
+                            if (dtpFechaEntrega._flatpickr) dtpFechaEntrega._flatpickr.clear();
+                            dtpFechaEntrega.value = "";
+                        }
+
+                        const puedePlanear =
+                            statusViaje === "Aprobada" ||
+                            statusViaje === "Planeada" ||
+                            statusViaje === "Planeado" ||
+                            planeacionEstatus == 1;
+
+                        if (puedePlanear) {
                             btnPlanear.classList.remove("d-none");
                         } else {
                             btnPlanear.classList.add("d-none");
@@ -639,7 +696,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         actualizarDistanciaEquipos();
                     } else {
                         // Viaje sin asignación previa: el formulario permanece limpio
-                        if (statusViaje == "Aprobada") {
+                        const puedePlanear =
+                            statusViaje === "Aprobada" ||
+                            statusViaje === "Planeada" ||
+                            statusViaje === "Planeado";
+
+                        if (puedePlanear) {
                             btnPlanear.classList.remove("d-none");
                         } else {
                             btnPlanear.classList.add("d-none");
@@ -650,7 +712,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 error: (err) => {},
             });
 
-            if (statusViaje == "Aprobada") {
+            if (
+                statusViaje === "Aprobada" ||
+                statusViaje === "Planeada" ||
+                statusViaje === "Planeado"
+            ) {
                 btnPlanear.classList.remove("d-none");
             }
             if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");

@@ -417,10 +417,14 @@ class MepController extends Controller
     public function parseFecha($fecha)
     {
         try {
-            if (str_contains($fecha, '/')) {
-                return Carbon::createFromFormat('d/m/Y', $fecha);
+            $fechaLimpia = trim(explode(' ', trim($fecha))[0]);
+            if (str_contains($fechaLimpia, '/')) {
+                return Carbon::createFromFormat('d/m/Y', $fechaLimpia);
             }
-            return Carbon::createFromFormat('Y-m-d', $fecha);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaLimpia)) {
+                return Carbon::createFromFormat('Y-m-d', $fechaLimpia);
+            }
+            return Carbon::parse($fecha);
         } catch (\Exception $e) {
             return Carbon::parse($fecha); // fallback
         }
