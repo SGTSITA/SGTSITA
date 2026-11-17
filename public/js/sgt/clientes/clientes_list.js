@@ -3,12 +3,15 @@ class MissionResultRenderer {
 
     // Optional: Params for rendering. The same params that are passed to the cellRenderer function.
     init(params) {
-        let icon = document.createElement('img');
-        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? 'tick-in-circle' : 'cross-in-circle'}.png`;
-        icon.setAttribute('style', 'width: auto; height: auto;');
+        let icon = document.createElement("img");
+        icon.src = `https://www.ag-grid.com/example-assets/icons/${params.value ? "tick-in-circle" : "cross-in-circle"}.png`;
+        icon.setAttribute("style", "width: auto; height: auto;");
 
-        this.eGui = document.createElement('span');
-        this.eGui.setAttribute('style', 'display: flex; justify-content: center; height: 100%; align-items: center');
+        this.eGui = document.createElement("span");
+        this.eGui.setAttribute(
+            "style",
+            "display: flex; justify-content: center; height: 100%; align-items: center",
+        );
         this.eGui.appendChild(icon);
     }
 
@@ -29,19 +32,19 @@ class CustomButtonComponent {
     eventListener;
 
     init(params) {
-        this.eGui = document.createElement('div');
-        let button = document.createElement('button');
+        this.eGui = document.createElement("div");
+        let button = document.createElement("button");
         button.innerHTML =
             '<span class="svg-icon svg-icon-muted svg-icon-2hx"><svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 13V13.5C21 16 19 18 16.5 18H5.6V16H16.5C17.9 16 19 14.9 19 13.5V13C19 12.4 19.4 12 20 12C20.6 12 21 12.4 21 13ZM18.4 6H7.5C5 6 3 8 3 10.5V11C3 11.6 3.4 12 4 12C4.6 12 5 11.6 5 11V10.5C5 9.1 6.1 8 7.5 8H18.4V6Z" fill="currentColor"/><path opacity="0.3" d="M21.7 6.29999C22.1 6.69999 22.1 7.30001 21.7 7.70001L18.4 11V3L21.7 6.29999ZM2.3 16.3C1.9 16.7 1.9 17.3 2.3 17.7L5.6 21V13L2.3 16.3Z" fill="currentColor"/></svg></span></span>';
-        button.className = 'btn btn-sm bg-gradient-success';
-        button.style.fontSize = '10px';
-        button.style.padding = '2px 6px';
-        button.style.lineHeight = '1';
+        button.className = "btn btn-sm bg-gradient-success";
+        button.style.fontSize = "10px";
+        button.style.padding = "2px 6px";
+        button.style.lineHeight = "1";
 
         const NumContenedorValue = params.data.NumContenedor;
 
         this.eventListener = () => assignEmpresa(NumContenedorValue);
-        button.addEventListener('click', this.eventListener);
+        button.addEventListener("click", this.eventListener);
         this.eGui.appendChild(button);
     }
 
@@ -55,94 +58,95 @@ class CustomButtonComponent {
 
     destroy() {
         if (button) {
-            button.removeEventListener('click', this.eventListener);
+            button.removeEventListener("click", this.eventListener);
         }
     }
 }
 
 const localeText = {
-    page: 'Página',
-    more: 'Más',
-    to: 'a',
-    of: 'de',
-    next: 'Siguiente',
-    last: 'Último',
-    first: 'Primero',
-    previous: 'Anterior',
-    loadingOoo: 'Cargando...',
-    selectAll: 'Seleccionar todo',
-    searchOoo: 'Buscar...',
-    blanks: 'Vacíos',
-    filterOoo: 'Filtrar...',
-    applyFilter: 'Aplicar filtro...',
-    equals: 'Igual',
-    notEqual: 'Distinto',
-    lessThan: 'Menor que',
-    greaterThan: 'Mayor que',
-    contains: 'Contiene',
-    notContains: 'No contiene',
-    startsWith: 'Empieza con',
-    endsWith: 'Termina con',
-    andCondition: 'Y',
-    orCondition: 'O',
-    group: 'Grupo',
-    columns: 'Columnas',
-    filters: 'Filtros',
-    pivotMode: 'Modo Pivote',
-    groups: 'Grupos',
-    values: 'Valores',
-    noRowsToShow: 'Sin filas para mostrar',
-    pinColumn: 'Fijar columna',
-    autosizeThiscolumn: 'Ajustar columna',
-    copy: 'Copiar',
-    resetColumns: 'Restablecer columnas',
-    blank: 'Vacíos',
-    notBlank: 'No Vacíos',
-    paginationPageSize: 'Registros por página',
+    page: "Página",
+    more: "Más",
+    to: "a",
+    of: "de",
+    next: "Siguiente",
+    last: "Último",
+    first: "Primero",
+    previous: "Anterior",
+    loadingOoo: "Cargando...",
+    selectAll: "Seleccionar todo",
+    searchOoo: "Buscar...",
+    blanks: "Vacíos",
+    filterOoo: "Filtrar...",
+    applyFilter: "Aplicar filtro...",
+    equals: "Igual",
+    notEqual: "Distinto",
+    lessThan: "Menor que",
+    greaterThan: "Mayor que",
+    contains: "Contiene",
+    notContains: "No contiene",
+    startsWith: "Empieza con",
+    endsWith: "Termina con",
+    andCondition: "Y",
+    orCondition: "O",
+    group: "Grupo",
+    columns: "Columnas",
+    filters: "Filtros",
+    pivotMode: "Modo Pivote",
+    groups: "Grupos",
+    values: "Valores",
+    noRowsToShow: "Sin filas para mostrar",
+    pinColumn: "Fijar columna",
+    autosizeThiscolumn: "Ajustar columna",
+    copy: "Copiar",
+    resetColumns: "Restablecer columnas",
+    blank: "Vacíos",
+    notBlank: "No Vacíos",
+    paginationPageSize: "Registros por página",
 };
 
 const gridOptions = {
-    domLayout: 'autoHeight',
+    domLayout: "autoHeight",
     pagination: true,
     paginationPageSize: 100,
     paginationPageSizeSelector: [100, 200, 500],
     getRowClass: (params) => {
-        return params.node.rowIndex % 2 === 0 ? 'row-even' : 'row-odd';
+        return params.node.rowIndex % 2 === 0 ? "row-even" : "row-odd";
     },
     rowData: [],
 
     columnDefs: [
-        { field: 'IdCliente', hide: true },
-        { field: 'Nombre', filter: true, floatingFilter: true, width: 200 },
-        { field: 'Correo', filter: true, floatingFilter: true, width: 200 },
-        { field: 'Telefono', filter: true, floatingFilter: true },
-        { field: 'RFC', filter: true, floatingFilter: true, width: 100 },
-        { field: 'RegimenFiscal', width: 200 },
-        { field: 'Empresa', width: 110 },
-        { field: 'Direccion', width: 120 },
+        { field: "IdCliente", hide: true },
+        { field: "Nombre", filter: true, floatingFilter: true, width: 200 },
+        { field: "Correo", filter: true, floatingFilter: true, width: 200 },
+        { field: "Telefono", filter: true, floatingFilter: true },
+        { field: "RFC", filter: true, floatingFilter: true, width: 100 },
+        { field: "RegimenFiscal", width: 200 },
+        { field: "Empresa", width: 110 },
+        { field: "Direccion", width: 120 },
         {
-            headerName: 'Acciones',
-            field: 'acciones',
+            headerName: "Acciones",
+            field: "acciones",
             width: 140,
             cellRenderer: function (params) {
-                if (!window.canCreateClientes) return document.createElement('div');
+                if (!window.canCreateClientes)
+                    return document.createElement("div");
 
-                const container = document.createElement('div');
-                container.className = 'd-flex gap-1 align-items-center'; // horizontal, con espacio
+                const container = document.createElement("div");
+                container.className = "d-flex gap-1 align-items-center"; // horizontal, con espacio
 
                 // Botón Editar Cliente
-                const btnEdit = document.createElement('button');
-                btnEdit.className = 'btn btn-outline-info btn-xs p-1'; // p-1 para más pequeño
-                btnEdit.style.fontSize = '10px';
-                btnEdit.innerText = 'Editar Cliente';
+                const btnEdit = document.createElement("button");
+                btnEdit.className = "btn btn-outline-info btn-xs p-1"; // p-1 para más pequeño
+                btnEdit.style.fontSize = "10px";
+                btnEdit.innerText = "Editar Cliente";
                 btnEdit.onclick = () => goToClientEdit(params.data.IdCliente);
                 container.appendChild(btnEdit);
 
                 // Botón Sub Clientes
-                const btnSub = document.createElement('button');
-                btnSub.className = 'btn btn-outline-info btn-xs p-1'; // p-1 para más pequeño
-                btnSub.style.fontSize = '10px';
-                btnSub.innerText = 'Sub Clientes';
+                const btnSub = document.createElement("button");
+                btnSub.className = "btn btn-outline-info btn-xs p-1"; // p-1 para más pequeño
+                btnSub.style.fontSize = "10px";
+                btnSub.innerText = "Sub Clientes";
                 btnSub.onclick = () => goToSubClients(params.data.IdCliente);
                 container.appendChild(btnSub);
 
@@ -154,24 +158,29 @@ const gridOptions = {
     localeText: localeText,
 };
 
-const myGridElement = document.querySelector('#myGrid');
+const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector('#ag-32-label');
-paginationTitle.textContent = 'Registros por página';
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 let IdContenedor = null;
 
 function getClientesList() {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     $.ajax({
-        url: '/clientes/get-list',
-        type: 'post',
+        url: "/clientes/get-list",
+        type: "post",
         data: { _token },
         beforeSend: () => {},
         success: (response) => {
-            apiGrid.setGridOption('rowData', response.list);
+            apiGrid.setGridOption("rowData", response.list);
 
             setTimeout(() => {
                 apiGrid.sizeColumnsToFit();
@@ -182,7 +191,9 @@ function getClientesList() {
 }
 
 function goToClientEdit(idClient) {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     // let client = apiGrid.getSelectedRows();
 
     // if (client.length == 0) {
@@ -193,7 +204,7 @@ function goToClientEdit(idClient) {
 
     //client.forEach((c) => (IdCliente = c.IdCliente));
 
-    var url = '/clientes/edit';
+    var url = "/clientes/edit";
 
     var form = $(
         '<form action="' +
@@ -205,10 +216,10 @@ function goToClientEdit(idClient) {
             '<input type="hidden" name="_token" value="' +
             _token +
             '" />' +
-            '</form>',
+            "</form>",
     );
 
-    $('body').append(form);
+    $("body").append(form);
     form.submit();
     setTimeout(() => {
         if (form) {
@@ -218,7 +229,9 @@ function goToClientEdit(idClient) {
 }
 
 function goToSubClients(idClient) {
-    var _token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    var _token = document
+        .querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
     // let client = apiGrid.getSelectedRows();
 
     // if (client.length == 0) {
@@ -229,7 +242,7 @@ function goToSubClients(idClient) {
 
     // client.forEach((c) => (IdCliente = c.IdCliente));
 
-    var url = '/subclientes/list';
+    var url = "/subclientes/list";
 
     var form = $(
         '<form action="' +
@@ -241,10 +254,10 @@ function goToSubClients(idClient) {
             '<input type="hidden" name="_token" value="' +
             _token +
             '" />' +
-            '</form>',
+            "</form>",
     );
 
-    $('body').append(form);
+    $("body").append(form);
     form.submit();
     setTimeout(() => {
         if (form) {

@@ -533,12 +533,6 @@
             document.getElementById('diferenciaColumna2').textContent = `$ ${diferencia.toLocaleString('en-US')}`;
         });
     </script>
-    <!-- CSS de Date Range Picker -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <!-- Moment.js -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <!-- JS de Date Range Picker -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <script>
         function addMovimientoBanco(bank) {
 
@@ -578,31 +572,14 @@
         }
 
         $(document).ready(function() {
-            $('#daterange').daterangepicker({
-                    opens: 'left',
-                    locale: {
-                        format: 'YYYY-MM-DD', // Formato de fecha
-                        separator: " AL ", // Separador entre la fecha inicial y final
-                        applyLabel: "Aplicar",
-                        cancelLabel: "Cancelar",
-                        fromLabel: "Desde",
-                        toLabel: "Hasta",
-                        customRangeLabel: "Personalizado",
-                        daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                        monthNames: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
-                            "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                        ],
-                        firstDay: 1
-                    },
-                    maxDate: moment()
-                },
-                function(start, end, label) {
-                    // Callback para el botón "Aplicar"
-                    $("#fecha_de").val(start.format('YYYY-MM-DD'));
-                    $("#fecha_hasta").val(end.format('YYYY-MM-DD'));
-                    document.getElementById("form-buscar").submit();
-
-                });
+            initSgtDateRange('#daterange', {
+                opens: 'left'
+            }, function(start, end, label) {
+                // Callback para el botón "Aplicar"
+                $("#fecha_de").val(start.format('YYYY-MM-DD'));
+                $("#fecha_hasta").val(end.format('YYYY-MM-DD'));
+                document.getElementById("form-buscar").submit();
+            });
         });
     </script>
     <script>

@@ -194,6 +194,16 @@
                                                     class="form-control"
                                                 />
                                             </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label font-weight-bold">Momento de Carga de Diésel (App Móvil)</label>
+                                                <select name="carga_diesel_al_final" class="form-select">
+                                                    <option value="0" selected>Al Inicio del Viaje (Por defecto)</option>
+                                                    <option value="1">Al Regreso / Final del Viaje</option>
+                                                </select>
+                                                <small class="text-muted d-block mt-1">
+                                                    Si se selecciona "Al Regreso / Final del Viaje", la asignación se mantendrá activa tras concluir el viaje en la app móvil hasta que el operador registre la carga de diésel.
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

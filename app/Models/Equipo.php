@@ -34,7 +34,8 @@ class Equipo extends Model
         'user_id',
         'gps_company_id',
         'usar_config_global',
-        'credenciales_gps'
+        'credenciales_gps',
+        'carga_diesel_al_final'
     ];
 
     public function gps()
@@ -47,13 +48,25 @@ class Equipo extends Model
         parent::boot();
 
         static::creating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
 
         static::updating(function ($empresa) {
-            $empresa->id_empresa = Auth::user()->id_empresa;
+            if (Auth::check()) {
+                $empresa->id_empresa = Auth::user()->id_empresa;
+            }
         });
     }
+
+    public function getTextoSelectAttribute(): string
+    {
+        $codigo = $this->id_equipo ?: ($this->placas ?: 'ID #' . $this->id);
+        $marca = $this->marca ?: 'Tracto';
+        return "{$codigo} - {$marca}";
+    }
+
     public function getEstadoGpsAttribute()
     {
         if ($this->usar_config_global) {

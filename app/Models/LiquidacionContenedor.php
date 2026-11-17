@@ -12,7 +12,7 @@ class LiquidacionContenedor extends Model
 
     public function Contenedores()
     {
-        return $this->belongsTo(DocumCotizacion::class, 'id_contenedor', 'id_cotizacion');
+        return $this->belongsTo(DocumCotizacion::class, 'id_contenedor', 'id');
     }
 
     public function getAuditoriaData($old = [], $new = [])

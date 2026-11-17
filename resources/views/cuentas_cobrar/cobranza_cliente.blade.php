@@ -12,7 +12,16 @@
                     <div class="col-6 d-flex align-items-center">
                         <h6 class="mb-0">Cuentas por cobrar</h6>
                     </div>
+
+
                     <div class="col-6 text-end">
+                        <a class="btn btn-sm btn-outline-primary mb-0 me-2"
+                            href="{{ route('cobros_pagos.historico') }}?cliente_id={{ $cliente->id }}"
+                            style="margin-left: 10px;">
+                            <img class="icon_search" src="{{ asset('img/icon/buscar.png') }}" alt="" width="20px">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            &nbsp;&nbsp;Buscar cobros anteriores
+                        </a>
                         <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.cobrar') }}">
                             <i class="fas fa-chevron-left" aria-hidden="true"></i>
                             &nbsp;&nbsp;Regresar
@@ -65,13 +74,13 @@
                         </div>
                     </div>
                     <!--div class="col-md-6">
-                                                                                            <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
-                                                                                            <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
-                                                                                            <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
-                                                                                            <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
-                                                                                            </div>
+                                                                                                                    <div class="card card-body border card-plain border-radius-lg d-flex align-items-center flex-row">
+                                                                                                                    <img class="w-10 me-3 mb-0" src="../assets/img/logos/visa.png" alt="logo">
+                                                                                                                    <h6 class="mb-0">****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;****&nbsp;&nbsp;&nbsp;5248</h6>
+                                                                                                                    <i class="fas fa-pencil-alt ms-auto text-dark cursor-pointer" data-bs-toggle="tooltip" data-bs-placement="top" aria-hidden="true" aria-label="Edit Card" data-bs-original-title="Edit Card"></i><span class="sr-only">Edit Card</span>
+                                                                                                                    </div>
 
-                                                                                         </div-->
+                                                                                                                 </div-->
                 </div>
             </div>
         </div>

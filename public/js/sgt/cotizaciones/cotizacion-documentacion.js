@@ -2,6 +2,118 @@ let fechaInicioViajes;
 let fechaFinViajes;
 
 let motivoBloqueo = "Selecciona al menos un registro";
+let docsData = [];
+let allViajesData = [];
+let currentTabStatus = "planeadas";
+let currentXhr = null;
+let searchDebounceTimer = null;
+
+function getTabStatusCategory(estatusStr) {
+    if (!estatusStr) return null;
+    const s = estatusStr.trim().toLowerCase();
+    if (s === "planeado" || s === "planeadas") {
+        return "planeadas";
+    }
+    if (s === "por asignar" || s === "por_asignar") {
+        return "por_asignar";
+    }
+    if (s === "viaje solicitado" || s === "pendiente" || s === "no asignada") {
+        return "pendientes";
+    }
+    if (s === "aprobada" || s === "aprobado" || s === "aprobadas") {
+        return "aprobadas";
+    }
+    if (s === "finalizado" || s === "finalizada" || s === "finalizadas") {
+        return "finalizadas";
+    }
+    if (s === "cancelada" || s === "cancelado" || s === "canceladas") {
+        return "canceladas";
+    }
+    return null;
+}
+
+function updateTabCounts(data) {
+    let counts = {
+        planeadas: 0,
+        pendientes: 0,
+        por_asignar: 0,
+        aprobadas: 0,
+        finalizadas: 0,
+        canceladas: 0,
+    };
+    data.forEach((item) => {
+        let cat = getTabStatusCategory(item.Estatus);
+        if (cat && counts[cat] !== undefined) counts[cat]++;
+    });
+    $("#count-planeadas").text(counts.planeadas);
+    $("#count-pendientes").text(counts.pendientes);
+    $("#count-por-asignar").text(counts.por_asignar);
+    $("#count-aprobadas").text(counts.aprobadas);
+    $("#count-finalizadas").text(counts.finalizadas);
+    $("#count-canceladas").text(counts.canceladas);
+}
+
+function applyCurrentFilters() {
+    const term =
+        $("#inputSearchGeneral").length && $("#inputSearchGeneral").val()
+            ? $("#inputSearchGeneral").val().trim().toLowerCase()
+            : "";
+
+    const hasStatusTabs = $("#statusTabsViajes").length > 0;
+
+    let filtered = allViajesData.filter((item) => {
+        let matchesTab = true;
+        if (hasStatusTabs) {
+            const category = getTabStatusCategory(item.Estatus);
+            matchesTab = category === currentTabStatus;
+        }
+
+        let matchesSearch = true;
+        if (term !== "") {
+            matchesSearch =
+                (item.NumContenedor &&
+                    item.NumContenedor.toLowerCase().includes(term)) ||
+                (item.cliente && item.cliente.toLowerCase().includes(term)) ||
+                (item.Origen && item.Origen.toLowerCase().includes(term)) ||
+                (item.Destino && item.Destino.toLowerCase().includes(term)) ||
+                (item.transportista &&
+                    item.transportista.toLowerCase().includes(term)) ||
+                (item.Estatus && item.Estatus.toLowerCase().includes(term));
+        }
+
+        return matchesTab && matchesSearch;
+    });
+
+    if (typeof apiGrid !== "undefined" && apiGrid) {
+        apiGrid.setGridOption("rowData", filtered);
+        if (document.body.classList.contains("mis-viajes-fullscreen")) {
+            setTimeout(() => recalcularLayoutFullscreen(), 30);
+        }
+    }
+    updateRastreoButtonState();
+}
+
+function updateRastreoButtonState() {
+    const isPlaneadas = currentTabStatus === "planeadas";
+    const $btn = $("#btnRastreo");
+    const $menuItem = $("#menuItemRastreo");
+
+    if (isPlaneadas) {
+        if ($btn.length) {
+            $btn.prop("disabled", false).removeClass("disabled").show();
+        }
+        if ($menuItem.length) {
+            $menuItem.show();
+        }
+    } else {
+        if ($btn.length) {
+            $btn.prop("disabled", true).addClass("disabled").hide();
+        }
+        if ($menuItem.length) {
+            $menuItem.hide();
+        }
+    }
+}
 
 function bloquearBoton(btn) {
     btn.classList.add("disabled");
@@ -28,6 +140,15 @@ function abrirMapaEnNuevaPestana(numContenedor, tipoS, origenRastreo) {
 const btnRastreo = document.getElementById("btnRastreo");
 if (btnRastreo) {
     btnRastreo.onclick = () => {
+        if (currentTabStatus !== "planeadas") {
+            Swal.fire({
+                icon: "warning",
+                title: "Opción restringida",
+                text: "El rastreo solo está disponible en la pestaña de Planeadas.",
+            });
+            return;
+        }
+
         const seleccionados = apiGrid.getSelectedRows();
 
         if (seleccionados.length === 0) {
@@ -58,8 +179,11 @@ if (btnRastreo) {
 }
 
 $(document).ready(function () {
-    let start = moment().subtract(1, "month");
-    let end = moment();
+    let start = moment().subtract(3, "months");
+    let end = moment().add(20, "days");
+
+    fechaInicioViajes = start.format("YYYY-MM-DD");
+    fechaFinViajes = end.format("YYYY-MM-DD");
 
     function setFechas(start, end) {
         fechaInicioViajes = start.format("YYYY-MM-DD");
@@ -72,51 +196,94 @@ $(document).ready(function () {
         getContenedoresPendientes(estatusSearch);
     }
 
-    $("#rangoFechasViajes").daterangepicker(
-        {
-            startDate: start,
-            endDate: end,
-            autoApply: true,
-            locale: {
-                format: "DD/MM/YYYY",
-                applyLabel: "Aplicar",
-                cancelLabel: "Cancelar",
-                fromLabel: "Desde",
-                toLabel: "Hasta",
-                customRangeLabel: "Personalizado",
-                daysOfWeek: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"],
-                monthNames: [
-                    "Enero",
-                    "Febrero",
-                    "Marzo",
-                    "Abril",
-                    "Mayo",
-                    "Junio",
-                    "Julio",
-                    "Agosto",
-                    "Septiembre",
-                    "Octubre",
-                    "Noviembre",
-                    "Diciembre",
-                ],
-                firstDay: 1,
-            },
-            ranges: {
-                Hoy: [moment(), moment()],
-                "Últimos 7 días": [moment().subtract(6, "days"), moment()],
-                "Últimos 30 días": [moment().subtract(29, "days"), moment()],
-                "Este mes": [
-                    moment().startOf("month"),
-                    moment().endOf("month"),
-                ],
-                "Mes anterior": [
-                    moment().subtract(1, "month").startOf("month"),
-                    moment().subtract(1, "month").endOf("month"),
-                ],
-            },
-        },
-        setFechas,
+    $("#rangoFechasViajes").val(
+        start.format("DD/MM/YYYY") + " - " + end.format("DD/MM/YYYY"),
     );
+
+    if (typeof initSgtDateRange === "function") {
+        initSgtDateRange(
+            "#rangoFechasViajes",
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+        $("#rangoFechasViajes").on("apply.daterangepicker", function (ev, picker) {
+            setFechas(picker.startDate, picker.endDate);
+        });
+    } else if ($.fn.daterangepicker) {
+        $("#rangoFechasViajes").daterangepicker(
+            {
+                startDate: start,
+                endDate: end,
+                autoApply: true,
+                locale: {
+                    format: "DD/MM/YYYY",
+                    separator: " - ",
+                },
+            },
+            setFechas,
+        );
+    }
+
+    // Event listeners para pestañas de estatus
+    $(".status-tab-btn").on("click", function () {
+        $(".status-tab-btn").removeClass("active");
+        $(this).addClass("active");
+        currentTabStatus = $(this).attr("data-status");
+        applyCurrentFilters();
+    });
+
+    // Event listener para buscador general con debounce
+    $("#inputSearchGeneral").on("input", function () {
+        const term = $(this).val().trim().toLowerCase();
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+            if (term !== "") {
+                const matches = allViajesData.filter((item) => {
+                    return (
+                        (item.NumContenedor &&
+                            item.NumContenedor.toLowerCase().includes(term)) ||
+                        (item.cliente &&
+                            item.cliente.toLowerCase().includes(term)) ||
+                        (item.Origen &&
+                            item.Origen.toLowerCase().includes(term)) ||
+                        (item.Destino &&
+                            item.Destino.toLowerCase().includes(term)) ||
+                        (item.transportista &&
+                            item.transportista.toLowerCase().includes(term)) ||
+                        (item.Estatus &&
+                            item.Estatus.toLowerCase().includes(term))
+                    );
+                });
+
+                if (matches.length > 0) {
+                    const categoriesFound = new Set(
+                        matches
+                            .map((m) => getTabStatusCategory(m.Estatus))
+                            .filter(Boolean),
+                    );
+                    if (categoriesFound.size === 1) {
+                        const targetTab = Array.from(categoriesFound)[0];
+                        if (targetTab !== currentTabStatus) {
+                            currentTabStatus = targetTab;
+                            $(".status-tab-btn").removeClass("active");
+                            $(
+                                `.status-tab-btn[data-status="${targetTab}"]`,
+                            ).addClass("active");
+                        }
+                    }
+                }
+            }
+            applyCurrentFilters();
+        }, 350);
+    });
 
     // Ejecuta al cargar
     setFechas(start, end);
@@ -241,6 +408,9 @@ const ragCellClassRules = {
         params.value === "Cancelada",
 };
 
+window.misViajesFullscreenDensity = "auto";
+window.misViajesComputedRowHeight = 24;
+
 const gridOptions = {
     pagination: true,
     paginationPageSize: 500,
@@ -249,11 +419,53 @@ const gridOptions = {
         mode: "multiRow",
         headerCheckbox: true,
     },
+    selectionColumnDef: {
+        width: 42,
+        minWidth: 42,
+        maxWidth: 45,
+        suppressSizeToFit: true,
+        resizable: false,
+    },
     rowData: [],
+    getRowHeight: (params) => {
+        if (
+            document.body.classList.contains("mis-viajes-fullscreen") &&
+            window.misViajesFullscreenDensity !== "normal"
+        ) {
+            return window.misViajesComputedRowHeight || 24;
+        }
+        if (
+            params.data &&
+            params.data.tipo === "Full" &&
+            params.data.NumContenedor &&
+            params.data.NumContenedor.trim().includes(" ")
+        ) {
+            return 48;
+        }
+        return 42;
+    },
+    onFilterChanged: () => {
+        if (document.body.classList.contains("mis-viajes-fullscreen")) {
+            setTimeout(() => recalcularLayoutFullscreen(), 20);
+        }
+    },
     onSelectionChanged: (event) => {
         const rows = event.api.getSelectedRows();
+
+        const btnWaRapido = document.getElementById("btnCompartirWhatsappRapido");
+        const badgeWaCount = document.getElementById("badgeCountWhatsapp");
+        if (btnWaRapido) {
+            if (rows.length > 0) {
+                btnWaRapido.classList.remove("d-none");
+                if (badgeWaCount) badgeWaCount.textContent = rows.length;
+            } else {
+                btnWaRapido.classList.add("d-none");
+            }
+        }
+
         const btn = document.getElementById("btnRegresarLocal");
 
+        if (!btn) return;
         if (rows.length === 0) {
             motivoBloqueo = "Selecciona al menos un registro";
             bloquearBoton(btn);
@@ -310,14 +522,6 @@ const gridOptions = {
             headerClass: "header-center",
             cellRenderer: MissionResultRenderer,
         },
-        {
-            field: "FormatoCartaPorte",
-            wrapHeaderText: true,
-            autoHeaderHeight: true,
-            width: 100,
-            headerClass: "header-center",
-            cellRenderer: MissionResultRenderer,
-        },
         { field: "PreAlta", width: 100, cellRenderer: MissionResultRenderer },
         {
             field: "foto_patio",
@@ -336,15 +540,17 @@ const gridOptions = {
             sortable: true,
             filter: true,
             minWidth: 150,
-            autoHeight: true, // Permite que la fila se ajuste en altura
             cellStyle: (params) => {
+                const isCompactFs =
+                    document.body.classList.contains("mis-viajes-fullscreen") &&
+                    window.misViajesFullscreenDensity !== "normal";
                 const styles = {
-                    "white-space": "normal",
-                    "line-height": "1.5",
+                    "white-space": isCompactFs ? "nowrap" : "normal",
+                    "line-height": isCompactFs ? "1.1" : "1.5",
                 };
 
                 // Si la cotización es tipo "Full", aplicar fondo
-                if (params.data.tipo === "Full") {
+                if (params.data && params.data.tipo === "Full") {
                     styles["background-color"] = "#ffe5b4";
                 }
 
@@ -359,10 +565,56 @@ const gridOptions = {
         },
         {
             field: "Estatus",
-            width: 100,
+            width: 140,
             filter: true,
             floatingFilter: true,
-            cellClassRules: ragCellClassRules,
+            cellRenderer: (params) => {
+                if (!params.value) return "";
+                const val = params.value.trim();
+                let customStyle =
+                    "background-color: #f8f9fa; color: #495057; border: 1px solid #dee2e6;";
+
+                if (val === "Planeado" || val === "Planeadas") {
+                    customStyle =
+                        "background-color: #fff7ed; color: #c2410c; border: 1px solid #fdba74;";
+                } else if (
+                    val === "Viaje solicitado" ||
+                    val === "Pendiente" ||
+                    val === "NO ASIGNADA"
+                ) {
+                    customStyle =
+                        "background-color: #fefce8; color: #a16207; border: 1px solid #fde047;";
+                } else if (val === "Por Asignar") {
+                    customStyle =
+                        "background-color: #f5f3ff; color: #6d28d9; border: 1px solid #c4b5fd;";
+                } else if (
+                    val === "Aprobada" ||
+                    val === "Aprobado" ||
+                    val === "Aprobadas"
+                ) {
+                    customStyle =
+                        "background-color: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd;";
+                } else if (
+                    val === "Finalizado" ||
+                    val === "Finalizada" ||
+                    val === "Finalizadas"
+                ) {
+                    customStyle =
+                        "background-color: #f0fdf4; color: #15803d; border: 1px solid #86efac;";
+                } else if (
+                    val === "Cancelada" ||
+                    val === "Cancelado" ||
+                    val === "Canceladas"
+                ) {
+                    customStyle =
+                        "background-color: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;";
+                } else if (val === "Documentos Faltantes") {
+                    customStyle =
+                        "background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5;";
+                }
+
+                return `<span class="badge fs-7 px-3 py-2 fw-bold" style="${customStyle}">${val}</span>`;
+            },
         },
         { field: "Origen", width: 100, filter: true, floatingFilter: true },
         { field: "Destino", width: 100 },
@@ -376,65 +628,131 @@ const myGridElement = document.querySelector("#myGrid");
 let apiGrid = agGrid.createGrid(myGridElement, gridOptions);
 // const gridInstance = createGrid(myGridElement, gridOptions)//new agGrid.Grid(myGridElement, gridOptions);
 
-var paginationTitle = document.querySelector("#ag-32-label");
-paginationTitle.textContent = "Registros por página";
+const paginationTitle = document.querySelector("#ag-32-label");
+
+if (paginationTitle) {
+    paginationTitle.textContent = "Registros por página";
+}
 
 const btnDocumets = document.querySelectorAll(".btnDocs");
 //const api = createGrid(gridDiv, gridOptions)
 
-function getContenedoresPendientes(estatus = "Documentos Faltantes") {
+function getContenedoresPendientes(estatus = "all") {
+    if (currentXhr) {
+        currentXhr.abort();
+        currentXhr = null;
+    }
+
     var _token = document
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
-    $.ajax({
+
+    currentXhr = $.ajax({
         url: "/viajes/documents/pending",
         type: "post",
         data: { _token, estatus, fechaInicioViajes, fechaFinViajes },
-        beforeSend: () => {},
+        beforeSend: (jqXHR) => {
+            currentXhr = jqXHR;
+        },
         success: (response) => {
-            if (response.length > 0) {
+            currentXhr = null;
+            allViajesData = response || [];
+            if (allViajesData.length > 0) {
                 btnDocumets.forEach((btn) => (btn.disabled = false));
             }
-            apiGrid.setGridOption("rowData", response);
+            updateTabCounts(allViajesData);
+            applyCurrentFilters();
         },
-        error: () => {},
+        error: (jqXHR, textStatus) => {
+            if (textStatus === "abort") {
+                return;
+            }
+            currentXhr = null;
+        },
     });
 }
 
-function goToUploadDocuments() {
-    let contenedor = apiGrid.getSelectedRows();
-    if (contenedor.length != 1) {
-        toastr.options = {
-            closeButton: true,
-            debug: false,
-            newestOnTop: false,
-            progressBar: true,
-            positionClass: "toastr-top-center",
-            preventDuplicates: false,
-            onclick: null,
-            showDuration: "1500",
-            hideDuration: "1000",
-            timeOut: "5000",
-            extendedTimeOut: "1000",
-            showEasing: "swing",
-            hideEasing: "linear",
-            showMethod: "fadeIn",
-            hideMethod: "fadeOut",
-        };
+function goToUploadDocuments(numContenedorFromBtn = null) {
+    let numContenedor = numContenedorFromBtn;
 
-        toastr.error(
-            `Debe seleccionar unicamente un contenedor para esta opción`,
-        );
-        return false;
+    if (!numContenedor) {
+        let contenedor = apiGrid.getSelectedRows();
+        if (contenedor.length != 1) {
+            toastr.options = {
+                closeButton: true,
+                debug: false,
+                newestOnTop: false,
+                progressBar: true,
+                positionClass: "toastr-top-center",
+                preventDuplicates: false,
+                onclick: null,
+                showDuration: "1500",
+                hideDuration: "1000",
+                timeOut: "5000",
+                extendedTimeOut: "1000",
+                showEasing: "swing",
+                hideEasing: "linear",
+                showMethod: "fadeIn",
+                hideMethod: "fadeOut",
+            };
+
+            toastr.error(
+                `Debe seleccionar unicamente un contenedor para esta opción`,
+            );
+            return false;
+        }
+        contenedor.forEach((c) => (numContenedor = c.NumContenedor));
     }
-    let numContenedor = null;
-    contenedor.forEach((c) => (numContenedor = c.NumContenedor));
 
+    if (!numContenedor) return;
+
+    let selectContenedores = document.querySelector("#selectContenedores");
     let titleFileUploader = document.querySelector("#titleFileUploader");
-    titleFileUploader.textContent = numContenedor.toUpperCase();
-    localStorage.setItem("numContenedor", numContenedor);
+
+    if (selectContenedores) {
+        while (selectContenedores.options.length > 0) {
+            selectContenedores.remove(0);
+        }
+
+        let contenedores = numContenedor
+            .replace(/\s+/g, "*")
+            .split("*")
+            .filter(Boolean);
+
+        contenedores.forEach((c) => {
+            let option = document.createElement("option");
+            option.value = c;
+            option.text = c;
+            selectContenedores.appendChild(option);
+        });
+
+        titleFileUploader.textContent = contenedores[0].toUpperCase();
+        localStorage.setItem("numContenedor", contenedores[0]);
+
+        // Fetch documents info for the first container
+        fetch(`/viajes/file-manager/get-file-list/${contenedores[0]}`)
+            .then((response) => response.json())
+            .then((json) => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    } else {
+        titleFileUploader.textContent = numContenedor.toUpperCase();
+        localStorage.setItem("numContenedor", numContenedor);
+    }
+
     const modalElement = document.getElementById("kt_modal_fileuploader");
-    const bootstrapModal = new bootstrap.Modal(modalElement);
+    const bootstrapModal =
+        bootstrap.Modal.getInstance(modalElement) ||
+        new bootstrap.Modal(modalElement);
+    if (typeof adjuntarDocumentos === "function") {
+        adjuntarDocumentos();
+    }
     bootstrapModal.show();
 }
 
@@ -882,7 +1200,529 @@ function RegresarForaneoLocal() {
         }
     });
 }
+const btnDocsopciones = document.querySelector("#btnDocs");
+if (btnDocsopciones) {
+    btnDocsopciones.addEventListener("click", () => goToUploadDocuments());
+}
 
-document
-    .querySelector("#btnDocs")
-    .addEventListener("click", goToUploadDocuments);
+let selectContenedores = document.querySelector("#selectContenedores");
+if (selectContenedores) {
+    selectContenedores.addEventListener("change", (e) => {
+        let container = e.target.value;
+        localStorage.setItem("numContenedor", container);
+        fetch(`/viajes/file-manager/get-file-list/${container}`)
+            .then((response) => response.json())
+            .then((json) => {
+                docsData = json.data;
+                let seleccionado = document.querySelector(
+                    ".CheckTypeFile:checked",
+                );
+                if (seleccionado) {
+                    actualizarFolio(seleccionado);
+                }
+            });
+    });
+}
+
+function obtenerFolioPorTipo(tipo) {
+    if (!docsData || docsData.length === 0) return "";
+
+    let file = docsData.find((f) => f.fileCode === tipo);
+
+    if (!file) return "";
+
+    return file.num_doc || "";
+}
+
+function actualizarFolio(radioSeleccionado) {
+    let container = document.getElementById("containerFolio");
+    let label = document.getElementById("labelFolio");
+    let input = document.getElementById("inputFolio");
+
+    if (!container || !label || !input) return;
+
+    input.value = "";
+
+    if (radioSeleccionado.value === "CartaPorte") {
+        container.classList.add("d-none");
+        return;
+    }
+
+    container.classList.remove("d-none");
+    input.type = "text";
+    let tipoSearchDoc = "";
+    switch (radioSeleccionado.value) {
+        case "BoletaLiberacion":
+            label.innerText = "Folio Boleta de Liberación";
+            input.placeholder = "Ej: BL-12345";
+            tipoSearchDoc = "Boleta-de-liberacion";
+            break;
+
+        case "DODA":
+            label.innerText = "Folio DODA";
+            input.placeholder = "Ej: DODA-98765";
+            tipoSearchDoc = "Doda";
+            break;
+
+        case "Prealta":
+            label.innerText = "Fecha Pre Alta";
+            input.placeholder = "";
+            input.type = "date";
+            tipoSearchDoc = "Pre-Alta";
+            break;
+    }
+
+    let folioExistente = obtenerFolioPorTipo(tipoSearchDoc);
+    if (radioSeleccionado.value === "Prealta") {
+        if (folioExistente) {
+            let fecha = new Date(folioExistente);
+            input.value = fecha.toISOString().split("T")[0];
+        } else {
+            input.value = "";
+        }
+    } else {
+        input.value = folioExistente || "";
+    }
+}
+
+let radios = document.querySelectorAll(".CheckTypeFile");
+
+if (radios.length > 0) {
+    radios.forEach((radio) => {
+        radio.addEventListener("change", function () {
+            actualizarFolio(this);
+        });
+    });
+}
+
+/**
+ * Formatea la información de un contenedor individual para el mensaje de WhatsApp.
+ */
+function formatContenedorWhatsapp(row) {
+    const isLocal = row.convertido_local || row.tipo_viaje_seleccion === "local";
+    const fecha = row.fecha_entrega || row.FechaSolicitud || "";
+    const referencia = (row.NumContenedor || row.contenedor || "").trim();
+
+    let horaI = isLocal
+        ? (row.bloque_hora_i_local || row.bloque_hora_i || "")
+        : (row.bloque_hora_i || row.bloque_hora_i_local || "");
+    let horaF = isLocal
+        ? (row.bloque_hora_f_local || row.bloque_hora_f || "")
+        : (row.bloque_hora_f || row.bloque_hora_f_local || "");
+    const horario = (horaI || horaF) ? `${horaI} - ${horaF}` : "";
+
+    const terminal = (row.terminal || "").trim();
+    const cambioSello = row.confirmacion_sello ? "CAMBIO DE SELLO" : "";
+    const autorizacion = (row.num_autorizacion && row.num_autorizacion !== "null" && row.num_autorizacion !== "undefined")
+        ? String(row.num_autorizacion).trim() : "";
+    const obs = (row.observaciones && row.observaciones !== "null" && row.observaciones !== "undefined")
+        ? String(row.observaciones).trim() : "";
+    const peso = row.peso_contenedor || row.Peso || "";
+    const destino = row.destino || row.Destino || row.direccion_entrega || "";
+
+    let lines = [];
+    lines.push(isLocal ? `Fecha: ${fecha}` : `Fecha entrega: ${fecha}`);
+    lines.push("");
+    lines.push(`Referencia: ${referencia}`);
+    if (horario) {
+        lines.push(`Horario: ${horario}`);
+    }
+    if (terminal) {
+        lines.push(`Terminal: ${terminal}`);
+    }
+    if (cambioSello) {
+        lines.push("");
+        lines.push(cambioSello);
+    }
+    if (autorizacion) {
+        lines.push(`No. Autorización: ${autorizacion}`);
+    }
+    if (obs) {
+        lines.push(`${obs}`);
+    }
+    if (peso || destino) {
+        lines.push("");
+        if (peso) {
+            lines.push(`Peso: ${peso}`);
+        }
+        if (destino) {
+            lines.push(`Destino: ${destino}`);
+        }
+    }
+
+    return lines.join("\n").trim();
+}
+
+/**
+ * Abre el modal para compartir la información de uno o varios contenedores por WhatsApp sin requerir documentos.
+ */
+function compartirWhatsappMultiple() {
+    if (typeof apiGrid === "undefined" || !apiGrid) {
+        console.error("Grid no inicializado");
+        return;
+    }
+
+    const selectedRows = apiGrid.getSelectedRows();
+    if (!selectedRows || selectedRows.length === 0) {
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toastr-top-center",
+            timeOut: "4000",
+        };
+        toastr.warning("Debe seleccionar al menos un contenedor para compartir por WhatsApp");
+        return;
+    }
+
+    const bloques = selectedRows.map((row) => formatContenedorWhatsapp(row));
+    const textoFinal = bloques.join("\n\n-------------------------\n\n");
+
+    const modalEl = document.getElementById("modalCompartirWhatsappMultiple");
+    if (!modalEl) {
+        console.error("Modal modalCompartirWhatsappMultiple no encontrado");
+        return;
+    }
+
+    const textarea = document.getElementById("waTextoMensajeMultiple");
+    if (textarea) {
+        textarea.value = textoFinal;
+    }
+
+    const countLabel = document.getElementById("waMultipleContenedoresCount");
+    if (countLabel) {
+        const conts = selectedRows
+            .map((r) => r.NumContenedor || r.contenedor)
+            .filter(Boolean)
+            .join(", ");
+        countLabel.textContent = `${selectedRows.length} contenedor(es) seleccionado(s): ${conts}`;
+    }
+
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modalInstance.show();
+}
+
+$(document).ready(function () {
+    const btnEnviarWa = document.getElementById("btnEnviarWhatsappMultiple");
+    if (btnEnviarWa) {
+        btnEnviarWa.addEventListener("click", function () {
+            const textarea = document.getElementById("waTextoMensajeMultiple");
+            const texto = textarea ? textarea.value.trim() : "";
+            if (!texto) {
+                toastr.warning("El mensaje está vacío");
+                return;
+            }
+            const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(url, "_blank");
+
+            const modalEl = document.getElementById("modalCompartirWhatsappMultiple");
+            if (modalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+            }
+        });
+    }
+
+    const btnCopiar = document.getElementById("btnCopiarTextoWhatsapp");
+    if (btnCopiar) {
+        btnCopiar.addEventListener("click", function () {
+            const textarea = document.getElementById("waTextoMensajeMultiple");
+            if (textarea && textarea.value.trim()) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textarea.value).then(() => {
+                        toastr.success("Texto copiado al portapapeles");
+                    }).catch(() => {
+                        textarea.select();
+                        document.execCommand("copy");
+                        toastr.success("Texto copiado al portapapeles");
+                    });
+                } else {
+                    textarea.select();
+                    document.execCommand("copy");
+                    toastr.success("Texto copiado al portapapeles");
+                }
+            } else {
+                toastr.warning("No hay texto para copiar");
+            }
+        });
+    }
+});
+
+/**
+ * =========================================================================
+ * MODO PANTALLA COMPLETA PARA /viajes/mis-viajes
+ * =========================================================================
+ */
+function ajustarColumnasFullscreen() {
+    if (typeof apiGrid === "undefined" || !apiGrid) return;
+    try {
+        const gridEl = document.getElementById("myGrid");
+        const totalWidth = gridEl ? gridEl.clientWidth : window.innerWidth - 24;
+
+        // Anchos fijos para checkbox, columnas de documentos y columnas cortas
+        const fixedWidths = {
+            checkbox: 42,
+            BoletaLiberacion: 96,
+            DODA: 70,
+            FormatoCartaPorte: 96,
+            cartaPortepdf: 92,
+            carta_porte_xml: 92,
+            PreAlta: 78,
+            foto_patio: 80,
+            docEir: 58,
+            NumContenedor: 215,
+            Estatus: 105,
+            Origen: 130,
+            Peso: 90,
+        };
+
+        const sumFixed = Object.values(fixedWidths).reduce((a, b) => a + b, 0);
+        const remaining = Math.max(360, totalWidth - sumFixed - 16);
+
+        const transportistaWidth = Math.max(190, Math.floor(remaining * 0.46));
+        const destinoWidth = Math.max(200, remaining - transportistaWidth);
+
+        apiGrid.applyColumnState({
+            state: [
+                { colId: "ag-Grid-SelectionColumn", width: fixedWidths.checkbox },
+                { colId: "BoletaLiberacion", width: fixedWidths.BoletaLiberacion },
+                { colId: "DODA", width: fixedWidths.DODA },
+                { colId: "FormatoCartaPorte", width: fixedWidths.FormatoCartaPorte },
+                { colId: "cartaPortepdf", width: fixedWidths.cartaPortepdf },
+                { colId: "carta_porte_xml", width: fixedWidths.carta_porte_xml },
+                { colId: "PreAlta", width: fixedWidths.PreAlta },
+                { colId: "foto_patio", width: fixedWidths.foto_patio },
+                { colId: "docEir", width: fixedWidths.docEir },
+                { colId: "NumContenedor", width: fixedWidths.NumContenedor },
+                { colId: "transportista", width: transportistaWidth },
+                { colId: "Estatus", width: fixedWidths.Estatus },
+                { colId: "Origen", width: fixedWidths.Origen },
+                { colId: "Destino", width: destinoWidth },
+                { colId: "Peso", width: fixedWidths.Peso },
+            ],
+        });
+    } catch (e) {
+        console.warn("Error ajustando columnas en pantalla completa:", e);
+    }
+}
+
+function restaurarColumnasNormal() {
+    if (typeof apiGrid === "undefined" || !apiGrid) return;
+    try {
+        apiGrid.applyColumnState({
+            state: [
+                { colId: "ag-Grid-SelectionColumn", width: 42 },
+                { colId: "BoletaLiberacion", width: 110 },
+                { colId: "DODA", width: 80 },
+                { colId: "FormatoCartaPorte", width: 100 },
+                { colId: "cartaPortepdf", width: 100 },
+                { colId: "carta_porte_xml", width: 100 },
+                { colId: "PreAlta", width: 100 },
+                { colId: "foto_patio", width: 100 },
+                { colId: "docEir", width: 70 },
+                { colId: "NumContenedor", width: 170 },
+                { colId: "transportista", width: 200 },
+                { colId: "Estatus", width: 140 },
+                { colId: "Origen", width: 100 },
+                { colId: "Destino", width: 100 },
+                { colId: "Peso", width: 100 },
+            ],
+        });
+    } catch (e) {
+        console.warn("Error restaurando columnas:", e);
+    }
+}
+
+function recalcularLayoutFullscreen() {
+    if (
+        !document.body.classList.contains("mis-viajes-fullscreen") ||
+        typeof apiGrid === "undefined" ||
+        !apiGrid
+    ) {
+        return;
+    }
+
+    const density = window.misViajesFullscreenDensity || "auto";
+    document.body.classList.remove("mis-viajes-auto", "mis-viajes-compact");
+
+    if (density === "auto") {
+        document.body.classList.add("mis-viajes-auto");
+        const gridEl = document.getElementById("myGrid");
+        const gridHeight = gridEl ? gridEl.clientHeight : window.innerHeight - 100;
+        const headerH = 32;
+        const footerH = 26;
+        const usableHeight = Math.max(220, gridHeight - headerH - footerH - 4);
+        const displayedRows = Math.max(1, apiGrid.getDisplayedRowCount() || 1);
+
+        const calculatedRowH = Math.max(
+            18,
+            Math.min(28, Math.floor(usableHeight / displayedRows)),
+        );
+        window.misViajesComputedRowHeight = calculatedRowH;
+
+        apiGrid.setGridOption("headerHeight", headerH);
+        apiGrid.setGridOption("floatingFiltersHeight", 0);
+        apiGrid.setGridOption("rowHeight", calculatedRowH);
+    } else if (density === "compact") {
+        document.body.classList.add("mis-viajes-compact");
+        window.misViajesComputedRowHeight = 25;
+        apiGrid.setGridOption("headerHeight", 34);
+        apiGrid.setGridOption("floatingFiltersHeight", 28);
+        apiGrid.setGridOption("rowHeight", 25);
+    } else {
+        window.misViajesComputedRowHeight = 42;
+        apiGrid.setGridOption("headerHeight", 48);
+        apiGrid.setGridOption("floatingFiltersHeight", 42);
+        apiGrid.setGridOption("rowHeight", 42);
+    }
+
+    apiGrid.resetRowHeights();
+    apiGrid.redrawRows();
+    ajustarColumnasFullscreen();
+}
+
+function setFullscreenDensity(density) {
+    window.misViajesFullscreenDensity = density;
+    const group = document.getElementById("fullscreenDensityGroup");
+    if (group) {
+        group.querySelectorAll("button[data-density]").forEach((btn) => {
+            if (btn.getAttribute("data-density") === density) {
+                btn.classList.remove("btn-light");
+                btn.classList.add("btn-light-primary", "active", "fw-bold");
+            } else {
+                btn.classList.remove("btn-light-primary", "active", "fw-bold");
+                btn.classList.add("btn-light");
+            }
+        });
+    }
+    recalcularLayoutFullscreen();
+}
+
+function actualizarBotonesFullscreenUI(isActive) {
+    const btn = document.getElementById("btnToggleFullscreenViajes");
+    const icon = document.getElementById("iconFullscreenViajes");
+    const text = document.getElementById("textFullscreenViajes");
+    const menuIcon = document.getElementById("menuIconFullscreenViajes");
+    const menuText = document.getElementById("menuTextFullscreenViajes");
+    const densityGroup = document.getElementById("fullscreenDensityGroup");
+
+    if (isActive) {
+        if (btn) {
+            btn.classList.remove("btn-light-primary");
+            btn.classList.add("btn-danger");
+        }
+        if (icon) {
+            icon.classList.remove("fa-expand");
+            icon.classList.add("fa-compress");
+        }
+        if (text) {
+            text.textContent = "Salir (ESC)";
+        }
+        if (menuIcon) {
+            menuIcon.classList.remove("fa-expand", "text-primary");
+            menuIcon.classList.add("fa-compress", "text-danger");
+        }
+        if (menuText) {
+            menuText.textContent = "Salir de pantalla completa";
+        }
+        if (densityGroup) {
+            densityGroup.classList.remove("d-none");
+        }
+    } else {
+        if (btn) {
+            btn.classList.remove("btn-danger");
+            btn.classList.add("btn-light-primary");
+        }
+        if (icon) {
+            icon.classList.remove("fa-compress");
+            icon.classList.add("fa-expand");
+        }
+        if (text) {
+            text.textContent = "Pantalla completa";
+        }
+        if (menuIcon) {
+            menuIcon.classList.remove("fa-compress", "text-danger");
+            menuIcon.classList.add("fa-expand", "text-primary");
+        }
+        if (menuText) {
+            menuText.textContent = "Pantalla completa";
+        }
+        if (densityGroup) {
+            densityGroup.classList.add("d-none");
+        }
+    }
+}
+
+function entrarFullscreenMisViajes() {
+    document.body.classList.add("mis-viajes-fullscreen");
+    actualizarBotonesFullscreenUI(true);
+
+    if (
+        !document.fullscreenElement &&
+        document.documentElement.requestFullscreen
+    ) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+
+    recalcularLayoutFullscreen();
+    setTimeout(() => recalcularLayoutFullscreen(), 120);
+    setTimeout(() => recalcularLayoutFullscreen(), 300);
+}
+
+function salirFullscreenMisViajes() {
+    document.body.classList.remove(
+        "mis-viajes-fullscreen",
+        "mis-viajes-auto",
+        "mis-viajes-compact",
+    );
+    actualizarBotonesFullscreenUI(false);
+
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+    }
+
+    if (typeof apiGrid !== "undefined" && apiGrid) {
+        apiGrid.setGridOption("headerHeight", 48);
+        apiGrid.setGridOption("floatingFiltersHeight", 42);
+        apiGrid.setGridOption("rowHeight", 42);
+        apiGrid.resetRowHeights();
+        apiGrid.redrawRows();
+        restaurarColumnasNormal();
+    }
+}
+
+function toggleFullscreenMisViajes() {
+    if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        salirFullscreenMisViajes();
+    } else {
+        entrarFullscreenMisViajes();
+    }
+}
+
+document.addEventListener("fullscreenchange", () => {
+    if (
+        !document.fullscreenElement &&
+        document.body.classList.contains("mis-viajes-fullscreen")
+    ) {
+        salirFullscreenMisViajes();
+    } else if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        setTimeout(() => recalcularLayoutFullscreen(), 80);
+    }
+});
+
+document.addEventListener("keydown", (e) => {
+    if (
+        e.key === "Escape" &&
+        document.body.classList.contains("mis-viajes-fullscreen")
+    ) {
+        const openModal = document.querySelector(".modal.show");
+        if (!openModal) {
+            salirFullscreenMisViajes();
+        }
+    }
+});
+
+window.addEventListener("resize", () => {
+    if (document.body.classList.contains("mis-viajes-fullscreen")) {
+        recalcularLayoutFullscreen();
+    }
+});

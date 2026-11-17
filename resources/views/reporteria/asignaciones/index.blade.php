@@ -22,11 +22,24 @@
                         <h5 class="mb-0 fw-bold">Reporte de viajes</h5>
                     </div>
 
-                    <!-- Rango de fechas -->
-                    <div class="d-flex align-items-center gap-2 px-4 pt-3">
-                        <label class="mb-0 fw-semibold text-sm">Periodo:</label>
-                        <input type="text" id="daterange" readonly class="form-control form-control-sm"
-                            style="width: auto; min-width: 200px; box-shadow: none" />
+                    <!-- Rango de fechas y Filtro de Unidad -->
+                    <div class="d-flex align-items-center gap-3 px-4 pt-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Periodo:</label>
+                            <input type="text" id="daterange" readonly class="form-control form-control-sm"
+                                style="width: auto; min-width: 200px; box-shadow: none" />
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="mb-0 fw-semibold text-sm">Unidad / Equipo:</label>
+                            <select id="selEquipoViajes" class="form-select form-select-sm" style="width: auto; min-width: 220px;">
+                                <option value="">-- Todas las unidades --</option>
+                                @if (isset($equipos))
+                                    @foreach ($equipos as $eq)
+                                        <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
                     </div>
 
                     <div class="card-body">
@@ -68,9 +81,6 @@
 @section('datatable')
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     <script
         src="{{ asset('js/sgt/reporteria/viajes_list.js') }}?v={{ filemtime(public_path('js/sgt/reporteria/viajes_list.js')) }}">

@@ -86,8 +86,7 @@
                             <select class="form-control" name="selectUnidadesGeneral" id="selectUnidadesGeneral"
                                 multiple>
                                 @foreach ($equipos as $e)
-                                    <option value="{{ $e->id }}">{{ $e->marca }} - {{ $e->id_equipo }}
-                                    </option>
+                                    <option value="{{ $e->id }}">{{ $e->texto_select }}</option>
                                 @endforeach
                             </select>
                         </div>

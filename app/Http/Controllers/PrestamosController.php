@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Services\BancosService;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\OperadorPrestamosExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PrestamosController extends Controller
 {
@@ -88,19 +91,19 @@ class PrestamosController extends Controller
 
         $prestamo = Prestamo::create($data);
 
-        Bancos::where('id', '=', $request->get('id_banco'))->update(["saldo" => DB::raw("saldo - ". $montoPrestamo)]);
+        // Bancos::where('id', '=', $request->get('id_banco'))->update(["saldo" => DB::raw("saldo - ". $montoPrestamo)]);
 
-        $bancoDinero[] = [
-            "monto1" => $montoPrestamo,
-            "metodo_pago1" => 'Transferencia',
-            "descripcion" => "Prestamo Operador",
-            "id_banco1" => $request->get('id_banco'),
-            "contenedores" => '[]',
-            "tipo" => 'Salida',
-            "fecha_pago" =>  date('Y-m-d'),
-        ];
+        // $bancoDinero[] = [
+        //     "monto1" => $montoPrestamo,
+        //     "metodo_pago1" => 'Transferencia',
+        //     "descripcion" => "Prestamo Operador",
+        //     "id_banco1" => $request->get('id_banco'),
+        //     "contenedores" => '[]',
+        //     "tipo" => 'Salida',
+        //     "fecha_pago" =>  date('Y-m-d'),
+        // ];
 
-        BancoDinero::insert($bancoDinero);
+        // BancoDinero::insert($bancoDinero);
 
 
         //bancos nuevo registrar movi
@@ -247,7 +250,7 @@ class PrestamosController extends Controller
         $operador = Operador::findOrFail($id);
 
 
-        $prestamos = Prestamo::with(['banco', 'pagoprestamos'])
+        $prestamos = Prestamo::with(['operador','banco', 'pagoprestamos'])
             ->where('id_operador', $id)
             ->when(!auth()->user()->is_admin, function ($q) {
                 $q->whereHas('operador', function ($q2) {
@@ -339,7 +342,7 @@ class PrestamosController extends Controller
             $prestamo->save();
 
             // Descontar del banco
-            Bancos::where('id', $request->id_banco_abono)
+          /*   Bancos::where('id', $request->id_banco_abono)
                 ->update(["saldo" => DB::raw("saldo - " . $request->monto)]);
 
             // Registrar movimiento en tabla banco_dinero
@@ -356,7 +359,7 @@ class PrestamosController extends Controller
                 )->format('Y-m-d'),
             ];
 
-            BancoDinero::insert($bancoDinero);
+            BancoDinero::insert($bancoDinero); */
 
             //  dd($prestamo);
 
@@ -415,4 +418,107 @@ class PrestamosController extends Controller
             ], 500);
         }
     }
+
+
+
+
+   public function reportePrestamosPdf($id)
+{
+    $operador = Operador::when(!auth()->user()->is_admin, function ($q) {
+            $q->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->findOrFail($id);
+
+    $prestamos = Prestamo::with(['operador', 'banco.catBanco',        'pagoprestamos.liquidacion.Viajes.Contenedores'])
+        ->where('id_operador', $id)
+        ->when(!auth()->user()->is_admin, function ($q) {
+            $q->whereHas('operador', function ($q2) {
+                $q2->where('id_empresa', auth()->user()->id_empresa);
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+       // dd($prestamos);
+
+    $totalPrestamos = $prestamos
+        ->where('tipo', Prestamo::TIPO_PRESTAMO)
+        ->sum('cantidad');
+
+    $totalAdelantos = $prestamos
+        ->where('tipo', Prestamo::TIPO_ADELANTO)
+        ->sum('cantidad');
+
+    $totalDeuda = $totalPrestamos + $totalAdelantos;
+
+    $totalAbonos = $prestamos
+        ->flatMap(fn ($p) => $p->pagoprestamos)
+        ->sum('monto_pago');
+
+    $saldoFinal = $totalDeuda - $totalAbonos;
+
+    $pdf = Pdf::loadView('reporteria.operadores.prestamos', compact(
+        'operador',
+        'prestamos',
+        'totalPrestamos',
+        'totalAdelantos',
+        'totalDeuda',
+        'totalAbonos',
+        'saldoFinal'
+    ))->setPaper('letter', 'portrait');
+
+    return $pdf->stream('reporte-prestamos-' . $operador->id . '.pdf');
+
+    }
+
+    public function reportePrestamosexcel($id)
+{
+   $operador = Operador::when(!auth()->user()->is_admin, function ($q) {
+            $q->where('id_empresa', auth()->user()->id_empresa);
+        })
+        ->findOrFail($id);
+
+    $prestamos = Prestamo::with([
+            'operador',
+            'banco.catBanco',
+            'pagoprestamos.liquidacion.Viajes.Contenedores'
+        ])
+        ->where('id_operador', $id)
+        ->when(!auth()->user()->is_admin, function ($q) {
+            $q->whereHas('operador', function ($q2) {
+                $q2->where('id_empresa', auth()->user()->id_empresa);
+            });
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $totalPrestamos = $prestamos
+        ->where('tipo', Prestamo::TIPO_PRESTAMO)
+        ->sum('cantidad');
+
+    $totalAdelantos = $prestamos
+        ->where('tipo', Prestamo::TIPO_ADELANTO)
+        ->sum('cantidad');
+
+    $totalDeuda = $totalPrestamos + $totalAdelantos;
+
+    $totalAbonos = $prestamos
+        ->flatMap(fn ($p) => $p->pagoprestamos)
+        ->sum('monto_pago');
+
+    $saldoFinal = $totalDeuda - $totalAbonos;
+
+    return Excel::download(
+        new OperadorPrestamosExport(
+            $operador,
+            $prestamos,
+            $totalPrestamos,
+            $totalAdelantos,
+            $totalDeuda,
+            $totalAbonos,
+            $saldoFinal
+        ),
+        'reporte-prestamos-' . $operador->id . '.xlsx'
+    );
+}
 }

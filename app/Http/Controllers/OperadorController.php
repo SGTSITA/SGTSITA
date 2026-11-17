@@ -92,40 +92,52 @@ class OperadorController extends Controller
 
 
     public function store(Request $request)
-    {
-        // Validación con Validator
-        $validator = Validator::make($request->all(), [
-            'curp' => 'required|string|unique:operadores,curp,NULL,id,id_empresa,' . auth()->user()->id_empresa,
-        ], [
-            'curp.required' => 'El campo CURP es obligatorio.',
-            'curp.unique' => 'validacion_curp_personalizada', // marcador especial
+{
+    try {
+        $request->merge([
+            'curp' => strtoupper(trim($request->curp))
         ]);
 
-        // Si hay errores
-        if ($validator->fails()) {
-            $errores = $validator->errors();
+       $validator = Validator::make($request->all(), [
+    'curp' => [
+        'required',
+        'string',
+        'size:18',
+        'regex:/^[A-Z0-9]+$/',
+        'unique:operadores,curp,NULL,id,id_empresa,' . auth()->user()->id_empresa,
+    ],
+], [
+    'curp.required' => 'El campo CURP es obligatorio.',
+    'curp.size' => 'La CURP debe tener exactamente 18 caracteres.',
+    'curp.regex' => 'La CURP no debe contener espacios ni caracteres especiales.',
+    'curp.unique' => 'validacion_curp_personalizada',
+]);
 
-            // Si el error es por CURP duplicado, lo personalizamos
-            if ($errores->has('curp') && $errores->first('curp') === 'validacion_curp_personalizada') {
+        if ($validator->fails()) {
+
+            if ($validator->errors()->first('curp') === 'validacion_curp_personalizada') {
+
                 $operadorExistente = Operador::where('curp', $request->curp)
                     ->where('id_empresa', auth()->user()->id_empresa)
                     ->first();
 
                 if ($operadorExistente) {
                     $mensaje = "El CURP <strong>{$operadorExistente->curp}</strong> ya está registrado para el operador <strong>{$operadorExistente->nombre}</strong>.";
-                    return redirect()->back()
-                        ->withInput()
-                        ->with('curp_error', $mensaje);
+
+                    return response()->json([
+                        'success' => false,
+                        'message' => $mensaje,
+                    ], 422);
                 }
             }
 
-            // Otros errores (no de CURP)
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Hay errores en el formulario.',
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
-        // Crear nuevo operador (misma lógica tuya, intacta)
         $operador = new Operador();
         $operador->curp = $request->get('curp');
         $operador->nombre = $request->get('nombre');
@@ -137,45 +149,64 @@ class OperadorController extends Controller
         $operador->tipo_sangre = $request->get('tipo_sangre');
         $operador->nss = $request->get('nss');
         $operador->recomendacion = $request->get('recomendacion');
-        $operador->foto = $request->get('foto');
 
-        // Manejo de archivos
-        $path = public_path() . '/operador';
+        $path = public_path('operador');
 
-        if ($request->hasFile("comprobante_domicilio")) {
+        if (!file_exists($path)) {
+            mkdir($path, 0777, true);
+        }
+
+        if ($request->hasFile('comprobante_domicilio')) {
             $file = $request->file('comprobante_domicilio');
-            $fileName = uniqid() . $file->getClientOriginalName();
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
             $file->move($path, $fileName);
             $operador->comprobante_domicilio = $fileName;
         }
 
-        if ($request->hasFile("ine")) {
+        if ($request->hasFile('ine')) {
             $file = $request->file('ine');
-            $fileName = uniqid() . $file->getClientOriginalName();
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
             $file->move($path, $fileName);
             $operador->ine = $fileName;
         }
 
-        if ($request->hasFile("cedula_fiscal")) {
+        if ($request->hasFile('cedula_fiscal')) {
             $file = $request->file('cedula_fiscal');
-            $fileName = uniqid() . $file->getClientOriginalName();
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
             $file->move($path, $fileName);
             $operador->cedula_fiscal = $fileName;
         }
 
-        if ($request->hasFile("licencia_conducir")) {
+        if ($request->hasFile('licencia_conducir')) {
             $file = $request->file('licencia_conducir');
-            $fileName = uniqid() . $file->getClientOriginalName();
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
             $file->move($path, $fileName);
             $operador->licencia_conducir = $fileName;
         }
 
+        if ($request->hasFile('foto')) {
+            $file = $request->file('foto');
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
+            $file->move($path, $fileName);
+            $operador->foto = $fileName;
+        }
+
         $operador->save();
 
-        Session::flash('success', 'Se ha guardado sus datos con éxito');
-        return redirect()->back()->with('success', 'Operador creado correctamente.');
-    }
+        return response()->json([
+            'success' => true,
+            'message' => 'Operador creado correctamente.',
+            'data' => $operador,
+        ], 200);
 
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al guardar el operador.',
+            'errors' => config('app.debug') ? $e->getMessage() : null,
+        ], 500);
+    }
+}
 
     public function update_pago(Request $request, $id)
     {

@@ -49,6 +49,7 @@ class HomeController extends Controller
         //dd($userRole);
 
         if ($user->hasRole('MEP')) {
+            //dd($user);
             return view('mep.index');
         } else {
             if (Auth::User()->id_cliente != 0) {

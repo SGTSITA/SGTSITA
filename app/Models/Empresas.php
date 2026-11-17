@@ -25,11 +25,21 @@ class Empresas extends Model
         'email',
         'fecha',
         'id_configuracion',
+        'requiere_unidad_gasto',
+    ];
+
+    protected $casts = [
+        'requiere_unidad_gasto' => 'boolean',
     ];
 
     public function configuracion()
     {
         return $this->belongsTo(Configuracion::class, 'id_configuracion');
+    }
+
+    public function esGlobalMultiEquipo(): bool
+    {
+        return (bool) ($this->requiere_unidad_gasto || $this->id == 28);
     }
 
     public function estadosCuenta()

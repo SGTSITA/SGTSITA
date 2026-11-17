@@ -13,6 +13,10 @@
                         <h6 class="mb-0">Cuentas por pagar</h6>
                     </div>
                     <div class="col-6 text-end">
+                        <a class="btn btn-sm btn-outline-primary mb-0 me-2" href="{{ route('cobros_pagos.historico_pagar') }}?proveedor_id={{ $proveedor->id }}">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            &nbsp;&nbsp;Buscar pagos anteriores
+                        </a>
                         <a class="btn btn-sm bg-gradient-warning mb-0" href="{{ route('index.pagar') }}">
                             <i class="fas fa-chevron-left" aria-hidden="true"></i>
                             &nbsp;&nbsp;Regresar

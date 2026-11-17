@@ -45,6 +45,34 @@
         .tabla-scroll table {
             margin-bottom: 0;
         }
+
+        .concepto-cell {
+            max-width: 260px;
+            white-space: normal !important;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+
+        .mov-row-alt {
+            background: #f8fafc;
+        }
+
+        .detalle-row {
+            background: #f1f5f9;
+        }
+
+        .detalle-row-alt {
+            background: #eef2ff;
+        }
+
+        .referencia-cell {
+            max-width: 150px;
+            white-space: nowrap;
+            font-size: 12px;
+            color: #475569;
+            font-weight: 600;
+        }
     </style>
 
     <div class="container-fluid">
@@ -226,7 +254,7 @@
                                     <th>Abono</th>
                                     <th class="text-end">Saldo</th>
                                     <th>Origen</th>
-                                    <th class="text-center">Acciones</th>
+                                    {{-- <th class="text-center">Acciones</th> --}}
                                 </tr>
                             </thead>
                             <tbody id="tablaMovimientos"></tbody>
@@ -242,7 +270,7 @@
                 </div>
             </div>
         </div>
-        ```
+
 
     </div>
 
@@ -283,20 +311,26 @@
         }
 
         function formatearmoneda(valor) {
-            return '$ ' + parseFloat(valor).toLocaleString('es-MX', {
+            let num = parseFloat(valor || 0);
+            let absStr = Math.abs(num).toLocaleString('es-MX', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+            return num < 0 ? '-$ ' + absStr : '$ ' + absStr;
         }
 
 
         function actualizarVista(data) {
-            document.getElementById('saldoAnterior').innerText = formatearmoneda(data.saldoAnterior);
+            let saldoAntNum = parseFloat(data.saldoAnterior || 0);
+            let saldoActNum = parseFloat(data.saldoActual || 0);
 
+            let elSaldoAnt = document.getElementById('saldoAnterior');
+            elSaldoAnt.innerText = formatearmoneda(saldoAntNum);
+            elSaldoAnt.style.color = saldoAntNum < 0 ? '#ea580c' : '';
 
-            document.getElementById('saldoActual').innerText =
-                formatearmoneda(data.saldoActual);
-
+            let elSaldoAct = document.getElementById('saldoActual');
+            elSaldoAct.innerText = formatearmoneda(saldoActNum);
+            elSaldoAct.style.color = saldoActNum < 0 ? '#ea580c' : '';
 
             document.getElementById('conteoDepositos').innerText = 'Depósitos (' + data.conteo_depositos + ')';
             document.getElementById('totalDepositos').innerText =
@@ -311,33 +345,89 @@
             tbody.innerHTML = '';
 
 
-            data.movimientos.forEach(mov => {
-                let claseCargo = mov.tipo === 'cargo' ?
-                    'text-danger fw-bold' :
-                    '';
-                let claseAbono = mov.tipo === 'abono' ?
-                    'text-success fw-bold' :
-                    '';
+            data.movimientos.forEach((mov, index) => {
+                let montoNum = parseFloat(mov.monto || 0);
+                let esNegativo = montoNum < 0;
 
-                let onclickDetalle = `onclick="toggleDetalle(${mov.id})" style="cursor:pointer;"`;
+                let styleCargo = '';
+                let styleAbono = '';
+                let textoCargo = '$ 0.00';
+                let textoAbono = '$ 0.00';
+
+                if (mov.tipo === 'cargo') {
+                    styleCargo = (esNegativo ? 'color: #ea580c; font-weight: bold;' :
+                        'color: #dc2626; font-weight: bold;') + ' cursor: pointer;';
+                    textoCargo = esNegativo ? formatearmoneda(montoNum) : '- ' + formatearmoneda(montoNum);
+                } else if (mov.tipo === 'abono') {
+                    styleAbono = (esNegativo ? 'color: #ea580c; font-weight: bold;' :
+                        'color: #16a34a; font-weight: bold;') + ' cursor: pointer;';
+                    textoAbono = esNegativo ? formatearmoneda(montoNum) : '+ ' + formatearmoneda(montoNum);
+                }
+
+                let onclickCargo = mov.tipo === 'cargo' ? `onclick="toggleDetalle(${mov.id})"` : '';
+                let onclickAbono = mov.tipo === 'abono' ? `onclick="toggleDetalle(${mov.id})"` : '';
+
+                const esAlt = index % 2 === 1;
+                const claseFila = esAlt ? 'mov-row mov-row-alt' : 'mov-row';
+                const claseDetalle = esAlt ? 'detalle-row detalle-row-alt' : 'detalle-row';
+
+                let saldoResNum = parseFloat(mov.saldo_resultante || 0);
+                let styleSaldoRes = saldoResNum < 0 ? 'color: #ea580c; font-weight: bold;' : '';
+
+                let badgeConcepto = '';
+                if (mov.tipo_concepto === 'interes') {
+                    badgeConcepto = ' <span class="badge bg-info text-dark" style="font-size: 11px;"><i class="fa fa-percent me-1"></i>Interés</span>';
+                } else if (mov.tipo_concepto === 'traspaso') {
+                    badgeConcepto = ' <span class="badge bg-secondary text-white" style="font-size: 11px;"><i class="fa fa-exchange-alt me-1"></i>Traspaso</span>';
+                } else if (mov.tipo_concepto === 'comision') {
+                    badgeConcepto = ' <span class="badge bg-warning text-dark" style="font-size: 11px;"><i class="fa fa-receipt me-1"></i>Comisión</span>';
+                }
+
+                if (mov.poliza_id) {
+                    badgeConcepto += ` <span class="badge bg-light text-primary border" style="font-size: 10px;" title="Póliza Contable #${mov.poliza_id}"><i class="fa fa-book me-1"></i>Póliza</span>`;
+                }
+
                 tbody.innerHTML += `
-                    <tr>
-                        <td>${formatearFecha(mov.fecha_movimiento)}</td>
-                        <td>${mov.concepto ?? ''}</td>
-                        <td>${mov.referencia ?? ''}</td>
-                        <td class="${claseCargo}"   ${mov.tipo === 'cargo' ? onclickDetalle : ''}>${mov.tipo === 'cargo' ? '- ' +  formatearmoneda(mov.monto) : '$ 0.00'}</td>
-                        <td class="${claseAbono}"   ${mov.tipo === 'abono' ? onclickDetalle : ''}>${mov.tipo === 'abono' ? '+ ' +  formatearmoneda(mov.monto) : '$ 0.00'}</td>
-                        <td>${ formatearmoneda(mov.saldo_resultante)}</td>
-                        <td>${mov.origen ?? ''}</td>
-                        <td></td>
-                    </tr>
-                    <tr id="detalle-${mov.id}" class="d-none bg-light">
-    <td colspan="3">
-        ${construirDetalle(mov.detalles)}
-    </td>
-</tr>
-                `;
+        <tr class="${claseFila}">
+            <td>${formatearFecha(mov.fecha_movimiento)}</td>
+
+            <td class="concepto-cell">
+                ${escapeHtml(mov.concepto ?? '')}${badgeConcepto}
+            </td>
+
+          <td class="referencia-cell" title="${escapeHtml(mov.referencia ?? '')}">
+    ${escapeHtml(mov.referencia ?? '')}
+</td>
+
+            <td style="${styleCargo}" ${onclickCargo}>
+                ${textoCargo}
+            </td>
+
+            <td style="${styleAbono}" ${onclickAbono}>
+                ${textoAbono}
+            </td>
+
+            <td style="${styleSaldoRes}">${formatearmoneda(saldoResNum)}</td>
+
+            <td>${escapeHtml(mov.origen ?? '')}</td>
+        </tr>
+
+        <tr id="detalle-${mov.id}" class="d-none ${claseDetalle}">
+            <td colspan="4">
+                ${construirDetalle(mov.detalles)}
+            </td>
+        </tr>
+    `;
             });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
         }
 
         function cargarMovimientos(inicio, fin) {
@@ -393,7 +483,7 @@
             <div class="card-body p-0">
     `;
 
-            // 🔥 SI ES ARRAY → TABLA PRO
+
             if (Array.isArray(detalles)) {
 
                 let totalMonto = 0;
@@ -401,7 +491,7 @@
                 html += `
         <div class="p-3">
             <div class="fw-semibold mb-2 text-secondary">
-                Contenedores y Abonos
+                Detalles del Gasto / Contenedores
             </div>
             <ul class="detalle-list mb-2">
     `;
@@ -410,25 +500,60 @@
 
                     let contenedor = '';
                     let monto = 0;
+                    let extraInfo = '';
 
-                    Object.entries(obj).forEach(([key, value]) => {
-
-                        if (key.toLowerCase().includes('contenedor')) {
-                            contenedor = value;
+                    // If it comes from unified gastos module
+                    if (obj.gasto_id) {
+                        contenedor = obj.concepto;
+                        monto = Number(obj.monto || 0);
+                        totalMonto += monto;
+                        let infoItems = [];
+                        if (obj.unidad) {
+                            infoItems.push(
+                                `<strong>UNIDAD:</strong> <span class="badge bg-light text-primary border">${obj.unidad}</span>`
+                                );
                         }
-
-                        if (!isNaN(value) && value !== '' && value !== null) {
-                            monto = Number(value);
-                            totalMonto += monto;
+                        if (obj.vinculos && obj.vinculos.length > 0) {
+                            obj.vinculos.forEach(v => {
+                                if (v.tipo !== 'unidad' || !obj.unidad) {
+                                    infoItems.push(
+                                        `<strong>${v.tipo.toUpperCase()}:</strong> ${v.referencia}`);
+                                }
+                            });
                         }
-                    });
+                        if (infoItems.length > 0) {
+                            extraInfo =
+                                '<div style="font-size: 11px; color: #555; margin-left: 5px; margin-top: 2px;">' +
+                                infoItems.join(' | ') +
+                                '</div>';
+                        }
+                    } else {
+                        // Legacy parser loop / liquidación
+                        Object.entries(obj).forEach(([key, value]) => {
+                            if (key.toLowerCase().includes('contenedor')) {
+                                contenedor = value;
+                            }
+                            if (!isNaN(value) && value !== '' && value !== null && key.toLowerCase() !==
+                                'id' && key.toLowerCase() !== 'id_equipo') {
+                                monto = Number(value);
+                                totalMonto += monto;
+                            }
+                        });
+                        if (obj.unidad) {
+                            extraInfo =
+                                `<div style="font-size: 11px; color: #555; margin-left: 5px; margin-top: 2px;"><strong>UNIDAD:</strong> <span class="badge bg-light text-primary border">${obj.unidad}</span></div>`;
+                        }
+                    }
 
                     html += `
-            <li class="detalle-item">
-                <span>${contenedor}</span>
-                <span class="monto">
-                    ${formatearmoneda(monto)}
-                </span>
+            <li class="detalle-item d-flex flex-column align-items-start py-1 border-bottom" style="gap: 2px;">
+                <div class="d-flex justify-content-between w-100">
+                    <span>${contenedor}</span>
+                    <span class="monto fw-bold text-dark">
+                        ${formatearmoneda(monto)}
+                    </span>
+                </div>
+                ${extraInfo}
             </li>
         `;
                 });
@@ -436,7 +561,7 @@
                 html += `
             </ul>
 
-            <div class="detalle-total-line">
+            <div class="detalle-total-line d-flex justify-content-between pt-2 border-top fw-bold">
                 <span>Total</span>
                 <span class="monto-total">
                     ${formatearmoneda(totalMonto)}
@@ -636,49 +761,16 @@
         const startDate = moment().subtract(7, 'days');
         const endDate = moment();
 
-        $('#daterange').daterangepicker({
+        initSgtDateRange(
+            '#daterange',
+            {
                 startDate,
                 endDate,
-                maxDate: moment().endOf('month'),
-                opens: 'right',
                 locale: {
-                    format: 'YYYY-MM-DD',
                     separator: ' al ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    fromLabel: 'Desde',
-                    toLabel: 'Hasta',
-                    customRangeLabel: 'Personalizado',
-                    daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                    monthNames: [
-                        'Enero',
-                        'Febrero',
-                        'Marzo',
-                        'Abril',
-                        'Mayo',
-                        'Junio',
-                        'Julio',
-                        'Agosto',
-                        'Septiembre',
-                        'Octubre',
-                        'Noviembre',
-                        'Diciembre',
-                    ],
-                    firstDay: 1,
-                },
-                ranges: {
-                    Hoy: [moment(), moment()],
-                    'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
-                    'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
-                    'Este mes': [moment().startOf('month'), moment().endOf('month')],
-                    'Mes anterior': [
-                        moment().subtract(1, 'month').startOf('month'),
-                        moment().subtract(1, 'month').endOf('month'),
-                    ],
                 },
             },
             function(start, end) {
-
                 fechaInicioGlobal = start.format('YYYY-MM-DD HH:mm:ss');
                 fechaFinGlobal = end.format('YYYY-MM-DD HH:mm:ss');
 

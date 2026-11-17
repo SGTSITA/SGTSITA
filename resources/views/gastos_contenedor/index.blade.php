@@ -91,12 +91,7 @@
     </style>
 
     {{-- JQuery debe ir primero --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    {{-- Moment.js y Daterangepicker --}}
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     {{-- AG Grid --}}
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
@@ -112,6 +107,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 
     <script>
+        window.mesinicio = null;
+        window.mesfin = null;
         $(document).ready(() => {
             getGxp(); // Este método ya contiene lógica para el filtro de fechas
 

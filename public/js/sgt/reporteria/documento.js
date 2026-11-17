@@ -256,37 +256,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========== RANGO DE FECHAS ==========
-    $('#daterange').daterangepicker(
+    initSgtDateRange(
+        '#daterange',
         {
             startDate: getUrlParam('fecha_inicio') || moment().subtract(7, 'days'),
             endDate: getUrlParam('fecha_fin') || moment(),
-            maxDate: moment(),
-            opens: 'right',
-            locale: {
-                format: 'YYYY-MM-DD',
-                separator: ' AL ',
-                applyLabel: 'Aplicar',
-                cancelLabel: 'Cancelar',
-                fromLabel: 'Desde',
-                toLabel: 'Hasta',
-                customRangeLabel: 'Personalizado',
-                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
-                monthNames: [
-                    'Enero',
-                    'Febrero',
-                    'Marzo',
-                    'Abril',
-                    'Mayo',
-                    'Junio',
-                    'Julio',
-                    'Agosto',
-                    'Septiembre',
-                    'Octubre',
-                    'Noviembre',
-                    'Diciembre',
-                ],
-                firstDay: 1,
-            },
         },
         function (start, end) {
             const currentStart = getUrlParam('fecha_inicio');
@@ -309,4 +283,15 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('fecha_fin', endDate);
         window.location.href = url.toString();
     }
+
+    $('#selEquipoDocumentos').on('change', function () {
+        const url = new URL(window.location.href);
+        const equipoId = $(this).val();
+        if (equipoId) {
+            url.searchParams.set('id_equipo', equipoId);
+        } else {
+            url.searchParams.delete('id_equipo');
+        }
+        window.location.href = url.toString();
+    });
 });

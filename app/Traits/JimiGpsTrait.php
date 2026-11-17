@@ -11,107 +11,225 @@ use Illuminate\Support\Facades\Log;
 
 trait JimiGpsTrait
 {
-    public static function getGpsAccessToken($empresaId, $accessAccount)
-    {
+    public static function getGpsAccessToken($accessAccount, bool $forceRefresh = false)
+{
+    $cacheKey = 'gps:jimi:token:' . md5(
+        ($accessAccount['appkey'] ?? '') . '|' .
+        ($accessAccount['account'] ?? '') . '|' .
+        ($accessAccount['appsecret'] ?? '')
+    );
 
-        $cacheKey = 'api_jimi_token_' . $empresaId;
-
-        try {
-            return Cache::remember($cacheKey, 115 * 60, function () use ($accessAccount) {
-                $method = 'jimi.oauth.token.get';
-                $timestamp = gmdate('Y-m-d H:i:s');
-
-                $params = [
-                    'app_key'       => $accessAccount['appkey'],
-                    'method'        => $method,
-                    'user_id'       => $accessAccount['account'],
-                    'user_pwd_md5'  => $accessAccount['password'],
-                    'timestamp'     => $timestamp,
-                    'expires_in'    => 7200,
-                    'sign_method'   => 'md5',
-                    'format'        => 'json',
-                    'v'             => '1.0',
-                ];
-
-                $params['sign'] = self::generateGpsSign($params, $accessAccount['appsecret']);
-
-                $response = Http::asForm()->post(config('services.JimiGps.url_base'), $params);
-                $data = $response->json();
-
-                Log::info('Respuesta completa del token JIMI:', $data);
-
-                if (isset($data['result']['accessToken'])) {
-                    return $data['result']['accessToken'];
-                }
-
-                throw new \Exception('No se pudo obtener el token.');
-            });
-        } catch (\Exception $e) {
-            Log::error('Error al obtener token GPS JIMI: ' . $e->getMessage());
-            // Cache::forget($cacheKey);
-
-            return false;
+    try {
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+            return self::fetchGpsAccessToken($accessAccount);
         }
+
+        return Cache::remember($cacheKey, now()->addMinutes(60), function () use ($accessAccount) {
+            return self::fetchGpsAccessToken($accessAccount);
+        });
+
+    } catch (\Throwable $e) {
+         Cache::forget($cacheKey);
+
+    Log::error('JIMI TOKEN ERROR', [
+        'message' => $e->getMessage(),
+        'account' => $accessAccount['account'] ?? null,
+    ]);
+
+    return false;
     }
+}
 
-    //ya no se usa
-    public static function getAuthenticationCredentials($rfc)
-    {
-        //Obtener las credenciales previamente guardadas, correspondiente a una empresa
-        $empresa = Empresas::where('rfc', $rfc)->first();
-        if (is_null($empresa)) {
-            return ["success" => false, "mensaje" => "No existe empresa", "account" => null];
-        }
+private static function fetchGpsAccessToken($accessAccount)
+{
+    $method = 'jimi.oauth.token.get';
+    $timestamp = gmdate('Y-m-d H:i:s');
 
-        $data = ServicioGps::where('id_empresa', $empresa->id)->where('id_gps_company', 2)->first();
-        if (is_null($data)) {
-            return ["success" => false, "mensaje" => "No existe configuración para TrackSolid PRO", "account" => null];
-        }
-
-
-        $detailAccount = json_decode(Crypt::decryptString($data->account_info));
-        $credenciales = [];
-        foreach ($detailAccount as $a) {
-            $credenciales[$a->field] =  $a->valor;
-        }
-
-        return ["success" => true, "mensaje" => "Credenciales correctamente configuradas", "accessAccount" => $credenciales];
-    }
-
-
-    public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
-    {
-        $timestamp = gmdate('Y-m-d H:i:s');
-        $empresaId = auth()->user()->id_empresa;
-        $accessToken = self::getGpsAccessToken($empresaId, $accessAccount);
-
-        if (!$accessToken) {
-            return ['error' => 'No se pudo obtener access_token'];
-        }
-        /*'app_key'       => ,
+    $params = [
+        'app_key'       => $accessAccount['appkey'],
         'method'        => $method,
         'user_id'       => $accessAccount['account'],
         'user_pwd_md5'  => $accessAccount['password'],
         'timestamp'     => $timestamp,
         'expires_in'    => 7200,
-        'sign_method'   => 'md5',*/
+        'sign_method'   => 'md5',
+        'format'        => 'json',
+        'v'             => '1.0',
+    ];
 
-        $params = array_merge([
-            'method'       => $method,
-            'access_token' => $accessToken,
-            'app_key'      => $accessAccount['appkey'],
-            'timestamp'    => $timestamp,
-            'format'        => 'json',
-            'v'            => '1.0',
-            'sign_method'  => 'md5',
+    $params['sign'] = self::generateGpsSign(
+        $params,
+        $accessAccount['appsecret']
+    );
 
-        ], $additionalParams);
+    $response = Http::asForm()
+        ->connectTimeout(10)
+        ->timeout(20)
+        ->retry(1, 300)
+        ->post(config('services.JimiGps.url_base'), $params);
 
-        $params['sign'] = self::generateGpsSign($params, $accessAccount['appsecret']);
+    $data = $response->json();
 
-        $response = Http::asForm()->post(config('services.JimiGps.url_base'), $params);
-        return $response->json();
+    if (isset($data['result']['accessToken'])) {
+        return $data['result']['accessToken'];
     }
+
+    throw new \Exception('No se pudo obtener el token JIMI.');
+}
+public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
+{
+    $response = self::callGpsApiOnce($method, $accessAccount, $additionalParams, false);
+
+    if (self::tokenExpiradoOInvalido($response)) {
+        Log::warning('JIMI token vencido/inválido, reintentando con token nuevo', [
+            'method' => $method,
+            'code' => $response['code'] ?? null,
+            'message' => $response['message'] ?? null,
+            'imeis' => $additionalParams['imeis'] ?? null,
+        ]);
+
+        $response = self::callGpsApiOnce($method, $accessAccount, $additionalParams, true);
+    }
+
+    return $response;
+}
+
+private static function tokenExpiradoOInvalido(array $response): bool
+{
+    $code = $response['code'] ?? null;
+    $message = strtolower((string) ($response['message'] ?? ''));
+
+    if (($response['success'] ?? null) === false) {
+        return true;
+    }
+
+    return $code !== 0 && (
+        str_contains($message, 'token') ||
+        str_contains($message, 'access') ||
+        str_contains($message, 'expired') ||
+        str_contains($message, 'invalid') ||
+        str_contains($message, 'session') ||
+        str_contains($message, 'auth')
+    );
+}
+private static function callGpsApiOnce($method, $accessAccount, array $additionalParams = [], bool $forceRefresh = false)
+{
+    $timestamp = gmdate('Y-m-d H:i:s');
+
+    $accessToken = self::getGpsAccessToken($accessAccount, $forceRefresh);
+
+    if (!$accessToken) {
+        return [
+            'code' => -1,
+            'message' => 'No se pudo obtener access_token',
+            'result' => [],
+            'data' => null,
+        ];
+    }
+
+    $params = array_merge([
+        'method'       => $method,
+        'access_token' => $accessToken,
+        'app_key'      => $accessAccount['appkey'],
+        'timestamp'    => $timestamp,
+        'format'       => 'json',
+        'v'            => '1.0',
+        'sign_method'  => 'md5',
+    ], $additionalParams);
+
+    $params['sign'] = self::generateGpsSign(
+        $params,
+        $accessAccount['appsecret']
+    );
+
+    try {
+        $response = Http::asForm()
+            ->connectTimeout(8)
+            ->timeout(20)
+            ->retry(1, 500)
+            ->post(config('services.JimiGps.url_base'), $params);
+
+        $json = $response->json() ?? [];
+
+        Log::info('JIMI API RESPONSE', [
+            'method' => $method,
+            'http_status' => $response->status(),
+            'api_code' => $json['code'] ?? null,
+            'api_message' => $json['message'] ?? null,
+            'result_count' => is_array($json['result'] ?? null) ? count($json['result']) : null,
+            'imei' => $additionalParams['imeis'] ?? null,
+            'force_refresh' => $forceRefresh,
+        ]);
+
+        return $json;
+
+    } catch (\Throwable $e) {
+        Log::error('JIMI API EXCEPTION', [
+            'method' => $method,
+            'imei' => $additionalParams['imeis'] ?? null,
+            'force_refresh' => $forceRefresh,
+            'message' => $e->getMessage(),
+        ]);
+
+        return [
+            'code' => -1,
+            'message' => 'Error JimiGps::callGpsApi => ' . $e->getMessage(),
+            'result' => [],
+            'data' => null,
+        ];
+    }
+}
+/*     public static function callGpsApi($method, $accessAccount, array $additionalParams = [])
+{
+    $timestamp = gmdate('Y-m-d H:i:s');
+
+    Log::info('JIMI ACCESS ACCOUNT RASTREO', [
+    'keys' => array_keys($accessAccount),
+    'appkey' => $accessAccount['appkey'] ?? null,
+    'account' => $accessAccount['account'] ?? null,
+    'password_len' => $accessAccount['password'] ?? '',
+    'appsecret_len' => $accessAccount['appsecret'] ?? '',
+]);
+
+    $accessToken = self::getGpsAccessToken($accessAccount);
+
+
+    if (!$accessToken) {
+        return ['error' => 'No se pudo obtener access_token'];
+    }
+
+    $params = array_merge([
+        'method'       => $method,
+        'access_token' => $accessToken,
+        'app_key'      => $accessAccount['appkey'],
+        'timestamp'    => $timestamp,
+        'format'       => 'json',
+        'v'            => '1.0',
+        'sign_method'  => 'md5',
+    ], $additionalParams);
+
+    $params['sign'] = self::generateGpsSign(
+        $params,
+        $accessAccount['appsecret']
+    );
+
+    $response = Http::asForm()
+        ->connectTimeout(5)
+        ->timeout(12)
+        ->retry(1, 300)
+        ->post(config('services.JimiGps.url_base'), $params);
+
+
+        log::info('JIMI API RESPONSE', [
+            'method' => $method,
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'params' => $params,
+        ]);
+
+    return $response->json();
+} */
 
     private static function generateGpsSign(array $params, $appSecret)
     {

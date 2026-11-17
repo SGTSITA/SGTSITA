@@ -67,7 +67,9 @@
     <link href="{{ asset('assets/metronic/fileuploader/jquery.fileuploader-theme-dragdrop.css') }}" media="all"
         rel="stylesheet" />
     <script src="{{ asset('assets/metronic/fileuploader/jquery.fileuploader.min.js') }}" type="text/javascript"></script>
-    <script src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}" type="text/javascript"></script>
+    <script
+        src="{{ asset('assets/metronic/fileuploader/cotizacion-cliente-externo.js') }}?v={{ filemtime(public_path('assets/metronic/fileuploader/cotizacion-cliente-externo.js')) }}"
+        type="text/javascript"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
