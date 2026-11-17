@@ -20,6 +20,7 @@ class CotizacionesCostosMultipleController extends Controller
         protected EquipoService $equipoService
     ) {
         $this->middleware('auth');
+        $this->middleware('permission:costos-multiples-coti');
     }
 
     /**
