@@ -407,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (card) card.classList.add("d-none");
 
             btnPlanear.classList.add("d-none");
-            seccionPlanearViaje.classList.add("d-none");
+            if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
             let statusViaje = "";
             let planeacionEstatus = 0;
             if (seleccion.length == 1) {
@@ -601,11 +601,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         if (statusViaje == "Aprobada" && planeacionEstatus != 1) {
                             btnPlanear.classList.remove("d-none");
-                            seccionPlanearViaje.classList.remove("d-none");
                         } else {
                             btnPlanear.classList.add("d-none");
-                            seccionPlanearViaje.classList.add("d-none");
                         }
+                        if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
 
                         const equipoIdUnidad =
                             data.camion?.id || data.id_camion;
@@ -642,11 +641,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         // Viaje sin asignación previa: el formulario permanece limpio
                         if (statusViaje == "Aprobada") {
                             btnPlanear.classList.remove("d-none");
-                            seccionPlanearViaje.classList.remove("d-none");
                         } else {
                             btnPlanear.classList.add("d-none");
-                            seccionPlanearViaje.classList.add("d-none");
                         }
+                        if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
                     }
                 },
                 error: (err) => {},
@@ -654,8 +652,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (statusViaje == "Aprobada") {
                 btnPlanear.classList.remove("d-none");
-                seccionPlanearViaje.classList.remove("d-none");
             }
+            if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
 
             if (!modal1) {
                 modal1 = bootstrap.Modal.getOrCreateInstance(modalEl);

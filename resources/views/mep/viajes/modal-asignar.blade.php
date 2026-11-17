@@ -691,9 +691,9 @@
 
         // 7. Botones de acción y secciones
         const btnPlanear = document.querySelector("#btnPlanearViaje");
-        const seccionPlanearViaje = document.querySelector("#seccionProgramarViaje");
+        const seccionFechasViaje = document.querySelector("#seccionProgramarViaje");
         if (btnPlanear) btnPlanear.classList.add("d-none");
-        if (seccionPlanearViaje) seccionPlanearViaje.classList.add("d-none");
+        if (seccionFechasViaje) seccionFechasViaje.classList.remove("d-none");
 
         // 8. Limpiar LocalStorage para evitar enviar contenedor equivocado si no está seleccionado
         localStorage.removeItem("idContenedor");
