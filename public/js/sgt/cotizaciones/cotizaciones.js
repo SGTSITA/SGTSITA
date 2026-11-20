@@ -716,14 +716,104 @@ const formFieldsProveedor = [
     },
 ];
 
-$(".moneyformat").on("focus", (e) => {
-    var val = e.target.value;
-    e.target.value = reverseMoneyFormat(val);
+let focusSelectTarget = null;
+
+$(document).on("focus", ".moneyformat", function (e) {
+    if (this.readOnly || this.disabled) {
+        return;
+    }
+    var val = this.value;
+    var cleanVal = reverseMoneyFormat(val).trim();
+    var num = parseFloat(cleanVal);
+
+    if (!cleanVal || isNaN(num) || num === 0) {
+        this.value = "";
+        focusSelectTarget = null;
+    } else {
+        this.value = cleanVal;
+        focusSelectTarget = this;
+        setTimeout(() => {
+            if (document.activeElement === this) {
+                try {
+                    this.select();
+                } catch (err) {}
+            }
+        }, 10);
+    }
 });
 
-$(".moneyformat").on("blur", (e) => {
-    var val = e.target.value;
-    e.target.value = moneyFormat(val);
+$(document).on("blur", ".moneyformat", function (e) {
+    if (this.readOnly || this.disabled) {
+        return;
+    }
+    focusSelectTarget = null;
+    var cleanVal = reverseMoneyFormat(this.value).trim();
+    var num = parseFloat(cleanVal);
+
+    if (!cleanVal || isNaN(num) || num === 0) {
+        this.value = moneyFormat(0);
+    } else {
+        this.value = moneyFormat(num);
+    }
+
+    if ($(this).hasClass("calculo-cotizacion")) {
+        calcularTotal();
+        if (this.id === "precio_sobre_peso" && typeof valorSobrePrecio === "function") {
+            valorSobrePrecio();
+        }
+    } else if ($(this).hasClass("calculo-proveedor")) {
+        calcularTotal("proveedores");
+        if (this.id === "sobrepeso_proveedor" && typeof valorSobrePrecioProveedor === "function") {
+            valorSobrePrecioProveedor();
+        }
+    }
+});
+
+$(document).on("focus", "#tamano, #peso_reglamentario, #peso_contenedor", function (e) {
+    if (this.readOnly || this.disabled) {
+        return;
+    }
+    var cleanVal = String(this.value || "").trim();
+    var num = parseFloat(cleanVal);
+
+    if (!cleanVal || isNaN(num) || num === 0) {
+        this.value = "";
+        focusSelectTarget = null;
+    } else {
+        focusSelectTarget = this;
+        setTimeout(() => {
+            if (document.activeElement === this) {
+                try {
+                    this.select();
+                } catch (err) {}
+            }
+        }, 10);
+    }
+});
+
+$(document).on("blur", "#tamano, #peso_reglamentario, #peso_contenedor", function (e) {
+    if (this.readOnly || this.disabled) {
+        return;
+    }
+    focusSelectTarget = null;
+    if (this.id === "peso_reglamentario" || this.id === "peso_contenedor") {
+        if (typeof calcularSobrepeso === "function") {
+            calcularSobrepeso();
+        }
+    }
+});
+
+$(document).on("mouseup", ".moneyformat, #tamano, #peso_reglamentario, #peso_contenedor", function (e) {
+    if (this.readOnly || this.disabled) {
+        return;
+    }
+    if (focusSelectTarget === this) {
+        focusSelectTarget = null;
+        e.preventDefault();
+        try {
+            this.select();
+        } catch (err) {}
+    }
 });
 
 function calcularTotal(modulo = "crear") {
@@ -2548,7 +2638,10 @@ $("#cotizacionesUpdate").on("submit", (e) => {
     formFields.forEach((item) => {
         if (item.type == "money") {
             var field = document.getElementById(item.field);
-            field.value = reverseMoneyFormat(field.value);
+            if (field) {
+                var rev = reverseMoneyFormat(field.value).trim();
+                field.value = (!rev || isNaN(parseFloat(rev))) ? 0 : rev;
+            }
         }
     });
 
@@ -2556,7 +2649,8 @@ $("#cotizacionesUpdate").on("submit", (e) => {
         if (item.type == "money") {
             var field = document.getElementById(item.id);
             if (field) {
-                field.value = reverseMoneyFormat(field.value);
+                var rev = reverseMoneyFormat(field.value).trim();
+                field.value = (!rev || isNaN(parseFloat(rev))) ? 0 : rev;
             }
         }
     });
