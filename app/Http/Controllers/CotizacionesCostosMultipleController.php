@@ -46,7 +46,7 @@ class CotizacionesCostosMultipleController extends Controller
                 }
             })
             ->where('jerarquia', '!=', 'Secundario')
-            ->where('estatus', '!=', 'Cancelada')
+            ->whereNotIn('estatus', ['Cancelada', 'Pendiente'])
             ->whereNotNull('id_cliente')
             ->distinct()
             ->pluck('id_cliente');
