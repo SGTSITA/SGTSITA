@@ -51,17 +51,24 @@ function validarEmail(email) {
 }
 
 function moneyFormat(moneyValue) {
+    let num = parseFloat(moneyValue);
+    if (isNaN(num)) {
+        num = 0;
+    }
     const $formatMoneda = new Intl.NumberFormat("es-MX", {
         style: "currency",
         currency: "MXN",
         minimumFractionDigits: 2,
-    }).format(moneyValue);
+    }).format(num);
 
     return $formatMoneda;
 }
 
 function reverseMoneyFormat(formatValue) {
-    var valorLimpio = formatValue.replace(/[\$,]/g, "");
+    if (formatValue === null || formatValue === undefined) {
+        return "";
+    }
+    var valorLimpio = String(formatValue).replace(/[\$,\s]/g, "");
     return valorLimpio;
 }
 
