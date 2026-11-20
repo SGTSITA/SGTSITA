@@ -49,22 +49,36 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+
     // ==========================================
-    // RENDERIZADOR PERSONALIZADO PARA MAPAS
+    // RENDERIZADORES PERSONALIZADOS
     // ==========================================
+    function textTruncateRenderer(instance, td, row, col, prop, value, cellProperties) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        td.style.whiteSpace = "nowrap";
+        td.style.overflow = "hidden";
+        td.style.textOverflow = "ellipsis";
+        td.style.verticalAlign = "middle";
+        if (value) {
+            td.title = value; // Tooltip nativo al pasar el cursor
+        }
+        return td;
+    }
+
     function mapaRenderer(instance, td, row, col, prop, value, cellProperties) {
         Handsontable.renderers.BaseRenderer.apply(this, arguments);
         td.style.textAlign = "center";
         td.style.verticalAlign = "middle";
+        td.style.whiteSpace = "nowrap";
 
         if (value && typeof value === "string" && value.trim() !== "") {
             td.innerHTML = `
-                <a href="${value}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-info btn-mapa-grid py-1 px-2" style="font-size:11px; text-decoration:none;">
-                    <i class="fas fa-map-marker-alt text-danger me-1"></i>Ver Mapa
+                <a href="${value}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline-info btn-mapa-grid" style="font-size:10px; line-height:16px; padding:1px 6px; text-decoration:none;">
+                    <i class="fas fa-map-marker-alt text-danger me-1"></i>Mapa
                 </a>
             `;
         } else {
-            td.innerHTML = '<span class="text-muted" style="font-size:11px;">Sin mapa</span>';
+            td.innerHTML = '<span class="text-muted" style="font-size:10px; line-height:16px;">Sin mapa</span>';
         }
         return td;
     }
@@ -73,26 +87,27 @@ document.addEventListener("DOMContentLoaded", function () {
     // CONFIGURACIÓN DE TABLA: COTIZACIÓN
     // ==========================================
     const columnsCotizacion = [
-        { data: "contenedor", title: "# CONTENEDOR", readOnly: true, width: 130 },
-        { data: "destino", title: "DESTINO", readOnly: true, width: 180 },
-        { data: "mapas", title: "MAPAS", readOnly: true, renderer: mapaRenderer, width: 110 },
-        { data: "peso_contenedor", title: "PESO (TON)", type: "numeric", numericFormat: { pattern: "0,0.00" }, width: 95 },
-        { data: "precio_viaje", title: "PRECIO VIAJE", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "burreo", title: "BURREO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 100 },
-        { data: "maniobra", title: "MANIOBRA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
-        { data: "estadia", title: "ESTADÍA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
+        { data: "contenedor", title: "# CONTENEDOR", readOnly: true, renderer: textTruncateRenderer, width: 140 },
+        { data: "destino", title: "DESTINO", readOnly: true, renderer: textTruncateRenderer, width: 150 },
+        { data: "mapas", title: "MAPAS", readOnly: true, renderer: mapaRenderer, width: 85 },
+        { data: "peso_contenedor", title: "PESO (TON)", type: "numeric", numericFormat: { pattern: "0,0.00" }, width: 115 },
+        { data: "precio_viaje", title: "PRECIO VIAJE", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 125 },
+        { data: "burreo", title: "BURREO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
+        { data: "maniobra", title: "MANIOBRA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
+        { data: "estadia", title: "ESTADÍA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
         { data: "otro", title: "OTROS", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 100 },
-        { data: "sobrepeso", title: "SOBREPESO", type: "numeric", numericFormat: { pattern: "0,0.00" }, readOnly: true, width: 95 },
-        { data: "precio_sobre_peso", title: "PRECIO S.PESO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "total_sobrepeso", title: "TOT. TONELADA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 120 },
-        { data: "base_factura", title: "BASE 1 (FAC)", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "base_taref", title: "BASE 2 (TAR)", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 115 },
+        { data: "sobrepeso", title: "SOBREPESO", type: "numeric", numericFormat: { pattern: "0,0.00" }, readOnly: true, width: 115 },
+        { data: "precio_sobre_peso", title: "PRECIO S.PESO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 125 },
+        { data: "total_sobrepeso", title: "TOT. TONELADA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 125 },
+        { data: "base_factura", title: "BASE 1 (FAC)", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 120 },
+        { data: "base_taref", title: "BASE 2 (TAR)", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 120 },
         { data: "iva", title: "IVA (16%)", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 110 },
-        { data: "retencion", title: "RETENCIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
-        { data: "total", title: "TOTAL COTIZACIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 135 },
+        { data: "retencion", title: "RETENCIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
+        { data: "total", title: "TOTAL COTIZACIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 145 },
         { data: "id", title: "ID", readOnly: true },
         { data: "peso_reglamentario", title: "PESO_REG", readOnly: true },
-        { data: "retencion_automatica", title: "RET_AUTO", readOnly: true }
+        { data: "retencion_automatica", title: "RET_AUTO", readOnly: true },
+        { data: "estatus", title: "ESTATUS", readOnly: true }
     ];
 
     // ==========================================
@@ -131,19 +146,24 @@ document.addEventListener("DOMContentLoaded", function () {
     hotCotizacion = new Handsontable(containerCotizacion, {
         data: dataCotizacion,
         columns: columnsCotizacion,
-        hiddenColumns: { columns: [17, 18, 19], indicators: false },
+        hiddenColumns: { columns: [17, 18, 19, 20], indicators: false },
         rowHeaders: true,
         colHeaders: true,
+        filters: true,
+        dropdownMenu: ["filter_by_value", "filter_action_bar"],
+        language: "es-MX",
         height: 520,
         width: "100%",
         fixedColumnsLeft: 2,
+        rowHeights: 25,
+        autoRowSize: false,
         autoWrapRow: true,
         licenseKey: "non-commercial-and-evaluation",
-        language: "es-MX",
-        filters: true,
-        dropdownMenu: ["filter_by_value", "filter_action_bar"],
         afterBeginEditing: function (row, col) {
             limpiarCeroAlEditar(this);
+        },
+        afterFilter: function () {
+            actualizarResumenCotizacion();
         },
         afterChange: function (changes, source) {
             if (!changes || source === "loadData" || source === "calculation" || isCalculatingCot) {
@@ -178,45 +198,51 @@ document.addEventListener("DOMContentLoaded", function () {
     // CONFIGURACIÓN DE TABLA: PROVEEDOR
     // ==========================================
     const columnsProveedor = [
-        { data: "contenedor", title: "# CONTENEDOR", readOnly: true, width: 130 },
-        { data: "destino", title: "DESTINO", readOnly: true, width: 180 },
-        { data: "mapas", title: "MAPAS", readOnly: true, renderer: mapaRenderer, width: 110 },
-        { data: "peso_contenedor", title: "PESO (TON)", readOnly: true, type: "numeric", numericFormat: { pattern: "0,0.00" }, width: 95 },
-        { data: "proveedor", title: "PROVEEDOR", readOnly: true, width: 160 },
-        { data: "precio_proveedor", title: "COSTO VIAJE", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "burreo_proveedor", title: "BURREO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 100 },
-        { data: "maniobra_proveedor", title: "MANIOBRA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
-        { data: "estadia_proveedor", title: "ESTADÍA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
-        { data: "sobrepeso", title: "SOBREPESO", type: "numeric", numericFormat: { pattern: "0,0.00" }, readOnly: true, width: 95 },
-        { data: "sobrepeso_proveedor", title: "PRECIO S.PESO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "total_tonelada", title: "TOT. TONELADA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 120 },
-        { data: "base1_proveedor", title: "BASE 1", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 115 },
-        { data: "base2_proveedor", title: "BASE 2", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 115 },
+        { data: "contenedor", title: "# CONTENEDOR", readOnly: true, renderer: textTruncateRenderer, width: 140 },
+        { data: "destino", title: "DESTINO", readOnly: true, renderer: textTruncateRenderer, width: 150 },
+        { data: "mapas", title: "MAPAS", readOnly: true, renderer: mapaRenderer, width: 85 },
+        { data: "peso_contenedor", title: "PESO (TON)", readOnly: true, type: "numeric", numericFormat: { pattern: "0,0.00" }, width: 115 },
+        { data: "proveedor", title: "PROVEEDOR", readOnly: true, renderer: textTruncateRenderer, width: 160 },
+        { data: "precio_proveedor", title: "COSTO VIAJE", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 125 },
+        { data: "burreo_proveedor", title: "BURREO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 105 },
+        { data: "maniobra_proveedor", title: "MANIOBRA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
+        { data: "estadia_proveedor", title: "ESTADÍA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
+        { data: "sobrepeso", title: "SOBREPESO", type: "numeric", numericFormat: { pattern: "0,0.00" }, readOnly: true, width: 115 },
+        { data: "sobrepeso_proveedor", title: "PRECIO S.PESO", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 125 },
+        { data: "total_tonelada", title: "TOT. TONELADA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 125 },
+        { data: "base1_proveedor", title: "BASE 1", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 110 },
+        { data: "base2_proveedor", title: "BASE 2", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 110 },
         { data: "otro_proveedor", title: "OTROS", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, width: 100 },
-        { data: "iva_proveedor", title: "IVA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 110 },
-        { data: "retencion_proveedor", title: "RETENCIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 110 },
-        { data: "total_proveedor", title: "TOTAL PROVEEDOR", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 135 },
+        { data: "iva_proveedor", title: "IVA", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 105 },
+        { data: "retencion_proveedor", title: "RETENCIÓN", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 115 },
+        { data: "total_proveedor", title: "TOTAL PROVEEDOR", type: "numeric", numericFormat: { pattern: "$ 0,0.00", culture: "en-US" }, readOnly: true, width: 145 },
         { data: "id", title: "ID", readOnly: true },
         { data: "id_asignacion", title: "ID_ASIGNACION", readOnly: true },
-        { data: "id_proveedor", title: "ID_PROVEEDOR", readOnly: true }
+        { data: "id_proveedor", title: "ID_PROVEEDOR", readOnly: true },
+        { data: "estatus", title: "ESTATUS", readOnly: true }
     ];
 
     hotProveedor = new Handsontable(containerProveedor, {
         data: dataProveedor,
         columns: columnsProveedor,
-        hiddenColumns: { columns: [18, 19, 20], indicators: false },
+        hiddenColumns: { columns: [18, 19, 20, 21], indicators: false },
         rowHeaders: true,
         colHeaders: true,
+        filters: true,
+        dropdownMenu: ["filter_by_value", "filter_action_bar"],
+        language: "es-MX",
         height: 520,
         width: "100%",
         fixedColumnsLeft: 2,
+        rowHeights: 25,
+        autoRowSize: false,
         autoWrapRow: true,
         licenseKey: "non-commercial-and-evaluation",
-        language: "es-MX",
-        filters: true,
-        dropdownMenu: ["filter_by_value", "filter_action_bar"],
         afterBeginEditing: function (row, col) {
             limpiarCeroAlEditar(this);
+        },
+        afterFilter: function () {
+            actualizarResumenProveedor();
         },
         afterChange: function (changes, source) {
             if (!changes || source === "loadData" || source === "calculation" || isCalculatingProv) {
@@ -343,59 +369,93 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function actualizarResumenCotizacion() {
-        const sourceData = hotCotizacion.getSourceData();
+        if (!hotCotizacion) return;
+        const count = hotCotizacion.countRows();
         let fletes = 0, burreos = 0, maniobras = 0, estadias = 0, sobrepesos = 0, otros = 0, ivas = 0, retenciones = 0, totales = 0;
 
-        sourceData.forEach(function (r) {
-            fletes += parseNum(r.precio_viaje);
-            burreos += parseNum(r.burreo);
-            maniobras += parseNum(r.maniobra);
-            estadias += parseNum(r.estadia);
-            sobrepesos += parseNum(r.total_sobrepeso);
-            otros += parseNum(r.otro);
-            ivas += parseNum(r.iva);
-            retenciones += parseNum(r.retencion);
-            totales += parseNum(r.total);
-        });
+        for (let r = 0; r < count; r++) {
+            const physicalRow = hotCotizacion.toPhysicalRow(r);
+            const actualRow = (physicalRow !== null && physicalRow !== undefined) ? physicalRow : r;
+            const fila = hotCotizacion.getSourceDataAtRow(actualRow);
+            if (!fila) continue;
 
-        document.getElementById("cot_resumen_viajes").textContent = sourceData.length;
-        document.getElementById("cot_resumen_fletes").textContent = formatMoney(fletes);
-        document.getElementById("cot_resumen_burreo").textContent = formatMoney(burreos);
-        document.getElementById("cot_resumen_maniobra").textContent = formatMoney(maniobras);
-        document.getElementById("cot_resumen_estadia").textContent = formatMoney(estadias);
-        document.getElementById("cot_resumen_sobrepeso").textContent = formatMoney(sobrepesos);
-        document.getElementById("cot_resumen_otros").textContent = formatMoney(otros);
-        document.getElementById("cot_resumen_iva").textContent = formatMoney(ivas);
-        document.getElementById("cot_resumen_retencion").textContent = formatMoney(retenciones);
-        document.getElementById("cot_resumen_total").textContent = formatMoney(totales);
+            fletes += parseNum(fila.precio_viaje);
+            burreos += parseNum(fila.burreo);
+            maniobras += parseNum(fila.maniobra);
+            estadias += parseNum(fila.estadia);
+            sobrepesos += parseNum(fila.total_sobrepeso);
+            otros += parseNum(fila.otro);
+            ivas += parseNum(fila.iva);
+            retenciones += parseNum(fila.retencion);
+            totales += parseNum(fila.total);
+        }
+
+        const elViajes = document.getElementById("cot_resumen_viajes");
+        const elFletes = document.getElementById("cot_resumen_fletes");
+        const elBurreo = document.getElementById("cot_resumen_burreo");
+        const elManiobra = document.getElementById("cot_resumen_maniobra");
+        const elEstadia = document.getElementById("cot_resumen_estadia");
+        const elSobrepeso = document.getElementById("cot_resumen_sobrepeso");
+        const elOtros = document.getElementById("cot_resumen_otros");
+        const elIva = document.getElementById("cot_resumen_iva");
+        const elRetencion = document.getElementById("cot_resumen_retencion");
+        const elTotal = document.getElementById("cot_resumen_total");
+
+        if (elViajes) elViajes.textContent = count;
+        if (elFletes) elFletes.textContent = formatMoney(fletes);
+        if (elBurreo) elBurreo.textContent = formatMoney(burreos);
+        if (elManiobra) elManiobra.textContent = formatMoney(maniobras);
+        if (elEstadia) elEstadia.textContent = formatMoney(estadias);
+        if (elSobrepeso) elSobrepeso.textContent = formatMoney(sobrepesos);
+        if (elOtros) elOtros.textContent = formatMoney(otros);
+        if (elIva) elIva.textContent = formatMoney(ivas);
+        if (elRetencion) elRetencion.textContent = formatMoney(retenciones);
+        if (elTotal) elTotal.textContent = formatMoney(totales);
     }
 
     function actualizarResumenProveedor() {
-        const sourceData = hotProveedor.getSourceData();
+        if (!hotProveedor) return;
+        const count = hotProveedor.countRows();
         let fletes = 0, burreos = 0, maniobras = 0, estadias = 0, sobrepesos = 0, otros = 0, ivas = 0, retenciones = 0, totales = 0;
 
-        sourceData.forEach(function (r) {
-            fletes += parseNum(r.precio_proveedor);
-            burreos += parseNum(r.burreo_proveedor);
-            maniobras += parseNum(r.maniobra_proveedor);
-            estadias += parseNum(r.estadia_proveedor);
-            sobrepesos += parseNum(r.total_tonelada);
-            otros += parseNum(r.otro_proveedor);
-            ivas += parseNum(r.iva_proveedor);
-            retenciones += parseNum(r.retencion_proveedor);
-            totales += parseNum(r.total_proveedor);
-        });
+        for (let r = 0; r < count; r++) {
+            const physicalRow = hotProveedor.toPhysicalRow(r);
+            const actualRow = (physicalRow !== null && physicalRow !== undefined) ? physicalRow : r;
+            const fila = hotProveedor.getSourceDataAtRow(actualRow);
+            if (!fila) continue;
 
-        document.getElementById("prov_resumen_viajes").textContent = sourceData.length;
-        document.getElementById("prov_resumen_fletes").textContent = formatMoney(fletes);
-        document.getElementById("prov_resumen_burreo").textContent = formatMoney(burreos);
-        document.getElementById("prov_resumen_maniobra").textContent = formatMoney(maniobras);
-        document.getElementById("prov_resumen_estadia").textContent = formatMoney(estadias);
-        document.getElementById("prov_resumen_sobrepeso").textContent = formatMoney(sobrepesos);
-        document.getElementById("prov_resumen_otros").textContent = formatMoney(otros);
-        document.getElementById("prov_resumen_iva").textContent = formatMoney(ivas);
-        document.getElementById("prov_resumen_retencion").textContent = formatMoney(retenciones);
-        document.getElementById("prov_resumen_total").textContent = formatMoney(totales);
+            fletes += parseNum(fila.precio_proveedor);
+            burreos += parseNum(fila.burreo_proveedor);
+            maniobras += parseNum(fila.maniobra_proveedor);
+            estadias += parseNum(fila.estadia_proveedor);
+            sobrepesos += parseNum(fila.total_tonelada);
+            otros += parseNum(fila.otro_proveedor);
+            ivas += parseNum(fila.iva_proveedor);
+            retenciones += parseNum(fila.retencion_proveedor);
+            totales += parseNum(fila.total_proveedor);
+        }
+
+        const elViajes = document.getElementById("prov_resumen_viajes");
+        const elFletes = document.getElementById("prov_resumen_fletes");
+        const elBurreo = document.getElementById("prov_resumen_burreo");
+        const elManiobra = document.getElementById("prov_resumen_maniobra");
+        const elEstadia = document.getElementById("prov_resumen_estadia");
+        const elSobrepeso = document.getElementById("prov_resumen_sobrepeso");
+        const elOtros = document.getElementById("prov_resumen_otros");
+        const elIva = document.getElementById("prov_resumen_iva");
+        const elRetencion = document.getElementById("prov_resumen_retencion");
+        const elTotal = document.getElementById("prov_resumen_total");
+
+        if (elViajes) elViajes.textContent = count;
+        if (elFletes) elFletes.textContent = formatMoney(fletes);
+        if (elBurreo) elBurreo.textContent = formatMoney(burreos);
+        if (elManiobra) elManiobra.textContent = formatMoney(maniobras);
+        if (elEstadia) elEstadia.textContent = formatMoney(estadias);
+        if (elSobrepeso) elSobrepeso.textContent = formatMoney(sobrepesos);
+        if (elOtros) elOtros.textContent = formatMoney(otros);
+        if (elIva) elIva.textContent = formatMoney(ivas);
+        if (elRetencion) elRetencion.textContent = formatMoney(retenciones);
+        if (elTotal) elTotal.textContent = formatMoney(totales);
     }
 
     function marcarCambiosCotizacion(tiene) {
@@ -545,7 +605,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const todasLasFilas = hotCotizacion.getSourceData();
+            const todasLasFilas = dataCotizacion;
             const filas = todasLasFilas.filter(r => r && r.id && filasModificadasCot.has(r.id));
 
             if (filas.length === 0) {
@@ -664,7 +724,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const todasLasFilas = hotProveedor.getSourceData();
+            const todasLasFilas = dataProveedor;
             const filas = todasLasFilas.filter(r => r && r.id && filasModificadasProv.has(r.id));
 
             if (filas.length === 0) {
@@ -770,6 +830,29 @@ document.addEventListener("DOMContentLoaded", function () {
     if (tabProveedorNav) {
         tabProveedorNav.addEventListener("shown.bs.tab", function () {
             if (hotProveedor) hotProveedor.render();
+        });
+    }
+
+
+
+    // ==========================================
+    // EXPORTACIÓN A EXCEL CON FILTROS ACTIVOS
+    // ==========================================
+    const btnExportarExcel = document.getElementById("btnExportarExcel");
+    if (btnExportarExcel) {
+        btnExportarExcel.addEventListener("click", function (e) {
+            e.preventDefault();
+            const clienteId = selectCliente?.value || "";
+            const estadoCosto = selectEstadoCosto?.value || "todos";
+            const equipoId = selectEquipo?.value || "";
+
+            const params = new URLSearchParams({
+                cliente_id: clienteId,
+                estado_costo: estadoCosto,
+                equipo_id: equipoId
+            });
+
+            window.location.href = `/cotizaciones/costos-multiple/exportar?${params.toString()}`;
         });
     }
 

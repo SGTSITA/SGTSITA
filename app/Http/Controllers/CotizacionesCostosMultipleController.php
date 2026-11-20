@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CostosMultipleExport;
 use App\Http\Requests\GuardarCostosCotizacionMultipleRequest;
 use App\Http\Requests\GuardarCostosProveedorMultipleRequest;
 use App\Models\Client;
@@ -12,6 +13,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CotizacionesCostosMultipleController extends Controller
 {
@@ -36,22 +39,23 @@ class CotizacionesCostosMultipleController extends Controller
         $esGlobal = $this->equipoService->esEmpresaGlobal($idEmpresa);
         $equipos = $esGlobal ? $this->equipoService->getTractocamiones($idEmpresa) : collect();
 
-        // Obtener clientes activos vinculados a la empresa
-        $clientes = Client::join('client_empresa as ce', 'clients.id', '=', 'ce.id_client')
-            ->when($idEmpresa != 0, function ($query) use ($idEmpresa) {
-                $query->where('ce.id_empresa', $idEmpresa);
+        // Obtener únicamente clientes activos que tengan viajes registrados en esta empresa
+        $clientIdsConViajes = \App\Models\Cotizaciones::where(function ($q) use ($idEmpresa) {
+                if ($idEmpresa != 0) {
+                    $q->where('id_empresa', $idEmpresa);
+                }
             })
-            ->where('is_active', 1)
-            ->select('clients.id', 'clients.nombre')
-            ->orderBy('clients.nombre', 'asc')
-            ->get();
+            ->where('jerarquia', '!=', 'Secundario')
+            ->where('estatus', '!=', 'Cancelada')
+            ->whereNotNull('id_cliente')
+            ->distinct()
+            ->pluck('id_cliente');
 
-        if ($clientes->isEmpty()) {
-            $clientes = Client::where('id_empresa', $idEmpresa)
-                ->where('is_active', 1)
-                ->orderBy('nombre', 'asc')
-                ->get(['id', 'nombre']);
-        }
+        $clientes = Client::whereIn('id', $clientIdsConViajes)
+            ->where('is_active', 1)
+            ->select('id', 'nombre')
+            ->orderBy('nombre', 'asc')
+            ->get();
 
         // Catálogo de proveedores para asignaciones (solo tipo de viaje foráneo y local_foráneo)
         $proveedores = Proveedor::where(function ($q) use ($idEmpresa) {
@@ -151,5 +155,31 @@ class CotizacionesCostosMultipleController extends Controller
             'Mensaje' => "Se actualizaron directamente los costos de {$actualizados} asignación(es) de proveedor.",
             'actualizados' => $actualizados,
         ]);
+    }
+
+    /**
+     * Exporta a Excel los viajes filtrados con información detallada de cotización y proveedor.
+     *
+     * @param Request $request
+     * @return BinaryFileResponse
+     */
+    public function exportar(Request $request): BinaryFileResponse
+    {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+
+        $idEmpresa = (int) auth()->user()->id_empresa;
+        $idCliente = $request->filled('cliente_id') ? (int) $request->cliente_id : null;
+        $idCamion = $request->filled('equipo_id') ? (int) $request->equipo_id : null;
+        $estadoCosto = (string) $request->input('estado_costo', 'todos');
+
+        $datos = $this->cotizacionesService->obtenerViajesParaCapturaCostos($idEmpresa, $idCliente, $idCamion, $estadoCosto);
+
+        $nombreArchivo = 'costos_seguimiento_' . date('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new CostosMultipleExport($datos['cotizaciones'], $datos['proveedores']),
+            $nombreArchivo
+        );
     }
 }

@@ -591,6 +591,8 @@ class CotizacionesService
                 'cotizaciones.direccion_mapa',
                 'cotizaciones.direccion_entrega',
                 'cotizaciones.estatus',
+                'cotizaciones.fecha_entrega',
+                'cotizaciones.fecha_modulacion',
                 'cotizaciones.referencia_full',
                 'cotizaciones.created_at',
             ])
@@ -611,22 +613,24 @@ class CotizacionesService
         }
 
         $cotizaciones = $query->with([
-            'DocCotizacion:id,id_cotizacion,num_contenedor',
-            'DocCotizacion.Asignaciones:id,id_contenedor,id_proveedor,id_camion,precio,burreo,maniobra,estadia,sobrepeso_proveedor,total_tonelada,base1_proveedor,base2_proveedor,otro,iva,retencion,total_proveedor',
-            'DocCotizacion.Asignaciones.Proveedor:id,nombre,tipo_viaje',
+            'Cliente:id,nombre',
+            'Empresa:id,nombre',
             'Proveedor:id,nombre,tipo_viaje',
+            'DocCotizacion:id,id_cotizacion,num_contenedor',
+            'DocCotizacion.Asignaciones:id,id_contenedor,id_proveedor,id_camion,id_operador,precio,burreo,maniobra,estadia,sobrepeso_proveedor,total_tonelada,base1_proveedor,base2_proveedor,otro,iva,retencion,total_proveedor',
+            'DocCotizacion.Asignaciones.Camion:id,id_equipo,marca,placas',
+            'DocCotizacion.Asignaciones.Operador:id,nombre',
+            'DocCotizacion.Asignaciones.Proveedor:id,nombre,tipo_viaje',
             'viajes.costos',
             'movimientos' => function ($q) {
                 $q->select('id', 'cobro_pago_id', 'cotizacion_id', 'monto')
                   ->with('cobroPago:id,tipo');
             },
         ])
-    ->wherehas('Proveedor', function ($q) {
+        ->whereHas('Proveedor', function ($q) {
             $q->whereIn('tipo_viaje', ['foraneo', 'local_foraneo']);
         })
-
         ->orderBy('cotizaciones.created_at', 'desc')
-        ->limit(1000)
         ->get();
 
         $rowsCotizacion = [];
@@ -653,6 +657,18 @@ class CotizacionesService
             $pesoContenedor = floatval($cot->peso_contenedor ?? 0);
             $pesoReglamentario = floatval($cot->peso_reglamentario ?: 22);
             $sobrepesoTon = max($pesoContenedor - $pesoReglamentario, 0);
+
+            // Metadatos adicionales para reportería y Excel
+            $clienteNombre = $cot->Cliente?->nombre ?? 'Sin cliente';
+            $fechaEntrega = !empty($cot->fecha_entrega) ? date('Y-m-d', strtotime($cot->fecha_entrega)) : '';
+            $fechaModulacion = !empty($cot->fecha_modulacion) ? date('Y-m-d', strtotime($cot->fecha_modulacion)) : '';
+            $fechaCreacion = $cot->created_at ? $cot->created_at->format('Y-m-d') : '';
+            $empresaNombre = $cot->Empresa?->nombre ?? '';
+            $proveedorCot = $cot->Proveedor?->nombre ?? '';
+            $transportistaNombre = $asignacion?->Proveedor?->nombre ?? ($cot->Proveedor?->nombre ?? 'N/A');
+            $operadorNombre = $asignacion?->Operador?->nombre ?? 'Sin operador';
+            $unidadCamion = $asignacion?->Camion ? ($asignacion->Camion->id_equipo . ' (' . ($asignacion->Camion->placas ?? 'S/P') . ')') : 'Sin unidad';
+            $estatusViaje = $cot->estatus ?? 'N/A';
 
             // Cobros CXC (clientes) y Pagos CXP (proveedores) desde pagos_cobros / cobros_pagos_cotizaciones
             $cobrosCXC = floatval($cot->movimientos->filter(function ($m) {
@@ -698,6 +714,15 @@ class CotizacionesService
                     $rowsCotizacion[] = [
                         'id' => $cot->id,
                         'contenedor' => $numContenedor,
+                        'estatus' => $estatusViaje,
+                        'cliente' => $clienteNombre,
+                        'fecha_entrega' => $fechaEntrega,
+                        'fecha_modulacion' => $fechaModulacion,
+                        'fecha_creacion' => $fechaCreacion,
+                        'proveedor_empresa' => $empresaNombre ?: $proveedorCot,
+                        'transportista' => $transportistaNombre,
+                        'operador' => $operadorNombre,
+                        'unidad' => $unidadCamion,
                         'destino' => $destino,
                         'mapas' => $mapaUrl,
                         'peso_contenedor' => $pesoContenedor,
@@ -715,6 +740,9 @@ class CotizacionesService
                         'iva' => $costoIva,
                         'retencion' => $costoRetencion,
                         'total' => $totalCotizacion,
+                        'total_cobrado' => $cobrosCXC,
+                        'saldo_pendiente' => round($totalCotizacion - $cobrosCXC, 2),
+                        'estado_costo_label' => $tieneCostoCotizacion ? 'Capturado' : 'No capturado',
                         'retencion_automatica' => (bool) ($cot->retencion_automatica ?? true),
                     ];
                 }
@@ -764,11 +792,19 @@ class CotizacionesService
                             'id_asignacion' => $asignacion?->id,
                             'id_proveedor' => $asignacion?->id_proveedor ?? $cot->id_proveedor,
                             'contenedor' => $numContenedor,
+                            'estatus' => $estatusViaje,
+                            'cliente' => $clienteNombre,
+                            'fecha_entrega' => $fechaEntrega,
+                            'fecha_creacion' => $fechaCreacion,
                             'destino' => $destino,
                             'mapas' => $mapaUrl,
                             'peso_contenedor' => $pesoContenedor,
                             'sobrepeso' => $sobrepesoTon,
                             'proveedor' => $proveedorNombre,
+                            'tipo_proveedor' => $tipoViajeProv,
+                            'transportista' => $transportistaNombre,
+                            'operador' => $operadorNombre,
+                            'unidad' => $unidadCamion,
                             'precio_proveedor' => $precioProveedor,
                             'burreo_proveedor' => $burreoProveedor,
                             'maniobra_proveedor' => $maniobraProveedor,
@@ -781,6 +817,9 @@ class CotizacionesService
                             'iva_proveedor' => $ivaProveedor,
                             'retencion_proveedor' => $retencionProveedor,
                             'total_proveedor' => $totalProveedor,
+                            'total_pagado' => $pagosCXP,
+                            'saldo_pendiente' => round($totalProveedor - $pagosCXP, 2),
+                            'estado_costo_label' => $tieneCostoProveedor ? 'Capturado' : 'No capturado',
                         ];
                     }
                 }

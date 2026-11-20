@@ -353,6 +353,7 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
         Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
         Route::get('/cotizaciones/costos-multiple', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'index'])->name('cotizaciones.costos_multiple');
         Route::get('/cotizaciones/costos-multiple/datos', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'datos'])->name('cotizaciones.costos_multiple.datos');
+        Route::get('/cotizaciones/costos-multiple/exportar', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'exportar'])->name('cotizaciones.costos_multiple.exportar');
         Route::post('/cotizaciones/costos-multiple/guardar-cotizacion', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarCotizacion'])->name('cotizaciones.costos_multiple.guardar_cotizacion');
         Route::post('/cotizaciones/costos-multiple/guardar-proveedor', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarProveedor'])->name('cotizaciones.costos_multiple.guardar_proveedor');
         Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
