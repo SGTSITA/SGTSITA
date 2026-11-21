@@ -456,7 +456,7 @@
                     {{-- Barra de Filtros Superiores --}}
                     <div class="card-body p-3">
                         <div class="row g-3 align-items-end">
-                            <div class="{{ $esGlobal ? 'col-md-4' : 'col-md-5' }} col-sm-12">
+                            <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-4' }} col-sm-12">
                                 <label for="selectCliente" class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                     Cliente
                                 </label>
@@ -469,7 +469,7 @@
                                 </select>
                             </div>
 
-                            <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-4' }} col-sm-12">
+                            <div class="{{ $esGlobal ? 'col-md-2' : 'col-md-3' }} col-sm-12">
                                 <label for="selectEstadoCosto"
                                     class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                     Filtro de Costos
@@ -481,8 +481,22 @@
                                 </select>
                             </div>
 
+                            <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-3' }} col-sm-12">
+                                <label for="filtro_periodo"
+                                    class="form-label text-xs font-weight-bold text-uppercase mb-1">
+                                    Periodo (Fecha Entrega)
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-primary"></i></span>
+                                    <input type="text" id="filtro_periodo" name="periodo" readonly
+                                        class="form-control form-control-sm"
+                                        placeholder="01/01/2026 AL ..."
+                                        style="background-color: #fff; cursor: pointer;" />
+                                </div>
+                            </div>
+
                             @if ($esGlobal)
-                                <div class="col-md-3 col-sm-12">
+                                <div class="col-md-2 col-sm-12">
                                     <label for="selectEquipo"
                                         class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                         Equipo / Unidad (Tracto)
@@ -500,7 +514,7 @@
                                 </div>
                             @endif
 
-                            <div class="{{ $esGlobal ? 'col-md-2' : 'col-md-3' }} col-sm-12 d-flex gap-2">
+                            <div class="{{ $esGlobal ? 'col-md-2' : 'col-md-2' }} col-sm-12 d-flex gap-2">
                                 <button type="button" class="btn btn-sm bg-gradient-primary w-100 mb-0" id="btnConsultar">
                                     <i class="fas fa-search me-1"></i> Consultar
                                 </button>

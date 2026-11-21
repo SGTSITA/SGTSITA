@@ -90,8 +90,17 @@ class CotizacionesCostosMultipleController extends Controller
             $idCliente = $request->filled('cliente_id') ? (int) $request->cliente_id : null;
             $idCamion = $request->filled('equipo_id') ? (int) $request->equipo_id : null;
             $estadoCosto = (string) $request->input('estado_costo', 'todos');
+            $fechaInicio = $request->filled('fecha_inicio') ? (string) $request->input('fecha_inicio') : null;
+            $fechaFin = $request->filled('fecha_fin') ? (string) $request->input('fecha_fin') : null;
 
-            $datos = $this->cotizacionesService->obtenerViajesParaCapturaCostos($idEmpresa, $idCliente, $idCamion, $estadoCosto);
+            $datos = $this->cotizacionesService->obtenerViajesParaCapturaCostos(
+                $idEmpresa,
+                $idCliente,
+                $idCamion,
+                $estadoCosto,
+                $fechaInicio,
+                $fechaFin
+            );
 
             return response()->json([
                 'TMensaje' => 'success',
@@ -172,8 +181,17 @@ class CotizacionesCostosMultipleController extends Controller
         $idCliente = $request->filled('cliente_id') ? (int) $request->cliente_id : null;
         $idCamion = $request->filled('equipo_id') ? (int) $request->equipo_id : null;
         $estadoCosto = (string) $request->input('estado_costo', 'todos');
+        $fechaInicio = $request->filled('fecha_inicio') ? (string) $request->input('fecha_inicio') : null;
+        $fechaFin = $request->filled('fecha_fin') ? (string) $request->input('fecha_fin') : null;
 
-        $datos = $this->cotizacionesService->obtenerViajesParaCapturaCostos($idEmpresa, $idCliente, $idCamion, $estadoCosto);
+        $datos = $this->cotizacionesService->obtenerViajesParaCapturaCostos(
+            $idEmpresa,
+            $idCliente,
+            $idCamion,
+            $estadoCosto,
+            $fechaInicio,
+            $fechaFin
+        );
 
         $nombreArchivo = 'costos_seguimiento_' . date('Ymd_His') . '.xlsx';
 

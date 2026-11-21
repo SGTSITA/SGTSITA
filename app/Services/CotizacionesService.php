@@ -553,13 +553,17 @@ class CotizacionesService
      * @param int|null $idCliente
      * @param int|null $idCamion
      * @param string $estadoCosto 'no_capturados' | 'capturados' | 'todos'
+     * @param string|null $fechaInicio Rango inicial de fecha_entrega (YYYY-MM-DD)
+     * @param string|null $fechaFin Rango final de fecha_entrega (YYYY-MM-DD)
      * @return array
      */
     public function obtenerViajesParaCapturaCostos(
         int $idEmpresa,
         ?int $idCliente = null,
         ?int $idCamion = null,
-        string $estadoCosto = 'todos'
+        string $estadoCosto = 'todos',
+        ?string $fechaInicio = null,
+        ?string $fechaFin = null
     ): array
     {
         $query = Cotizaciones::query()
@@ -602,6 +606,7 @@ class CotizacionesService
             ->where('cotizaciones.jerarquia', '!=', 'Secundario')
             ->whereNotIn('cotizaciones.estatus', ['Cancelada', 'Pendiente'])
             ->where('cotizaciones.id_proveedor', '!=', 59); //tEMPORAL EXCLUI ESTE VAMOS A PONERLE ALGUN CANDADO "Transporte XYZ" (id_proveedor=59) from cost capture
+
         if (!empty($idCliente)) {
             $query->where('cotizaciones.id_cliente', $idCliente);
         }
@@ -610,6 +615,15 @@ class CotizacionesService
             $query->whereHas('DocCotizacion.Asignaciones', function ($q) use ($idCamion) {
                 $q->where('id_camion', $idCamion);
             });
+        }
+
+        // Filtro por Periodo de Fecha de Entrega
+        if (!empty($fechaInicio) && !empty($fechaFin)) {
+            $query->whereBetween('cotizaciones.fecha_entrega', [$fechaInicio, $fechaFin]);
+        } elseif (!empty($fechaInicio)) {
+            $query->whereDate('cotizaciones.fecha_entrega', '>=', $fechaInicio);
+        } elseif (!empty($fechaFin)) {
+            $query->whereDate('cotizaciones.fecha_entrega', '<=', $fechaFin);
         }
 
         $cotizaciones = $query->with([
