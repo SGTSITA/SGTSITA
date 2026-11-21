@@ -10,8 +10,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const selectCliente = document.getElementById("selectCliente");
     const selectEstadoCosto = document.getElementById("selectEstadoCosto");
     const selectEquipo = document.getElementById("selectEquipo");
+    const inputPeriodo = document.getElementById("filtro_periodo");
     const btnConsultar = document.getElementById("btnConsultar");
     const btnLimpiar = document.getElementById("btnLimpiar");
+
+    // Configuración y variables del filtro de Periodo (Fecha Entrega)
+    const defaultStart = moment("2026-01-01");
+    const defaultEnd = moment().add(20, "days");
+    let fechaInicioFiltro = defaultStart.format("YYYY-MM-DD");
+    let fechaFinFiltro = defaultEnd.format("YYYY-MM-DD");
+
+    // Inicializar DateRangePicker con estándares SGT
+    if (inputPeriodo && typeof window.initSgtDateRange === "function") {
+        const rangosOpciones = {
+            "Predeterminado (01/01/2026 a Hoy +20d)": [defaultStart.clone(), defaultEnd.clone()],
+            "Últimos 7 días": [moment().subtract(6, "days").startOf("day"), moment().endOf("day")],
+            "Últimos 30 días": [moment().subtract(29, "days").startOf("day"), moment().endOf("day")],
+            "Este mes": [moment().startOf("month"), moment().endOf("month")],
+            "Mes anterior": [moment().subtract(1, "month").startOf("month"), moment().subtract(1, "month").endOf("month")],
+            "Año 2026": [moment("2026-01-01"), moment("2026-12-31")]
+        };
+
+        window.initSgtDateRange("#filtro_periodo", {
+            startDate: defaultStart,
+            endDate: defaultEnd,
+            ranges: rangosOpciones,
+            opens: "left"
+        }, function (start, end, label) {
+            fechaInicioFiltro = start.format("YYYY-MM-DD");
+            fechaFinFiltro = end.format("YYYY-MM-DD");
+            consultarDatos();
+        });
+
+        inputPeriodo.value = `${defaultStart.format("YYYY-MM-DD")} AL ${defaultEnd.format("YYYY-MM-DD")}`;
+    }
 
     // Botones de Guardado
     const btnGuardarCotizacion = document.getElementById("btnGuardarCotizacion");
@@ -488,6 +520,15 @@ document.addEventListener("DOMContentLoaded", function () {
         const estadoCosto = selectEstadoCosto ? selectEstadoCosto.value : "todos";
         const equipoId = selectEquipo ? selectEquipo.value : "";
 
+        // Obtener rango de fechas activo
+        let fechaIni = fechaInicioFiltro;
+        let fechaFin = fechaFinFiltro;
+        if (window.jQuery && $("#filtro_periodo").data("daterangepicker")) {
+            const drp = $("#filtro_periodo").data("daterangepicker");
+            fechaIni = drp.startDate.format("YYYY-MM-DD");
+            fechaFin = drp.endDate.format("YYYY-MM-DD");
+        }
+
         Swal.fire({
             title: "Cargando viajes...",
             text: "Consultando cotizaciones y costos de seguimiento",
@@ -505,6 +546,12 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (equipoId) {
             params.append("equipo_id", equipoId);
+        }
+        if (fechaIni) {
+            params.append("fecha_inicio", fechaIni);
+        }
+        if (fechaFin) {
+            params.append("fecha_fin", fechaFin);
         }
 
         fetch("/cotizaciones/costos-multiple/datos?" + params.toString(), {
@@ -585,6 +632,14 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             if (selectEstadoCosto) {
                 selectEstadoCosto.value = "todos";
+            }
+            if (window.jQuery && $("#filtro_periodo").data("daterangepicker")) {
+                const drp = $("#filtro_periodo").data("daterangepicker");
+                drp.setStartDate(defaultStart.clone());
+                drp.setEndDate(defaultEnd.clone());
+                fechaInicioFiltro = defaultStart.format("YYYY-MM-DD");
+                fechaFinFiltro = defaultEnd.format("YYYY-MM-DD");
+                $("#filtro_periodo").val(`${fechaInicioFiltro} AL ${fechaFinFiltro}`);
             }
             consultarDatos();
         });
@@ -846,11 +901,25 @@ document.addEventListener("DOMContentLoaded", function () {
             const estadoCosto = selectEstadoCosto?.value || "todos";
             const equipoId = selectEquipo?.value || "";
 
+            let fechaIni = fechaInicioFiltro;
+            let fechaFin = fechaFinFiltro;
+            if (window.jQuery && $("#filtro_periodo").data("daterangepicker")) {
+                const drp = $("#filtro_periodo").data("daterangepicker");
+                fechaIni = drp.startDate.format("YYYY-MM-DD");
+                fechaFin = drp.endDate.format("YYYY-MM-DD");
+            }
+
             const params = new URLSearchParams({
                 cliente_id: clienteId,
                 estado_costo: estadoCosto,
                 equipo_id: equipoId
             });
+            if (fechaIni) {
+                params.append("fecha_inicio", fechaIni);
+            }
+            if (fechaFin) {
+                params.append("fecha_fin", fechaFin);
+            }
 
             window.location.href = `/cotizaciones/costos-multiple/exportar?${params.toString()}`;
         });
