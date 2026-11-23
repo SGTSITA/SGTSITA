@@ -805,11 +805,35 @@
                                         {{ $intervals->interval == 'everyFiveMinutes' ? 'selected' : '' }}>
                                         Cada 5 minutos
                                     </option>
+                                    <option value="everyTenMinutes"
+                                        {{ $intervals->interval == 'everyTenMinutes' ? 'selected' : '' }}>
+                                        Cada 10 minutos
+                                    </option>
+                                    <option value="everyFifteenMinutes"
+                                        {{ $intervals->interval == 'everyFifteenMinutes' ? 'selected' : '' }}>
+                                        Cada 15 minutos
+                                    </option>
+                                    <option value="everyThirtyMinutes"
+                                        {{ $intervals->interval == 'everyThirtyMinutes' ? 'selected' : '' }}>
+                                        Cada 30 minutos
+                                    </option>
                                     <option value="hourly" {{ $intervals->interval == 'hourly' ? 'selected' : '' }}>
                                         Cada hora
                                     </option>
+                                    <option value="everyTwoHours" {{ $intervals->interval == 'everyTwoHours' ? 'selected' : '' }}>
+                                        Cada 2 horas
+                                    </option>
+                                    <option value="everyThreeHours" {{ $intervals->interval == 'everyThreeHours' ? 'selected' : '' }}>
+                                        Cada 3 horas
+                                    </option>
+                                    <option value="everyFourHours" {{ $intervals->interval == 'everyFourHours' ? 'selected' : '' }}>
+                                        Cada 4 horas
+                                    </option>
+                                    <option value="everySixHours" {{ $intervals->interval == 'everySixHours' ? 'selected' : '' }}>
+                                        Cada 6 horas
+                                    </option>
                                     <option value="daily" {{ $intervals->interval == 'daily' ? 'selected' : '' }}>
-                                        Diario
+                                        Diario (Una vez al día)
                                     </option>
                                     <option value="weekly" {{ $intervals->interval == 'weekly' ? 'selected' : '' }}>
                                         Semanal

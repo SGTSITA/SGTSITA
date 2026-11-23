@@ -133,16 +133,16 @@
         }
 
         /* ========================================================
-                   AJUSTES AL MENÚ DE FILTRO POR VALOR (HANDSONTABLE)
-                   - Ancho uniforme de 270px para el contenedor (.htDropdownMenu)
-                     y sincronización estricta de sus elementos internos.
-                   - Altura automática (height: auto) para que el contenedor
-                     envuelva íntegramente los campos del filtro en lugar de
-                     fijarse a los 55px iniciales de Handsontable, eliminando
-                     el contenedor desfasado / fantasma visible detrás.
-                   - Fondo blanco unificado y celdas transparentes para evitar
-                     sombras dobles o bordes flotantes.
-                   ======================================================== */
+                           AJUSTES AL MENÚ DE FILTRO POR VALOR (HANDSONTABLE)
+                           - Ancho uniforme de 270px para el contenedor (.htDropdownMenu)
+                             y sincronización estricta de sus elementos internos.
+                           - Altura automática (height: auto) para que el contenedor
+                             envuelva íntegramente los campos del filtro en lugar de
+                             fijarse a los 55px iniciales de Handsontable, eliminando
+                             el contenedor desfasado / fantasma visible detrás.
+                           - Fondo blanco unificado y celdas transparentes para evitar
+                             sombras dobles o bordes flotantes.
+                           ======================================================== */
         .htDropdownMenu {
             width: 270px !important;
             min-width: 270px !important;
@@ -160,11 +160,11 @@
         }
 
         /* Solo aplicar a los contenedores directos del dropdown principal para no afectar la lista interna */
-        .htDropdownMenu > .ht_master,
-        .htDropdownMenu > .ht_master > .wtHolder,
-        .htDropdownMenu > .ht_master > .wtHolder > .wtHider,
-        .htDropdownMenu > .ht_master > .wtHolder > .wtHider > .wtSpreader,
-        .htDropdownMenu > .ht_master > .wtHolder > .wtHider > .wtSpreader > table.htCore {
+        .htDropdownMenu>.ht_master,
+        .htDropdownMenu>.ht_master>.wtHolder,
+        .htDropdownMenu>.ht_master>.wtHolder>.wtHider,
+        .htDropdownMenu>.ht_master>.wtHolder>.wtHider>.wtSpreader,
+        .htDropdownMenu>.ht_master>.wtHolder>.wtHider>.wtSpreader>table.htCore {
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
@@ -172,7 +172,7 @@
             box-sizing: border-box !important;
         }
 
-        .htDropdownMenu > .ht_master > .wtHolder > .wtHider > .wtSpreader > table.htCore {
+        .htDropdownMenu>.ht_master>.wtHolder>.wtHider>.wtSpreader>table.htCore {
             border: none !important;
             background: #ffffff !important;
         }
@@ -430,10 +430,7 @@
                                     <i class="fas fa-layer-group text-primary me-2"></i>
                                     Captura Múltiple de Costos — Seguimiento
                                 </h5>
-                                <p class="text-xs text-muted mb-0">
-                                    Edición masiva de costos de cotización (cliente en viajes->costos) y costos de proveedor
-                                    (en asignaciones)
-                                </p>
+
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 @if ($esGlobal)
@@ -482,15 +479,14 @@
                             </div>
 
                             <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-3' }} col-sm-12">
-                                <label for="filtro_periodo"
-                                    class="form-label text-xs font-weight-bold text-uppercase mb-1">
+                                <label for="filtro_periodo" class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                     Periodo (Fecha Entrega)
                                 </label>
                                 <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-primary"></i></span>
+                                    <span class="input-group-text bg-white"><i
+                                            class="fas fa-calendar-alt text-primary"></i></span>
                                     <input type="text" id="filtro_periodo" name="periodo" readonly
-                                        class="form-control form-control-sm"
-                                        placeholder="01/01/2026 AL ..."
+                                        class="form-control form-control-sm" placeholder="01/01/2026 AL ..."
                                         style="background-color: #fff; cursor: pointer;" />
                                 </div>
                             </div>

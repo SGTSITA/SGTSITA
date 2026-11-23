@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes; // Importar SoftDeletes
 use Illuminate\Support\Facades\Auth;
-use App\Traits\Auditable;
+//use App\Traits\Auditable;
 
 class Bancos extends Model
 {
-    use Auditable;
+   // use Auditable;
     use HasFactory;
     use SoftDeletes; // Habilitar SoftDeletes para el borrado lógico
 

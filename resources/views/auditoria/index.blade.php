@@ -8,7 +8,29 @@
             word-break: break-word;
             white-space: pre-wrap;
             max-width: 250px;
-
+        }
+        .select2-container--default .select2-selection--multiple {
+            border: 1px solid #d2d6da;
+            border-radius: 0.5rem;
+            min-height: 38px;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: #5e72e4;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #5e72e4;
+            border: none;
+            color: #fff;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            padding: 2px 6px;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff;
+            margin-right: 4px;
+        }
+        .select2-container {
+            width: 100% !important;
         }
     </style>
     <div class="row mt-4">
@@ -16,31 +38,46 @@
             <div class="card">
                 <div class="card-header">
                     <h5 class="mb-0">Auditoría del sistema</h5>
-                    <p class="text-sm mb-0">Registro de altas, cambios y eliminaciones</p>
+                    <p class="text-sm mb-2">Registro de altas, cambios y eliminaciones</p>
 
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Empresa</label>
-                            <select id="filtroEmpresa" class="form-select">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-2 col-sm-6">
+                            <label class="form-label text-xs font-weight-bold mb-1">Empresa</label>
+                            <select id="filtroEmpresa" class="form-select form-select-sm">
                                 <option value="">Todas</option>
                                 @foreach ($empresas as $empresa)
                                     <option value="{{ $empresa->id }}">{{ $empresa->id }}-{{ $empresa->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Referencia</label>
-                            <input type="text" id="contenedor" class="form-control" placeholder="Ej: ABC123">
+
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label text-xs font-weight-bold mb-1">Módulo / Modelo</label>
+                            <select id="filtroModulo" class="form-select form-select-sm select2" multiple="multiple" data-placeholder="Todos los módulos">
+                                <option value="todos">Todos los módulos</option>
+                                @foreach ($modulosAgrupados as $categoria => $modulos)
+                                    <optgroup label="{{ $categoria }}">
+                                        @foreach ($modulos as $clave => $etiqueta)
+                                            <option value="{{ $clave }}">{{ $etiqueta }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">Rango de fechas</label>
-                            <input type="text" id="auditoriaRange" class="form-control"
+                        <div class="col-md-2 col-sm-6">
+                            <label class="form-label text-xs font-weight-bold mb-1">Referencia</label>
+                            <input type="text" id="contenedor" class="form-control form-control-sm" placeholder="Ej: ABC123">
+                        </div>
+
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label text-xs font-weight-bold mb-1">Rango de fechas</label>
+                            <input type="text" id="auditoriaRange" class="form-control form-control-sm"
                                 placeholder="Selecciona un rango">
                         </div>
 
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button class="btn btn-primary w-100" id="btnBuscar">
+                        <div class="col-md-1 col-sm-12">
+                            <button class="btn btn-primary btn-sm w-100" id="btnBuscar">
                                 Buscar
                             </button>
                         </div>
@@ -72,13 +109,21 @@
 
 @push('scripts')
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
+    <script src="{{ asset('assets/vendor/select2/dist/js/select2.min.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
     <script>
         let gridApi;
         let fechaInicio = null;
         let fechaFin = null;
+
+        $(document).ready(function() {
+            $('#filtroModulo').select2({
+                placeholder: 'Todos los módulos',
+                allowClear: true,
+                width: '100%'
+            });
+        });
 
         const hoy = moment();
         const hace15Dias = moment().subtract(15, 'days');
@@ -118,11 +163,18 @@
                 params.append('referencia', contenedor);
             }
 
-
-
             const empresaId = document.getElementById('filtroEmpresa').value;
             if (empresaId) {
                 params.append('empresa_id', empresaId);
+            }
+
+            const modulos = $('#filtroModulo').val() || [];
+            if (modulos.length > 0 && !modulos.includes('todos')) {
+                modulos.forEach(m => {
+                    if (m && m !== 'todos') {
+                        params.append('modulos[]', m);
+                    }
+                });
             }
 
             fetch(`/admin/auditoria-data/inicial?${params}`)
@@ -135,8 +187,6 @@
                     alert('Error al cargar auditoría');
                 });
         }
-
-
 
         const columnDefs = [{
                 headerName: 'Fecha',
@@ -152,7 +202,12 @@
             },
             {
                 headerName: 'Modelo',
-                field: 'model'
+                field: 'model',
+                minWidth: 200,
+                cellRenderer: p => {
+                    const label = p.data.modelo_label || p.value;
+                    return `<span class="badge bg-light text-dark border text-wrap" style="font-size: 0.75rem;">${label}</span>`;
+                }
             },
             {
                 headerName: 'ID Modelo',
@@ -238,13 +293,6 @@
                 .replace(/\b\w/g, l => l.toUpperCase());
         }
 
-        function togglePayload() {
-            const el = document.getElementById('payloadBox');
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        }
-
-
-
         function verAuditoria(id) {
             fetch(`/admin/auditoria/${id}`)
                 .then(r => r.json())
@@ -268,7 +316,7 @@
         </div>
 
         <div class="col-md-4">
-            <b>Modelo:</b> ${data.modelo} #${data.modelo_id}
+            <b>Modelo:</b> ${data.modelo_label || data.modelo} #${data.modelo_id}
         </div>
 
         <div class="col-md-4">
@@ -335,29 +383,10 @@
 
             html += '</tbody></table></div>';
 
-
-            if (data.request_payload) {
-                html += `
-            <hr>
-            <button class="btn btn-sm btn-outline-secondary mb-2" onclick="togglePayload()">
-                Ver request
-            </button>
-            <pre id="payloadBox" style="display:none;max-height:300px;overflow:auto;background:#111;color:#0f0;padding:10px;">
-${JSON.stringify(data.request_payload, null, 2)}
-            </pre>
-        `;
-            }
-
-
             html += `
 <a href="/admin/auditoria/${data.id}/pdf" target="_blank"
    class="btn btn-danger btn-sm">
    Descargar PDF
-</a>
-
-<a href="/admin/auditoria/${data.id}/pdf?payload=1" target="_blank"
-   class="btn btn-secondary btn-sm">
-   PDF con payload
 </a>
 `;
 

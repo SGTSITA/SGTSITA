@@ -2,6 +2,23 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- Optimización de Telemetría GPS y Depuración (`cmdRastreoInterval.php`, `LimpiarHistoriales.php`, `Kernel.php`):
+  - Opciones de intervalo en UI (`/coordenadas/rastrearTabs` -> Configuraciones): Se ampliaron los intervalos configurables a: 1 min, 5 min, 10 min, 15 min, 30 min, 1 hora, 2 horas, 3 horas, 4 horas, 6 horas, Diario y Semanal, mapeados nativamente a los métodos de frecuencia de Laravel (`Kernel.php`).
+  - Umbral de movimiento (Haversine): En el rastreo automático (`cmdRastreoInterval`), se compara la nueva ubicación contra la última registrada para el contenedor. Si la distancia es < 50 metros y la última lectura tiene menos de 120 minutos, se omite la inserción duplicada. Previene decenas de miles de registros diarios de unidades estáticas o pernoctando.
+  - Programación de purga cada 4 horas (`Kernel.php`): Se configuró `$schedule->command('db:limpiar-historiales --force')->cron('0 */4 * * *')` para archivar en ZIP y purgar coordenadas viejas de forma continua a lo largo del día.
+  - Parámetros flexibles en `LimpiarHistoriales`: Añadidos `{--dias-coords=30}` y `{--dias-act=60}` para personalizar la antigüedad de depuración.
+- Spec 027 (Filtro y Mapeo Amigable de Modelos en Auditoría — `/admin/auditoria`):
+  - Servicio `AuditoriaModelMapperService`: Mapeo declarativo y centralizado que traduce módulos funcionales a modelos de BD (`activity_log.model`). Agrupa en categorías: Operación y Tráfico (`Asignaciones` como Planeación, `Cotizaciones`, `DocumCotizacion`, `ViajesCostos`), Finanzas y Tesorería (`CatBancoCuentasMovimientos` para Bancos V2, `CobroPago` y `CobroPagoCotizacion` para CXC/CXP, `Gasto`/`GastoImputacion`/`GastoPago` para Gastos Unificados, `Liquidaciones`), Catálogos y modelos históricos descontinuados (`Bancos`, `GastosOperadores`, `Planeacion`).
+  - Filtro Multi-Select en UI (`index.blade.php`): Selector múltiple con Select2 y optgroups (`#filtroModulo`), con opción "Todos los módulos", permitiendo buscar simultáneamente varios módulos sin conocer nombres de clases de PHP.
+  - Columna "Modelo" en AG Grid y vistas de detalle/PDF enriquecidas con etiquetas amigables legibles (`modelo_label`, ej. `Planeación de Viaje (Asignaciones)`).
+- Optimización de Auditoría en `AuditObserver.php` (`activity_log`):
+  - Eliminación de `request_payload`: Se fijó `'request_payload' => null` en el observer, eliminando la captura y cifrado innecesario en AES-256 de todas las peticiones HTTP (reduciendo el tamaño por registro de ~19 KB a ~300 bytes, un ~98% de ahorro en BD y respaldos).
+  - Limpieza de UI y reportes: Se retiró el botón "Ver request", el visor de payload y el botón "PDF con payload" en `/admin/auditoria` (`AuditoriaController.php`, `index.blade.php`, `pdf.blade.php`), manteniendo únicamente "Descargar PDF" con los cambios reales.
+  - Validación de documentos (`/cotizaciones/edit/{id}` y reportería multidoctos): Se verificó que los reportes de validación documental no dependen de `request_payload` (solo auditan `old_values` y `new_values`), manteniéndose 100% operativos.
+  - Exclusión selectiva por modelo (`$modelExclude` y soporte dinámico de `$auditExclude` en modelos):
+    - `Cotizaciones`: se ignoran cambios cuando únicamente se modifican `editing_by`, `editing_at` o `estatus_maniobra_id`. Si no hay otros cambios de negocio, la actualización se descarta por completo y no se crea registro en `activity_log`.
+    - `DocumCotizacionAcceso`: se excluyen campos sensibles y temporales (`token`, `password_hash`, `expires_at`).
+    - `Asignaciones`: se excluye `ruta_coordenadas` (evitando almacenar arrays masivos de GPS).
 - Edición Ágil de Importes Numéricos en Cotización y Proveedor (`/cotizaciones/edit/{id}` — `cotizaciones.js`, `common.js`):
   - Al hacer focus en inputs numéricos editables (`.moneyformat`, `#tamano`, `#peso_reglamentario`, `#peso_contenedor`), si el valor es 0, null o $0.00 se limpia automáticamente esperando que el usuario teclee; si tiene un importe existente se muestra limpio y se selecciona todo el texto (con prevención en `mouseup` de clic de mouse) para sobrescribirlo inmediatamente. Al salir del campo (`blur`), se restaura el formato moneda `$X,XXX.XX` (o `$0.00` si quedó vacío) y recalculan totales; los campos de cálculos automáticos (`readonly`/`disabled`: IVA, retención automática, bases, totales, sobrepeso) permanecen intactos.
 - Spec 026 (Captura Múltiple de Costos en Seguimiento — `/cotizaciones/costos-multiple`):

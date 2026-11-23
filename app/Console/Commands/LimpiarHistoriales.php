@@ -15,14 +15,14 @@ class LimpiarHistoriales extends Command
      *
      * @var string
      */
-    protected $signature = 'db:limpiar-historiales {--dry-run : Muestra los registros que se borrarían sin borrarlos} {--force : Forzar la depuración e ignorar frecuencia de 30/60 días}';
+    protected $signature = 'db:limpiar-historiales {--dry-run : Muestra los registros que se borrarían sin borrarlos} {--force : Forzar la depuración e ignorar frecuencia de 30/60 días} {--dias-coords=30 : Días de antigüedad a conservar en coordenadas} {--dias-act=60 : Días de antigüedad a conservar en activity_log}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Respalda en archivos ZIP y depura coordenadas (cada 30 días) e historiales (cada 60 días).';
+    protected $description = 'Respalda en archivos ZIP y depura coordenadas e historiales antiguos.';
 
     /**
      * Create a new command instance.
@@ -43,6 +43,8 @@ class LimpiarHistoriales extends Command
     {
         $dryRun = $this->option('dry-run');
         $force = $this->option('force');
+        $diasLimCoords = (int) ($this->option('dias-coords') ?: 30);
+        $diasLimAct = (int) ($this->option('dias-act') ?: 60);
 
         $this->info("Iniciando depuración y archivado de historiales...");
 
@@ -54,8 +56,8 @@ class LimpiarHistoriales extends Command
         $diasAct = $ultimoRespaldoAct ? (int) $ultimoRespaldoAct->diffInDays(Carbon::now()) : null;
 
         // Fechas límite de registros a depurar
-        $fechaCoordenadas = Carbon::now()->subDays(30);
-        $fechaActivity = Carbon::now()->subDays(60);
+        $fechaCoordenadas = Carbon::now()->subDays($diasLimCoords);
+        $fechaActivity = Carbon::now()->subDays($diasLimAct);
 
         // 1. Procesar Coordenadas (frecuencia cada 30 días)
         $this->info("--------------------------------------------------");

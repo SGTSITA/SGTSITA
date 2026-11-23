@@ -16,6 +16,42 @@ class AuditObserver
         'password',
     ];
 
+    /**
+     * Campos a omitir de la auditoría por modelo específico.
+     * Si los únicos campos modificados de un modelo pertenecen a esta lista,
+     * la actualización se descarta por completo y no genera registro en activity_log.
+     */
+    protected array $modelExclude = [
+        'Cotizaciones' => [
+            'editing_by',
+            'editing_at',
+            'estatus_maniobra_id',
+        ],
+        'DocumCotizacionAcceso' => [
+            'token',
+            'password_hash',
+            'expires_at',
+        ],
+        'Asignaciones' => [
+            'ruta_coordenadas',
+        ],
+    ];
+
+    /**
+     * Obtiene la lista unificada de campos excluidos para un modelo dado.
+     */
+    protected function getExcludedFieldsForModel(Model $model): array
+    {
+        $modelName = class_basename($model);
+        $specific = $this->modelExclude[$modelName] ?? [];
+
+        if (property_exists($model, 'auditExclude') && is_array($model->auditExclude)) {
+            $specific = array_merge($specific, $model->auditExclude);
+        }
+
+        return array_unique(array_merge($this->exclude, $specific));
+    }
+
     private function normalize($data)
     {
         return collect($data)->map(function ($value) {
@@ -36,19 +72,21 @@ class AuditObserver
         $old = $model->getRelation('__old')?->toArray() ?? [];
         $changes = $model->getChanges();
 
-        $changesFiltrados = collect($changes)
-               ->except($this->exclude)
-               ->toArray();
+        $excluded = $this->getExcludedFieldsForModel($model);
 
+        $changesFiltrados = collect($changes)
+            ->except($excluded)
+            ->toArray();
 
         if (empty($changesFiltrados)) {
             return;
         }
+
         $oldFiltered = collect($old)
-            ->only(array_keys($changes))
+            ->only(array_keys($changesFiltrados))
             ->toArray();
 
-        $this->log('updated', $model, $oldFiltered, $changes);
+        $this->log('updated', $model, $oldFiltered, $changesFiltrados);
     }
     public function updating(Model $model)
     {
@@ -63,32 +101,25 @@ class AuditObserver
 
     protected function log($action, Model $model, $old, $new)
     {
-        //         $requestData = request()?->except([
-        //     '_token',
-        //     'password',
-        //     'password_confirmation'
-        // ]) ?? [];
-
-        $requestData = collect(request()->all())
-    ->except($this->exclude)
-       ->toArray() ?? [];
-
-        $referencia =  AuditoriaDataExtractor::extract($model, $old, $new);
-
-        //dd($referencia);
+        $excluded = $this->getExcludedFieldsForModel($model);
 
         $old = is_array($old) ? $old : [];
         $new = is_array($new) ? $new : [];
 
-        $old = collect($old)->except($this->exclude)->toArray();
-        $new = collect($new)->except($this->exclude)->toArray();
+        $old = collect($old)->except($excluded)->toArray();
+        $new = collect($new)->except($excluded)->toArray();
 
         $oldNormalized = $this->normalize($old);
         $newNormalized = $this->normalize($new);
 
         $cambios = array_diff_assoc($newNormalized, $oldNormalized);
 
-        //dd($cambios);
+        // Si es una actualización y tras excluir campos no hubo cambios reales, omitir
+        if ($action === 'updated' && empty($cambios)) {
+            return;
+        }
+
+        $referencia = AuditoriaDataExtractor::extract($model, $old, $new);
 
         ActivityLog::create([
             'model'      => class_basename($model),
@@ -99,18 +130,14 @@ class AuditObserver
             'user_id'    => auth()->id(),
             'ip'         => request()->ip(),
             'user_agent' => request()->userAgent(),
-            'request_payload' => AuditoriaCifrado::encrypt($requestData),
-             'campos_modificados' => !empty($cambios)
-        ? json_encode(array_keys($cambios))
-        : null,
-
-    'empresa_id' => $model->empresa_id ?? $model->id_empresa ?? auth()->user()?->id_empresa ?? null,
-
-    'referencia' =>  $referencia['referencia'] ?? null,
-
-
-    'created_at' => now('America/Mexico_City'),
-    'updated_at' => now('America/Mexico_City'),
+            'request_payload' => null,
+            'campos_modificados' => !empty($cambios)
+                ? json_encode(array_keys($cambios))
+                : null,
+            'empresa_id' => $model->empresa_id ?? $model->id_empresa ?? auth()->user()?->id_empresa ?? null,
+            'referencia' =>  $referencia['referencia'] ?? null,
+            'created_at' => now('America/Mexico_City'),
+            'updated_at' => now('America/Mexico_City'),
         ]);
     }
 }

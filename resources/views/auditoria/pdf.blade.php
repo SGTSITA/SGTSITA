@@ -132,7 +132,7 @@
 
         <tr>
             <td><b>Modelo:</b></td>
-            <td>{{ $data['modelo'] }} #{{ $data['modelo_id'] }}</td>
+            <td>{{ $data['modelo_label'] ?? $data['modelo'] }} #{{ $data['modelo_id'] }}</td>
 
             <td><b>Usuario:</b></td>
             <td>{{ $data['usuario'] }}</td>
@@ -179,31 +179,6 @@
         </tbody>
     </table>
 
-
-    @if ($data['payload'])
-        <div class="payload">
-            <h4>Datos enviados (Request)</h4>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Campo</th>
-                        <th>Valor</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($data['payload'] as $key => $val)
-                        <tr>
-                            <td>{{ $key }}</td>
-                            <td style="word-break: break-all;">
-                                {{ is_array($val) ? json_encode($val) : $val }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
 
     <!-- FOOTER -->
     <div class="footer">

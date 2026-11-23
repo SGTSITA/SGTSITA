@@ -6,6 +6,7 @@ use App\Models\ActivityLog;
 use App\Models\Empresas;
 use Illuminate\Support\Facades\Auth;
 use App\Services\AuditoriaCifrado;
+use App\Services\AuditoriaModelMapperService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -33,24 +34,19 @@ class AuditoriaController extends Controller
             abort(403, 'No autorizado, solo administradores');
         }
 
-        //  Log::info('Auditoria@index - usuario es admin, consultando logs');
-
         $empresas = Empresas::all();
+        $modulosAgrupados = AuditoriaModelMapperService::getModulosAgrupados();
 
-        // Log::info('Auditoria@index - logs obtenidos', [
-        //     'total' => $logs->count(),
-        // ]);
-
-        return view('auditoria.index', compact('empresas'));
-
+        return view('auditoria.index', compact('empresas', 'modulosAgrupados'));
     }
+
     public function data(Request $request)
     {
         if (!Auth::user()->es_admin) {
             abort(403);
         }
         $query = ActivityLog::with(['user', 'empresa'])
-        ->orderByDesc('created_at');
+            ->orderByDesc('created_at');
 
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
             $query->whereBetween('created_at', [
@@ -67,8 +63,20 @@ class AuditoriaController extends Controller
             $query->where('empresa_id', $request->empresa_id);
         }
 
-        return $query->get();
+        if ($request->filled('modulos')) {
+            $modelos = AuditoriaModelMapperService::getModelosPorClaves($request->modulos);
+            if (!empty($modelos)) {
+                $query->whereIn('model', $modelos);
+            }
+        }
 
+        $logs = $query->get();
+
+        $logs->each(function ($log) {
+            $log->modelo_label = AuditoriaModelMapperService::getEtiquetaAmigable($log->model);
+        });
+
+        return $logs;
     }
 
     public function show($id)
@@ -82,6 +90,7 @@ class AuditoriaController extends Controller
             'id' => $id,
             'accion' => $log->action,
             'modelo' => $log->model,
+            'modelo_label' => AuditoriaModelMapperService::getEtiquetaAmigable($log->model),
             'modelo_id' => $log->model_id,
             'usuario' => $log->user?->name ?? 'Sistema',
             'correo' => $log->user?->email ?? '',
@@ -90,7 +99,6 @@ class AuditoriaController extends Controller
             'referencia' => $log->referencia,
             'old' => AuditoriaCifrado::safeDecrypt($log->old_values),
             'new' => AuditoriaCifrado::safeDecrypt($log->new_values),
-            'request_payload' => AuditoriaCifrado::safeDecrypt($log->request_payload),
         ]);
     }
 
@@ -100,8 +108,6 @@ class AuditoriaController extends Controller
 
         $old = AuditoriaCifrado::safeDecrypt($log->old_values) ?? [];
         $new = AuditoriaCifrado::safeDecrypt($log->new_values) ?? [];
-        $payload = AuditoriaCifrado::safeDecrypt($log->request_payload) ?? [];
-
 
         $keys = collect(array_keys($old))
             ->merge(array_keys($new))
@@ -124,14 +130,14 @@ class AuditoriaController extends Controller
         $data = [
             'accion' => $log->action,
             'modelo' => $log->model,
+            'modelo_label' => AuditoriaModelMapperService::getEtiquetaAmigable($log->model),
             'modelo_id' => $log->model_id,
             'usuario' => optional($log->user)->name ?? 'Sistema',
-             'correo' => $log->user?->email ?? '',
+            'correo' => $log->user?->email ?? '',
             'empresa' => optional($log->empresa)->nombre ?? 'N/A',
             'fecha' => $log->created_at,
             'referencia' => $log->referencia,
             'cambios' => $cambios,
-            'payload' => $request->boolean('payload') ? $payload : null
         ];
 
         $pdf = Pdf::loadView('auditoria.pdf', compact('data'));

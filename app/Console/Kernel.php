@@ -31,7 +31,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('command:saldosBancarios')->daily();
-        $schedule->command('db:limpiar-historiales')->dailyAt('02:00');
+        $schedule->command('db:limpiar-historiales --force')->cron('0 */4 * * *');
 
         try {
             $intervalSetting = RastreoIntervals::where('task_name', 'rastreo_gps_interval')->first();

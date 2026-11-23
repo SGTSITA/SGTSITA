@@ -113,12 +113,40 @@ class cmdRastreoInterval extends Command
                         $nomContenedor = $res['contenedor'] ?? 'Contenedor';
 
                         if ($status && $ubicacion && isset($ubicacion['lat']) && floatval($ubicacion['lat']) !== 0.0 && $id_contenedor) {
-                            $this->info("Ubicación encontrada para {$nomContenedor}: Lat {$ubicacion['lat']}, Lng {$ubicacion['lng']}");
-                            Log::info("[Rastreo Automático] Contenedor {$nomContenedor} (ID: {$id_contenedor}): Ubicación encontrada Lat: {$ubicacion['lat']}, Lng: {$ubicacion['lng']}");
+                            $nuevaLat = floatval($ubicacion['lat']);
+                            $nuevaLng = floatval($ubicacion['lng']);
+
+                            // Verificar última coordenada registrada para este contenedor
+                            $ultima = coordenadashistorial::where('ubicacionable_id', $id_contenedor)
+                                ->where('ubicacionable_type', \App\Models\DocumCotizacion::class)
+                                ->orderByDesc('id')
+                                ->first();
+
+                            if ($ultima && !empty($ultima->latitud) && !empty($ultima->longitud)) {
+                                $distancia = $this->calcularDistanciaMetros(
+                                    floatval($ultima->latitud),
+                                    floatval($ultima->longitud),
+                                    $nuevaLat,
+                                    $nuevaLng
+                                );
+
+                                $minutosDesdeUltima = $ultima->registrado_en
+                                    ? \Carbon\Carbon::parse($ultima->registrado_en)->diffInMinutes(now())
+                                    : 999;
+
+                                // Si la unidad no se ha movido al menos 50 metros y la última lectura fue hace menos de 2 horas (120 min), omitir inserción
+                                if ($distancia < 50 && $minutosDesdeUltima < 120) {
+                                    $this->info("Contenedor {$nomContenedor} sin movimiento ({$distancia}m hace {$minutosDesdeUltima} min). Omitiendo duplicado.");
+                                    continue;
+                                }
+                            }
+
+                            $this->info("Ubicación registrada para {$nomContenedor}: Lat {$nuevaLat}, Lng {$nuevaLng}");
+                            Log::info("[Rastreo Automático] Contenedor {$nomContenedor} (ID: {$id_contenedor}): Ubicación registrada Lat: {$nuevaLat}, Lng: {$nuevaLng}");
                             
                             coordenadashistorial::create([
-                                'latitud' => $ubicacion['lat'],
-                                'longitud' => $ubicacion['lng'],
+                                'latitud' => $nuevaLat,
+                                'longitud' => $nuevaLng,
                                 'registrado_en' => now(),
                                 'user_id' => 1, // siempre sera 1 es admin del sistema
                                 'ubicacionable_id' => $id_contenedor,
@@ -138,5 +166,23 @@ class cmdRastreoInterval extends Command
                 Log::error("[Rastreo Automático] Error general en el escaneo por ítems. Detalle: " . $e->getMessage());
             }
         }
+    }
+
+    /**
+     * Calcula la distancia en metros entre dos coordenadas geográficas utilizando la fórmula de Haversine.
+     */
+    protected function calcularDistanciaMetros(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371000; // Radio de la Tierra en metros
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) * sin($dLon / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return round($earthRadius * $c, 2);
     }
 }
