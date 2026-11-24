@@ -531,11 +531,20 @@ class PlaneacionController extends Controller
         ));
     }
 
+    public function updatePlaneacion(Request $request, $idCotizacion)
+    {
+        $res = $this->planeacionService->updatePlaneacion((int) $idCotizacion, $request->all(), (int) Auth::user()->id_empresa, Auth::user());
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json($res);
+        }
+
+        return redirect()->route('index.planeacion')->with('success', $res['Mensaje'] ?? 'Planeación actualizada correctamente.');
+    }
+
     public function update(Request $request, $id)
     {
-        $idCotizacion = (int) $id;
-        $res = $this->planeacionService->updatePlaneacion($idCotizacion, $request->all(), (int) Auth::user()->id_empresa, Auth::user());
-        return redirect()->route('index.planeacion')->with('success', $res['message'] ?? 'Planeación actualizada correctamente.');
+        return $this->updatePlaneacion($request, $id);
     }
 
     public function comboUnidades(Request $request)
