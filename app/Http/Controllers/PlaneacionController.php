@@ -329,6 +329,7 @@ class PlaneacionController extends Controller
                 ? "https://maps.google.com/?q={$cotizacion->latitud},{$cotizacion->longitud}"
                 : "";
             $contacto = $cotizacion->contacto ?? "";
+            $comentarios = $cotizacion->observaciones ?? "";
             $fechaEntrega = $cotizacion->fecha_entrega ? Carbon::parse($cotizacion->fecha_entrega)->format('d/m/Y') : "";
             $horaLlegada = "";
 

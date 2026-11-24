@@ -37,7 +37,7 @@
                                 <h5 class="mb-1 font-weight-bolder">
                                     {{ $operador->nombre }}
                                     <input type="hidden" id="IdOperador"
-                                        value="{{ str_pad($operador->id, 10, '0', STR_PAD_LEFT) }}" />
+                                        value="{{ $operador->id }}" />
                                 </h5>
                                 <p class="mb-0 font-weight-bold text-sm">Liquidación viajes operador</p>
                             </div>

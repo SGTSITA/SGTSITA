@@ -11,6 +11,15 @@ class AplicarLiquidacionRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('_IdOperador')) {
+            $this->merge([
+                '_IdOperador' => intval($this->_IdOperador),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
