@@ -461,6 +461,7 @@
 
                             const gastoHTML = `
               <div class="row gasto-item align-items-center mb-3 border-bottom pb-3">
+                <input type="hidden" class="gasto-id-input" name="gasto_id[]" value="">
                 <div class="col-md-3">
                   <label class="form-label mb-1">Motivo del gasto</label>
                   <select class="form-control gasto-select" name="gasto_nombre[]" required>
@@ -601,6 +602,122 @@
                                 select.value = valorActual;
                             } else {
                                 select.value = '';
+                            }
+                        });
+                    }
+
+                    // Detección de Precarga de Combustible al seleccionar o cambiar Unidad
+                    const camionSelect = document.getElementById("cmbCamion");
+                    const alertaPrecarga = document.getElementById("contenedorAlertaPrecarga");
+                    const textoPrecarga = document.getElementById("textoAlertaPrecarga");
+                    const btnAplicarPrecarga = document.getElementById("btnAplicarPrecarga");
+                    let gastoPrecargaDisponible = null;
+
+                    function verificarPrecargaUnidad(idEquipo) {
+                        if (!idEquipo) {
+                            if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                            gastoPrecargaDisponible = null;
+                            return;
+                        }
+
+                        fetch(`/planeaciones/equipos/${idEquipo}/combustible-precargado`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.tiene_precarga && data.items && data.items.length > 0) {
+                                    gastoPrecargaDisponible = data.items[0];
+                                    if (textoPrecarga) {
+                                        const orig = gastoPrecargaDisponible.origen_contenedor_num ? ` (Contenedor origen: <b>${gastoPrecargaDisponible.origen_contenedor_num}</b>)` : '';
+                                        textoPrecarga.innerHTML = `La unidad cuenta con <b>${gastoPrecargaDisponible.monto_formateado}</b> de Diésel precargado en tanque disponible${orig}.`;
+                                    }
+                                    if (alertaPrecarga) alertaPrecarga.style.display = "block";
+                                } else {
+                                    gastoPrecargaDisponible = null;
+                                    if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                                }
+                            })
+                            .catch(() => {
+                                gastoPrecargaDisponible = null;
+                                if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                            });
+                    }
+
+                    if (camionSelect) {
+                        camionSelect.addEventListener("change", function() {
+                            verificarPrecargaUnidad(this.value);
+                        });
+                        if (camionSelect.value) {
+                            verificarPrecargaUnidad(camionSelect.value);
+                        }
+                    }
+
+                    // También verificar cuando se avanza al paso de viaje propio o se selecciona propio
+                    const nextTwoBtn = document.getElementById('nextTwo');
+                    if (nextTwoBtn) {
+                        nextTwoBtn.addEventListener('click', function() {
+                            setTimeout(() => {
+                                if (camionSelect && camionSelect.value) {
+                                    verificarPrecargaUnidad(camionSelect.value);
+                                }
+                            }, 200);
+                        });
+                    }
+
+                    if (btnAplicarPrecarga) {
+                        btnAplicarPrecarga.addEventListener("click", function() {
+                            if (!gastoPrecargaDisponible) return;
+
+                            let filaDiesel = null;
+                            container.querySelectorAll('.gasto-item').forEach(row => {
+                                const sel = row.querySelector('.gasto-select');
+                                if (sel && sel.value === 'GDI02') {
+                                    filaDiesel = row;
+                                }
+                            });
+
+                            if (!filaDiesel) {
+                                if (botonGastos) {
+                                    botonGastos.click();
+                                    filaDiesel = container.querySelector('.gasto-item:last-child');
+                                }
+                            }
+
+                            if (filaDiesel) {
+                                filaDiesel.dataset.gastoId = gastoPrecargaDisponible.id;
+                                const idInput = filaDiesel.querySelector('.gasto-id-input');
+                                if (idInput) idInput.value = gastoPrecargaDisponible.id;
+
+                                const selMotivo = filaDiesel.querySelector('.gasto-select');
+                                if (selMotivo) {
+                                    selMotivo.value = 'GDI02';
+                                    selMotivo.dispatchEvent(new Event('change'));
+                                }
+
+                                const inputMonto = filaDiesel.querySelector('input[name="gasto_monto[]"]');
+                                if (inputMonto) inputMonto.value = gastoPrecargaDisponible.monto;
+
+                                const chkPago = filaDiesel.querySelector('.pagoInmediatoCheck');
+                                if (chkPago) {
+                                    chkPago.checked = false;
+                                    chkPago.dispatchEvent(new Event('change'));
+                                }
+
+                                let badgePrecarga = filaDiesel.querySelector('.badge-precarga-live');
+                                if (!badgePrecarga) {
+                                    badgePrecarga = document.createElement('div');
+                                    badgePrecarga.className = 'mt-1 badge-precarga-live';
+                                    selMotivo.parentElement.appendChild(badgePrecarga);
+                                }
+                                badgePrecarga.innerHTML = `<span class="badge badge-sm bg-gradient-info text-white"><i class="fas fa-gas-pump me-1"></i> Precarga aplicada: <b>${gastoPrecargaDisponible.origen_contenedor_num || 'Viaje previo'}</b></span>`;
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Precarga aplicada',
+                                    text: `Se aplicó el diésel precargado (${gastoPrecargaDisponible.monto_formateado}) a la planeación del viaje. No requerirá salida de banco.`,
+                                    timer: 2500,
+                                    showConfirmButton: false
+                                });
+
+                                if (alertaPrecarga) alertaPrecarga.style.display = "none";
                             }
                         });
                     }

@@ -17,6 +17,11 @@ class Prestamo extends Model
     public const TIPO_PRESTAMO = 'prestamo';
     public const TIPO_ADELANTO = 'adelanto';
 
+    protected $attributes = [
+        'pagos' => 0,
+        'saldo_actual' => 0,
+    ];
+
     protected $fillable = [
         'id_operador',
         'id_banco',
@@ -25,6 +30,8 @@ class Prestamo extends Model
         'saldo_actual',
          'tipo',
          'fecha_prestamo',
+         'origen_asignacion_id',
+         'origen_tipo',
     ];
 
     protected $casts = [

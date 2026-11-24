@@ -1136,7 +1136,9 @@ else{
                 'gasto_imputaciones.*',
                 'gasto_imputaciones.monto_imputado as cantidad',
                 'gastos.concepto as tipo',
-                'gastos.estatus as estatus'
+                'gastos.estatus as estatus',
+                'gastos.origen_contenedor_num as origen_contenedor_num',
+                'gastos.historial_reasignaciones as historial_reasignaciones'
             )
             ->get();
 
@@ -1336,7 +1338,9 @@ else{
                 'gasto_imputaciones.*',
                 'gasto_imputaciones.monto_imputado as cantidad',
                 'gastos.concepto as tipo',
-                'gastos.estatus as estatus'
+                'gastos.estatus as estatus',
+                'gastos.origen_contenedor_num as origen_contenedor_num',
+                'gastos.historial_reasignaciones as historial_reasignaciones'
             )
             ->get();
         $subclientes = Subclientes::where('id_cliente', '=', auth()->user()->id_cliente)->get();
@@ -2841,9 +2845,7 @@ $this->procesarDocumento(
                 $idEmpresa = auth()->user()->id_empresa;
 
                 // 1. Intentar con el modelo nuevo Gasto
-                $nuevoGasto = Gasto::where('id', $idGasto)
-                    ->where('id_empresa', $idEmpresa)
-                    ->first();
+                $nuevoGasto = Gasto::where('id', $idGasto)->first();
 
                 if ($nuevoGasto) {
                     $fechacancelacion = $r->fechacancelacion ?? now()->format('Y-m-d');
@@ -2852,6 +2854,15 @@ $this->procesarDocumento(
                     }
                     $nuevoGasto->update(['estatus' => 'cancelado']);
                     $nuevoGasto->delete();
+
+                    // Sincronizar bajas con tablas legacy correspondientes
+                    if ($nuevoGasto->origen_legacy_id) {
+                        if ($nuevoGasto->origen_legacy === 'viaticos_operadores' || $nuevoGasto->origen_legacy === 'viaticos_operadores_excedente') {
+                            \App\Models\ViaticosOperador::where('id', $nuevoGasto->origen_legacy_id)->delete();
+                        } elseif ($nuevoGasto->origen_legacy === 'gastos_operadores') {
+                            \App\Models\GastosOperadores::where('id', $nuevoGasto->origen_legacy_id)->update(['estatus' => 'eliminado']);
+                        }
+                    }
                     continue;
                 }
 

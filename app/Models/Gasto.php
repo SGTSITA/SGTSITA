@@ -34,12 +34,19 @@ class Gasto extends Model
         'origen_legacy',
         'origen_legacy_id',
         'user_id',
+        'es_precarga_combustible',
+        'id_equipo_precarga',
+        'origen_contenedor_num',
+        'origen_cotizacion_id',
+        'historial_reasignaciones',
     ];
 
     protected $casts = [
         'fecha_gasto' => 'date',
         'fecha_operacion' => 'date',
         'monto_total' => 'decimal:2',
+        'es_precarga_combustible' => 'boolean',
+        'historial_reasignaciones' => 'array',
     ];
 
     public function equipo()
@@ -85,6 +92,20 @@ class Gasto extends Model
     public function vinculos()
     {
         return $this->hasMany(GastoVinculo::class, 'gasto_id');
+    }
+
+    public function equipoPrecarga()
+    {
+        return $this->belongsTo(Equipo::class, 'id_equipo_precarga');
+    }
+
+    public function scopePrecargasDisponibles($query, $idEquipo = null)
+    {
+        $q = $query->where('es_precarga_combustible', true);
+        if ($idEquipo) {
+            $q->where('id_equipo_precarga', $idEquipo);
+        }
+        return $q;
     }
 
     public function getMontoPagadoAttribute(): float

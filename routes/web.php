@@ -460,6 +460,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::post('viaje/programar-elemental', [App\Http\Controllers\PlaneacionController::class, 'asignacionElemental'])->name('asignacion.elemental.planeaciones');
 
             Route::post('viaje/programa/anular', [App\Http\Controllers\PlaneacionController::class, 'anularPlaneacion'])->name('anular.planeaciones');
+            Route::get('viaje/{idContenedor}/resumen-gastos-cancelacion', [App\Http\Controllers\PlaneacionController::class, 'resumenGastosCancelacion'])->name('planeacion.resumen_gastos_cancelacion');
+            Route::get('equipos/{idEquipo}/combustible-precargado', [App\Http\Controllers\PlaneacionController::class, 'combustiblePrecargadoEquipo'])->name('planeacion.combustible_precargado_equipo');
 
             Route::post('viaje/finalizar', [App\Http\Controllers\PlaneacionController::class, 'finalizarViaje'])->name('finalizar.planeaciones');
             Route::post('cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');
