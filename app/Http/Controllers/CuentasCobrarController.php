@@ -117,7 +117,7 @@ class CuentasCobrarController extends Controller
             'cotizacionesId' => 'required|array|min:1',
         ]);
 
-        $res = $this->cuentasCobrarService->guardarEstadoCuenta(
+$res = $this->cuentasCobrarService->guardarEstadoCuenta(
             $request->all(),
             auth()->user()->id_empresa,
             auth()->id()

@@ -827,6 +827,7 @@ async function programarViaje() {
                 fila.querySelector('[name="gasto_banco_id[]"]').value || null;
             const fechaAplicacion =
                 fila.querySelector('[name="fechaAplicacion[]"]').value || null;
+            const gastoId = fila.dataset.gastoId || (fila.querySelector('.gasto-id-input')?.value) || null;
 
             if (motivoVal === 'OTR01' && conceptoOtro === "") {
                 Swal.fire(
@@ -875,6 +876,7 @@ async function programarViaje() {
 
             if (motivoVal !== "" || monto > 0) {
                 gastosValidos.push({
+                    id: gastoId,
                     motivo: motivoVal,
                     conceptoOtro: conceptoOtro,
                     monto,

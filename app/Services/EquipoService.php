@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Equipo;
 use App\Models\GpsCompany;
 use App\Models\User;
+use App\Models\Empresas;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\UploadedFile;
@@ -378,6 +379,26 @@ class EquipoService
             $file->move(public_path('/equipos'), $fileName);
             $equipo->poliza_seguro = $fileName;
         }
+    }
+
+    /**
+     * Valida si la empresa actual (o especificada) opera bajo el modelo multi-equipo
+     * (H00-GLOBAL o requiere_unidad_gasto).
+     *
+     * @param int|null $idEmpresa
+     * @return bool
+     */
+    public function esEmpresaGlobal(?int $idEmpresa = null): bool
+    {
+        $idEmpresa = $idEmpresa ?? auth()->user()?->id_empresa;
+
+        if (!$idEmpresa) {
+            return false;
+        }
+
+        $empresa = Empresas::withoutGlobalScopes()->find($idEmpresa);
+
+        return (bool) ($empresa?->esGlobalMultiEquipo() ?? false);
     }
 
     /**

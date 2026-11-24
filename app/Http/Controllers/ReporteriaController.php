@@ -78,7 +78,14 @@ class ReporteriaController extends Controller
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', '=', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        Estado_Cuenta::where('id_empresa', auth()->user()->id_empresa)
+            ->doesntHave('cotizaciones')
+            ->delete();
+
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)
+            ->has('cotizaciones')
+            ->orderBy('numero', 'asc')
+            ->get();
         $equipos = $this->equipoService->getTractocamiones();
 
         $documentos = config('CatAuxiliares.columnsbycode');
@@ -106,7 +113,14 @@ class ReporteriaController extends Controller
         $subclientes = Subclientes::whereIn('id_cliente', $clientesIds)->orderBy('created_at', 'desc')->get();
         $proveedores = Proveedor::where('id_empresa', auth()->user()->id_empresa)->orderBy('created_at', 'desc')->get();
 
-        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        Estado_Cuenta::where('id_empresa', auth()->user()->id_empresa)
+            ->doesntHave('cotizaciones')
+            ->delete();
+
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)
+            ->has('cotizaciones')
+            ->orderBy('numero', 'asc')
+            ->get();
 
         $documentos = config('CatAuxiliares.columnsbycode');
 
@@ -825,7 +839,14 @@ class ReporteriaController extends Controller
                                 ->where('is_active', 1)
                                 ->orderBy('nombre')->get();
 
-        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        Estado_Cuenta::where('id_empresa', auth()->user()->id_empresa)
+            ->doesntHave('cotizaciones')
+            ->delete();
+
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)
+            ->has('cotizaciones')
+            ->orderBy('numero', 'asc')
+            ->get();
         $equipos = $this->equipoService->getTractocamiones();
 
         $clientesIds = $clientes->pluck('id');
@@ -845,7 +866,14 @@ class ReporteriaController extends Controller
                             ->where('ce.id_empresa', Auth::User()->id_empresa)
                             ->where('is_active', 1)
                             ->orderBy('nombre')->get();
-        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)->get();
+        Estado_Cuenta::where('id_empresa', auth()->user()->id_empresa)
+            ->doesntHave('cotizaciones')
+            ->delete();
+
+        $estadosCuentas = Estado_Cuenta::where('id_empresa', '=', auth()->user()->id_empresa)
+            ->has('cotizaciones')
+            ->orderBy('numero', 'asc')
+            ->get();
         $equipos = $this->equipoService->getTractocamiones();
 
         $clientesIds = $clientes->pluck('id');

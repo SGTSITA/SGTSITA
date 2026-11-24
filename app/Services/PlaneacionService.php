@@ -115,14 +115,17 @@ class PlaneacionService
      * Anula la planeación de un viaje/contenedor, revirtiendo asignación, anticipos y gastos.
      * Consumido tanto por el panel web como por la API móvil (ApiValidationController::anularPlaneacionMobile).
      */
-    public function anularPlaneacion(int|string $idContenedor, ?string $numContenedor, int $idEmpresa, $user): array
+    public function anularPlaneacion(int|string $idContenedor, ?string $numContenedor, int $idEmpresa, $user, array $options = []): array
     {
-        return DB::transaction(function () use ($idContenedor, $numContenedor) {
+        return DB::transaction(function () use ($idContenedor, $numContenedor, $options) {
             $documenCotizacion = DocumCotizacion::findOrFail($idContenedor);
             $cotizaciones = Cotizaciones::findOrFail($documenCotizacion->id_cotizacion);
             $asignaciones = Asignaciones::where('id_contenedor', '=', $documenCotizacion->id)->first();
 
-            if ($asignaciones && !is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje)) {
+            $dineroViajeAccion = $options['dinero_viaje_accion'] ?? 'prestamo';
+            $dieselAccion = $options['diesel_accion'] ?? 'precarga';
+
+            if ($asignaciones && !is_null($asignaciones->id_operador) && !is_null($asignaciones->id_banco1_dinero_viaje) && floatval($asignaciones->dinero_viaje) > 0) {
                 $movimientoBanco = $this->bancosService->findMovimiento(
                     $asignaciones->id,
                     Asignaciones::class,
@@ -130,14 +133,41 @@ class PlaneacionService
                 );
 
                 if ($movimientoBanco) {
-                    $cancelarMovimientoBanco = $this->bancosService->cancelarMovimiento(
-                        $asignaciones->id_banco1_dinero_viaje,
-                        $movimientoBanco->id,
-                        $movimientoBanco->fecha_movimiento
-                    );
+                    if ($dineroViajeAccion === 'prestamo') {
+                        // Preservar movimiento bancario y convertirlo a Préstamo a Operador
+                        $prestamo = new \App\Models\Prestamo();
+                        $prestamo->id_operador = $asignaciones->id_operador;
+                        $prestamo->id_banco = $asignaciones->id_banco1_dinero_viaje;
+                        $prestamo->cantidad = $asignaciones->dinero_viaje;
+                        $prestamo->pagos = 0;
+                        $prestamo->saldo_actual = $asignaciones->dinero_viaje;
+                        $prestamo->tipo = \App\Models\Prestamo::TIPO_PRESTAMO;
+                        $prestamo->fecha_prestamo = now()->format('Y-m-d');
+                        $prestamo->origen_asignacion_id = $asignaciones->id;
+                        $prestamo->origen_tipo = 'planeacion_cancelada';
+                        $prestamo->save();
 
-                    if (!$cancelarMovimientoBanco) {
-                        throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje.');
+                        $movimientoBanco->referenciaable_type = \App\Models\Prestamo::class;
+                        $movimientoBanco->referenciaable_id = $prestamo->id;
+                        $movimientoBanco->concepto = 'Préstamo operador (Dinero viaje cancelado ' . $documenCotizacion->num_contenedor . ')';
+                        $movimientoBanco->save();
+
+                        try {
+                            app(\App\Services\PolizaService::class)->contabilizarPrestamoOperador($prestamo);
+                        } catch (\Throwable $tPol) {
+                            Log::warning('No se pudo generar póliza de préstamo al anular planeación: ' . $tPol->getMessage());
+                        }
+                    } else {
+                        // Se devolvió el dinero al banco: cancelamos movimiento bancario
+                        $cancelarMovimientoBanco = $this->bancosService->cancelarMovimiento(
+                            $asignaciones->id_banco1_dinero_viaje,
+                            $movimientoBanco->id,
+                            $movimientoBanco->fecha_movimiento
+                        );
+
+                        if (!$cancelarMovimientoBanco) {
+                            throw new \Exception('No se pudo cancelar el movimiento bancario, dinero para viaje.');
+                        }
                     }
                 }
             }
@@ -150,13 +180,61 @@ class PlaneacionService
             $cotizaciones->estatus_planeacion = 0;
             $cotizaciones->update();
 
-            // Validar gastos asociados a la asignación y cancelarlos
+            // Validar gastos asociados a la asignación
             if ($asignaciones) {
-                $gastosUnified = Gasto::where('origen_legacy', 'like', 'asignacion_planeacion%')
-                    ->where('origen_legacy_id', $asignaciones->id)
-                    ->get();
+                $idTracto = $asignaciones->id_camion ?: $asignaciones->id_equipo;
+                $gastosUnified = Gasto::where(function ($query) use ($asignaciones) {
+                    $query->where('origen_legacy', 'like', 'asignacion_planeacion%')
+                          ->where('origen_legacy_id', $asignaciones->id);
+                })->orWhereHas('vinculos', function ($q) use ($asignaciones) {
+                    $q->where('vinculable_type', Asignaciones::class)
+                      ->where('vinculable_id', $asignaciones->id);
+                })
+                ->where('tipo_gasto', '!=', 'sueldo')
+                ->get();
 
                 foreach ($gastosUnified as $g) {
+                    $esDiesel = str_contains(strtolower($g->concepto), 'diesel') ||
+                                str_contains(strtolower($g->concepto), 'diésel') ||
+                                str_contains($g->concepto, 'GDI02') ||
+                                str_contains($g->origen_legacy ?? '', 'GDI02');
+
+                    if ($esDiesel) {
+                        if ($dieselAccion === 'precarga') {
+                            $g->vinculos()->whereIn('tipo_vinculo', ['cotizacion', 'contenedor', 'asignacion'])->delete();
+                            $g->imputaciones()->where('imputable_type', Asignaciones::class)->delete();
+
+                            $historial = $g->historial_reasignaciones ?? [];
+                            $historial[] = [
+                                'fecha' => now()->toDateTimeString(),
+                                'contenedor' => $documenCotizacion->num_contenedor,
+                                'cotizacion_id' => $cotizaciones->id,
+                                'equipo_id' => $idTracto,
+                                'accion' => 'cancelado_y_precargado',
+                                'usuario_id' => auth()->id(),
+                            ];
+
+                            $g->update([
+                                'es_precarga_combustible' => true,
+                                'id_equipo_precarga' => $idTracto,
+                                'origen_contenedor_num' => $g->origen_contenedor_num ?: $documenCotizacion->num_contenedor,
+                                'origen_cotizacion_id' => $g->origen_cotizacion_id ?: $cotizaciones->id,
+                                'historial_reasignaciones' => $historial,
+                            ]);
+                            continue;
+                        } elseif ($dieselAccion === 'gasto_unidad') {
+                            $g->vinculos()->whereIn('tipo_vinculo', ['cotizacion', 'contenedor', 'asignacion'])->delete();
+                            $g->imputaciones()->where('imputable_type', Asignaciones::class)->delete();
+                            $g->update([
+                                'tipo_gasto' => 'unidad',
+                                'id_equipo' => $idTracto,
+                                'es_precarga_combustible' => false,
+                            ]);
+                            continue;
+                        }
+                    }
+
+                    // Cancelar pagos y movimientos para otros gastos
                     foreach ($g->pagos as $pago) {
                         if ($pago->estatus !== 'cancelado') {
                             $movimientoBancoGasto = $this->bancosService->findMovimiento(
@@ -194,6 +272,8 @@ class PlaneacionService
             ];
         });
     }
+
+    
 
     /**
      * Valida y finaliza un viaje/contenedor, verificando documentación obligatoria y planeación elemental.
@@ -574,6 +654,45 @@ class PlaneacionService
         }
 
         foreach ($filas as $gastoItem) {
+            $gastoId = !empty($gastoItem['id']) ? intval($gastoItem['id']) : (!empty($gastoItem['id_precarga']) ? intval($gastoItem['id_precarga']) : null);
+            if ($gastoId) {
+                $gastoPrecarga = Gasto::where('id', $gastoId)->where('es_precarga_combustible', true)->first();
+                if ($gastoPrecarga) {
+                    $gastoPrecarga->es_precarga_combustible = false;
+                    $gastoPrecarga->origen_legacy_id = $asignacion->id;
+                    $gastoPrecarga->origen_legacy = 'asignacion_planeacionGDI02 - Diesel';
+                    $historial = $gastoPrecarga->historial_reasignaciones ?? [];
+                    $historial[] = [
+                        'fecha' => now()->toDateTimeString(),
+                        'contenedor' => $contenedor->num_contenedor,
+                        'cotizacion_id' => $contenedor->id_cotizacion,
+                        'equipo_id' => $asignacion->id_camion ?: $asignacion->id_equipo,
+                        'accion' => 'aplicado_a_viaje',
+                        'usuario_id' => auth()->id(),
+                    ];
+                    $gastoPrecarga->historial_reasignaciones = $historial;
+                    $gastoPrecarga->save();
+
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'cotizacion')->where('vinculable_id', $contenedor->id_cotizacion)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'cotizacion', 'vinculable_type' => Cotizaciones::class, 'vinculable_id' => $contenedor->id_cotizacion]);
+                    }
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'contenedor')->where('vinculable_id', $contenedor->id)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'contenedor', 'vinculable_type' => DocumCotizacion::class, 'vinculable_id' => $contenedor->id]);
+                    }
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'asignacion')->where('vinculable_id', $asignacion->id)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'asignacion', 'vinculable_type' => Asignaciones::class, 'vinculable_id' => $asignacion->id]);
+                    }
+                    if (!$gastoPrecarga->imputaciones()->where('imputable_type', Asignaciones::class)->where('imputable_id', $asignacion->id)->exists()) {
+                        $gastoPrecarga->imputaciones()->create([
+                            'imputable_type' => Asignaciones::class,
+                            'imputable_id' => $asignacion->id,
+                            'porcentaje' => 100,
+                            'monto' => $gastoPrecarga->monto_total,
+                        ]);
+                    }
+                    continue;
+                }
+            }
             $motivo = $gastoItem['motivo'] ?? null;
             $monto = floatval($gastoItem['monto'] ?? 0);
             $esPagoInmediato = !empty($gastoItem['pagoInmediato']);

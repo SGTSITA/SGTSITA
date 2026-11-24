@@ -20,7 +20,17 @@ const gridOptionsOperador = {
     columnDefs: [
         { field: "IdCotizacion", hide: true },
         { field: "IdGasto", hide: true },
-        { field: "Gasto", width: 210 },
+        {
+            field: "Gasto",
+            width: 260,
+            cellRenderer: (params) => {
+                let text = params.value || "";
+                if (params.data && params.data.OrigenContenedor) {
+                    text += ` <span class="badge badge-sm bg-gradient-info text-white ms-1" title="Reasignado de viaje cancelado"><i class="fas fa-gas-pump"></i> De: ${params.data.OrigenContenedor}</span>`;
+                }
+                return text;
+            },
+        },
         {
             field: "Monto",
             width: 110,
@@ -159,6 +169,8 @@ function getGastosOperador() {
                         Fecha: g.fecha_gasto,
                         FechaPago: fechaPago,
                         BancoPago: bancoPago,
+                        OrigenContenedor: g.origen_contenedor_num || "",
+                        Historial: g.historial_reasignaciones || [],
                     };
                 });
 

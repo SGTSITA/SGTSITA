@@ -207,6 +207,22 @@
 
     <div class="row mt-4 elemental-hidden"> <!-- Nueva fila para los botones y gastos -->
         <div class="col-12 mt-4">
+            <!-- BANNER DE COMBUSTIBLE PRECARGADO EN TANQUE -->
+            <div id="contenedorAlertaPrecarga" class="mb-3" style="display: none;">
+                <div class="alert alert-info d-flex align-items-center justify-content-between p-3 border-0 shadow-sm" style="background: linear-gradient(90deg, #1171ef, #11cdef); color: white;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-gas-pump fs-2 me-3 text-white"></i>
+                        <div>
+                            <h6 class="mb-0 text-white font-weight-bold">Combustible Precargado en Tanque</h6>
+                            <p class="mb-0 text-white text-xs" id="textoAlertaPrecarga">Esta unidad tiene diésel precargado disponible de un viaje previo cancelado.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-white text-primary font-weight-bold shadow-sm" id="btnAplicarPrecarga">
+                        <i class="fas fa-check-circle me-1 text-success"></i> Aplicar al viaje
+                    </button>
+                </div>
+            </div>
+
             <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGasto">
                 <i class="ni ni-fat-add"></i> Agregar gastos al viaje
             </button>

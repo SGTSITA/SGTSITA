@@ -1,45 +1,35 @@
 # MEMORY.md — SGTSITA
-Memoria viva del proyecto entre sesiones (máximo ~50 líneas).
+Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
-- **Unicidad de `id_viaje` por Cotización y Rastreo GPS (`CotizacionesService::resolverViajeDesdeRequest` y `CoordenadasService::baseQuery`):**
-  - En `CotizacionesService::resolverViajeDesdeRequest` (y delegado desde `CotizacionesController::resolverViajeDesdeRequest`): si una cotización ya cuenta con un registro en `viajes` (`viajes_cotizacion`), se reutiliza y actualiza su `tipo` (`sencillo` o `full`) y `estado = 'activo'` en lugar de crear un nuevo `Viajes::create`, limpiando registros secundarios huérfanos en `viajes_cotizacion`.
-  - En `CoordenadasService::baseQuery`: el `leftJoin` a `viajes_cotizacion` / `viajes` se realiza mediante `leftJoinSub` agrupado por `cotizacion_id` y filtrado por `v.estado = 'activo'`, evitando filas duplicadas en `/coordenadas/rastrearTabs` y `/coordenadas/coordenadas/exrastrear`.
-- **Spec 019 (Thin Controllers & Reusable Services) — COMPLETADA Y VALIDADA EN DEMO (SGT, MEC y MEP):**
-  - Validación interactiva CRUD en vivo en sistema central (Admin `oliva@gmail.com`): Clientes, Subclientes, Proveedores, Operadores, Equipos, Préstamos, Bancos, Cuentas Bancarias y Cotizaciones (Crear, Editar, Listar, Desactivar/Reactivar y Cambios de Estatus).
-  - Correcciones aplicadas y probadas en vivo:
-    - Normalización de IDs (`int` vs `array`) en `CotizacionesService` para `convertirFull`, `cancelarFull`, `convertirLocalForaneo` y `revertirForaneo`.
-    - Creación defensiva de carpetas en `OperadorService` (`@mkdir` solo con archivos) y validación limpia de CURP en `StoreOperadorRequest`.
-    - Desacople de `password_temporal` en WhatsApp (`boardCarpos.js`, `modal_info_planeacion.blade.php`), separación limpia de número y referencia en `/viajes/mis-viajes-local`, y bypass de validación destino-ubicación en viajes locales.
-    - Soporte completo de edición y guardado de subclientes en panel central (`ClientController::edit`, `routes/web.php`).
-    - Blindaje en `ExternosController::getFilesProperties` con fallback y null-safety (`?->`) al cargar archivos de contenedores.
-  - Reporte consolidado en `reporte_pruebas_sgt_demo.md` y 39 reportes PDF/XLSX exportados en escritorio `PRUEBAS SGT DEMO`.
-- **Cambio de Proveedor y Transportista en Viaje Planeado (`CotizacionesController::singleUpdate` y `CotizacionesService::deshacerPlaneacionPorCambioProveedor`):**
-  - Cancela movimientos bancarios de dinero para viaje, anula gastos unificados (`origen_legacy like 'asignacion_planeacion%'`), limpia `GastosOperadores::withoutGlobalScope('no_eliminados')`, `Coordenadas`, `DineroContenedor` y `ViaticosOperador` antes de eliminar `Asignaciones`.
-- **Spec 025 (Validación de Peso de Contenedor y Sobrepeso):** En `CotizacionesService::validarYCalcularPesoSobrepeso()` y `CotizacionesController` (`> 0` y `<= 60` ton, recalcula `sobrepeso = max(peso - peso_reglamentario, 0)`), homologado en `cotizaciones.js` y `cotizaciones-local.js`.
-- **Pantalla Completa en Mis Viajes (`/viajes/mis-viajes`):** Botón Pantalla completa (`toggleFullscreenMisViajes()`) y selector de densidad (`Auto (Captura)` | `Compacta` | `Normal`).
-- **Cierre de Sesión Automático y Rastreo de Mapas (`CheckUserSessionTimeout.php` y `sessionAutoLogout.js`):** Sincronización multi-pestaña en `localStorage`, keep-alive cada 4 min y pausa automática en pantallas de rastreo/mapas.
-- **Spec 024 (Devengo de sueldos, anticipos y deducciones):** `OperadorGastosContabilidadService` deduplica comprobaciones y registra "Dinero para viaje - [Operador]". En `/reporteria/utilidad`, `pagoOperacion = min($sueldo_viaje, $total_pagado)`. Balance General Empresa 8 cuadrado con Diferencia $0.00.
-- **Spec 020 & 011 (CONAC & Cierre Contable):** Acumulación real en `3.2.1`, formatos ESF-01, ERA-02, BC-03, AC-07, LD-06 y selector `initSgtDateRange`.
+- **Spec 029 (Columna Cliente y Filtro Multi-Check Sincronizado — `/cotizaciones/costos-multiple`):**
+  - Columna CLIENTE añadida después de `# CONTENEDOR` en ambas pestañas Handsontable con renderizador truncado (`width: 170px`) y fijación izquierda (`fixedColumnsLeft: 2`).
+  - Barra de Filtros compacta en una sola fila continua; checkboxes nítidos (`19x19px` azul con palomita blanca), resaltado integral de fila seleccionada (`#ebf5ff`, borde `#b9dcff`).
+  - Sincronización bi-tabular reactiva: cambios en `#dropdownContenedoresWrapper` o en filtros de columna `# CONTENEDOR` se replican en ambas grillas con prevención de bucles.
+  - Botón condicional "Guardar Todo" en el tab header si ambas grillas tienen cambios; modal SweetAlert estandarizado para prevenir pérdida de datos en `keydown` (F5, Ctrl+R), links `<a>`, consultar/limpiar y navegación atrás (`popstate`).
+- **Spec 028 (Gestión Inteligente y Reasignación de Gastos al Deshacer Planeación — `/planeaciones`):**
+  - Detección elemental vs completa: si no hay movimientos bancarios, desprograma directo.
+  - Dinero para viaje a Préstamo: si el operador no devolvió el anticipo, se preserva el movimiento bancario y se crea `Prestamo` a su nombre con póliza contable (`1.1.2.3.001` vs `Bancos`) para amortización en liquidación.
+  - Diésel en tanque como precarga: marcado con `es_precarga_combustible = true`, `id_equipo_precarga` y trazabilidad histórica en JSON (`historial_reasignaciones`).
+  - Detección y absorción de precarga en nueva planeación (`GET /planeaciones/equipos/{id}/combustible-precargado` y `/resumen-gastos-cancelacion`) tanto en step como en edit sin generar nueva salida bancaria.
+- **Segregación y Gestión de Comprobaciones en Editar Planeación (`/planeaciones/viajes/editar/{id}`):**
+  - Comprobaciones del chofer (`tipo_gasto = 'operador'` o comprobaciones legacy) segregadas de campos editables de planeación; no exigen banco. Botón de eliminación/rechazo (`/cotizaciones/gastos-operador/eliminar`) sincronizado con `gastos`, `viaticos_operadores` y `gastos_operadores`. Sueldo y Dinero de viaje excluidos de esta tabla. Acceso flexibilizado para empresa asignada o cliente.
+- **Spec 019 (Thin Controllers & Reusable Services) — VALIDADA EN DEMO (SGT, MEC y MEP):**
+  - `PlaneacionService`, `CotizacionesService`, `CuentasCobrarService`, `MepService`, `EquipoService` y `OperadorService` centralizan lógica de negocio.
+  - Unicidad de `id_viaje` por cotización en `resolverViajeDesdeRequest` y `CoordenadasService::baseQuery` evitando duplicados en rastreo.
+  - Conversión Full / Local-Foráneo con normalización de IDs; validación defensiva de CURP y carpetas en operadores; desacople de WhatsApp y blindaje null-safe en `ExternosController`.
+- **Persistencia de Estados de Cuenta en CXC (`/reporteria/cotizaciones/cxc`):**
+  - Renombre in-situ al editar folio completo (`update(['numero' => $nuevo])`); creación de grupo al seleccionar subconjunto; limpieza automática de registros con 0 cotizaciones (`doesntHave('cotizaciones')->delete()`).
 - **Specs operativas activas:** Spec 002–018 (`/liquidaciones/ajustes`, `#filtro_unidad`, Reporte Personalizado CXC, Naanix GPS, Multi-equipo `requiere_unidad_gasto == 1`).
-- **Respaldo de Sistema Completo:** `php artisan backup:sistema-completo` (`--sin-gps`, `--listar`, `--eliminar`).
 
 ## Decisiones arquitectónicas (y por qué)
-- `PlaneacionService` y `LiquidacionesService`: centralizan la lógica de negocio e integran `OperadorGastosContabilidadService` para mantener sincronizadas las pólizas contables de sueldos, anticipos, comprobaciones y liquidaciones.
-- `CotizacionesService`: unifica creación individual, en lote (`storeMultipleCotizaciones`, `storeMultipleLocal`), locales (`storeLocal`, `singleUpdateLocal`), validación de peso (`<= 60` ton), resolución única de `Viajes` (`resolverViajeDesdeRequest`) y conversiones Full / Local-Foráneo.
-- Deduplicación de Viáticos y Aislamiento de Sueldos: `tipo_gasto = 'operador'` con categoría `'Sueldos de Operadores'` y `origen_legacy = 'asignacion_sueldo_operador'` se filtran fuera de otros gastos de planeación.
+- Thin Controllers estrictos: los controladores solo reciben requests, validan con FormRequests y delegan a Services bajo `DB::transaction()`.
+- Precargas de Diésel y Préstamos: el combustible físico permanece en la unidad y el anticipo se convierte en pasivo del chofer sin duplicar salidas de banco.
+- Deduplicación de Viáticos y Aislamiento de Sueldos: `tipo_gasto = 'operador'` se filtra fuera de gastos de planeación.
 - Multi-equipo H00 Global: activado estrictamente con `requiere_unidad_gasto == 1`.
-- Transacciones `DB::transaction()` obligatorias en todo cálculo y mutación de saldo.
 
-## Errores a evitar
-- Nunca crear un nuevo `Viajes::create` si la cotización ya tiene un `viaje_id` en `viajes_cotizacion`; reutilizar el existente y actualizar su `tipo`/`estado`.
-- En `GastosService::registrar`, no enviar valores fuera del `ENUM('manual','combustibles','mantenimiento','impuestos','migracion_legacy')` en `origen_modulo`.
-- En `storeLocal`, crear primero `Cotizaciones`, después su bitácora y luego `DocumCotizacion` con el ID real.
-- Al renderizar PDFs con `Pdf::loadView`, asegurar compatibilidad dual de variables (`cotizacion`/`cotizaciones`) y blindar blades con operadores null-safe (`?->`) y `try-catch`.
+## Aprendizajes y errores a evitar
+- En la tabla `prestamos`, la columna `pagos` no tiene default; asignar siempre `pagos => 0` y `saldo_actual` explícitos.
+- En la tabla `cotizaciones`, la clave primaria es `id` (no `id_cotizacion`) y se vincula a través de `docum_cotizacion.id_cotizacion`.
 - NUNCA alterar la firma JSON de rutas en `routes/api.php` consumidas por la app Flutter `operador_appsgt`.
 - Prohibido `migrate:fresh` o `db:wipe` en cualquier entorno.
-
-## Próximos pasos
-- [ ] Ejecutar en producción `php artisan contabilidad:sync-historico 8 --force` tras desplegar cambios.
-- [ ] Validar en producción telemetría continua de Naanix y retirar `SISGPSTrait.php`.
-- [ ] Spec 001: Módulo de control y reportes de combustible por unidad de transporte.

@@ -433,6 +433,17 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                 response.documentos.id_equipo_chasis ?? "NA";
             imei_chasis.textContent = response.documentos.imei_chasis ?? "NA";
 
+            const rowDieselPrecarga = document.getElementById("info_diesel_reasignado_row");
+            const textoDieselPrecarga = document.getElementById("info_diesel_reasignado_texto");
+            if (rowDieselPrecarga && textoDieselPrecarga) {
+                if (response.diesel_precarga) {
+                    textoDieselPrecarga.textContent = `${response.diesel_precarga.monto_formateado} (Reasignado de ${response.diesel_precarga.origen_contenedor_num || 'Viaje previo'})`;
+                    rowDieselPrecarga.classList.remove("d-none");
+                } else {
+                    rowDieselPrecarga.classList.add("d-none");
+                }
+            }
+
             if (response.tipo == "Viaje Propio") {
                 $("#tipoViajeSpan").addClass("bg-gradient-success");
             } else {
@@ -666,42 +677,185 @@ if (btnGuardarBoard) {
 function anularPlaneacion(idContenendor, numContenedor) {
     $("#viajeModal").modal("hide");
     var _token = $('input[name="_token"]').val();
+
+    // Mostrar loader mientras consultamos el resumen financiero
     Swal.fire({
-        title: `Quitar programación ${numContenedor}`,
-        text: `¿Desea cancelar la programación actual del viaje? Una vez realizada esta acción no se podrá deshacer`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Sí, continuar",
-        cancelButtonText: "Cancelar",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`/planeaciones/viaje/programa/anular`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    _token: _token,
-                    idContenendor: idContenendor,
-                    numContenedor: numContenedor,
-                }),
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
-                    if (data.TMensaje == "success") {
-                        dp.events.remove(idContenendor); //Eliminar del board
-                    }
-                })
-                .catch((error) => {
-                    Swal.fire(
-                        "Error",
-                        "No pudimos anular el programa del viaje",
-                        "error",
-                    );
-                });
+        title: "Consultando estado del viaje...",
+        text: "Verificando dinero para viaje y combustible asignado",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
         }
     });
+
+    fetch(`/planeaciones/viaje/${idContenendor}/resumen-gastos-cancelacion`)
+        .then((response) => response.json())
+        .then((res) => {
+            if (!res.success) {
+                throw new Error(res.message || "No se pudo obtener el resumen financiero");
+            }
+
+            // 1. Caso Planeación Elemental (sin dinero ni diésel)
+            if (res.es_elemental) {
+                Swal.fire({
+                    title: `Quitar programación ${numContenedor}`,
+                    html: `<p class="text-muted">Esta planeación es <b>elemental</b> (no cuenta con salidas bancarias ni combustible pagado).</p><p>¿Deseas desprogramar este viaje?</p>`,
+                    icon: "question",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, desprogramar",
+                    cancelButtonText: "Volver",
+                    confirmButtonColor: "#f1416c",
+                }).then((confirmRes) => {
+                    if (confirmRes.isConfirmed) {
+                        ejecutarAnulacionPlaneacion(idContenendor, numContenedor, {
+                            _token: _token,
+                            idContenendor: idContenendor,
+                            numContenedor: numContenedor,
+                        });
+                    }
+                });
+                return;
+            }
+
+            // 2. Caso Planeación Completa con Dinero para Viaje y/o Diésel
+            let htmlContent = `<div class="text-start fs-7" style="max-height: 400px; overflow-y: auto;">`;
+            htmlContent += `<p class="mb-3 text-dark">El viaje cuenta con movimientos financieros emitidos. Elige el destino de cada concepto para mantener la conciliación contable:</p>`;
+
+            // Sección Dinero para Viaje
+            if (res.dinero_viaje) {
+                htmlContent += `
+                <div class="card bg-light-warning border border-warning p-3 mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-hand-holding-usd text-warning fs-3 me-2"></i>
+                        <div>
+                            <div class="fw-bolder text-dark">Dinero para Viaje: <span class="text-danger">${res.dinero_viaje.monto_formateado}</span></div>
+                            <div class="text-muted fs-8">Operador: <b>${res.dinero_viaje.operador_nombre}</b> | Banco: <b>${res.dinero_viaje.banco_nombre}</b></div>
+                        </div>
+                    </div>
+                    <div class="fw-bold fs-8 text-dark mb-1">¿El operador devolvió este dinero al banco / caja?</div>
+                    <div class="form-check form-check-custom form-check-solid mb-1">
+                        <input class="form-check-input" type="radio" name="opt_dinero_viaje" id="opt_dinero_prestamo" value="prestamo" checked>
+                        <label class="form-check-label fs-8" for="opt_dinero_prestamo">
+                            <b>No devolvió el dinero</b> — Cargar como <b>Préstamo a Operador</b> (Conservar salida bancaria y descontar en liquidación).
+                        </label>
+                    </div>
+                    <div class="form-check form-check-custom form-check-solid">
+                        <input class="form-check-input" type="radio" name="opt_dinero_viaje" id="opt_dinero_devolucion" value="devolucion">
+                        <label class="form-check-label fs-8" for="opt_dinero_devolucion">
+                            <b>Sí devolvió el dinero</b> — Cancelar salida bancaria (Restituir saldo al banco).
+                        </label>
+                    </div>
+                </div>`;
+            }
+
+            // Sección Diésel / Combustible
+            if (res.diesel) {
+                const origenTexto = res.diesel.origen_contenedor_num 
+                    ? `<span class="badge badge-light-info ms-1">Precarga origen: ${res.diesel.origen_contenedor_num}</span>` 
+                    : '';
+                htmlContent += `
+                <div class="card bg-light-primary border border-primary p-3 mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-gas-pump text-primary fs-3 me-2"></i>
+                        <div>
+                            <div class="fw-bolder text-dark">Diésel Asignado: <span class="text-primary">${res.diesel.monto_formateado}</span> ${origenTexto}</div>
+                            <div class="text-muted fs-8">Unidad: <b>${res.unidad.nombre}</b></div>
+                        </div>
+                    </div>
+                    <div class="fw-bold fs-8 text-dark mb-1">¿Qué destino tuvo este combustible?</div>
+                    <div class="form-check form-check-custom form-check-solid mb-1">
+                        <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_precarga" value="precarga" checked>
+                        <label class="form-check-label fs-8" for="opt_diesel_precarga">
+                            <b>Queda en el tanque de la unidad</b> — Dejar como <b>Precarga disponible</b> para ser absorbida en el próximo viaje de esta unidad.
+                        </label>
+                    </div>
+                    <div class="form-check form-check-custom form-check-solid mb-1">
+                        <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_unidad" value="gasto_unidad">
+                        <label class="form-check-label fs-8" for="opt_diesel_unidad">
+                            <b>Se consumió en taller / traslados</b> — Reclasificar como gasto operativo directo de la unidad.
+                        </label>
+                    </div>
+                    <div class="form-check form-check-custom form-check-solid">
+                        <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_cancelar" value="cancelar">
+                        <label class="form-check-label fs-8" for="opt_diesel_cancelar">
+                            <b>No se cargó / Cancelado con proveedor</b> — Anular gasto y orden bancaria.
+                        </label>
+                    </div>
+                </div>`;
+            }
+
+            htmlContent += `</div>`;
+
+            Swal.fire({
+                title: `Desprogramar Viaje: ${numContenedor}`,
+                html: htmlContent,
+                icon: "warning",
+                width: "600px",
+                showCancelButton: true,
+                confirmButtonText: "Confirmar y Desprogramar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#f1416c",
+                preConfirm: () => {
+                    const dineroAccion = document.querySelector('input[name="opt_dinero_viaje"]:checked')?.value || 'prestamo';
+                    const dieselAccion = document.querySelector('input[name="opt_diesel"]:checked')?.value || 'precarga';
+                    return {
+                        dinero_viaje_accion: dineroAccion,
+                        diesel_accion: dieselAccion,
+                    };
+                }
+            }).then((modalResult) => {
+                if (modalResult.isConfirmed && modalResult.value) {
+                    ejecutarAnulacionPlaneacion(idContenendor, numContenedor, {
+                        _token: _token,
+                        idContenendor: idContenendor,
+                        numContenedor: numContenedor,
+                        dinero_viaje_accion: modalResult.value.dinero_viaje_accion,
+                        diesel_accion: modalResult.value.diesel_accion,
+                    });
+                }
+            });
+        })
+        .catch((error) => {
+            Swal.fire("Error", error.message || "No pudimos consultar el resumen del viaje", "error");
+        });
+}
+
+function ejecutarAnulacionPlaneacion(idContenendor, numContenedor, payload) {
+    Swal.fire({
+        title: "Procesando desprogramación...",
+        text: "Actualizando registros financieros y liberando contenedor",
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    fetch(`/planeaciones/viaje/programa/anular`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+            if (data.TMensaje == "success") {
+                if (typeof dp !== 'undefined' && dp.events) {
+                    dp.events.remove(idContenendor);
+                }
+                if (typeof getCotizacionesList === 'function') {
+                    getCotizacionesList();
+                }
+            }
+        })
+        .catch((error) => {
+            Swal.fire(
+                "Error",
+                "No pudimos anular el programa del viaje",
+                "error",
+            );
+        });
 }
 
 function finalizarViaje(idContenendor, numContenedor) {

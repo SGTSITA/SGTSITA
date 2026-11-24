@@ -356,6 +356,11 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
         // ==================== C O T I Z A C I O N E S ====================
         Route::get('/cotizaciones/index', [App\Http\Controllers\CotizacionesController::class, 'index'])->name('index.cotizaciones');
+        Route::get('/cotizaciones/costos-multiple', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'index'])->name('cotizaciones.costos_multiple');
+        Route::get('/cotizaciones/costos-multiple/datos', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'datos'])->name('cotizaciones.costos_multiple.datos');
+        Route::get('/cotizaciones/costos-multiple/exportar', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'exportar'])->name('cotizaciones.costos_multiple.exportar');
+        Route::post('/cotizaciones/costos-multiple/guardar-cotizacion', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarCotizacion'])->name('cotizaciones.costos_multiple.guardar_cotizacion');
+        Route::post('/cotizaciones/costos-multiple/guardar-proveedor', [App\Http\Controllers\CotizacionesCostosMultipleController::class, 'guardarProveedor'])->name('cotizaciones.costos_multiple.guardar_proveedor');
         Route::get('/cotizaciones/list', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesList'])->name('cotizaciones.list');
         Route::get('/cotizaciones/by-status', [App\Http\Controllers\CotizacionesController::class, 'getCotizacionesByStatus'])->name('cotizaciones.byStatus');
         Route::get('/sgt/fechas/periodos-cotizaciones', [App\Http\Controllers\CotizacionesController::class, 'getPeriodosCotizaciones'])->name('sgt.fechas.periodos_cotizaciones');
@@ -460,6 +465,8 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
             Route::post('viaje/programar-elemental', [App\Http\Controllers\PlaneacionController::class, 'asignacionElemental'])->name('asignacion.elemental.planeaciones');
 
             Route::post('viaje/programa/anular', [App\Http\Controllers\PlaneacionController::class, 'anularPlaneacion'])->name('anular.planeaciones');
+            Route::get('viaje/{idContenedor}/resumen-gastos-cancelacion', [App\Http\Controllers\PlaneacionController::class, 'resumenGastosCancelacion'])->name('planeacion.resumen_gastos_cancelacion');
+            Route::get('equipos/{idEquipo}/combustible-precargado', [App\Http\Controllers\PlaneacionController::class, 'combustiblePrecargadoEquipo'])->name('planeacion.combustible_precargado_equipo');
 
             Route::post('viaje/finalizar', [App\Http\Controllers\PlaneacionController::class, 'finalizarViaje'])->name('finalizar.planeaciones');
             Route::post('cambio/fecha', [App\Http\Controllers\PlaneacionController::class, 'edit_fecha'])->name('asignacion.edit_fecha');

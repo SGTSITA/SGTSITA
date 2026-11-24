@@ -167,8 +167,11 @@ const normalizarFecha = (valueFecha) => {
     if (!valueFecha) return null;
 
     if (valueFecha.includes("/")) {
-        const [d, m, y] = valueFecha.split("/");
-        return `${y}-${m}-${d}`;
+        const parts = valueFecha.split("/");
+        if (parts.length === 3) {
+            const [d, m, y] = parts;
+            return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        }
     }
 
     return valueFecha.substring(0, 10);
@@ -294,15 +297,14 @@ function asignarOperador2(planear = 0) {
                 return false;
             }
 
-            //validar fechas de inicio y fin si se planea el viaje.
+            // Fechas de inicio y fin: normalizar siempre si existen, validar obligatoriedad si se planea
             if (
-                planear === 1 &&
-                (item.field === "txtFechaInicio" ||
-                    item.field === "txtFechaFinal")
+                item.field === "txtFechaInicio" ||
+                item.field === "txtFechaFinal"
             ) {
                 let valueFecha = field.value;
 
-                if (!valueFecha) {
+                if (planear === 1 && !valueFecha) {
                     Swal.fire(
                         "El campo " +
                             item.label +
@@ -313,10 +315,8 @@ function asignarOperador2(planear = 0) {
                     );
                     return false;
                 }
-                //formatear fecha para yyy-mm-dd hh:mm:ss
-                let fechaObj = normalizarFecha(valueFecha);
 
-                formData[item.field] = fechaObj;
+                formData[item.field] = valueFecha ? normalizarFecha(valueFecha) : null;
                 return true;
             }
         }
@@ -335,10 +335,10 @@ function asignarOperador2(planear = 0) {
     });
 
     let fecha_inicio = formData["txtFechaInicio"]
-        ? new Date(formData["txtFechaInicio"])
+        ? new Date(formData["txtFechaInicio"] + "T00:00:00")
         : null;
     let fecha_final = formData["txtFechaFinal"]
-        ? new Date(formData["txtFechaFinal"])
+        ? new Date(formData["txtFechaFinal"] + "T00:00:00")
         : null;
 
     if (fecha_inicio && fecha_final && fecha_inicio > fecha_final) {
@@ -408,7 +408,25 @@ function asignarOperador2(planear = 0) {
         .then((data) => {
             console.log("Respuesta del backend:", data);
 
-            Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
+            Swal.fire({
+                title: data.Titulo,
+                text: data.Mensaje,
+                icon: data.TMensaje === "success" ? "success" : (data.TMensaje || "info"),
+            }).then(() => {
+                if (data.TMensaje === "success") {
+                    const modalEl = document.getElementById("viajeModal");
+                    if (modalEl) {
+                        if (typeof bootstrap !== "undefined" && bootstrap.Modal) {
+                            bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                        } else if (typeof jQuery !== "undefined") {
+                            jQuery(modalEl).modal("hide");
+                        }
+                    }
+                    if (typeof getCotizacionesList === "function") {
+                        getCotizacionesList();
+                    }
+                }
+            });
         })
         .catch((error) => {
             console.error("Error al enviar los datos:", error);

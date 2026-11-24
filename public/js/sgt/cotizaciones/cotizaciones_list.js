@@ -397,11 +397,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
                 return false;
             }
+
+            // Limpiar datos previos del modal para evitar que se arrastren a viajes sin asignación
+            if (typeof window.limpiarModalViaje === "function") {
+                window.limpiarModalViaje();
+            }
+
             const card = document.getElementById("cardGpsMapa");
-            card.classList.add("d-none");
+            if (card) card.classList.add("d-none");
 
             btnPlanear.classList.add("d-none");
-            seccionPlanearViaje.classList.add("d-none");
+            if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
             let statusViaje = "";
             let planeacionEstatus = 0;
             if (seleccion.length == 1) {
@@ -423,6 +429,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 .querySelector('meta[name="csrf-token"]')
                 .getAttribute("content");
             let idContenedor = seleccion[0].id;
+            localStorage.setItem("idContenedor", idContenedor);
+            localStorage.setItem("numContenedor", seleccion[0].contenedor);
 
             let payload = { _token, idContenedor };
 
@@ -441,12 +449,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         planeacionEstatus =
                             data.contenedor?.cotizacion?.estatus_planeacion ??
                             0;
-                        statusViaje =
-                            data.contenedor?.cotizacion?.estatus_planeacion ??
-                            "NO ASIGNADA";
+                        const cotEstatus =
+                            data.contenedor?.cotizacion?.estatus ?? statusViaje;
+                        statusViaje = cotEstatus;
+
+                        document.getElementById("estatusViaje").textContent =
+                            planeacionEstatus == 1 ? "Planeada" : statusViaje;
 
                         // ----- OPERADOR -----
                         txtOperador.value = data.operador?.nombre ?? "";
+                        txtOperador.dataset.mepOperador =
+                            data.operador?.id ?? "0";
                         txtTelefono.value = data.operador?.telefono ?? "";
 
                         // Helper para asegurar opción de equipo y actualizar visualmente Select2 sin disparar limpieza destructiva
@@ -576,9 +589,79 @@ document.addEventListener("DOMContentLoaded", function () {
                                     : "none";
                         }
 
-                        //FECHAS -- AGREGADO NUEVO
-                        dtpFechaSalida.value = data.fecha_inicio;
-                        dtpFechaEntrega.value = data.fecha_fin;
+                        // Helper para parsear fecha (SQL YYYY-MM-DD..., ISO o DD/MM/YYYY) a Date
+                        const parsearFechaParaFlatpickr = (fechaStr) => {
+                            if (!fechaStr) return null;
+                            if (fechaStr instanceof Date) return fechaStr;
+                            const str = String(fechaStr).trim();
+
+                            const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (matchIso) {
+                                return new Date(
+                                    parseInt(matchIso[1], 10),
+                                    parseInt(matchIso[2], 10) - 1,
+                                    parseInt(matchIso[3], 10),
+                                );
+                            }
+
+                            const matchDmy = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+                            if (matchDmy) {
+                                return new Date(
+                                    parseInt(matchDmy[3], 10),
+                                    parseInt(matchDmy[2], 10) - 1,
+                                    parseInt(matchDmy[1], 10),
+                                );
+                            }
+
+                            const d = new Date(str);
+                            return isNaN(d.getTime()) ? null : d;
+                        };
+
+                        //FECHAS
+                        if (data.fecha_inicio) {
+                            const dInicio = parsearFechaParaFlatpickr(data.fecha_inicio);
+                            if (dInicio && dtpFechaSalida._flatpickr) {
+                                dtpFechaSalida._flatpickr.setDate(dInicio, true);
+                            } else if (dInicio) {
+                                const dia = String(dInicio.getDate()).padStart(2, "0");
+                                const mes = String(dInicio.getMonth() + 1).padStart(2, "0");
+                                dtpFechaSalida.value = `${dia}/${mes}/${dInicio.getFullYear()}`;
+                            } else {
+                                dtpFechaSalida.value = data.fecha_inicio;
+                            }
+                        } else {
+                            if (dtpFechaSalida._flatpickr) dtpFechaSalida._flatpickr.clear();
+                            dtpFechaSalida.value = "";
+                        }
+
+                        if (data.fecha_fin) {
+                            const dFin = parsearFechaParaFlatpickr(data.fecha_fin);
+                            if (dFin && dtpFechaEntrega._flatpickr) {
+                                dtpFechaEntrega._flatpickr.setDate(dFin, true);
+                            } else if (dFin) {
+                                const dia = String(dFin.getDate()).padStart(2, "0");
+                                const mes = String(dFin.getMonth() + 1).padStart(2, "0");
+                                dtpFechaEntrega.value = `${dia}/${mes}/${dFin.getFullYear()}`;
+                            } else {
+                                dtpFechaEntrega.value = data.fecha_fin;
+                            }
+                        } else {
+                            if (dtpFechaEntrega._flatpickr) dtpFechaEntrega._flatpickr.clear();
+                            dtpFechaEntrega.value = "";
+                        }
+
+                        const puedePlanear =
+                            statusViaje === "Aprobada" ||
+                            statusViaje === "Planeada" ||
+                            statusViaje === "Planeado" ||
+                            planeacionEstatus == 1;
+
+                        if (puedePlanear) {
+                            btnPlanear.classList.remove("d-none");
+                        } else {
+                            btnPlanear.classList.add("d-none");
+                        }
+                        if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
 
                         const equipoIdUnidad =
                             data.camion?.id || data.id_camion;
@@ -611,18 +694,35 @@ document.addEventListener("DOMContentLoaded", function () {
                         ]);
 
                         actualizarDistanciaEquipos();
+                    } else {
+                        // Viaje sin asignación previa: el formulario permanece limpio
+                        const puedePlanear =
+                            statusViaje === "Aprobada" ||
+                            statusViaje === "Planeada" ||
+                            statusViaje === "Planeado";
+
+                        if (puedePlanear) {
+                            btnPlanear.classList.remove("d-none");
+                        } else {
+                            btnPlanear.classList.add("d-none");
+                        }
+                        if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
                     }
                 },
                 error: (err) => {},
             });
 
-            if (statusViaje == "Aprobada" && planeacionEstatus != 1) {
+            if (
+                statusViaje === "Aprobada" ||
+                statusViaje === "Planeada" ||
+                statusViaje === "Planeado"
+            ) {
                 btnPlanear.classList.remove("d-none");
-                seccionPlanearViaje.classList.remove("d-none");
             }
+            if (seccionPlanearViaje) seccionPlanearViaje.classList.remove("d-none");
 
             if (!modal1) {
-                modal1 = new bootstrap.Modal(modalEl);
+                modal1 = bootstrap.Modal.getOrCreateInstance(modalEl);
             }
 
             modal1.show();

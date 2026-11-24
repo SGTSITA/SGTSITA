@@ -164,10 +164,18 @@
                             @endcan
 
                             @can('cotizacion-segumiento')
-                                <a class="nav-link {{ Request::is('cotizaciones*') ? 'show' : '' }}"
+                                <a class="nav-link {{ Request::is('cotizaciones/index*') ? 'show' : '' }}"
                                     href="{{ route('index.cotizaciones') }}">
                                     <span class="sidenav-mini-icon"> P </span>
                                     <span class="sidenav-normal">Seguimiento</span>
+                                </a>
+                            @endcan
+
+                            @can('costos-multiples-coti')
+                                <a class="nav-link {{ Request::is('cotizaciones/costos-multiple*') ? 'active' : '' }}"
+                                    href="{{ route('cotizaciones.costos_multiple') }}">
+                                    <span class="sidenav-mini-icon"> CM </span>
+                                    <span class="sidenav-normal">Costos Multiple</span>
                                 </a>
                             @endcan
 
