@@ -20,6 +20,10 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Conversión Full / Local-Foráneo con normalización de IDs; validación defensiva de CURP y carpetas en operadores; desacople de WhatsApp y blindaje null-safe en `ExternosController`.
 - **Persistencia de Estados de Cuenta en CXC (`/reporteria/cotizaciones/cxc`):**
   - Renombre in-situ al editar folio completo (`update(['numero' => $nuevo])`); creación de grupo al seleccionar subconjunto; limpieza automática de registros con 0 cotizaciones (`doesntHave('cotizaciones')->delete()`).
+- **Spec 012 (Separación por Unidades en Reportería):**
+  - Switch `separar_unidades` operativo en CXC, Viajes, GXP, Utilidad y Documentos (`/reporteria/documentos`).
+  - Corregido `pdf.blade.php` de documentos para evaluar `$esEmpresaGlobal = !empty($separarUnidades)` en lugar de hardcodear `esGlobalMultiEquipo()`, respetando cuando el switch está desmarcado.
+  - Comando `php artisan empresa:reset-pruebas` para reestablecer contenedores a Aprobada, limpiar gastos y contabilidad operativa conservando saldos iniciales de bancos.
 - **Modal Detalle Planeación (`/planeaciones/monitor/board/info-viaje`):**
   - Mapeo de proveedor, transportista, operador, teléfono, marca e IMEI en consulta SQL por `docum_cotizacion.id` con fallbacks automáticos mediante relaciones Eloquent (`Asignaciones` -> `Operador`, `Camion`, `Chasis`, `Proveedor`).
   - Variables de frontend blindadas en `boardCarpos.js` y `boardClient.js` con soporte para `Transporte Propio` y `response.nombre`.
