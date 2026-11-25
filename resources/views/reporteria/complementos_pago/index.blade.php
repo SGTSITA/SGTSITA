@@ -17,20 +17,31 @@
                     <div class="card-body">
                         <!-- Filtros / Buscadores -->
                         <div class="row mb-5 g-3 align-items-end">
-                            <div class="col-md-5">
+                            <div class="{{ ($esEmpresaGlobal ?? false) ? 'col-md-4' : 'col-md-5' }}">
                                 <label class="form-label fw-bold text-gray-700">Estado de Cuenta</label>
                                 <div class="position-relative">
                                     <input type="text" id="searchEstadoCuenta" class="form-control" 
                                         placeholder="Buscar por número de estado de cuenta..." />
                                 </div>
                             </div>
-                            <div class="col-md-5">
+                            <div class="{{ ($esEmpresaGlobal ?? false) ? 'col-md-3' : 'col-md-5' }}">
                                 <label class="form-label fw-bold text-gray-700">Número de Contenedor</label>
                                 <div class="position-relative">
                                     <input type="text" id="searchContenedor" class="form-control" 
                                         placeholder="Buscar por número de contenedor..." />
                                 </div>
                             </div>
+                            @if ($esEmpresaGlobal ?? false)
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold text-gray-700">Unidad / Tractocamión</label>
+                                    <select id="searchEquipo" class="form-select">
+                                        <option value="">-- Todas las Unidades --</option>
+                                        @foreach ($equipos as $eq)
+                                            <option value="{{ $eq->id }}">{{ $eq->texto_select }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
                             <div class="col-md-2">
                                 <button type="button" id="btnBuscar" class="btn btn-primary w-100 fw-bold">
                                     <i class="fa fa-search me-1"></i> Buscar
@@ -143,10 +154,17 @@
         let allData = [];
         let currentPage = 1;
         const itemsPerPage = 8; // Número de estados de cuenta por página
+        const esEmpresaGlobal = @json($esEmpresaGlobal ?? false);
 
         $(document).ready(() => {
             // Buscar al hacer clic en el botón
             $('#btnBuscar').on('click', () => {
+                currentPage = 1;
+                fetchComplementos();
+            });
+
+            // Filtro por unidad (si aplica a empresa global)
+            $('#searchEquipo').on('change', () => {
                 currentPage = 1;
                 fetchComplementos();
             });
@@ -181,6 +199,7 @@
         function fetchComplementos() {
             const num_estado_cuenta = $('#searchEstadoCuenta').val().trim();
             const num_contenedor = $('#searchContenedor').val().trim();
+            const id_equipo = $('#searchEquipo').length ? ($('#searchEquipo').val() || '') : '';
 
             $('#loadingIndex').removeClass('d-none');
             $('#complementoAccordion').html('');
@@ -192,7 +211,8 @@
                 type: 'GET',
                 data: {
                     num_estado_cuenta: num_estado_cuenta,
-                    num_contenedor: num_contenedor
+                    num_contenedor: num_contenedor,
+                    id_equipo: id_equipo
                 },
                 success: function(response) {
                     $('#loadingIndex').addClass('d-none');
@@ -251,6 +271,7 @@
                                         <thead>
                                             <tr class="fw-bold text-white bg-dark">
                                                 <th>Contenedor</th>
+                                                ${esEmpresaGlobal ? '<th>Unidad</th>' : ''}
                                                 <th>Subcliente</th>
                                                 <th>Archivos Disponibles</th>
                                             </tr>
@@ -275,10 +296,12 @@
                     }
 
                     const subclienteText = container.subcliente ? container.subcliente : 'Sin subcliente';
+                    const unidadTd = esEmpresaGlobal ? `<td><span class="badge bg-light text-dark border px-2 py-1"><i class="fa fa-truck text-info me-1"></i>${container.unidad || 'Sin Unidad'}</span></td>` : '';
 
                     html += `
                         <tr>
                             <td class="fw-bold text-dark">${container.num_contenedor}</td>
+                            ${unidadTd}
                             <td><span class="text-secondary fw-semibold">${subclienteText}</span></td>
                             <td>${filesHtml}</td>
                         </tr>`;

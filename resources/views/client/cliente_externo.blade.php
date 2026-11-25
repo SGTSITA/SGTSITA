@@ -18,6 +18,7 @@
         action="{{ route('upadate.subcliente') }}" @endif
                 id="sublienteCreate" enctype="multipart/form-data" role="form">
                 @csrf
+                <input type="hidden" id="redirect_to" value="/clientes/list">
                 <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
                 @if (isset($subCliente))
                     <input type="hidden" value="{{ $subCliente->id }}" name="id_subcliente" id="id_subcliente">

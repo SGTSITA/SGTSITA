@@ -804,7 +804,7 @@ function aplicarPago() {
         .querySelector('meta[name="csrf-token"]')
         .getAttribute("content");
 
-    let _IdOperador = IdOperador.value;
+    let _IdOperador = parseInt(IdOperador.value, 10);
 
     btnConfirmaPagov2.disabled = true;
 

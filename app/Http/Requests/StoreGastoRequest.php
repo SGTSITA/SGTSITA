@@ -59,6 +59,7 @@ class StoreGastoRequest extends FormRequest
 
             'id_equipo' => ['nullable', 'integer', 'exists:equipos,id'],
             'equipo_id' => ['nullable', 'integer', 'exists:equipos,id'],
+            'id_equipo_confirmacion' => ['nullable', 'integer', 'exists:equipos,id'],
             'unidades' => ['nullable', 'array'],
             'unidades.*' => ['integer', 'exists:equipos,id'],
             'partidas' => ['nullable', 'array'],
@@ -102,6 +103,14 @@ class StoreGastoRequest extends FormRequest
                         ->exists();
                     if (!$equipoValido) {
                         $validator->errors()->add('id_equipo', 'La unidad seleccionada no pertenece a la empresa actual o no es del tipo Tractos / Camiones.');
+                    }
+
+                    if ($this->filled('id_equipo_confirmacion')) {
+                        if ($this->id_equipo_confirmacion != $idEquipo) {
+                            $validator->errors()->add('id_equipo_confirmacion', 'La unidad de confirmación no coincide con la unidad seleccionada.');
+                        }
+                    } elseif (empty($unidades) && !$this->filled('viajes') && !$this->filled('asignacion_id')) {
+                        $validator->errors()->add('id_equipo_confirmacion', 'Debe confirmar la unidad / equipo seleccionada.');
                     }
                 }
 

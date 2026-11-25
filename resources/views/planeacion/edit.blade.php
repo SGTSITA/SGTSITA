@@ -299,6 +299,21 @@
 
                             <div class="row elemental-hidden-edit">
                                 <div class="col-12">
+                                    <div id="contenedorAlertaPrecarga" class="mb-3" style="display: none;">
+                                        <div class="alert alert-info d-flex align-items-center justify-content-between p-3 border-0 shadow-sm" style="background: linear-gradient(90deg, #1171ef, #11cdef); color: white;">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-gas-pump fs-2 me-3 text-white"></i>
+                                                <div>
+                                                    <h6 class="mb-0 text-white font-weight-bold">Combustible Precargado en Tanque</h6>
+                                                    <p class="mb-0 text-white text-xs" id="textoAlertaPrecarga">Esta unidad tiene diésel precargado disponible de un viaje previo cancelado.</p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-white text-primary font-weight-bold shadow-sm" id="btnAplicarPrecarga">
+                                                <i class="fas fa-check-circle me-1 text-success"></i> Aplicar al viaje
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <button type="button" class="btn btn-success btn-sm mt-2" id="btnAddGastoEdit">
                                         <i class="ni ni-fat-add"></i> Agregar gastos al viaje
                                     </button>
@@ -319,10 +334,11 @@
                                                 } else {
                                                     $motivo = 'OTR01';
                                                 }
-                                                $esPagoInmediato = $gasto->estatus === 'pagado';
+                                                $pagoConBanco = $pago && !empty($pago->cuenta_bancaria_id);
+                                                $esPagoInmediato = ($gasto->estatus === 'pagado') && $pagoConBanco;
                                                 $bancoId = $pago ? $pago->cuenta_bancaria_id : '';
                                                 $fechaPago =
-                                                    $pago && $pago->fecha_pago
+                                                    $pago && $pago->fecha_pago && $pagoConBanco
                                                         ? date('d/m/Y', strtotime($pago->fecha_pago))
                                                         : '';
                                             @endphp
@@ -349,6 +365,23 @@
                                                             {{ $motivo === 'OTR01' ? 'selected' : '' }}>Otros
                                                         </option>
                                                     </select>
+                                                    @if (!empty($gasto->origen_contenedor_num))
+                                                        @php
+                                                            $cadenaHistorial = collect($gasto->historial_reasignaciones ?? [])
+                                                                ->pluck('contenedor')
+                                                                ->filter()
+                                                                ->unique()
+                                                                ->implode(' ➔ ');
+                                                        @endphp
+                                                        <div class="mt-1">
+                                                            <span class="badge badge-sm bg-gradient-info text-white" title="Historial completo: {{ $cadenaHistorial ?: $gasto->origen_contenedor_num }}">
+                                                                <i class="fas fa-gas-pump me-1"></i> Precarga de: <b>{{ $gasto->origen_contenedor_num }}</b>
+                                                                @if ($cadenaHistorial && $cadenaHistorial !== $gasto->origen_contenedor_num)
+                                                                    <small class="ms-1 opacity-75">({{ $cadenaHistorial }})</small>
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                    @endif
                                                 </div>
 
                                                 <div class="col-md-2 concepto-otro-col" style="{{ $motivo === 'OTR01' ? '' : 'display:none;' }}">
@@ -389,6 +422,23 @@
                                                                 {{ $item['display'] }}</option>
                                                         @endforeach
                                                     </select>
+                                                    @if (!empty($gasto->origen_contenedor_num))
+                                                        @php
+                                                            $cadenaHistorial = collect($gasto->historial_reasignaciones ?? [])
+                                                                ->pluck('contenedor')
+                                                                ->filter()
+                                                                ->unique()
+                                                                ->implode(' ➔ ');
+                                                        @endphp
+                                                        <div class="mt-1">
+                                                            <span class="badge badge-sm bg-gradient-info text-white" title="Historial completo: {{ $cadenaHistorial ?: $gasto->origen_contenedor_num }}">
+                                                                <i class="fas fa-gas-pump me-1"></i> Precarga de: <b>{{ $gasto->origen_contenedor_num }}</b>
+                                                                @if ($cadenaHistorial && $cadenaHistorial !== $gasto->origen_contenedor_num)
+                                                                    <small class="ms-1 opacity-75">({{ $cadenaHistorial }})</small>
+                                                                @endif
+                                                            </span>
+                                                        </div>
+                                                    @endif
                                                 </div>
 
                                                 <div class="col-md-2 fecha-col"
@@ -412,6 +462,64 @@
                                             </div>
                                         @endforeach
                                     </div>
+
+                                    @if (isset($comprobacionesOperador) && $comprobacionesOperador->isNotEmpty())
+                                        <div class="mt-4 pt-3 border-top" id="contenedorComprobacionesOperador">
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <h6 class="text-sm font-weight-bold text-secondary mb-0">
+                                                    <i class="fas fa-receipt text-info me-1"></i> Comprobaciones de Viáticos registradas por el Operador
+                                                </h6>
+                                            </div>
+                                            <p class="text-xs text-muted mb-2">
+                                                Estos gastos fueron subidos por el chofer desde la App móvil o justificados de su dinero de viaje. Si alguno no procede (mentira, viaje anterior o rechazo), puede eliminarlo aquí para desvincularlo del viaje y descartarlo de su liquidación.
+                                            </p>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-items-center mb-0" id="tablaComprobacionesOperador">
+                                                    <thead>
+                                                        <tr class="text-xs text-secondary">
+                                                            <th>Concepto</th>
+                                                            <th>Monto</th>
+                                                            <th>Fecha</th>
+                                                            <th>Estatus</th>
+                                                            <th>Tipo</th>
+                                                            <th class="text-center">Acción</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($comprobacionesOperador as $comp)
+                                                            @php
+                                                                $esPagado = $comp->estatus === 'pagado' || ($comp->pagos && $comp->pagos->where('estatus', '!=', 'cancelado')->isNotEmpty());
+                                                            @endphp
+                                                            <tr class="text-xs" id="fila-comp-{{ $comp->id }}">
+                                                                <td class="font-weight-bold">{{ $comp->concepto }}</td>
+                                                                <td class="text-success font-weight-bold">${{ number_format($comp->monto_total, 2) }}</td>
+                                                                <td>{{ $comp->fecha_gasto ? \Carbon\Carbon::parse($comp->fecha_gasto)->format('d/m/Y') : '--' }}</td>
+                                                                <td>
+                                                                    @if ($comp->estatus === 'cancelado')
+                                                                        <span class="badge badge-sm bg-gradient-danger">Cancelado</span>
+                                                                    @else
+                                                                        <span class="badge badge-sm bg-gradient-info text-white">
+                                                                            <i class="fas fa-mobile-alt me-1"></i> Subido por Chofer (Pendiente de Liquidar)
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+                                                                <td><span class="badge badge-sm bg-light text-dark">Viáticos de Operador</span></td>
+                                                                <td class="text-center">
+                                                                    <button type="button" class="btn btn-danger btn-xs py-1 px-2 mb-0 btn-eliminar-comprobacion" 
+                                                                            data-id="{{ $comp->id }}" 
+                                                                            data-concepto="{{ $comp->concepto }}" 
+                                                                            data-monto="{{ number_format($comp->monto_total, 2) }}" 
+                                                                            title="Rechazar / Eliminar gasto del operador">
+                                                                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -878,6 +986,179 @@
                 });
             }
             actualizarDisponibles();
+
+            // Detección de Precarga de Combustible al seleccionar o cambiar Unidad
+            const camionSelect = document.getElementById("cmbCamion");
+            const alertaPrecarga = document.getElementById("contenedorAlertaPrecarga");
+            const textoPrecarga = document.getElementById("textoAlertaPrecarga");
+            const btnAplicarPrecarga = document.getElementById("btnAplicarPrecarga");
+            let gastoPrecargaDisponible = null;
+
+            function verificarPrecargaUnidad(idEquipo) {
+                if (!idEquipo) {
+                    if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                    gastoPrecargaDisponible = null;
+                    return;
+                }
+
+                fetch(`/planeaciones/equipos/${idEquipo}/combustible-precargado`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const items = data.items || (data.gasto ? [data.gasto] : []);
+                        if (data.success && data.tiene_precarga && items.length > 0) {
+                            gastoPrecargaDisponible = items[0];
+                            if (textoPrecarga) {
+                                const orig = gastoPrecargaDisponible.origen_contenedor_num ? ` (Contenedor origen: <b>${gastoPrecargaDisponible.origen_contenedor_num}</b>)` : '';
+                                textoPrecarga.innerHTML = `La unidad cuenta con <b>${gastoPrecargaDisponible.monto_formateado}</b> de Diésel precargado en tanque disponible${orig}.`;
+                            }
+                            if (alertaPrecarga) alertaPrecarga.style.display = "block";
+                        } else {
+                            gastoPrecargaDisponible = null;
+                            if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                        }
+                    })
+                    .catch(() => {
+                        gastoPrecargaDisponible = null;
+                        if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                    });
+            }
+
+            if (camionSelect) {
+                camionSelect.addEventListener("change", function() {
+                    verificarPrecargaUnidad(this.value);
+                });
+                if (window.jQuery) {
+                    $(camionSelect).on("change select2:select", function() {
+                        verificarPrecargaUnidad($(this).val());
+                    });
+                }
+                if (camionSelect.value) {
+                    verificarPrecargaUnidad(camionSelect.value);
+                }
+            }
+
+            if (btnAplicarPrecarga) {
+                btnAplicarPrecarga.addEventListener("click", function() {
+                    if (!gastoPrecargaDisponible) return;
+
+                    let filaDiesel = null;
+                    container.querySelectorAll('.gasto-item').forEach(row => {
+                        const sel = row.querySelector('.gasto-select');
+                        if (sel && sel.value === 'GDI02') {
+                            filaDiesel = row;
+                        }
+                    });
+
+                    if (!filaDiesel) {
+                        if (botonGastos) {
+                            botonGastos.click();
+                            filaDiesel = container.querySelector('.gasto-item:last-child');
+                        }
+                    }
+
+                    if (filaDiesel) {
+                        filaDiesel.dataset.gastoId = gastoPrecargaDisponible.id;
+                        const idInput = filaDiesel.querySelector('.gasto-id-input');
+                        if (idInput) idInput.value = gastoPrecargaDisponible.id;
+
+                        const selMotivo = filaDiesel.querySelector('.gasto-select');
+                        if (selMotivo) {
+                            selMotivo.value = 'GDI02';
+                            selMotivo.dispatchEvent(new Event('change'));
+                        }
+
+                        const inputMonto = filaDiesel.querySelector('input[name="gasto_monto[]"]');
+                        if (inputMonto) inputMonto.value = gastoPrecargaDisponible.monto;
+
+                        const chkPago = filaDiesel.querySelector('.pagoInmediatoCheck');
+                        if (chkPago) {
+                            chkPago.checked = false;
+                            chkPago.dispatchEvent(new Event('change'));
+                        }
+
+                        let badgePrecarga = filaDiesel.querySelector('.badge-precarga-live');
+                        if (!badgePrecarga) {
+                            badgePrecarga = document.createElement('div');
+                            badgePrecarga.className = 'mt-1 badge-precarga-live';
+                            selMotivo.parentElement.appendChild(badgePrecarga);
+                        }
+                        badgePrecarga.innerHTML = `<span class="badge badge-sm bg-gradient-info text-white"><i class="fas fa-gas-pump me-1"></i> Precarga aplicada: <b>${gastoPrecargaDisponible.origen_contenedor_num || 'Viaje previo'}</b></span>`;
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Precarga aplicada',
+                            text: `Se aplicó el diésel precargado (${gastoPrecargaDisponible.monto_formateado}) a la planeación del viaje. No requerirá salida de banco.`,
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+
+                        if (alertaPrecarga) alertaPrecarga.style.display = "none";
+                    }
+                });
+            }
+
+            // Eliminar / Rechazar comprobación de viáticos del operador
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-eliminar-comprobacion');
+                if (!btn) return;
+
+                const gastoId = btn.dataset.id;
+                const concepto = btn.dataset.concepto;
+                const monto = btn.dataset.monto;
+                const row = btn.closest('tr');
+
+                Swal.fire({
+                    title: '¿Rechazar / Eliminar gasto?',
+                    html: `¿Está seguro de eliminar el gasto <b>"${concepto}"</b> por <b>$${monto}</b>?<br><br><small class="text-danger">Este gasto se descartará de las comprobaciones del operador y no se tomará en cuenta para su liquidación ni para el viaje.</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        mostrarLoading("Eliminando gasto del operador...");
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
+
+                        $.ajax({
+                            url: '/cotizaciones/gastos-operador/eliminar',
+                            type: 'POST',
+                            data: {
+                                _token: token,
+                                seleccionEliminarPago: [{ IdGasto: gastoId }]
+                            },
+                            success: function(resp) {
+                                ocultarLoading();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Gasto eliminado',
+                                    text: resp.Mensaje || 'El gasto del operador fue eliminado correctamente.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                if (row) {
+                                    row.style.transition = 'all 0.3s ease';
+                                    row.style.backgroundColor = '#f8d7da';
+                                    setTimeout(() => {
+                                        row.remove();
+                                        const tbody = document.querySelector('#tablaComprobacionesOperador tbody');
+                                        if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                            const cont = document.querySelector('#contenedorComprobacionesOperador');
+                                            if (cont) cont.remove();
+                                        }
+                                    }, 300);
+                                }
+                            },
+                            error: function(xhr) {
+                                ocultarLoading();
+                                const msg = xhr.responseJSON?.Mensaje || 'No se pudo eliminar el gasto del operador.';
+                                Swal.fire('Error', msg, 'error');
+                            }
+                        });
+                    }
+                });
+            });
         });
     </script>
 @endsection

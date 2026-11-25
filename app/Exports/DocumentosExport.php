@@ -15,12 +15,14 @@ class DocumentosExport implements FromView,ShouldAutoSize
     public $vFechaCarbon;
     public $vCotizacion;
     public $vUser;
+    public $vSepararUnidades;
 
-    public function __construct($cotizaciones, $fechaCarbon, $cotizacion , $user){
+    public function __construct($cotizaciones, $fechaCarbon, $cotizacion, $user, $separarUnidades = false){
         $this->vCotizaciones = $cotizaciones;
         $this->vFechaCarbon = $fechaCarbon;
         $this->vCotizacion = $cotizacion;
         $this->vUser = $user;
+        $this->vSepararUnidades = (bool)$separarUnidades;
     }
 
     public function view() : View
@@ -29,8 +31,10 @@ class DocumentosExport implements FromView,ShouldAutoSize
         $fechaCarbon = $this->vFechaCarbon;
         $cotizacion = $this->vCotizacion;
         $user = $this->vUser;
+        $separarUnidades = $this->vSepararUnidades;
         $isExcel = true;
         
-        return view('reporteria.documentos.xlsx',compact('cotizaciones', 'fechaCarbon','cotizacion', 'user',  'isExcel'));
+        return view('reporteria.documentos.xlsx', compact('cotizaciones', 'fechaCarbon', 'cotizacion', 'user', 'isExcel', 'separarUnidades'));
     }
 }
+

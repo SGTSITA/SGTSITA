@@ -416,6 +416,62 @@
             border-radius: 6px;
             font-weight: 600;
         }
+
+        /* Estilos de alta visibilidad para checkboxes del dropdown de contenedores */
+        .item-check-contenedor {
+            transition: all 0.15s ease-in-out;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 5px 8px !important;
+            margin-bottom: 2px;
+            border: 1px solid transparent !important;
+        }
+
+        .item-check-contenedor:hover {
+            background-color: #f4f6f9 !important;
+        }
+
+        .item-check-contenedor.item-selected {
+            background-color: #ebf5ff !important;
+            border: 1px solid #b9dcff !important;
+        }
+
+        .item-check-contenedor input.check-contenedor-item {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            width: 19px !important;
+            height: 19px !important;
+            min-width: 19px !important;
+            border: 2px solid #8e95a5 !important;
+            border-radius: 4px !important;
+            background-color: #ffffff !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            position: relative !important;
+            flex-shrink: 0 !important;
+        }
+
+        .item-check-contenedor input.check-contenedor-item:hover {
+            border-color: #0d6efd !important;
+        }
+
+        .item-check-contenedor input.check-contenedor-item:checked {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+
+        .item-check-contenedor input.check-contenedor-item:checked::after {
+            content: "" !important;
+            display: block !important;
+            width: 5px !important;
+            height: 10px !important;
+            border: solid #ffffff !important;
+            border-width: 0 2.5px 2.5px 0 !important;
+            transform: rotate(45deg) translate(-1px, -1px) !important;
+        }
     </style>
 
     <div class="container-fluid py-2">
@@ -431,8 +487,7 @@
                                     Captura Múltiple de Costos — Seguimiento
                                 </h5>
                                 <p class="text-xs text-muted mb-0">
-                                    Edición masiva de costos de cotización (cliente en viajes->costos) y costos de proveedor
-                                    (en asignaciones)
+                                    Edición masiva de costos de cotización (cliente) y costos de proveedor por viaje
                                 </p>
                             </div>
                             <div class="d-flex align-items-center gap-2">
@@ -453,10 +508,11 @@
                         </div>
                     </div>
 
-                    {{-- Barra de Filtros Superiores --}}
+                    {{-- Barra de Filtros Superiores en Una Sola Fila --}}
                     <div class="card-body p-3">
-                        <div class="row g-3 align-items-end">
-                            <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-4' }} col-sm-12">
+                        <div class="row g-2 align-items-end">
+                            {{-- 1. Cliente --}}
+                            <div class="{{ $esGlobal ? 'col-xl-2 col-lg-2' : 'col-xl-3 col-lg-3' }} col-md-4 col-sm-6">
                                 <label for="selectCliente" class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                     Cliente
                                 </label>
@@ -469,7 +525,8 @@
                                 </select>
                             </div>
 
-                            <div class="{{ $esGlobal ? 'col-md-2' : 'col-md-3' }} col-sm-12">
+                            {{-- 2. Filtro de Costos --}}
+                            <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6">
                                 <label for="selectEstadoCosto"
                                     class="form-label text-xs font-weight-bold text-uppercase mb-1">
                                     Filtro de Costos
@@ -481,10 +538,53 @@
                                 </select>
                             </div>
 
-                            <div class="{{ $esGlobal ? 'col-md-3' : 'col-md-3' }} col-sm-12">
+                            {{-- 3. Contenedores Multi-Check (Sincronizado) --}}
+                            <div class="{{ $esGlobal ? 'col-xl-2 col-lg-3' : 'col-xl-3 col-lg-3' }} col-md-4 col-sm-6">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label text-xs font-weight-bold text-uppercase mb-0 text-dark">
+                                        Contenedores
+                                    </label>
+                                    <span class="badge badge-sm bg-light text-dark border py-0 px-1 text-xxs" id="badgeContenedoresSeleccionados">
+                                        Todos
+                                    </span>
+                                </div>
+                                <div class="dropdown w-100" id="dropdownContenedoresWrapper">
+                                    <button class="btn btn-sm btn-outline-secondary w-100 text-start d-flex justify-content-between align-items-center mb-0 px-2 bg-white" 
+                                            style="height: 31px;"
+                                            type="button" id="btnDropdownContenedores" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                        <span class="text-truncate me-1 text-xs" id="textoDropdownContenedores">
+                                            <i class="fas fa-boxes text-primary me-1"></i> Seleccionar...
+                                        </span>
+                                        <i class="fas fa-chevron-down text-xxs text-muted"></i>
+                                    </button>
+                                    <div class="dropdown-menu p-3 shadow-lg border-0" style="min-width: 320px; max-width: 440px; z-index: 1060;" aria-labelledby="btnDropdownContenedores">
+                                        {{-- Buscador rápido en tiempo real --}}
+                                        <div class="input-group input-group-sm mb-2">
+                                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                            <input type="text" class="form-control form-control-sm border-start-0" id="inputBuscarContenedorCheck" placeholder="Buscar contenedor o cliente...">
+                                        </div>
+                                        {{-- Acciones rápidas --}}
+                                        <div class="d-flex justify-content-between align-items-center pb-2 mb-2 border-bottom">
+                                            <button type="button" class="btn btn-link btn-xs text-primary p-0 m-0 text-decoration-none font-weight-bold" id="btnCheckTodosContenedores">
+                                                <i class="fas fa-check-double me-1"></i> Seleccionar todos
+                                            </button>
+                                            <button type="button" class="btn btn-link btn-xs text-danger p-0 m-0 text-decoration-none font-weight-bold" id="btnCheckLimpiarContenedores">
+                                                <i class="fas fa-times me-1"></i> Limpiar selección
+                                            </button>
+                                        </div>
+                                        {{-- Lista con scroll de checkboxes --}}
+                                        <div id="listaContenedoresCheck" class="overflow-auto pe-1" style="max-height: 240px;">
+                                            <p class="text-xs text-muted text-center py-2 mb-0">Sin datos de contenedores</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- 4. Periodo (Fecha Entrega) --}}
+                            <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6">
                                 <label for="filtro_periodo"
                                     class="form-label text-xs font-weight-bold text-uppercase mb-1">
-                                    Periodo (Fecha Entrega)
+                                    Periodo (Entrega)
                                 </label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text bg-white"><i class="fas fa-calendar-alt text-primary"></i></span>
@@ -496,10 +596,11 @@
                             </div>
 
                             @if ($esGlobal)
-                                <div class="col-md-2 col-sm-12">
+                                {{-- 5. Equipo / Unidad (Tracto) --}}
+                                <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6">
                                     <label for="selectEquipo"
                                         class="form-label text-xs font-weight-bold text-uppercase mb-1">
-                                        Equipo / Unidad (Tracto)
+                                        Equipo / Unidad
                                     </label>
                                     <select class="form-select form-select-sm" id="selectEquipo" name="equipo_id"
                                         data-toggle="select">
@@ -514,11 +615,12 @@
                                 </div>
                             @endif
 
-                            <div class="{{ $esGlobal ? 'col-md-2' : 'col-md-2' }} col-sm-12 d-flex gap-2">
-                                <button type="button" class="btn btn-sm bg-gradient-primary w-100 mb-0" id="btnConsultar">
+                            {{-- 6. Botones de Acción --}}
+                            <div class="{{ $esGlobal ? 'col-xl-2 col-lg-1' : 'col-xl-2 col-lg-2' }} col-md-4 col-sm-6 d-flex gap-2">
+                                <button type="button" class="btn btn-sm bg-gradient-primary w-100 mb-0 d-flex align-items-center justify-content-center" id="btnConsultar" style="height: 31px;">
                                     <i class="fas fa-search me-1"></i> Consultar
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary mb-0" id="btnLimpiar"
+                                <button type="button" class="btn btn-sm btn-outline-secondary mb-0 d-flex align-items-center justify-content-center px-3" id="btnLimpiar" style="height: 31px;"
                                     title="Restablecer filtros">
                                     <i class="fas fa-undo"></i>
                                 </button>
@@ -529,7 +631,7 @@
 
                 {{-- Contenedor de Pestañas y Tablas --}}
                 <div class="card">
-                    <div class="card-header pb-0 p-3 border-bottom">
+                    <div class="card-header pb-0 p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <ul class="nav nav-tabs" id="costosTab" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="tab-cotizacion-nav" data-bs-toggle="tab"
@@ -548,6 +650,15 @@
                                 </button>
                             </li>
                         </ul>
+
+                        {{-- Botón Guardar Todo (Solo visible cuando hay cambios en ambas pestañas) --}}
+                        <div class="d-flex align-items-center mb-2 mb-sm-0">
+                            <button type="button" class="btn btn-sm bg-gradient-success mb-0 d-none shadow-sm d-flex align-items-center gap-2" id="btnGuardarTodo" title="Guardar simultáneamente costos de Cotización y Proveedor">
+                                <i class="fas fa-save fs-6"></i>
+                                <span>Guardar Todo (Ambas Pestañas)</span>
+                                <span class="badge bg-white text-success font-weight-bold" id="badgeTotalCambiosAmbos">0</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="card-body p-3">
@@ -691,8 +802,7 @@
                                 <div class="text-xs text-muted mt-2 d-flex justify-content-between align-items-center">
                                     <span>
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Los costos de proveedor se persisten directamente en la tabla de asignaciones del
-                                        viaje.
+                                        Los costos de proveedor se actualizan directamente en cada viaje.
                                     </span>
                                     <span id="prov_status_cambios" class="text-secondary font-weight-bold">Sin cambios
                                         pendientes</span>

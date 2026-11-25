@@ -178,6 +178,7 @@
             @csrf
             <input type="hidden" id="modifico_informacion" name="modifico_informacion" value="0">
             <input type="hidden" value="{{ Auth::User()->id_cliente }}" name="id_cliente" id="id_cliente">
+            <input type="hidden" id="es_viaje_local" value="1">
 
             <div id="kt_billing_payment_tab_content" class="card-body tab-content">
 

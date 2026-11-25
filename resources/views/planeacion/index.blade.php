@@ -6,7 +6,7 @@
 
 @section('content')
     <style>
-        <style>
+
 
         /* Estilo general del modal */
         #viajeModal .modal-content {

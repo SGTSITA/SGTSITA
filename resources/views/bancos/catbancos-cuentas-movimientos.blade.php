@@ -77,7 +77,7 @@
 
     <div class="container-fluid">
 
-        ```
+
         {{-- HEADER --}}
         <div class="row mb-4">
             <div class="col-12">

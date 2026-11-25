@@ -86,9 +86,6 @@
                                     style="color: #25d366 !important; border-left-color: #25d366 !important;">
                                     <i class="fab fa-whatsapp"></i> Compartir con el Operador
                                 </h6>
-                                <p class="text-sm">
-                                    <b id="passwordTemporalSpan"></b>
-                                </p>
                                 <button type="button" class="btn btn-sm btn-success" id="btnReenviarWhatsApp"
                                     style="background-color: #25d366; border-color: #25d366;">
                                     <i class="fab fa-whatsapp"></i> Reenviar a WhatsApp
@@ -125,6 +122,12 @@
                         <p class="text-sm">
                             IMEI Chasis:
                             <b id="imei_chasis"></b>
+                        </p>
+                        <p class="text-sm d-none" id="info_diesel_reasignado_row">
+                            Diésel Precargado:
+                            <span class="badge badge-sm bg-gradient-info text-white" id="badge_diesel_reasignado">
+                                <i class="fas fa-gas-pump me-1"></i> <span id="info_diesel_reasignado_texto"></span>
+                            </span>
                         </p>
                     </div>
                 </div>

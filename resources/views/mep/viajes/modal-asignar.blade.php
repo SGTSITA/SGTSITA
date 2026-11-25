@@ -54,7 +54,7 @@
                                 <i class="fas fa-chevron-down text-xs transition-300"></i>
                             </h6>
                         </div>
-                        <input type="hidden" id="cmbProveedor" name="cmbProveedor" value="{{ $proveedorId }}" />
+                        <input type="hidden" id="cmbProveedor" name="cmbProveedor" value="{{ $proveedorId ?? '' }}" />
 
                         <div class="collapse show w-100" id="collapseOperador">
                             <div class="row">

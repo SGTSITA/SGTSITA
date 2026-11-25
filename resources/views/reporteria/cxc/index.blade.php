@@ -73,6 +73,10 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                @php
+                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                @endphp
+                                @if ($esEmpresaGlobal)
                                 <div class="col-md-2">
                                     <label for="id_equipo">Unidad / Equipo</label>
                                     <select name="id_equipo" id="id_equipo" class="form-control">
@@ -87,6 +91,7 @@
                                         @endif
                                     </select>
                                 </div>
+                                @endif
                                 <div class="col-md-2">
                                     <label for="numero_edo_cuenta">Num. Edo. Cuenta</label>
                                     <select name="numero_edo_cuenta" id="numero_edo_cuenta" class="form-control">
@@ -122,6 +127,15 @@
                                         Adjuntar documentos
                                     </label>
                                 </div>
+
+                                @if ($esEmpresaGlobal ?? false)
+                                    <div class="form-check form-switch m-0 d-flex align-items-center">
+                                        <input class="form-check-input" type="checkbox" id="checkSepararUnidadesCxc" name="separar_unidades" value="1" checked>
+                                        <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesCxc">
+                                            Separar por unidades
+                                        </label>
+                                    </div>
+                                @endif
 
                                 <div id="contenedorDocumentos" style="display:none; min-width: 300px;">
                                     <select name="documentos[]" id="documentos" class="form-control" multiple>
@@ -551,6 +565,7 @@
                         documentos: documentosSeleccionados,
                         modo: modo,
                         tipo_reporte: $('input[name="tipo_reporte"]:checked').val() || 'predeterminado',
+                        separar_unidades: $('#checkSepararUnidadesCxc').length ? ($('#checkSepararUnidadesCxc').is(':checked') ? 1 : 0) : 1,
                     },
                     xhrFields: {
                         responseType: 'blob', // Indicar que esperamos una respuesta tipo blob (archivo)

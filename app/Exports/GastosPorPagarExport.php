@@ -12,11 +12,13 @@ class GastosPorPagarExport implements FromView
 {
     protected $ids;
     protected $status;
+    protected $separarUnidades;
 
-    public function __construct(array $ids = [], $status = 'por_pagar')
+    public function __construct(array $ids = [], $status = 'por_pagar', $separarUnidades = false)
     {
         $this->ids = $ids;
         $this->status = $status;
+        $this->separarUnidades = (bool)$separarUnidades;
     }
 
     public function getGastosData()
@@ -53,10 +55,19 @@ class GastosPorPagarExport implements FromView
             'gasto.vinculos' => function ($q) {
                 $q->where('tipo_vinculo', 'asignacion');
             },
-            'gasto.vinculos.vinculable.Operador',
-            'gasto.vinculos.vinculable.Camion',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Cliente',
-            'gasto.vinculos.vinculable.Contenedor.Cotizacion.Subcliente'
+            'gasto.vinculos.vinculable' => function (\Illuminate\Database\Eloquent\Relations\MorphTo $morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Asignaciones::class => [
+                        'Operador',
+                        'Camion',
+                        'Contenedor.Cotizacion.Cliente',
+                        'Contenedor.Cotizacion.Subcliente',
+                    ],
+                ]);
+            },
+
+
+
         ]);
 
         if ($this->status === 'por_pagar') {
@@ -144,7 +155,10 @@ class GastosPorPagarExport implements FromView
 
     public function view(): View
     {
-        return view('reporteria.gxp.excel', $this->getGastosData());
+        $data = $this->getGastosData();
+        $data['separarUnidades'] = $this->separarUnidades;
+        return view('reporteria.gxp.excel', $data);
     }
 }
+
 

@@ -42,7 +42,7 @@ class CustomButtonComponent {
         button.style.padding = "2px 6px";
         button.style.lineHeight = "1";
 
-        const NumContenedorValue = params.data.NumContenedor;
+        const NumContenedorValue = params.data.NUM_CONTENEDOR_REFER || params.data.NumContenedor;
 
         this.eventListener = () => goToUploadDocuments(NumContenedorValue);
         button.addEventListener("click", this.eventListener);
@@ -320,7 +320,7 @@ const gridOptions = {
                 return `
             <span
                 style="cursor:pointer; text-decoration:underline;"
-                onclick="verHistorialEstatus(${p.data.id}, '${p.data.NumContenedor}')"
+                onclick="verHistorialEstatus(${p.data.id}, '${p.data.NUM_CONTENEDOR_REFER || p.data.NumContenedor}')"
                 title="Ver historial de estatus"
             >
                 ${p.value}
@@ -700,7 +700,7 @@ function goToUploadDocuments(numContenedorFromBtn = null) {
             );
             return false;
         }
-        contenedor.forEach((c) => (numContenedor = c.NumContenedor));
+        contenedor.forEach((c) => (numContenedor = c.NUM_CONTENEDOR_REFER || c.NumContenedor));
     }
 
     if (!numContenedor) return;
@@ -790,7 +790,7 @@ function cancelarViajeConfirm() {
     if (contenedor.length <= 0) return;
 
     let numContenedor = null;
-    contenedor.forEach((c) => (numContenedor = c.NumContenedor));
+    contenedor.forEach((c) => (numContenedor = c.NUM_CONTENEDOR_REFER || c.NumContenedor));
 
     let _token = document
         .querySelector('meta[name="csrf-token"]')

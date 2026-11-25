@@ -105,6 +105,12 @@
                             IMEI Chasis:
                             <b id="imei_chasis"></b>
                         </p>
+                        <p class="text-sm d-none" id="info_diesel_reasignado_row">
+                            Diésel Precargado:
+                            <span class="badge badge-sm bg-gradient-info text-white" id="badge_diesel_reasignado">
+                                <i class="fas fa-gas-pump me-1"></i> <span id="info_diesel_reasignado_texto"></span>
+                            </span>
+                        </p>
                     </div>
                 </div>
                 <div class="">

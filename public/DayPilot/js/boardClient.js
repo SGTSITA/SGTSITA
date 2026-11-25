@@ -285,6 +285,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
     numContenedor.textContent = numContenedor_;
 
     let nombreProveedor = document.querySelector("#nombreProveedor");
+    let nombreTransportista = document.querySelector("#nombreTransportista");
     let contactoEntrega = document.querySelector("#ContactoEntrega");
     let nombreOperador = document.querySelector("#nombreOperador");
     let telefonoOperador = document.querySelector("#telefonoOperador");
@@ -318,10 +319,11 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                 .querySelectorAll(".documentos")
                 .forEach((d) => (d.innerHTML = "--"));
 
-            nombreProveedor.textContent = "--";
-            contactoEntrega.textContent = "--";
-            nombreOperador.textContent = "--";
-            telefonoOperador.textContent = "--";
+            if (nombreProveedor) nombreProveedor.textContent = "--";
+            if (nombreTransportista) nombreTransportista.textContent = "--";
+            if (contactoEntrega) contactoEntrega.textContent = "--";
+            if (nombreOperador) nombreOperador.textContent = "--";
+            if (telefonoOperador) telefonoOperador.textContent = "--";
 
             origen.textContent = "--";
             destino.textContent = "--";
@@ -342,17 +344,40 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             fechaEntrega.textContent = formatFecha(
                 response.documentos.fecha_fin,
             );
-            nombreProveedor.textContent = response.documentos.Empresa;
-            contactoEntrega.textContent =
-                response.documentos.cp_contacto_entrega ?? "--";
-            nombreTransportista.textContent =
-                response.documentos.transportista_nombre ??
-                response.documentos.Empresa ??
-                "--";
-            nombreOperador.textContent = response.documentos.operador ?? "--";
+            if (nombreProveedor) {
+                nombreProveedor.textContent =
+                    response.documentos?.id_proveedor
+                        ? (response.documentos?.nombre_proveedor ?? "--")
+                        : (response.documentos?.Empresa ?? "Transporte Propio");
+            }
+            if (contactoEntrega) {
+                contactoEntrega.textContent =
+                    response.documentos?.cp_contacto_entrega ??
+                    response.cotizacion?.cp_contacto_entrega ??
+                    "--";
+            }
+            if (nombreTransportista) {
+                nombreTransportista.textContent =
+                    response.documentos?.transportista_nombre ??
+                    response.documentos?.nombre_proveedor ??
+                    response.documentos?.Empresa ??
+                    response.documentos?.nombre_empresa_asignacion ??
+                    "--";
+            }
+            if (nombreOperador) {
+                nombreOperador.textContent =
+                    response.documentos?.operador ??
+                    response.documentos?.nombre_operador ??
+                    response.nombre ??
+                    "--";
+            }
 
-            telefonoOperador.textContent =
-                response.documentos.beneficiario_telefono ?? "--";
+            if (telefonoOperador) {
+                telefonoOperador.textContent =
+                    response.documentos?.beneficiario_telefono ??
+                    response.documentos?.telefono_operador ??
+                    "--";
+            }
 
             origen.textContent = response.cotizacion.origen;
             destino.textContent = response.cotizacion.destino;

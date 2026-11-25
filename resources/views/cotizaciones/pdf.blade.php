@@ -103,7 +103,7 @@
                                 <strong>Datos Generales </strong>
                             </p>
                             <p class="text-right  text-white" style="color: #000;font-size: 18px;">
-                                Empresa: {{$configuracion->nombre_sistema}}
+                                Empresa: {{ $configuracion?->nombre_sistema ?? '' }}
                             </p>
                             <p class="text-right  text-white" style="color: #000;font-size: 18px;">
                                 Telefono: 5500000000
@@ -112,7 +112,7 @@
                                 Correo: <br> sita@gmail.com
                             </p>
                             <p class="text-right  text-white" style="color: #000;font-size: 18px;">
-                                Fecha:  {{$cotizacion->created_at->format('d \d\e F \d\e\l Y')}}
+                                Fecha:  {{$cotizacion->created_at ? $cotizacion->created_at->format('d \d\e F \d\e\l Y') : ''}}
                             </p>
 
                         </blockquote>
@@ -125,23 +125,23 @@
                             </p>
 
                                 <p class="text-footer text-white para" style="color: #000;font-size: 18px;">
-                                    Nombre: {{ $cotizacion->Cliente->nombre }}
+                                    Nombre: {{ $cotizacion->Cliente?->nombre ?? ($cotizacion->cliente?->nombre ?? '') }}
                                 </p>
 
                                 <p class="text-footer text-white para" style="color: #000;font-size: 18px;">
-                                    Telefono: {{ $cotizacion->Cliente->telefono }}
+                                    Telefono: {{ $cotizacion->Cliente?->telefono ?? ($cotizacion->cliente?->telefono ?? '') }}
                                 </p>
 
                                 <p class="text-footer text-white para" style="color: #000;font-size: 18px;">
-                                    Correo: {{ $cotizacion->Cliente->correo }}
+                                    Correo: {{ $cotizacion->Cliente?->correo ?? ($cotizacion->cliente?->correo ?? '') }}
                                 </p>
 
                                 <p class="text-footer text-white para" style="color: #000;font-size: 18px;">
                                     Facturado A:
                                     @if ($cotizacion->id_subcliente == NULL)
-                                        {{ $cotizacion->Cliente->nombre }}
+                                        {{ $cotizacion->Cliente?->nombre ?? ($cotizacion->cliente?->nombre ?? '') }}
                                     @else
-                                        {{ $cotizacion->Subcliente->nombre }}
+                                        {{ $cotizacion->Subcliente?->nombre ?? ($cotizacion->subcliente?->nombre ?? '') }}
                                     @endif
                                 </p>
                         </blockquote>
