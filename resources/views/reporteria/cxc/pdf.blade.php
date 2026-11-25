@@ -219,7 +219,9 @@
 
     @php
         $empresaActualModel = $user?->Empresa ?? ($cotizacion?->Empresa ?? null);
-        $esEmpresaGlobal = !empty($separarUnidades);
+        $esEmpresaGlobal = isset($separarUnidades)
+            ? (bool) $separarUnidades
+            : (bool) (optional($empresaActualModel)->requiere_unidad_gasto ?? false);
     @endphp
 
     @if (!$esEmpresaGlobal)

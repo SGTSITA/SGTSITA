@@ -220,7 +220,9 @@ class ReporteriaController extends Controller
         $fechaEnvio = $fecha;
         $fechaCarbon = Carbon::parse($fecha);
         $modo = $request->input('modo');
-        $separarUnidades = $request->boolean('separar_unidades', false);
+        $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
         $adjuntar = filter_var($request->input('adjuntar_docs'), FILTER_VALIDATE_BOOLEAN);
         $documentos = $request->input('documentos', []);
         $tipoReporte = $request->input('tipo_reporte', 'predeterminado');
@@ -1380,7 +1382,9 @@ class ReporteriaController extends Controller
         $cotizacion = $cotizaciones->first();
         $user = User::find(auth()->id());
 
-        $separarUnidades = $request->boolean('separar_unidades', false);
+        $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
 
         if ($fileType === "xlsx") {
             Excel::store(
@@ -1555,7 +1559,9 @@ class ReporteriaController extends Controller
 
         $totalRows = max(0, (int) $request->input('totalRows', count($info)));
         $selectedRows = $cotizaciones->count();
-        $separarUnidades = $request->boolean('separar_unidades', false);
+        $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
 
         if ($fileType == "xlsx") {
             return Excel::download(
@@ -2115,7 +2121,9 @@ class ReporteriaController extends Controller
 
 
         $user = auth()->user();
-        $separarUnidades = $request->boolean('separar_unidades', false);
+        $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
 
         if ($request->fileType === 'xlsx') {
             return Excel::download(
@@ -2176,7 +2184,9 @@ class ReporteriaController extends Controller
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        $separarUnidades = $request->boolean('separar_unidades', false);
+        $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
 
         return $this->reporteriaService->exportLiquidadosCxc($cotizacionIds, $request->input('fileType', 'pdf'), $separarUnidades);
     }
@@ -2365,7 +2375,9 @@ class ReporteriaController extends Controller
             $ids = $request->input('selected_ids', []);
             $status = $request->input('status', 'por_pagar');
             $fileType = $request->input('fileType');
-            $separarUnidades = $request->boolean('separar_unidades', false);
+            $separarUnidades = $request->has('separar_unidades')
+            ? $request->boolean('separar_unidades')
+            : (bool) (optional(auth()->user()?->Empresa)->requiere_unidad_gasto ?? false);
 
             $export = new \App\Exports\GastosPorPagarExport($ids, $status, $separarUnidades);
 
