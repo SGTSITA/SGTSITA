@@ -19,6 +19,7 @@ use App\Models\GastoRecuperacion;
 use App\Models\GastoVinculo;
 use App\Models\GastosOperadores;
 use App\Models\ViaticosOperador;
+use App\Models\Operador;
 use App\Models\Prestamo;
 use App\Models\PagoPrestamo;
 use App\Models\Poliza;
@@ -96,32 +97,60 @@ class ResetDatosPruebaEmpresaCommand extends Command
         $bancos = Bancos::where('id_empresa', $empresaId)->get();
         $bancosIds = $bancos->pluck('id')->toArray();
 
-        $movimientosQuery = CatBancoCuentasMovimientos::whereIn('cuenta_bancaria_id', $bancosIds)
-            ->where(function ($q) use ($asignacionIds, $gastoIds, $cotizacionIds, $documIds) {
-                $q->whereIn('referenciaable_type', [
-                    Asignaciones::class,
-                    Gasto::class,
-                    ViaticosOperador::class,
-                    DineroContenedor::class,
-                    Prestamo::class,
-                    Cotizaciones::class,
-                ])
-                ->orWhereIn('referenciaable_id', $asignacionIds)
-                ->orWhereIn('referenciaable_id', $gastoIds)
-                ->orWhere('origen', 'sistema')
-                ->orWhere('concepto', 'like', '%viaje%')
-                ->orWhere('concepto', 'like', '%diesel%')
-                ->orWhere('concepto', 'like', '%diésel%')
-                ->orWhere('concepto', 'like', '%anticipo%')
-                ->orWhere('concepto', 'like', '%burrero%')
-                ->orWhere('concepto', 'like', '%GDI%')
-                ->orWhere('concepto', 'like', '%GBV%')
-                ->orWhere('concepto', 'like', '%Dinero para viaje%');
-            });
-        $totalMovimientos = $movimientosQuery->count();
+        $movimientosQueryBuilder = function () use ($bancosIds, $asignacionIds, $gastoIds, $cotizacionIds, $documIds) {
+            return CatBancoCuentasMovimientos::whereIn('cuenta_bancaria_id', $bancosIds)
+                ->where(function ($q) use ($asignacionIds, $gastoIds, $cotizacionIds, $documIds) {
+                    $q->whereIn('referenciaable_type', [
+                        Asignaciones::class,
+                        Gasto::class,
+                        ViaticosOperador::class,
+                        DineroContenedor::class,
+                        Prestamo::class,
+                        Cotizaciones::class,
+                    ])
+                    ->orWhereIn('referenciaable_id', $asignacionIds)
+                    ->orWhereIn('referenciaable_id', $gastoIds)
+                    ->orWhere('origen', 'sistema')
+                    ->orWhere('concepto', 'like', '%viaje%')
+                    ->orWhere('concepto', 'like', '%diesel%')
+                    ->orWhere('concepto', 'like', '%diésel%')
+                    ->orWhere('concepto', 'like', '%anticipo%')
+                    ->orWhere('concepto', 'like', '%burrero%')
+                    ->orWhere('concepto', 'like', '%GDI%')
+                    ->orWhere('concepto', 'like', '%GBV%')
+                    ->orWhere('concepto', 'like', '%Dinero para viaje%');
+                });
+        };
+        $totalMovimientos = !empty($bancosIds) ? $movimientosQueryBuilder()->count() : 0;
 
-        // Prestamos
-        $prestamos = Prestamo::where('id_empresa', $empresaId)->get();
+        // 5. Recolección de Préstamos (relacionados por origen_asignacion_id, id_banco o id_operador de la empresa)
+        $operadorIds = Operador::where('id_empresa', $empresaId)->pluck('id')->toArray();
+        $prestamos = Prestamo::where(function ($q) use ($asignacionIds, $bancosIds, $operadorIds) {
+            $hasCondition = false;
+            if (!empty($asignacionIds)) {
+                $q->whereIn('origen_asignacion_id', $asignacionIds);
+                $hasCondition = true;
+            }
+            if (!empty($bancosIds)) {
+                if ($hasCondition) {
+                    $q->orWhereIn('id_banco', $bancosIds);
+                } else {
+                    $q->whereIn('id_banco', $bancosIds);
+                    $hasCondition = true;
+                }
+            }
+            if (!empty($operadorIds)) {
+                if ($hasCondition) {
+                    $q->orWhereIn('id_operador', $operadorIds);
+                } else {
+                    $q->whereIn('id_operador', $operadorIds);
+                    $hasCondition = true;
+                }
+            }
+            if (!$hasCondition) {
+                $q->whereRaw('1 = 0');
+            }
+        })->get();
         $prestamoIds = $prestamos->pluck('id')->toArray();
 
         // Conteo general
@@ -153,7 +182,7 @@ class ResetDatosPruebaEmpresaCommand extends Command
             $gastoIds,
             $polizaIds,
             $bancosIds,
-            $movimientosQuery,
+            $movimientosQueryBuilder,
             $prestamoIds,
             $bancos
         ) {
@@ -214,7 +243,9 @@ class ResetDatosPruebaEmpresaCommand extends Command
             }
 
             // F. Eliminar movimientos bancarios operativos
-            $movimientosQuery->delete();
+            if (!empty($bancosIds)) {
+                $movimientosQueryBuilder()->delete();
+            }
 
             // G. Recalcular saldo de las cuentas bancarias de la empresa
             foreach ($bancos as $banco) {
