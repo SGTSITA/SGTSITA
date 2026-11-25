@@ -20,6 +20,9 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Conversión Full / Local-Foráneo con normalización de IDs; validación defensiva de CURP y carpetas en operadores; desacople de WhatsApp y blindaje null-safe en `ExternosController`.
 - **Persistencia de Estados de Cuenta en CXC (`/reporteria/cotizaciones/cxc`):**
   - Renombre in-situ al editar folio completo (`update(['numero' => $nuevo])`); creación de grupo al seleccionar subconjunto; limpieza automática de registros con 0 cotizaciones (`doesntHave('cotizaciones')->delete()`).
+- **Modal Detalle Planeación (`/planeaciones/monitor/board/info-viaje`):**
+  - Mapeo de proveedor, transportista, operador, teléfono, marca e IMEI en consulta SQL por `docum_cotizacion.id` con fallbacks automáticos mediante relaciones Eloquent (`Asignaciones` -> `Operador`, `Camion`, `Chasis`, `Proveedor`).
+  - Variables de frontend blindadas en `boardCarpos.js` y `boardClient.js` con soporte para `Transporte Propio` y `response.nombre`.
 - **Specs operativas activas:** Spec 002–018 (`/liquidaciones/ajustes`, `#filtro_unidad`, Reporte Personalizado CXC, Naanix GPS, Multi-equipo `requiere_unidad_gasto == 1`).
 
 ## Decisiones arquitectónicas (y por qué)
