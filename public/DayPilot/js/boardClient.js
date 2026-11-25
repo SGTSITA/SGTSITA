@@ -342,17 +342,31 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             fechaEntrega.textContent = formatFecha(
                 response.documentos.fecha_fin,
             );
-            nombreProveedor.textContent = response.documentos.Empresa;
+            nombreProveedor.textContent =
+                response.documentos.Empresa ??
+                response.documentos.nombre_empresa_asignacion ??
+                response.documentos.nombre_empresa_cotizacion ??
+                "--";
             contactoEntrega.textContent =
-                response.documentos.cp_contacto_entrega ?? "--";
+                response.documentos.cp_contacto_entrega ??
+                response.cotizacion?.contacto ??
+                "--";
             nombreTransportista.textContent =
                 response.documentos.transportista_nombre ??
+                response.documentos.nombre_proveedor ??
                 response.documentos.Empresa ??
+                response.documentos.nombre_empresa_asignacion ??
                 "--";
-            nombreOperador.textContent = response.documentos.operador ?? "--";
+            nombreOperador.textContent =
+                response.documentos.operador ??
+                response.documentos.nombre_operador ??
+                response.nombre ??
+                "--";
 
             telefonoOperador.textContent =
-                response.documentos.beneficiario_telefono ?? "--";
+                response.documentos.beneficiario_telefono ??
+                response.documentos.telefono_operador ??
+                "--";
 
             origen.textContent = response.cotizacion.origen;
             destino.textContent = response.cotizacion.destino;
