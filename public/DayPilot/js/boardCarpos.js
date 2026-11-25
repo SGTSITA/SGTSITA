@@ -770,8 +770,23 @@ function anularPlaneacion(idContenendor, numContenedor) {
                 </div>`;
             }
 
+            // Sección Sueldo de Operador
+            if (res.sueldo_viaje) {
+                htmlContent += `
+                <div class="card bg-light-secondary border p-3 mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-tag text-secondary fs-3 me-2"></i>
+                        <div>
+                            <div class="fw-bolder text-dark">Sueldo de Operador Asignado: <span class="text-success">${res.sueldo_viaje.monto_formateado}</span></div>
+                            <div class="text-muted fs-8">Operador: <b>${res.sueldo_viaje.operador_nombre}</b> | Al desprogramar, se anula la asignación y no se computará en la liquidación.</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+
             // Sección Diésel / Combustible
             if (res.diesel) {
+                const unidadNombre = res.unidad?.nombre || res.tracto?.nombre || res.tracto?.descripcion || res.tracto?.id_equipo || 'Unidad asignada';
                 const origenTexto = res.diesel.origen_contenedor_num 
                     ? `<span class="badge badge-light-info ms-1">Precarga origen: ${res.diesel.origen_contenedor_num}</span>` 
                     : '';
@@ -781,7 +796,7 @@ function anularPlaneacion(idContenendor, numContenedor) {
                         <i class="fas fa-gas-pump text-primary fs-3 me-2"></i>
                         <div>
                             <div class="fw-bolder text-dark">Diésel Asignado: <span class="text-primary">${res.diesel.monto_formateado}</span> ${origenTexto}</div>
-                            <div class="text-muted fs-8">Unidad: <b>${res.unidad.nombre}</b></div>
+                            <div class="text-muted fs-8">Unidad: <b>${unidadNombre}</b></div>
                         </div>
                     </div>
                     <div class="fw-bold fs-8 text-dark mb-1">¿Qué destino tuvo este combustible?</div>

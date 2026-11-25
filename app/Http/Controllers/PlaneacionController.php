@@ -139,16 +139,35 @@ class PlaneacionController extends Controller
 
             $esElemental = is_null($dineroViajeData) && is_null($dieselData) && empty($otrosGastosData);
 
+            $sueldoViajeData = null;
+            if (floatval($asignacion->sueldo_viaje) > 0) {
+                $operador = \App\Models\Operador::find($asignacion->id_operador);
+                $sueldoViajeData = [
+                    'monto' => floatval($asignacion->sueldo_viaje),
+                    'monto_formateado' => '$' . number_format($asignacion->sueldo_viaje, 2),
+                    'operador_nombre' => $operador?->nombre ?? 'Operador asignado',
+                ];
+            }
+
             $tracto = null;
+            $unidad = null;
             $idTracto = $asignacion->id_camion ?: $asignacion->id_equipo;
             if ($idTracto) {
                 $eq = \App\Models\Equipo::find($idTracto);
                 if ($eq) {
+                    $nombreUnidad = ($eq->id_equipo ? $eq->id_equipo . ' - ' : '') . ($eq->marca ?? 'Unidad');
                     $tracto = [
                         'id' => $eq->id,
                         'id_equipo' => $eq->id_equipo,
                         'placas' => $eq->placas,
-                        'descripcion' => ($eq->id_equipo ? $eq->id_equipo . ' - ' : '') . ($eq->marca ?? 'Unidad'),
+                        'descripcion' => $nombreUnidad,
+                        'nombre' => $nombreUnidad,
+                    ];
+                    $unidad = [
+                        'id' => $eq->id,
+                        'id_equipo' => $eq->id_equipo,
+                        'placas' => $eq->placas,
+                        'nombre' => $nombreUnidad,
                     ];
                 }
             }
@@ -161,9 +180,11 @@ class PlaneacionController extends Controller
                     'num_contenedor' => $contenedor->num_contenedor,
                 ],
                 'dinero_viaje' => $dineroViajeData,
+                'sueldo_viaje' => $sueldoViajeData,
                 'diesel' => $dieselData,
                 'otros_gastos' => $otrosGastosData,
                 'tracto' => $tracto,
+                'unidad' => $unidad,
             ]);
 
         } catch (\Throwable $th) {
