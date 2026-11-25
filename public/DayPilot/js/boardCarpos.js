@@ -404,8 +404,8 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             }
             if (contactoEntrega) {
                 contactoEntrega.textContent =
-                    response.documentos.cp_contacto_entrega ??
-                    response.cotizacion?.contacto ??
+                    response.documentos?.cp_contacto_entrega ??
+                    response.cotizacion?.cp_contacto_entrega ??
                     "--";
             }
             if (nombreTransportista) {

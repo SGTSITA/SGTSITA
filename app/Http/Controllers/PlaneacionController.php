@@ -299,7 +299,7 @@ class PlaneacionController extends Controller
                 'operadores.telefono as beneficiario_telefono',
                 'operadores.telefono as telefono_operador',
                 'cotizaciones.tipo_viaje',
-                'cotizaciones.contacto as cp_contacto_entrega',
+                'cotizaciones.cp_contacto_entrega',
                 'em.nombre as nombre_empresa_asignacion',
                 'emc.nombre as nombre_empresa_cotizacion',
                 DB::raw("COALESCE(em.nombre, emc.nombre, 'Transporte Propio') as Empresa"),
@@ -361,7 +361,7 @@ class PlaneacionController extends Controller
             $mapLink = $cotizacion->latitud && $cotizacion->longitud
                 ? "https://maps.google.com/?q={$cotizacion->latitud},{$cotizacion->longitud}"
                 : "";
-            $contacto = $cotizacion->contacto ?? "";
+            $contacto = $cotizacion->cp_contacto_entrega ?? "";
             $comentarios = $cotizacion->observaciones ?? "";
             $fechaEntrega = $cotizacion->fecha_entrega ? Carbon::parse($cotizacion->fecha_entrega)->format('d/m/Y') : "";
             $horaLlegada = "";
