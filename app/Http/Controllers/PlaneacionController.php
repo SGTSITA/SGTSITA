@@ -366,7 +366,7 @@ class PlaneacionController extends Controller
             $fechaEntrega = $cotizacion->fecha_entrega ? Carbon::parse($cotizacion->fecha_entrega)->format('d/m/Y') : "";
             $horaLlegada = "";
 
-            $waText = "¡Hola buen día! Saludos de Gologi Logistics.\n";
+            $waText = "¡Hola buen día!\n";
             $waText .= "Comparto los datos de salida del día de hoy:\n\n";
             $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
             $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
