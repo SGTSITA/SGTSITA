@@ -330,7 +330,7 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
     numContenedor.textContent = numContenedor_;
 
     let nombreProveedor = document.querySelector("#nombreProveedor");
-    // let nombreTransportista = document.querySelector('#nombreTransportista')
+    let nombreTransportista = document.querySelector("#nombreTransportista");
     let contactoEntrega = document.querySelector("#ContactoEntrega");
     let nombreOperador = document.querySelector("#nombreOperador");
     let telefonoOperador = document.querySelector("#telefonoOperador");
@@ -366,11 +366,11 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                 d.innerHTML = `--`;
             });
 
-            nombreProveedor.textContent = "--";
-            //nombreTransportista.textContent = "--"
-            contactoEntrega.textContent = "--";
-            nombreOperador.textContent = "--";
-            telefonoOperador.textContent = "--";
+            if (nombreProveedor) nombreProveedor.textContent = "--";
+            if (nombreTransportista) nombreTransportista.textContent = "--";
+            if (contactoEntrega) contactoEntrega.textContent = "--";
+            if (nombreOperador) nombreOperador.textContent = "--";
+            if (telefonoOperador) telefonoOperador.textContent = "--";
 
             tipoViajeSpan.textContent = "--";
 
@@ -396,31 +396,39 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
             );
 
             asignacionId = response.documentos.asignacionId;
-            nombreProveedor.textContent =
-                response.documentos.Empresa ??
-                response.documentos.nombre_empresa_asignacion ??
-                response.documentos.nombre_empresa_cotizacion ??
-                "--";
-            contactoEntrega.textContent =
-                response.documentos.cp_contacto_entrega ??
-                response.cotizacion?.contacto ??
-                "--";
-            nombreTransportista.textContent =
-                response.documentos.transportista_nombre ??
-                response.documentos.nombre_proveedor ??
-                response.documentos.Empresa ??
-                response.documentos.nombre_empresa_asignacion ??
-                "--";
-            nombreOperador.textContent =
-                response.documentos.operador ??
-                response.documentos.nombre_operador ??
-                response.nombre ??
-                "--";
-
-            telefonoOperador.textContent =
-                response.documentos.beneficiario_telefono ??
-                response.documentos.telefono_operador ??
-                "--";
+            if (nombreProveedor) {
+                nombreProveedor.textContent =
+                    response.documentos.id_proveedor
+                        ? (response.documentos.nombre_proveedor ?? "--")
+                        : (response.documentos.Empresa ?? "Transporte Propio");
+            }
+            if (contactoEntrega) {
+                contactoEntrega.textContent =
+                    response.documentos.cp_contacto_entrega ??
+                    response.cotizacion?.contacto ??
+                    "--";
+            }
+            if (nombreTransportista) {
+                nombreTransportista.textContent =
+                    response.documentos.transportista_nombre ??
+                    response.documentos.nombre_proveedor ??
+                    response.documentos.Empresa ??
+                    response.documentos.nombre_empresa_asignacion ??
+                    "--";
+            }
+            if (nombreOperador) {
+                nombreOperador.textContent =
+                    response.documentos.operador ??
+                    response.documentos.nombre_operador ??
+                    response.nombre ??
+                    "--";
+            }
+            if (telefonoOperador) {
+                telefonoOperador.textContent =
+                    response.documentos.beneficiario_telefono ??
+                    response.documentos.telefono_operador ??
+                    "--";
+            }
 
             tipoViajeSpan.textContent = response.tipo;
 

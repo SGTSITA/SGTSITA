@@ -255,10 +255,10 @@ class PlaneacionController extends Controller
     {
         $asignaciones = Asignaciones::where('id_contenedor', '=', $request->id)->first();
         $docCotizacion = DocumCotizacion::where('id', '=', $request->id)->first();
-        $cotizacion = Cotizaciones::where('id', '=', $docCotizacion->id_cotizacion)->first();
+        $cotizacion = $docCotizacion ? Cotizaciones::where('id', '=', $docCotizacion->id_cotizacion)->first() : null;
 
         $documentos = Cotizaciones::query()
-            ->where('cotizaciones.id', $cotizacion->id)
+            ->where('docum_cotizacion.id', $request->id)
             ->join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
             ->leftJoin('asignaciones', 'docum_cotizacion.id', '=', 'asignaciones.id_contenedor')
             ->leftJoin('empresas as em', 'em.id', '=', 'asignaciones.id_empresa')
@@ -309,6 +309,30 @@ class PlaneacionController extends Controller
                 'asignaciones.ruta_coordenadas'
             )
             ->get();
+
+        $docFirst = $documentos->first();
+        if ($docFirst && $asignaciones) {
+            if (empty($docFirst->operador) && $asignaciones->Operador) {
+                $docFirst->operador = $asignaciones->Operador->nombre;
+                $docFirst->nombre_operador = $asignaciones->Operador->nombre;
+            }
+            if (empty($docFirst->beneficiario_telefono) && $asignaciones->Operador) {
+                $docFirst->beneficiario_telefono = $asignaciones->Operador->telefono;
+                $docFirst->telefono_operador = $asignaciones->Operador->telefono;
+            }
+            if (empty($docFirst->marca_camion) && $asignaciones->Camion) {
+                $docFirst->marca_camion = $asignaciones->Camion->marca;
+            }
+            if (empty($docFirst->imei_camion) && $asignaciones->Camion) {
+                $docFirst->imei_camion = $asignaciones->Camion->imei;
+            }
+            if (empty($docFirst->imei_chasis) && $asignaciones->Chasis) {
+                $docFirst->imei_chasis = $asignaciones->Chasis->imei;
+            }
+            if (empty($docFirst->nombre_proveedor) && $asignaciones->Proveedor) {
+                $docFirst->nombre_proveedor = $asignaciones->Proveedor->nombre;
+            }
+        }
 
         $misDocumentos = Cotizaciones::where('cotizaciones.id', $cotizacion->id)
             ->join('docum_cotizacion', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
