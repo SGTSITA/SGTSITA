@@ -192,7 +192,7 @@ class ResetDatosPruebaEmpresaCommand extends Command
                     'estatus' => 'Aprobada',
                     'estatus_planeacion' => 0,
                     'referencia_full' => null,
-                    'jerarquia' => null,
+                    'jerarquia' => 'Principal',
                     'tipo_viaje' => 'Sencillo',
                     'litros_diesel' => 0,
                     'litros_urea' => 0,
@@ -201,6 +201,13 @@ class ResetDatosPruebaEmpresaCommand extends Command
                     'cp_comentarios' => null,
                 ]);
             }
+
+            // Asegurar que ninguna cotización quede con jerarquía null o no principal
+            Cotizaciones::where('id_empresa', $empresaId)
+                ->where(function ($q) {
+                    $q->whereNull('jerarquia')->orWhere('jerarquia', '');
+                })
+                ->update(['jerarquia' => 'Principal']);
 
             // B. Eliminar bitácoras y dineros de contenedores/asignaciones
             if (!empty($documIds)) {

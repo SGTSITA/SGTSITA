@@ -131,7 +131,10 @@ class CotizacionesService
         }
 
         // 5. Excluir siempre contenedores secundarios directos
-        $cotizacionesQuery->where('jerarquia', '!=', 'Secundario');
+        $cotizacionesQuery->where(function ($q) {
+            $q->where('jerarquia', '!=', 'Secundario')
+              ->orWhereNull('jerarquia');
+        });
 
         // 6. Filtro opcional por rango de fechas en fecha_entrega
         if (!empty($fechaInicio) && !empty($fechaFin)) {
@@ -1708,7 +1711,10 @@ class CotizacionesService
             ->join('clients as cl', 'cotizaciones.id_cliente', '=', 'cl.id')
             ->join('subclientes as sc', 'cotizaciones.id_subcliente', '=', 'sc.id')
             ->where('estatus', '=', 'NO ASIGNADA')
-            ->where('jerarquia', '!=', 'Secundario')
+            ->where(function ($q) {
+                $q->where('jerarquia', '!=', 'Secundario')
+                  ->orWhereNull('jerarquia');
+            })
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor, d.doc_eir, d.doc_ccp, d.boleta_liberacion, d.doda, cl.nombre as cliente, sc.nombre as subcliente')
             ->get();
@@ -1852,7 +1858,10 @@ class CotizacionesService
             ->where('cotizaciones.id_cliente', '=', $idCliente)
             ->where('estatus', '=', 'local')
             ->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo'])
-            ->where('jerarquia', '!=', 'Secundario')
+            ->where(function ($q) {
+                $q->where('jerarquia', '!=', 'Secundario')
+                  ->orWhereNull('jerarquia');
+            })
             ->where('en_patio', '=', '1')
             ->orderBy('created_at', 'desc')
             ->selectRaw('cotizaciones.*, d.num_contenedor, d.doc_eir, d.doc_ccp, d.boleta_liberacion, d.doda, d.foto_patio, d.boleta_patio')
@@ -1929,7 +1938,10 @@ class CotizacionesService
             }, function ($query) {
                 $query->whereIn('tipo_viaje_seleccion', ['local', 'local_to_foraneo']);
             })
-            ->where('jerarquia', '!=', 'Secundario')
+            ->where(function ($q) {
+                $q->where('jerarquia', '!=', 'Secundario')
+                  ->orWhereNull('jerarquia');
+            })
             ->orderBy('cotizaciones.created_at', 'desc')
             ->select([
                 'cotizaciones.*',
@@ -2142,7 +2154,10 @@ class CotizacionesService
             ->when($idEmpresa != 0, function ($q) use ($idEmpresa) {
                 $q->where('cotizaciones.id_empresa', $idEmpresa);
             })
-            ->where('cotizaciones.jerarquia', '!=', 'Secundario')
+            ->where(function ($q) {
+                $q->where('cotizaciones.jerarquia', '!=', 'Secundario')
+                  ->orWhereNull('cotizaciones.jerarquia');
+            })
             ->whereNotIn('cotizaciones.estatus', ['Cancelada', 'Pendiente'])
             ->where('cotizaciones.id_proveedor', '!=', 59); //tEMPORAL EXCLUI ESTE VAMOS A PONERLE ALGUN CANDADO "Transporte XYZ" (id_proveedor=59) from cost capture
 
