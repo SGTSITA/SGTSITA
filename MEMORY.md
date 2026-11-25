@@ -38,6 +38,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - Multi-equipo H00 Global: activado estrictamente con `requiere_unidad_gasto == 1`.
 
 ## Aprendizajes y errores a evitar
+- En la tabla `cotizaciones`, `jerarquia` debe ser `'Principal'` (nunca `null`), ya que cláusulas `where('jerarquia', '!=', 'Secundario')` excluyen registros con `null` en SQL.
 - La tabla `prestamos` no tiene `id_empresa`; se vincula mediante `id_operador`, `id_banco` o `origen_asignacion_id`.
 - En la tabla `prestamos`, la columna `pagos` no tiene default; asignar siempre `pagos => 0` y `saldo_actual` explícitos.
 - En la tabla `cotizaciones`, la clave primaria es `id` (no `id_cotizacion`) y se vincula a través de `docum_cotizacion.id_cotizacion`.
