@@ -21,7 +21,9 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - **Persistencia de Estados de Cuenta en CXC (`/reporteria/cotizaciones/cxc`):**
   - Renombre in-situ al editar folio completo (`update(['numero' => $nuevo])`); creación de grupo al seleccionar subconjunto; limpieza automática de registros con 0 cotizaciones (`doesntHave('cotizaciones')->delete()`).
 - **Spec 012 (Separación por Unidades en Reportería):**
-  - Switch `separar_unidades` operativo en CXC, Viajes, GXP, Utilidad y Documentos (`/reporteria/documentos`).
+  - Switch `separar_unidades` operativo en CXC, Viajes, GXP, Utilidad, Documentos (`/reporteria/documentos`), Liquidados CxC (`/reporteria/liquidados/cxc`) y Liquidados CxP (`/reporteria/liquidados/cxp`).
+  - En Liquidados CxC y CxP: interruptor agregado tanto junto a "Seleccionar todo" como en barra de exportación para empresas globales (`requiere_unidad_gasto == 1`), sincronizados por JS y con fallback desmarcado por defecto.
+  - En CxP (`ReporteriaService::exportLiquidadosCxp`, `LiquidadosCxpExport` y `pdf.blade.php`), soporta `$separarUnidades` para agrupar por unidad, mostrar "Unidad / Tracto" en lugar de contratista y totalizar por unidades distintas.
   - Corregido `pdf.blade.php` de documentos para evaluar `$esEmpresaGlobal = !empty($separarUnidades)` en lugar de hardcodear `esGlobalMultiEquipo()`, respetando cuando el switch está desmarcado.
   - Comando `php artisan empresa:reset-pruebas` para reestablecer contenedores a Aprobada, limpiar gastos y contabilidad operativa conservando saldos iniciales de bancos.
 - **Modal Detalle Planeación (`/planeaciones/monitor/board/info-viaje`):**
