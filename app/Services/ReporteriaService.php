@@ -519,11 +519,11 @@ class ReporteriaService
     /**
      * Exportar Liquidados CXP a Excel o PDF
      */
-    public function exportLiquidadosCxp(array $cotizacionIds, string $fileType)
+    public function exportLiquidadosCxp(array $cotizacionIds, string $fileType, bool $separarUnidades = false)
     {
         $fechaCarbon = Carbon::now();
 
-        $cotizaciones = Asignaciones::with(['Proveedor', 'Contenedor.Cotizacion.estadoCuenta', 'Contenedor.Cotizacion.pagos.cobroPago.bancoA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoB', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorB'])
+        $cotizaciones = Asignaciones::with(['Camion', 'Proveedor', 'Contenedor.Cotizacion.estadoCuenta', 'Contenedor.Cotizacion.pagos.cobroPago.bancoA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoB', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorA', 'Contenedor.Cotizacion.pagos.cobroPago.bancoProveedorB'])
             ->whereIn('id', $cotizacionIds)
             ->get();
 
@@ -539,10 +539,10 @@ class ReporteriaService
         $fileName = "cxp_{$idProveedor}_{$timestamp}.{$fileType}";
 
         if ($fileType == "xlsx") {
-            Excel::store(new \App\Exports\LiquidadosCxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion), $fileName, 'public');
+            Excel::store(new \App\Exports\LiquidadosCxpExport($cotizaciones, $fechaCarbon, $bancos_oficiales, $bancos_no_oficiales, $registrosBanco, $user, $cotizacion, $separarUnidades), $fileName, 'public');
             return Response::download(storage_path('app/public/' . $fileName), $fileName)->deleteFileAfterSend(true);
         } else {
-            $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion'))
+            $pdf = PDF::loadView('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion', 'separarUnidades'))
                 ->setPaper('a4', 'landscape');
 
             $pdf->save(storage_path('app/public/' . $fileName));

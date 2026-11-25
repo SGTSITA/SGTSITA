@@ -74,9 +74,23 @@
 
     <body>
         @php
-            $cotizacionesGrouped = $cotizaciones->groupBy(function($item) use ($cotizacion) {
+            $empresaActual = $user?->Empresa ?? null;
+            $esEmpresaGlobal = !empty($separarUnidades);
+
+            $cotizacionesGrouped = $cotizaciones->groupBy(function($item) use ($cotizacion, $esEmpresaGlobal) {
                 $cotiPadre = $item->Contenedor?->Cotizacion;
                 $numEdo = $cotiPadre?->estadoCuenta?->numero ?? '-';
+                if ($esEmpresaGlobal) {
+                    $camion = $item->Camion;
+                    $unidadTexto = '-';
+                    if ($camion) {
+                        $codigo = $camion->id_equipo ?: ($camion->placas ?: 'UNIDAD #' . $camion->id);
+                        $marca = $camion->marca ?: 'TRACTO';
+                        $placas = $camion->placas ?: 'S/P';
+                        $unidadTexto = trim("{$codigo} - {$marca} [{$placas}]");
+                    }
+                    return $numEdo . ' ||| ' . $unidadTexto;
+                }
                 $prov = $item->Proveedor?->nombre ?? ($cotizacion?->Proveedor?->nombre ?? 'Sin Proveedor');
                 return $numEdo . ' ||| ' . $prov;
             });
@@ -93,7 +107,7 @@
             @php
                 $parts = explode(' ||| ', $groupKey);
                 $numEdoCuenta = $parts[0] ?? '-';
-                $nombreProveedor = $parts[1] ?? 'Sin Proveedor';
+                $nombreProveedor = $parts[1] ?? ($esEmpresaGlobal ? 'Sin Unidad' : 'Sin Proveedor');
 
                 $subImporteCT = 0;
                 $subPagar1 = 0;
@@ -105,14 +119,14 @@
                 <div class="sin_margem" style="margin-bottom: 12px; position: relative; clear: both;">
                     <h4 class="sin_espacios2">Empresa: {{ $user?->Empresa?->nombre ?? '-' }}</h4>
                     <h4 class="sin_espacios2">Estado de cuenta: {{ $numEdoCuenta }}</h4>
-                    <h4 class="sin_espacios2">Proveedor: {{ $nombreProveedor }}</h4>
+                    <h4 class="sin_espacios2">{{ $esEmpresaGlobal ? 'Unidad' : 'Proveedor' }}: {{ $nombreProveedor }}</h4>
                     <h5 style="position: absolute; right: 0; top: 0; margin: 0;">Estado de cuenta por pagar : {{ date('d-m-Y') }}</h5>
                 </div>
 
                 <table class="table text-white tabla-completa" style="color: #000; width: 100%; font-size: 11px; border-collapse: collapse;" border="1">
                     <thead>
                         <tr style="background-color: #f2f2f2;">
-                            <th style="border: 1px solid #000; padding: 5px;">Contratista</th>
+                            <th style="border: 1px solid #000; padding: 5px;">{{ $esEmpresaGlobal ? 'Unidad / Tracto' : 'Contratista' }}</th>
                             <th style="border: 1px solid #000; padding: 5px;">Contenedor</th>
                             <th style="border: 1px solid #000; padding: 5px;">Importe CT</th>
                             <th style="border: 1px solid #000; padding: 5px; color: #000000; background: yellow;">A pagar 1</th>
@@ -163,13 +177,29 @@
                                 $grandAbono += $abonoItem;
                                 $grandTotalContenedores++;
 
-                                if (!empty($nombreProveedor) && trim($nombreProveedor) !== '-') {
-                                    $grandContratistas[] = trim($nombreProveedor);
+                                $contratistaNombre = $item->Proveedor?->nombre ?? $nombreProveedor;
+                                $camion = $item->Camion;
+                                $unidadTexto = '-';
+                                if ($camion) {
+                                    $codigo = $camion->id_equipo ?: ($camion->placas ?: 'UNIDAD #' . $camion->id);
+                                    $marca = $camion->marca ?: 'TRACTO';
+                                    $placas = $camion->placas ?: 'S/P';
+                                    $unidadTexto = trim("{$codigo} - {$marca} [{$placas}]");
+                                }
+
+                                if ($esEmpresaGlobal) {
+                                    if ($unidadTexto !== '-') {
+                                        $grandContratistas[] = $unidadTexto;
+                                    }
+                                } else {
+                                    if (!empty($contratistaNombre) && trim($contratistaNombre) !== '-') {
+                                        $grandContratistas[] = trim($contratistaNombre);
+                                    }
                                 }
                             @endphp
 
                             <tr>
-                                <td style="border: 1px solid #000;">{{ $item->Proveedor?->nombre ?? $nombreProveedor }}</td>
+                                <td style="border: 1px solid #000;">{{ $esEmpresaGlobal ? $unidadTexto : $contratistaNombre }}</td>
                                 <td style="border: 1px solid #000;">{{ $item->Contenedor?->num_contenedor ?? '-' }}</td>
                                 <td style="border: 1px solid #000;">${{ number_format($suma_importeCT, 2, '.', ',') }}</td>
                                 <td style="border: 1px solid #000;">${{ number_format($total_oficial, 2, '.', ',') }}</td>
@@ -315,11 +345,11 @@
 
         @if($cotizacionesGrouped->count() > 0)
             <div style="margin-top: 25px; page-break-inside: avoid;">
-                <h4 style="margin-bottom: 8px; font-size: 13px; font-weight: bold; text-align: center;">RESUMEN GRAN TOTAL GENERAL (TODOS LOS PROVEEDORES)</h4>
+                <h4 style="margin-bottom: 8px; font-size: 13px; font-weight: bold; text-align: center;">RESUMEN GRAN TOTAL GENERAL ({{ $esEmpresaGlobal ? 'TODAS LAS UNIDADES' : 'TODOS LOS PROVEEDORES' }})</h4>
                 <table class="table tabla-completa" style="color: #000; width: 100%; padding: 5px; font-size: 12px; border-collapse: collapse; text-align: center; font-weight: bold;" border="1">
                     <thead>
                         <tr style="background-color: #344767; color: #ffffff;">
-                            <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Proveedores Distintos</th>
+                            <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">{{ $esEmpresaGlobal ? 'Unidades Distintas' : 'Proveedores Distintos' }}</th>
                             <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Contenedores</th>
                             <th style="border: 1px solid #000; padding: 6px; color: #ffffff;">Total Importe CT</th>
                             <th style="border: 1px solid #000; padding: 6px; background: yellow; color: #000;">Total A pagar 1 (Oficial)</th>

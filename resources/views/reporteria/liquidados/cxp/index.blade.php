@@ -26,6 +26,9 @@
                                     <div class="card">
                                         <form action="{{ route('advance_liquidados_cxp.buscador') }}" method="GET">
                                             <div class="card-body" style="padding-left: 1.5rem; padding-top: 1rem;">
+                                                @php
+                                                    $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
+                                                @endphp
                                                 <h5>Filtros</h5>
                                                 <div class="row align-items-end">
                                                     <div class="col-md-3 mb-2">
@@ -69,9 +72,16 @@
                         </div>
 
                         <div class="table-responsive">
-                            <div class="mb-3"></div>
-                            <div class="mb-3">
-                                <button type="button" id="selectAllButton" class="btn btn-primary">Seleccionar todo</button>
+                            <div class="mb-3 d-flex align-items-center gap-3">
+                                <button type="button" id="selectAllButton" class="btn btn-primary mb-0">Seleccionar todo</button>
+                                @if ($esEmpresaGlobal)
+                                    <div class="form-check form-switch d-inline-flex align-items-center mb-0">
+                                        <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxpTop" value="1">
+                                        <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxpTop">
+                                            Separar por unidades
+                                        </label>
+                                    </div>
+                                @endif
                             </div>
                             <form id="exportForm" action="{{ route('liquidados_cxp.export') }}" method="POST">
                                 @csrf
@@ -116,6 +126,14 @@
                                 </table>
                                 @if(isset($cotizaciones) && $cotizaciones->count() > 0)
                                     <input type="hidden" id="txtDataGenericExcel" value="{{ json_encode($cotizaciones) }}">
+                                    @if ($esEmpresaGlobal)
+                                        <div class="form-check form-switch d-inline-flex align-items-center me-2">
+                                            <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxp" name="separar_unidades" value="1">
+                                            <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxp">
+                                                Separar por unidades
+                                            </label>
+                                        </div>
+                                    @endif
                                     <button type="button" id="exportButtonExcel" data-filetype="xlsx" class="btn btn-success exportButton">Exportar a Excel</button>
                                     <button type="button" id="exportButton" data-filetype="pdf" class="btn btn-primary exportButton">Exportar a PDF</button>
                                 @endif  
@@ -203,6 +221,14 @@
                 }
             });
 
+            // Sincronizar switches de separar unidades
+            $('#checkSepararUnidadesLiqCxpTop').on('change', function() {
+                $('#checkSepararUnidadesLiqCxp').prop('checked', $(this).is(':checked'));
+            });
+            $('#checkSepararUnidadesLiqCxp').on('change', function() {
+                $('#checkSepararUnidadesLiqCxpTop').prop('checked', $(this).is(':checked'));
+            });
+
             // Función para la exportación de datos seleccionados
             $('.exportButton').on('click', function(event) {
                 event.preventDefault();
@@ -210,6 +236,7 @@
                 const selectedIds = table.rows('.selected').data().toArray().map(row => row[1]);
 
                 var fileType = $("#"+event.target.id).data('filetype');
+                var separarUnidadesVal = ($('#checkSepararUnidadesLiqCxp').is(':checked') || $('#checkSepararUnidadesLiqCxpTop').is(':checked')) ? 1 : 0;
 
                 $.ajax({
                     url: '{{ route('liquidados_cxp.export') }}',
@@ -217,7 +244,8 @@
                     data: {
                         _token: '{{ csrf_token() }}',
                         selected_ids: selectedIds,
-                        fileType: fileType
+                        fileType: fileType,
+                        separar_unidades: separarUnidadesVal
                     },
                     xhrFields: {
                         responseType: 'blob'

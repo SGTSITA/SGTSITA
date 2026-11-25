@@ -2232,7 +2232,9 @@ class ReporteriaController extends Controller
             return redirect()->back()->with('error', 'No se seleccionaron cotizaciones.');
         }
 
-        return $this->reporteriaService->exportLiquidadosCxp($cotizacionIds, $request->input('fileType', 'pdf'));
+        $separarUnidades = $request->boolean('separar_unidades', false);
+
+        return $this->reporteriaService->exportLiquidadosCxp($cotizacionIds, $request->input('fileType', 'pdf'), $separarUnidades);
     }
 
 

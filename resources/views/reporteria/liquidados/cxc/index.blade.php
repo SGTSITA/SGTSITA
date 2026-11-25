@@ -62,10 +62,6 @@
                                                         $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
                                                     @endphp
                                                     @if ($esEmpresaGlobal)
-                                                    @php
-                                                        $esEmpresaGlobal = (bool) (auth()->user()?->Empresa?->requiere_unidad_gasto ?? false);
-                                                    @endphp
-                                                    @if ($esEmpresaGlobal)
                                                     <div class="col-md-2 mb-2">
                                                         <label for="id_unidad" class="form-label text-sm mb-1">Buscar unidad (equipo):</label>
                                                         <select
@@ -81,7 +77,6 @@
                                                             @endforeach
                                                         </select>
                                                     </div>
-                                                    @endif
                                                     @endif
                                                     <div class="col-md-3 mb-2">
                                                         <label class="form-label text-sm mb-1">Periodo (Rango de fechas):</label>
@@ -110,11 +105,18 @@
                         </div>
 
                         <div class="table-responsive">
-                            <div class="mb-3"></div>
-                            <div class="mb-3">
-                                <button type="button" id="selectAllButton" class="btn btn-primary">
+                            <div class="mb-3 d-flex align-items-center gap-3">
+                                <button type="button" id="selectAllButton" class="btn btn-primary mb-0">
                                     Seleccionar todo
                                 </button>
+                                @if ($esEmpresaGlobal)
+                                    <div class="form-check form-switch d-inline-flex align-items-center mb-0">
+                                        <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxcTop" value="1">
+                                        <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxcTop">
+                                            Separar por unidades
+                                        </label>
+                                    </div>
+                                @endif
                             </div>
                             <form id="exportForm" action="{{ route('liquidados_cxc.export') }}" method="POST">
                                 @csrf
@@ -204,15 +206,13 @@
                                         id="txtDataGenericExcel"
                                         value="{{ json_encode($cotizaciones) }}"
                                     />
-                                    @if ($esEmpresaGlobal ?? false)
-                                    @if ($esEmpresaGlobal ?? false)
+                                    @if ($esEmpresaGlobal)
                                     <div class="form-check form-switch d-inline-flex align-items-center me-2">
                                         <input class="form-check-input" type="checkbox" id="checkSepararUnidadesLiqCxc" name="separar_unidades" value="1">
                                         <label class="form-check-label ms-2 mb-0 fw-bold text-dark text-xs" for="checkSepararUnidadesLiqCxc">
                                             Separar por unidades
                                         </label>
                                     </div>
-                                    @endif
                                     @endif
                                     <button
                                         type="button"
@@ -315,6 +315,14 @@
                 }
             });
 
+            // Sincronizar switches de separar unidades
+            $('#checkSepararUnidadesLiqCxcTop').on('change', function() {
+                $('#checkSepararUnidadesLiqCxc').prop('checked', $(this).is(':checked'));
+            });
+            $('#checkSepararUnidadesLiqCxc').on('change', function() {
+                $('#checkSepararUnidadesLiqCxcTop').prop('checked', $(this).is(':checked'));
+            });
+
             // Función para la exportación de datos seleccionados
             $('.exportButton').on('click', function (event) {
                 event.preventDefault();
@@ -325,6 +333,7 @@
                     .map((row) => row[1]);
 
                 var fileType = $('#' + event.target.id).data('filetype');
+                var separarUnidadesVal = ($('#checkSepararUnidadesLiqCxc').is(':checked') || $('#checkSepararUnidadesLiqCxcTop').is(':checked')) ? 1 : 0;
 
                 $.ajax({
                     url: '{{ route('liquidados_cxc.export') }}',
@@ -333,7 +342,7 @@
                         _token: '{{ csrf_token() }}',
                         selected_ids: selectedIds,
                         fileType: fileType,
-                        separar_unidades: $('#checkSepararUnidadesLiqCxc').is(':checked') ? 1 : 0,
+                        separar_unidades: separarUnidadesVal,
                     },
                     xhrFields: {
                         responseType: 'blob',

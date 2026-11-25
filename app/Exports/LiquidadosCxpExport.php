@@ -18,8 +18,9 @@ class LiquidadosCxpExport implements FromView,ShouldAutoSize
     public $vRegistrosBanco;
     public $vUser;
     public $vCotizacion;
+    public $vSepararUnidades;
 
-    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales,$registrosBanco, $user, $cotizacion){
+    public function __construct($cotizaciones, $fechaCarbon, $bancosOficiales, $bancosNoOficiales, $registrosBanco, $user, $cotizacion, $separarUnidades = false){
         $this->vCotizaciones = $cotizaciones;
         $this->vFechaCarbon = $fechaCarbon;
         $this->vBancosOficiales = $bancosOficiales;
@@ -27,8 +28,7 @@ class LiquidadosCxpExport implements FromView,ShouldAutoSize
         $this->vRegistrosBanco = $registrosBanco;
         $this->vUser = $user;
         $this->vCotizacion = $cotizacion;
-        
-        
+        $this->vSepararUnidades = (bool)$separarUnidades;
     }
 
     public function view() : View
@@ -40,8 +40,9 @@ class LiquidadosCxpExport implements FromView,ShouldAutoSize
         $registrosBanco = $this->vRegistrosBanco;
         $user = $this->vUser;
         $cotizacion = $this->vCotizacion;
+        $separarUnidades = $this->vSepararUnidades;
         $isExcel = true;
         
-        return view('reporteria.liquidados.cxp.pdf',compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion', 'isExcel'));
+        return view('reporteria.liquidados.cxp.pdf', compact('cotizaciones', 'fechaCarbon', 'bancos_oficiales', 'bancos_no_oficiales', 'registrosBanco', 'user', 'cotizacion', 'isExcel', 'separarUnidades'));
     }
 }
