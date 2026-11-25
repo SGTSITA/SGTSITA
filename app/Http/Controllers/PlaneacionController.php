@@ -341,42 +341,57 @@ class PlaneacionController extends Controller
 
         $waText = "";
         if ($asignaciones) {
-            $tipoViaje = $cotizacion->tipo_viaje;
-            $contenedorStr = $documentos->first()?->num_contenedor ?? "";
-
-            if (!empty($cotizacion->referencia_full)) {
-                $contenedoresFull = DocumCotizacion::join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
-                    ->where('cotizaciones.referencia_full', $cotizacion->referencia_full)
-                    ->pluck('docum_cotizacion.num_contenedor')
-                    ->toArray();
-
-                if (!empty($contenedoresFull)) {
-                    $contenedorStr = implode(' - ', $contenedoresFull);
+            if (!empty($asignaciones->mensaje_compartido)) {
+                $waText = $asignaciones->mensaje_compartido;
+            } else {
+                $hora = Carbon::now()->hour;
+                if ($hora >= 6 && $hora < 12) {
+                    $saludo = "Buenos días";
+                } elseif ($hora >= 12 && $hora < 19) {
+                    $saludo = "Buenas tardes";
+                } else {
+                    $saludo = "Buenas noches";
                 }
+
+                $nombreOp = $asignaciones->Operador?->nombre ?? ($docFirst?->operador ?? '');
+
+                $tipoViaje = $cotizacion->tipo_viaje;
+                $contenedorStr = $documentos->first()?->num_contenedor ?? "";
+
+                if (!empty($cotizacion->referencia_full)) {
+                    $contenedoresFull = DocumCotizacion::join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+                        ->where('cotizaciones.referencia_full', $cotizacion->referencia_full)
+                        ->pluck('docum_cotizacion.num_contenedor')
+                        ->toArray();
+
+                    if (!empty($contenedoresFull)) {
+                        $contenedorStr = implode(' - ', $contenedoresFull);
+                    }
+                }
+
+                $unidadEco = $documentos->first()?->id_equipo_camion;
+                $origen = $cotizacion->origen;
+                $direccion = $cotizacion->direccion_mapa;
+                $mapLink = $cotizacion->latitud && $cotizacion->longitud
+                    ? "https://maps.google.com/?q={$cotizacion->latitud},{$cotizacion->longitud}"
+                    : "";
+                $contacto = $cotizacion->cp_contacto_entrega ?? "";
+                $comentarios = $cotizacion->observaciones ?? "";
+                $fechaEntrega = $cotizacion->fecha_entrega ? Carbon::parse($cotizacion->fecha_entrega)->format('d/m/Y') : "";
+                $horaLlegada = "";
+
+                $waText = "{$saludo}" . ($nombreOp ? " " . trim($nombreOp) : "") . ",\n\n";
+                $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+                $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+                $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+                $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+                $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+                $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+                $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+                $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+                $waText .= "Hora de salida: \n";
+                $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
             }
-
-            $unidadEco = $documentos->first()?->id_equipo_camion;
-            $origen = $cotizacion->origen;
-            $direccion = $cotizacion->direccion_mapa;
-            $mapLink = $cotizacion->latitud && $cotizacion->longitud
-                ? "https://maps.google.com/?q={$cotizacion->latitud},{$cotizacion->longitud}"
-                : "";
-            $contacto = $cotizacion->cp_contacto_entrega ?? "";
-            $comentarios = $cotizacion->observaciones ?? "";
-            $fechaEntrega = $cotizacion->fecha_entrega ? Carbon::parse($cotizacion->fecha_entrega)->format('d/m/Y') : "";
-            $horaLlegada = "";
-
-            $waText = "¡Hola buen día!\n";
-            $waText .= "Comparto los datos de salida del día de hoy:\n\n";
-            $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
-            $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
-            $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
-            $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
-            $waText .= "Contacto: " . ($contacto ?: "") . "\n";
-            $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
-            $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
-            $waText .= "Hora de salida: \n";
-            $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
         }
 
         $dieselPrecarga = null;
