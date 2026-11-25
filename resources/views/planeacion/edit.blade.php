@@ -1004,8 +1004,9 @@
                 fetch(`/planeaciones/equipos/${idEquipo}/combustible-precargado`)
                     .then(res => res.json())
                     .then(data => {
-                        if (data.success && data.tiene_precarga && data.items && data.items.length > 0) {
-                            gastoPrecargaDisponible = data.items[0];
+                        const items = data.items || (data.gasto ? [data.gasto] : []);
+                        if (data.success && data.tiene_precarga && items.length > 0) {
+                            gastoPrecargaDisponible = items[0];
                             if (textoPrecarga) {
                                 const orig = gastoPrecargaDisponible.origen_contenedor_num ? ` (Contenedor origen: <b>${gastoPrecargaDisponible.origen_contenedor_num}</b>)` : '';
                                 textoPrecarga.innerHTML = `La unidad cuenta con <b>${gastoPrecargaDisponible.monto_formateado}</b> de Diésel precargado en tanque disponible${orig}.`;
@@ -1026,6 +1027,11 @@
                 camionSelect.addEventListener("change", function() {
                     verificarPrecargaUnidad(this.value);
                 });
+                if (window.jQuery) {
+                    $(camionSelect).on("change select2:select", function() {
+                        verificarPrecargaUnidad($(this).val());
+                    });
+                }
                 if (camionSelect.value) {
                     verificarPrecargaUnidad(camionSelect.value);
                 }

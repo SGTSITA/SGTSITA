@@ -209,6 +209,7 @@ class PlaneacionController extends Controller
                 return response()->json([
                     'success' => true,
                     'tiene_precarga' => false,
+                    'items' => [],
                 ]);
             }
 
@@ -216,21 +217,25 @@ class PlaneacionController extends Controller
             $bancoNombre = $primerPago?->cuentaBancaria?->nombre_banco ?? 'Banco';
             $cuentaNum = $primerPago?->cuentaBancaria?->cuenta ? ' •••• ' . substr($primerPago->cuentaBancaria->cuenta, -4) : '';
 
+            $gastoData = [
+                'id' => $gasto->id,
+                'concepto' => $gasto->concepto,
+                'monto' => floatval($gasto->monto_total),
+                'monto_formateado' => '$' . number_format($gasto->monto_total, 2),
+                'origen_contenedor' => $gasto->origen_contenedor_num,
+                'origen_contenedor_num' => $gasto->origen_contenedor_num,
+                'origen_cotizacion_id' => $gasto->origen_cotizacion_id,
+                'banco' => $primerPago ? ($bancoNombre . $cuentaNum) : 'Pre-pagado en banco',
+                'banco_id' => $primerPago?->cuenta_bancaria_id,
+                'fecha_aplicacion' => $primerPago?->fecha_pago ? Carbon::parse($primerPago->fecha_pago)->format('d/m/Y') : null,
+                'historial' => $gasto->historial_reasignaciones ?? [],
+            ];
+
             return response()->json([
                 'success' => true,
                 'tiene_precarga' => true,
-                'gasto' => [
-                    'id' => $gasto->id,
-                    'concepto' => $gasto->concepto,
-                    'monto' => floatval($gasto->monto_total),
-                    'monto_formateado' => '$' . number_format($gasto->monto_total, 2),
-                    'origen_contenedor' => $gasto->origen_contenedor_num,
-                    'origen_cotizacion_id' => $gasto->origen_cotizacion_id,
-                    'banco' => $primerPago ? ($bancoNombre . $cuentaNum) : 'Pre-pagado en banco',
-                    'banco_id' => $primerPago?->cuenta_bancaria_id,
-                    'fecha_aplicacion' => $primerPago?->fecha_pago ? Carbon::parse($primerPago->fecha_pago)->format('d/m/Y') : null,
-                    'historial' => $gasto->historial_reasignaciones ?? [],
-                ],
+                'gasto' => $gastoData,
+                'items' => [$gastoData],
             ]);
 
         } catch (\Throwable $th) {
