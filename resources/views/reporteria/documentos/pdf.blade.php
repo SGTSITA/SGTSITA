@@ -76,7 +76,7 @@
 <body>
     @php
         $empresaActual = data_get($user, 'Empresa');
-        $esEmpresaGlobal = $empresaActual ? $empresaActual->esGlobalMultiEquipo() : false;
+        $esEmpresaGlobal = !empty($separarUnidades);
     @endphp
 
     <h4>Empresa: {{ data_get($user, 'Empresa.nombre', 'SGT') }}</h4>
