@@ -669,6 +669,8 @@ class PlaneacionService
 
     /**
      * Guarda gastos asociados al viaje durante la planeación.
+     */
+    public function guardarOtrosGastosPlaneacion(array $filas, string $numContenedor, $idOperadorViaje, int $idEmpresa, $user): array
     {
         $respuesta = null;
         $descripcionGastosPermitidos = [
