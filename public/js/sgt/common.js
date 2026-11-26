@@ -51,6 +51,16 @@ function validarEmail(email) {
 }
 
 function moneyFormat(moneyValue) {
+    if (moneyValue === null || moneyValue === undefined || moneyValue === "") {
+        moneyValue = 0;
+    }
+    let valStr = String(moneyValue);
+    if (valStr.includes("NaN")) {
+        moneyValue = 0;
+    } else {
+        let clean = typeof moneyValue === "string" ? reverseMoneyFormat(valStr).trim() : moneyValue;
+        moneyValue = parseFloat(clean);
+    }
     let num = parseFloat(moneyValue);
     if (isNaN(num)) {
         num = 0;
@@ -68,7 +78,7 @@ function reverseMoneyFormat(formatValue) {
     if (formatValue === null || formatValue === undefined) {
         return "";
     }
-    var valorLimpio = String(formatValue).replace(/[\$,\s]/g, "");
+    var valorLimpio = String(formatValue).replace(/NaN/gi, "").replace(/[\$,\s]/g, "");
     return valorLimpio;
 }
 
