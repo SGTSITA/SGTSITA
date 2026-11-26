@@ -394,8 +394,11 @@
                                                                                     <span class="badge bg-secondary me-1" style="font-size: 10px;">{{ $idx + 1 }}</span>
                                                                                     <strong class="text-primary">{{ $h['contenedor'] ?? 'S/N' }}</strong>
                                                                                     <span class="text-muted ms-1">({{ !empty($h['fecha']) ? \Carbon\Carbon::parse($h['fecha'])->format('d/m/Y H:i') : 'Fecha N/D' }})</span>
-                                                                                    <span class="badge {{ ($h['accion'] ?? '') === 'deshecho_a_tanque' ? 'bg-warning text-dark' : 'bg-success text-white' }} ms-1" style="font-size: 9px;">
-                                                                                        {{ ($h['accion'] ?? '') === 'deshecho_a_tanque' ? 'Deshecho a tanque' : 'Aplicado a viaje' }}
+                                                                                    @php
+                                                                                        $isTanque = in_array($h['accion'] ?? '', ['deshecho_a_tanque', 'cancelado_y_precargado']);
+                                                                                    @endphp
+                                                                                    <span class="badge {{ $isTanque ? 'bg-warning text-dark' : 'bg-success text-white' }} ms-1" style="font-size: 9px;">
+                                                                                        {{ $isTanque ? 'Deshecho a tanque' : 'Aplicado a viaje' }}
                                                                                     </span>
                                                                                 </li>
                                                                             @endforeach

@@ -437,7 +437,8 @@ $(document).on("click", ".precarga-badge-info", function (e) {
     if (Array.isArray(historial) && historial.length > 0) {
         html += `<ul class="list-unstyled mt-2 mb-0">`;
         historial.forEach((h, i) => {
-            const accionBadge = h.accion === 'deshecho_a_tanque' 
+            const isTanque = h.accion === 'deshecho_a_tanque' || h.accion === 'cancelado_y_precargado';
+            const accionBadge = isTanque
                 ? '<span class="badge bg-warning text-dark">Deshecho a tanque</span>'
                 : '<span class="badge bg-success text-white">Aplicado a viaje</span>';
             html += `<li class="py-1 border-bottom d-flex justify-content-between align-items-center">
