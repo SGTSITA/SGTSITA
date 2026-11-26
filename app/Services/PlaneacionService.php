@@ -592,26 +592,7 @@ class PlaneacionService
             $camionN = !empty($data['cmbCamion']) ? Equipo::find($data['cmbCamion']) : null;
             $chasisN = !empty($data['cmbChasis']) ? Equipo::find($data['cmbChasis']) : null;
 
-            $waText = "🚛 *Detalles del Viaje Programado* 🚛
-
-"
-                . "📦 *Contenedor:* " . implode(" / ", $numContenedores) . "
-"
-                . "📍 *Origen:* " . ($cotizacion->origen ?? 'N/D') . "
-"
-                . "🏁 *Destino:* " . ($cotizacion->destino ?? 'N/D') . "
-"
-                . "📅 *Fecha Inicio:* " . Carbon::parse($fechaInicio)->format('d/m/Y') . "
-"
-                . "📅 *Fecha Fin:* " . Carbon::parse($fechaFinal)->format('d/m/Y') . "
-"
-                . "👤 *Operador:* " . ($operadorN ? $operadorN->nombre : 'Subcontratado') . "
-"
-                . "🚚 *Unidad:* " . ($camionN ? $camionN->id_equipo . ' (' . $camionN->placas . ')' : 'N/A') . "
-"
-                . "🔗 *Chasis:* " . ($chasisN ? $chasisN->id_equipo : 'N/A') . "
-"
-                . "🔑 *Contraseña Temporal:* " . $passwordTemporal;
+            $waText = $this->construirMensajeWhatsApp($cotizacion, $asignaciones, $passwordTemporal);
 
             return [
                 "TMensaje" => "success",
@@ -627,9 +608,67 @@ class PlaneacionService
     }
 
     /**
-     * Guarda gastos asociados al viaje durante la planeación.
+     * Construye el texto estandarizado para compartir la salida del viaje por WhatsApp.
      */
-    public function guardarOtrosGastosPlaneacion(array $filas, string $numContenedor, $idOperadorViaje, int $idEmpresa, $user): array
+    public function construirMensajeWhatsApp(Cotizaciones $cotizacion, Asignaciones $asignaciones, $passwordTemporal = null): string
+    {
+        $hora = Carbon::now()->hour;
+        if ($hora >= 6 && $hora < 12) {
+            $saludo = "Buenos días";
+        } elseif ($hora >= 12 && $hora < 19) {
+            $saludo = "Buenas tardes";
+        } else {
+            $saludo = "Buenas noches";
+        }
+
+        $nombreOp = $asignaciones->Operador?->nombre ?? '';
+
+        $contenedorStr = '';
+        if (!empty($cotizacion->referencia_full)) {
+            $contenedoresFull = DocumCotizacion::join('cotizaciones', 'cotizaciones.id', '=', 'docum_cotizacion.id_cotizacion')
+                ->where('cotizaciones.referencia_full', $cotizacion->referencia_full)
+                ->pluck('docum_cotizacion.num_contenedor')
+                ->toArray();
+
+            if (!empty($contenedoresFull)) {
+                $contenedorStr = implode(' - ', $contenedoresFull);
+            }
+        }
+        if (empty($contenedorStr)) {
+            $contenedorStr = $cotizacion->DocCotizacion?->num_contenedor ?? '';
+        }
+
+        $camion = $asignaciones->Camion ?? ($asignaciones->id_camion ? Equipo::find($asignaciones->id_camion) : null);
+        $unidadEco = $camion ? $camion->id_equipo : '';
+
+        $origen = $cotizacion->origen;
+        $direccion = $cotizacion->direccion_mapa ?: $cotizacion->direccion_entrega;
+        $mapLink = $cotizacion->latitud && $cotizacion->longitud
+            ? "https://maps.google.com/?q={$cotizacion->latitud},{$cotizacion->longitud}"
+            : "";
+        $contacto = $cotizacion->cp_contacto_entrega ?? "";
+        $comentarios = $cotizacion->observaciones ?: ($cotizacion->cp_comentarios ?? "");
+        $fechaEntregaRaw = $cotizacion->fecha_entrega ?: $cotizacion->cp_fecha_tentativa_entrega;
+        $fechaEntrega = $fechaEntregaRaw ? Carbon::parse($fechaEntregaRaw)->format('d/m/Y') : "";
+        $horaLlegada = $cotizacion->cp_hora_tentativa_entrega ?? "";
+
+        $waText = "{$saludo}" . ($nombreOp ? " " . trim($nombreOp) : "") . ",\n\n";
+        $waText .= "Comparto los datos de salida del día de hoy:\n\n";
+        $waText .= "{$contenedorStr}" . ($unidadEco ? "-{$unidadEco}" : "") . "\n";
+        $waText .= "Puerto / Lugar de salida:\n" . ($origen ?: "") . "\n";
+        $waText .= "Domicilio de entrega: " . ($direccion ?: "") . "\n";
+        $waText .= "Mapa: " . ($mapLink ?: "") . "\n";
+        $waText .= "Contacto: " . ($contacto ?: "") . "\n";
+        $waText .= "Fecha de entrega:\n" . ($fechaEntrega ?: "") . "\n";
+        $waText .= "Hora de llegada a bodega:\n" . ($horaLlegada ?: "") . "\n";
+        $waText .= "Hora de salida: \n";
+        $waText .= "Comentarios:\n" . ($comentarios ?: "") . "\n\n";
+
+        return $waText;
+    }
+
+    /**
+     * Guarda gastos asociados al viaje durante la planeación.
     {
         $respuesta = null;
         $descripcionGastosPermitidos = [
@@ -684,10 +723,12 @@ class PlaneacionService
                     }
                     if (!$gastoPrecarga->imputaciones()->where('imputable_type', Asignaciones::class)->where('imputable_id', $asignacion->id)->exists()) {
                         $gastoPrecarga->imputaciones()->create([
+                            'fecha_imputacion' => Carbon::now()->format('Y-m-d'),
+                            'tipo_imputacion' => 'viaje',
                             'imputable_type' => Asignaciones::class,
                             'imputable_id' => $asignacion->id,
-                            'porcentaje' => 100,
-                            'monto' => $gastoPrecarga->monto_total,
+                            'monto_imputado' => $gastoPrecarga->monto_total,
+                            'origen' => 'directo',
                         ]);
                     }
                     continue;
@@ -1114,7 +1155,48 @@ class PlaneacionService
         $gastosProcesadosIds = [];
 
         foreach ($otrosGastos as $gasto) {
-            $gastoId = !empty($gasto['id']) ? intval($gasto['id']) : null;
+            $gastoId = !empty($gasto['id']) ? intval($gasto['id']) : (!empty($gasto['id_precarga']) ? intval($gasto['id_precarga']) : null);
+            if ($gastoId) {
+                $gastoPrecarga = Gasto::where('id', $gastoId)->where('es_precarga_combustible', true)->first();
+                if ($gastoPrecarga) {
+                    $gastoPrecarga->es_precarga_combustible = false;
+                    $gastoPrecarga->origen_legacy_id = $asignacion->id;
+                    $gastoPrecarga->origen_legacy = 'asignacion_planeacionGDI02 - Diesel';
+                    $historial = $gastoPrecarga->historial_reasignaciones ?? [];
+                    $historial[] = [
+                        'fecha' => now()->toDateTimeString(),
+                        'contenedor' => $contenedor->num_contenedor,
+                        'cotizacion_id' => $contenedor->id_cotizacion,
+                        'equipo_id' => $asignacion->id_camion ?: $asignacion->id_equipo,
+                        'accion' => 'aplicado_a_viaje_edit',
+                        'usuario_id' => auth()->id(),
+                    ];
+                    $gastoPrecarga->historial_reasignaciones = $historial;
+                    $gastoPrecarga->save();
+
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'cotizacion')->where('vinculable_id', $contenedor->id_cotizacion)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'cotizacion', 'vinculable_type' => Cotizaciones::class, 'vinculable_id' => $contenedor->id_cotizacion]);
+                    }
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'contenedor')->where('vinculable_id', $contenedor->id)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'contenedor', 'vinculable_type' => DocumCotizacion::class, 'vinculable_id' => $contenedor->id]);
+                    }
+                    if (!$gastoPrecarga->vinculos()->where('tipo_vinculo', 'asignacion')->where('vinculable_id', $asignacion->id)->exists()) {
+                        $gastoPrecarga->vinculos()->create(['tipo_vinculo' => 'asignacion', 'vinculable_type' => Asignaciones::class, 'vinculable_id' => $asignacion->id]);
+                    }
+                    if (!$gastoPrecarga->imputaciones()->where('imputable_type', Asignaciones::class)->where('imputable_id', $asignacion->id)->exists()) {
+                        $gastoPrecarga->imputaciones()->create([
+                            'fecha_imputacion' => Carbon::now()->format('Y-m-d'),
+                            'tipo_imputacion' => 'viaje',
+                            'imputable_type' => Asignaciones::class,
+                            'imputable_id' => $asignacion->id,
+                            'monto_imputado' => $gastoPrecarga->monto_total,
+                            'origen' => 'directo',
+                        ]);
+                    }
+                    $gastosProcesadosIds[] = $gastoPrecarga->id;
+                    continue;
+                }
+            }
             $motivo = $gasto['motivo'] ?? null;
             $monto = floatval($gasto['monto'] ?? 0);
             $esPagoInmediato = !empty($gasto['pagoInmediato']);
@@ -1515,6 +1597,8 @@ class PlaneacionService
                 }
             }
 
+            $waText = $this->construirMensajeWhatsApp($cotizacion, $asignaciones, $passwordTemporal);
+
             return [
                 "TMensaje" => "success",
                 "Titulo" => "Planeado correctamente",
@@ -1522,6 +1606,7 @@ class PlaneacionService
                 'success' => true,
                 'cotizacion_data' => ["tipo_viaje" => $cotizacion->tipo_viaje],
                 'password_temporal' => null,
+                'wa_text' => $waText,
                 'id_asignacion' => $asignaciones->id,
             ];
         });
