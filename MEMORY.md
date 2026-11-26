@@ -23,7 +23,8 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 - **Captura Ágil de Campos Numéricos y Moneda en Planeación (Step Propios y Editar Planeación):**
   - Implementada la misma estrategia ágil de captura de cotizaciones en `public/js/sgt/common.js`: al enfocar (`focus`) un campo con valor `0`, `0.00`, `$0.00` o vacío, se limpia automáticamente para teclear directo sin tener que borrar; si contiene un valor mayor a cero, se desformatea a número limpio y se selecciona todo el texto (`select()`) con prevención de deselección en `mouseup` para sustitución inmediata.
   - Al desenfocar (`blur`), se restaura el formato correspondiente (`moneyFormat` para `.moneyformat` y formato decimal para litros y montos).
-  - Aplicado a sueldo operador, dinero de viaje, litros diésel, litros urea y gastos adicionales (tanto en `/planeaciones/planeacion-step` como en `/planeaciones/viajes/editar/{id}`). En `PlaneacionService` se blindó la recepción de valores monetarios con limpieza regex defensiva.
+  - Removidos listeners locales obsoletos/conflictivos de `.moneyformat` en `public/js/sgt/cotizaciones/aprobadas_list.js` que sobrescribían valores vacíos con `$NaN`.
+  - Robustecidas `moneyFormat` y `reverseMoneyFormat` en `common.js` para limpiar defensivamente `NaN` y valores vacíos hacia `0` (`$0.00`), garantizando que `#txtSueldoOperador` y `#txtDineroViaje` en `/planeaciones/programar-viaje` nunca muestren `$NaN`. En `PlaneacionService` se blindó la recepción de valores monetarios con limpieza regex defensiva.
 - **Spec 019 (Thin Controllers & Reusable Services) — VALIDADA EN DEMO (SGT, MEC y MEP):**
   - `PlaneacionService`, `CotizacionesService`, `CuentasCobrarService`, `MepService`, `EquipoService` y `OperadorService` centralizan lógica de negocio.
   - Unicidad de `id_viaje` por cotización en `resolverViajeDesdeRequest` y `CoordenadasService::baseQuery` evitando duplicados en rastreo.

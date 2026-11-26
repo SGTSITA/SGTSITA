@@ -997,15 +997,7 @@ async function programarViaje() {
     });
 }
 
-$(".moneyformat").on("focus", (e) => {
-    var val = e.target.value;
-    e.target.value = reverseMoneyFormat(val);
-});
-
-$(".moneyformat").on("blur", (e) => {
-    var val = e.target.value;
-    e.target.value = moneyFormat(val);
-});
+// Nota: Los listeners de .moneyformat son manejados de forma unificada en common.js
 
 /* cmbTipoUnidad.addEventListener("change", (e) => {
     let isActive = e.target.value == "Sencillo" ? true : false;

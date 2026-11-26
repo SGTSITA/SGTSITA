@@ -403,10 +403,10 @@
                 <script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js"></script>
 
                 <!-- Nuestro JavaScript unificado -->
+                <script src="/js/sgt/common.js?v={{ filemtime(public_path('js/sgt/common.js')) }}"></script>
                 <script
                     src="/js/sgt/cotizaciones/aprobadas_list.js?v={{ filemtime(public_path('js/sgt/cotizaciones/aprobadas_list.js')) }}">
                 </script>
-                <script src="/js/sgt/common.js?v=1744206575"></script>
 
                 <script src="/assets/js/plugins/multistep-form.js"></script>
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
@@ -422,7 +422,8 @@
                         let moneyformatInput = document.querySelectorAll('.moneyformat');
                         moneyformatInput.forEach((r) => {
                             if (r.value && r.value.trim() !== "") {
-                                r.value = moneyFormat(reverseMoneyFormat(r.value).trim());
+                                var num = parseFloat(reverseMoneyFormat(r.value).trim()) || 0;
+                                r.value = moneyFormat(num);
                             } else {
                                 r.value = moneyFormat(0);
                             }
