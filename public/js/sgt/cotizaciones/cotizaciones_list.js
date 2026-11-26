@@ -47,6 +47,42 @@ function abrirMapaEnNuevaPestana(contenedor, tipoS) {
     const url = `/coordenadas/mapa_rastreo?contenedor=${contenedor}&tipoS=${encodeURIComponent(tipoS)}`;
     window.open(url, "_blank");
 }
+
+function copiarTextoAlPortapapeles(event, texto) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    if (!texto) return;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(texto).then(() => {
+            if (typeof toastr !== "undefined") {
+                toastr.success(`Copiado: ${texto}`, "Portapapeles");
+            }
+        }).catch(() => {
+            copiarFallback(texto);
+        });
+    } else {
+        copiarFallback(texto);
+    }
+}
+
+function copiarFallback(texto) {
+    const input = document.createElement("input");
+    input.value = texto;
+    document.body.appendChild(input);
+    input.select();
+    try {
+        document.execCommand("copy");
+        if (typeof toastr !== "undefined") {
+            toastr.success(`Copiado: ${texto}`, "Portapapeles");
+        }
+    } catch (e) {
+        console.error("Error al copiar texto", e);
+    }
+    document.body.removeChild(input);
+}
+window.copiarTextoAlPortapapeles = copiarTextoAlPortapapeles;
 document.addEventListener("DOMContentLoaded", function () {
     let gridApi;
     let currentTab = "planeadas";
@@ -98,8 +134,22 @@ document.addEventListener("DOMContentLoaded", function () {
             field: "contenedor",
             sortable: true,
             filter: true,
-            minWidth: 150,
+            minWidth: 160,
             autoHeight: true, // Permite que la fila se ajuste en altura
+            cellRenderer: (params) => {
+                if (!params.value) return '';
+                const escaped = String(params.value).replace(/'/g, "\\'");
+                return `
+                    <div class="d-flex align-items-center justify-content-between w-100 py-1">
+                        <span class="me-2">${params.value}</span>
+                        <button type="button" class="btn btn-xs btn-link text-primary p-0 m-0 border-0" 
+                                onclick="copiarTextoAlPortapapeles(event, '${escaped}')" 
+                                title="Copiar contenedor">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
+                `;
+            },
             cellStyle: (params) => {
                 const styles = {
                     "white-space": "normal",
@@ -128,6 +178,13 @@ document.addEventListener("DOMContentLoaded", function () {
             filter: true,
             minWidth: 150,
         },
+        ...(window.canVerProveedorSeguimiento ? [{
+            headerName: "Proveedor",
+            field: "proveedor",
+            sortable: true,
+            filter: true,
+            minWidth: 160,
+        }] : []),
 
         {
             headerName: "Estatus",
@@ -269,6 +326,8 @@ document.addEventListener("DOMContentLoaded", function () {
         paginationPageSize: 10,
         paginationPageSizeSelector: [10, 50, 100],
         rowSelection: "multiple",
+        enableCellTextSelection: true,
+        ensureDomOrder: true,
         defaultColDef: {
             resizable: true,
             flex: 1,

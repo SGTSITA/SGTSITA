@@ -18,3 +18,4 @@ En este directorio residen las especificaciones funcionales y técnicas del sist
 | [011](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/011-ajustes-contabilidad-balance-socios) | Ajustes Contabilidad, Balance General y Saldos | Completado | Contabilidad / Finanzas |
 | [012](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/012-opcion-separacion-unidades-reportes) | Opción Dinámica de Separación por Unidades en Reportería | Completado | Reportería |
 | [013](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/013-separacion-otros-gastos-utilidad-unidades) | Separación de Otros Gastos por Unidad y Cuadre de Utilidad Neta | Propuesta | Reportería / Gastos |
+| [030](file:///c:/Users/carlo/Documents/desarrollo/JoseMXN/SGTSITA/specs/030-seguimiento-proveedor-grid-reporte-gastos) | Columna Proveedor y Copiado en Seguimiento + Reporte Unificado de Gastos | Propuesta | Cotizaciones / Gastos |

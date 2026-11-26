@@ -187,15 +187,15 @@
                     <label class="form-label mb-1 small fw-bold">
                         Litros diesel
                     </label>
-                    <input type="number" class="form-control form-control-sm text-end" id="litros_diesel"
-                        step="0.001" min="0" name="gasto_litros_diesel" placeholder="0.000">
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm text-end numeric-input" id="litros_diesel"
+                        name="gasto_litros_diesel" placeholder="0.000" oninput="allowOnlyDecimals(event)" autocomplete="off">
                 </div>
                 <div class="col-md-4 mt-3">
                     <label class="form-label mb-1 small fw-bold">
                         Litros urea
                     </label>
-                    <input type="number" class="form-control form-control-sm text-end" id="litros_urea"
-                        step="0.001" min="0" name="gasto_litros_urea" placeholder="0.000">
+                    <input type="text" inputmode="decimal" class="form-control form-control-sm text-end numeric-input" id="litros_urea"
+                        name="gasto_litros_urea" placeholder="0.000" oninput="allowOnlyDecimals(event)" autocomplete="off">
                 </div>
 
             </div>

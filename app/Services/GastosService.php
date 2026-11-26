@@ -7,6 +7,8 @@ use App\Models\Cotizaciones;
 use App\Models\DocumCotizacion;
 use App\Models\Gasto;
 use App\Models\GastoPago;
+use App\Models\GastoConcepto;
+use App\Models\GastoPartida;
 use App\Models\GastosExtras;
 use App\Models\GastosGenerales;
 use App\Models\GastosOperadores;
@@ -2644,5 +2646,253 @@ class GastosService
             ->get();
 
         return collect($gastosOperadores)->merge($gastosGenerales);
+    }
+
+    /**
+     * Genera la matriz pivote de relación de gastos unificada agrupada por categoría y subcategoría.
+     */
+    public function obtenerReporteUnificadoMatriz(
+        int $idEmpresa,
+        ?string $from = null,
+        ?string $to = null,
+        bool $omitirVacias = true,
+        string $agrupacion = 'subcategoria'
+    ): array {
+        // Resilient Date Parsing
+        $fechaInicio = null;
+        if (!empty($from)) {
+            try {
+                $fechaInicio = str_contains($from, '/')
+                    ? Carbon::createFromFormat('d/m/Y', $from)->startOfDay()
+                    : Carbon::parse($from)->startOfDay();
+            } catch (\Throwable $e) {
+                $fechaInicio = now()->startOfYear();
+            }
+        } else {
+            $fechaInicio = now()->startOfYear();
+        }
+
+        $fechaFin = null;
+        if (!empty($to)) {
+            try {
+                $fechaFin = str_contains($to, '/')
+                    ? Carbon::createFromFormat('d/m/Y', $to)->endOfDay()
+                    : Carbon::parse($to)->endOfDay();
+            } catch (\Throwable $e) {
+                $fechaFin = now()->endOfYear();
+            }
+        } else {
+            $fechaFin = now()->endOfYear();
+        }
+
+        // 1. Obtener todas las categorías activas
+        $todasCategorias = CategoriasGastos::where('is_active', 1)
+            ->orderBy('categoria')
+            ->get(['id', 'categoria']);
+
+        // 2. Obtener gastos en el periodo que no estén cancelados
+        $query = Gasto::with(['categoria', 'conceptoCatalogo'])
+            ->where('estatus', '!=', 'cancelado')
+            ->whereBetween('fecha_gasto', [
+                $fechaInicio->format('Y-m-d'),
+                $fechaFin->format('Y-m-d')
+            ]);
+
+        if (!empty($idEmpresa) && $idEmpresa != 0) {
+            $query->where('id_empresa', $idEmpresa);
+        }
+
+        $gastos = $query->get();
+
+        // 3. Estructurar filas y acumuladores
+        $filasMap = [];
+        $totalesColumnas = [];
+        foreach ($todasCategorias as $cat) {
+            $totalesColumnas[$cat->id] = 0.0;
+        }
+
+        $granTotal = 0.0;
+
+        foreach ($gastos as $g) {
+            if ($agrupacion === 'concepto') {
+                $subcatNombre = !empty($g->concepto) ? trim($g->concepto) : ($g->conceptoCatalogo?->nombre ?: 'Sin Concepto');
+            } elseif ($agrupacion === 'categoria') {
+                $subcatNombre = $g->categoria?->categoria ?: 'Sin Categoría';
+            } else {
+                $subcatNombre = $g->conceptoCatalogo?->nombre;
+                if (empty($subcatNombre)) {
+                    $subcatNombre = !empty($g->concepto) ? trim($g->concepto) : 'General / Sin Subcategoría';
+                }
+            }
+
+            $catId = $g->categoria_gasto_id;
+            $monto = (float) $g->monto_total;
+
+            if (!isset($filasMap[$subcatNombre])) {
+                $filasMap[$subcatNombre] = [
+                    'nombre' => $subcatNombre,
+                    'valores' => [],
+                    'total' => 0.0,
+                ];
+                foreach ($todasCategorias as $cat) {
+                    $filasMap[$subcatNombre]['valores'][$cat->id] = 0.0;
+                }
+            }
+
+            if ($catId && isset($filasMap[$subcatNombre]['valores'][$catId])) {
+                $filasMap[$subcatNombre]['valores'][$catId] += $monto;
+                $totalesColumnas[$catId] += $monto;
+            }
+
+            $filasMap[$subcatNombre]['total'] += $monto;
+            $granTotal += $monto;
+        }
+
+        // Si es agrupación por categoría y no se omiten vacías, incluir todas las categorías del catálogo en $filasMap
+        if ($agrupacion === 'categoria' && !$omitirVacias) {
+            foreach ($todasCategorias as $cat) {
+                if (!isset($filasMap[$cat->categoria])) {
+                    $filasMap[$cat->categoria] = [
+                        'nombre' => $cat->categoria,
+                        'valores' => [],
+                        'total' => 0.0,
+                    ];
+                }
+            }
+        }
+
+        // 4. Filtrar categorías en columnas
+        if ($agrupacion === 'categoria') {
+            // Cuando se agrupa solo por categoría, se muestran únicamente en filas con su importe (sin columnas redundantes)
+            $categorias = collect([]);
+        } elseif ($omitirVacias && $gastos->count() > 0) {
+            $categorias = $todasCategorias->filter(function ($cat) use ($totalesColumnas) {
+                return isset($totalesColumnas[$cat->id]) && $totalesColumnas[$cat->id] > 0;
+            })->values();
+        } else {
+            $categorias = $todasCategorias;
+        }
+
+        // Ordenar filas alfabéticamente
+        ksort($filasMap, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return [
+            'categorias' => $categorias,
+            'filas' => array_values($filasMap),
+            'totales_columnas' => $totalesColumnas,
+            'gran_total' => $granTotal,
+            'from' => $fechaInicio->format('d/m/Y'),
+            'to' => $fechaFin->format('d/m/Y'),
+            'from_raw' => $fechaInicio->format('Y-m-d'),
+            'to_raw' => $fechaFin->format('Y-m-d'),
+            'total_registros' => $gastos->count(),
+            'omitir_vacias' => $omitirVacias,
+            'agrupacion' => $agrupacion,
+        ];
+    }
+
+    public function getCatalogosCategoriasConceptos(): array
+    {
+        return [
+            'categorias' => CategoriasGastos::orderBy('categoria')->get(),
+            'conceptos' => GastoConcepto::with('categoria')->orderBy('nombre')->get(),
+        ];
+    }
+
+    public function crearCategoria(string $nombre): CategoriasGastos
+    {
+        $nombreLimpio = trim($nombre);
+        if (empty($nombreLimpio)) {
+            throw new \InvalidArgumentException('El nombre de la categoría es requerido.');
+        }
+
+        return CategoriasGastos::firstOrCreate(
+            ['categoria' => $nombreLimpio],
+            ['is_active' => 1]
+        );
+    }
+
+    public function actualizarCategoria(int $id, string $nombre): CategoriasGastos
+    {
+        $cat = CategoriasGastos::findOrFail($id);
+        $cat->update(['categoria' => trim($nombre)]);
+        return $cat;
+    }
+
+    public function crearConcepto(int $categoriaId, string $nombre, ?string $clave = null): GastoConcepto
+    {
+        $nombreLimpio = trim($nombre);
+        if (empty($nombreLimpio)) {
+            throw new \InvalidArgumentException('El nombre del concepto es requerido.');
+        }
+
+        CategoriasGastos::findOrFail($categoriaId);
+
+        $claveGenerada = $clave ?: strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $nombreLimpio), 0, 8));
+
+        return GastoConcepto::firstOrCreate(
+            [
+                'categoria_gasto_id' => $categoriaId,
+                'nombre' => $nombreLimpio,
+            ],
+            [
+                'clave' => $claveGenerada,
+                'tipo_default' => 'general',
+                'afecta_utilidad' => 1,
+                'permite_diferir' => 0,
+                'es_recuperable_cliente' => 0,
+                'is_active' => 1,
+            ]
+        );
+    }
+
+    public function actualizarConcepto(int $id, string $nombre, ?int $categoriaId = null): GastoConcepto
+    {
+        $concepto = GastoConcepto::findOrFail($id);
+        $data = ['nombre' => trim($nombre)];
+        if (!empty($categoriaId)) {
+            $data['categoria_gasto_id'] = $categoriaId;
+        }
+        $concepto->update($data);
+        return $concepto;
+    }
+
+    public function reclasificarGasto(int $gastoId, int $idEmpresa, int $categoriaId, ?int $subcategoriaId = null, ?string $concepto = null): Gasto
+    {
+        return DB::transaction(function () use ($gastoId, $idEmpresa, $categoriaId, $subcategoriaId, $concepto) {
+            $gasto = Gasto::where('id', $gastoId)->where('id_empresa', $idEmpresa)->firstOrFail();
+            $data = [
+                'categoria_gasto_id' => $categoriaId,
+                'gasto_concepto_id' => $subcategoriaId,
+            ];
+            if (!is_null($concepto) && trim($concepto) !== '') {
+                $data['concepto'] = trim($concepto);
+            }
+            $gasto->update($data);
+
+            $gasto->partidas()->update([
+                'categoria_gasto_id' => $categoriaId,
+                'gasto_concepto_id' => $subcategoriaId,
+            ]);
+
+            return $gasto;
+        });
+    }
+
+    public function reclasificarMultiple(array $gastoIds, int $idEmpresa, int $categoriaId, ?int $subcategoriaId = null): int
+    {
+        return DB::transaction(function () use ($gastoIds, $idEmpresa, $categoriaId, $subcategoriaId) {
+            $count = Gasto::whereIn('id', $gastoIds)->where('id_empresa', $idEmpresa)->update([
+                'categoria_gasto_id' => $categoriaId,
+                'gasto_concepto_id' => $subcategoriaId,
+            ]);
+
+            GastoPartida::whereIn('gasto_id', $gastoIds)->update([
+                'categoria_gasto_id' => $categoriaId,
+                'gasto_concepto_id' => $subcategoriaId,
+            ]);
+
+            return $count;
+        });
     }
 }

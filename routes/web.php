@@ -769,6 +769,32 @@ Route::middleware(['auth', 'idle.timeout'])->group(function () {
 
                     Route::post('/cuentas-bancarias/transferencia', [App\Http\Controllers\GastosController::class, 'storeTransferenciaBancaria'])
                         ->name('bancos_transferencia');
+
+                    // Reporte Unificado Matriz Pivote
+                    Route::get('/reporte-unificado', [App\Http\Controllers\GastosController::class, 'reporteUnificadoIndex'])
+                        ->name('reporte_unificado');
+                    Route::get('/reporte-unificado/data', [App\Http\Controllers\GastosController::class, 'reporteUnificadoData'])
+                        ->name('reporte_unificado.data');
+                    Route::get('/reporte-unificado/export', [App\Http\Controllers\GastosController::class, 'exportReporteUnificado'])
+                        ->name('reporte_unificado.export');
+
+                    // Administración de Categorías y Subcategorías
+                    Route::get('/catalogos/categorias-conceptos', [App\Http\Controllers\GastosController::class, 'getCatalogosCategoriasConceptos'])
+                        ->name('catalogos.categorias_conceptos');
+                    Route::post('/categorias/store', [App\Http\Controllers\GastosController::class, 'storeCategoria'])
+                        ->name('categorias.store');
+                    Route::put('/categorias/{id}', [App\Http\Controllers\GastosController::class, 'updateCategoria'])
+                        ->name('categorias.update');
+                    Route::post('/conceptos/store', [App\Http\Controllers\GastosController::class, 'storeConcepto'])
+                        ->name('conceptos.store');
+                    Route::put('/conceptos/{id}', [App\Http\Controllers\GastosController::class, 'updateConcepto'])
+                        ->name('conceptos.update');
+
+                    // Reclasificación de Gastos Existentes
+                    Route::post('/reclasificar', [App\Http\Controllers\GastosController::class, 'reclasificarGasto'])
+                        ->name('reclasificar');
+                    Route::post('/reclasificar-multiple', [App\Http\Controllers\GastosController::class, 'reclasificarMultiple'])
+                        ->name('reclasificar_multiple');
         });
 
         Route::get('gastos/generales', [App\Http\Controllers\GastosGeneralesController::class, 'index'])->name('index.gastos_generales');

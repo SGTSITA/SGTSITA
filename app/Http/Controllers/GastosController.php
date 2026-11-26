@@ -12,6 +12,8 @@ use App\Services\BancosService;
 use App\Exceptions\SaldoInsuficienteException;
 use App\Http\Requests\StoreGastoRequest;
 use App\Http\Requests\TransferenciaBancariaRequest;
+use App\Exports\GastosUnificadosExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -339,5 +341,242 @@ class GastosController extends Controller
             'cuenta_origen_id' => $request->cuenta_origen,
             'cuenta_destino_id' => $request->cuenta_destino,
         ]);
+    }
+
+    public function reporteUnificadoIndex(Request $request)
+    {
+        $idEmpresa = auth()->user()->id_empresa;
+        $empresa = Empresas::withoutGlobalScopes()->find($idEmpresa);
+
+        // Si no se especifica periodo, tomar el año actual completo para mostrar datos consolidados
+        $from = $request->query('from', now()->startOfYear()->format('Y-m-d'));
+        $to = $request->query('to', now()->endOfYear()->format('Y-m-d'));
+        $omitirVacias = $request->query('omitir_vacias', '1') !== '0';
+        $agrupacion = $request->query('agrupacion', 'subcategoria');
+
+        return view('gastos.reporte_unificado', compact('empresa', 'from', 'to', 'omitirVacias', 'agrupacion'));
+    }
+
+    public function reporteUnificadoData(Request $request)
+    {
+        try {
+            $omitirVacias = $request->input('omitir_vacias', '1');
+            $omitirVaciasBool = !in_array($omitirVacias, [0, '0', false, 'false'], true);
+            $agrupacion = $request->input('agrupacion', 'subcategoria');
+
+            $data = $this->gastosService->obtenerReporteUnificadoMatriz(
+                auth()->user()->id_empresa,
+                $request->from,
+                $request->to,
+                $omitirVaciasBool,
+                $agrupacion
+            );
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al cargar reporte',
+                'Mensaje' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function exportReporteUnificado(Request $request)
+    {
+        $omitirVacias = $request->query('omitir_vacias', '1');
+        $omitirVaciasBool = !in_array($omitirVacias, [0, '0', false, 'false'], true);
+        $agrupacion = $request->query('agrupacion', 'subcategoria');
+
+        $data = $this->gastosService->obtenerReporteUnificadoMatriz(
+            auth()->user()->id_empresa,
+            $request->from,
+            $request->to,
+            $omitirVaciasBool,
+            $agrupacion
+        );
+
+        $fileName = 'Relacion_Gastos_' . ($data['from_raw'] ?? date('Ymd')) . '_' . ($data['to_raw'] ?? date('Ymd')) . '.xlsx';
+
+        return Excel::download(new GastosUnificadosExport($data), $fileName);
+    }
+
+    public function getCatalogosCategoriasConceptos()
+    {
+        return response()->json([
+            'TMensaje' => 'success',
+            'catalogos' => $this->gastosService->getCatalogosCategoriasConceptos(),
+        ]);
+    }
+
+    public function storeCategoria(Request $request)
+    {
+        $request->validate([
+            'categoria' => ['required', 'string', 'max:100'],
+        ]);
+
+        try {
+            $cat = $this->gastosService->crearCategoria($request->categoria);
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Categoría creada',
+                'Mensaje' => "Categoría '{$cat->categoria}' creada exitosamente.",
+                'categoria' => $cat,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function updateCategoria(Request $request, $id)
+    {
+        $request->validate([
+            'categoria' => ['required', 'string', 'max:100'],
+        ]);
+
+        try {
+            $cat = $this->gastosService->actualizarCategoria((int) $id, $request->categoria);
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Categoría actualizada',
+                'Mensaje' => "Categoría actualizada exitosamente.",
+                'categoria' => $cat,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function storeConcepto(Request $request)
+    {
+        $request->validate([
+            'categoria_gasto_id' => ['required', 'exists:categorias_gastos,id'],
+            'nombre' => ['required', 'string', 'max:150'],
+            'clave' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        try {
+            $concepto = $this->gastosService->crearConcepto(
+                (int) $request->categoria_gasto_id,
+                $request->nombre,
+                $request->clave
+            );
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Subcategoría creada',
+                'Mensaje' => "Subcategoría '{$concepto->nombre}' registrada exitosamente.",
+                'concepto' => $concepto,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function updateConcepto(Request $request, $id)
+    {
+        $request->validate([
+            'nombre' => ['required', 'string', 'max:150'],
+            'categoria_gasto_id' => ['nullable', 'exists:categorias_gastos,id'],
+        ]);
+
+        try {
+            $concepto = $this->gastosService->actualizarConcepto(
+                (int) $id,
+                $request->nombre,
+                $request->categoria_gasto_id ? (int) $request->categoria_gasto_id : null
+            );
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Subcategoría actualizada',
+                'Mensaje' => "Subcategoría actualizada exitosamente.",
+                'concepto' => $concepto,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function reclasificarGasto(Request $request)
+    {
+        $request->validate([
+            'gasto_id' => ['required', 'exists:gastos,id'],
+            'categoria_gasto_id' => ['required', 'exists:categorias_gastos,id'],
+            'gasto_concepto_id' => ['nullable', 'exists:gasto_conceptos,id'],
+            'concepto' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            $gasto = $this->gastosService->reclasificarGasto(
+                (int) $request->gasto_id,
+                auth()->user()->id_empresa,
+                (int) $request->categoria_gasto_id,
+                $request->gasto_concepto_id ? (int) $request->gasto_concepto_id : null,
+                $request->concepto
+            );
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Gasto reclasificado',
+                'Mensaje' => 'El gasto se reclasificó correctamente.',
+                'gasto' => $gasto,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al reclasificar',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function reclasificarMultiple(Request $request)
+    {
+        $request->validate([
+            'gasto_ids' => ['required', 'array', 'min:1'],
+            'gasto_ids.*' => ['exists:gastos,id'],
+            'categoria_gasto_id' => ['required', 'exists:categorias_gastos,id'],
+            'gasto_concepto_id' => ['nullable', 'exists:gasto_conceptos,id'],
+        ]);
+
+        try {
+            $count = $this->gastosService->reclasificarMultiple(
+                $request->gasto_ids,
+                auth()->user()->id_empresa,
+                (int) $request->categoria_gasto_id,
+                $request->gasto_concepto_id ? (int) $request->gasto_concepto_id : null
+            );
+
+            return response()->json([
+                'TMensaje' => 'success',
+                'Titulo' => 'Reclasificación masiva',
+                'Mensaje' => "Se reclasificaron {$count} gastos correctamente.",
+                'afectados' => $count,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'TMensaje' => 'error',
+                'Titulo' => 'Error al reclasificar',
+                'Mensaje' => $e->getMessage(),
+            ], 422);
+        }
     }
 }

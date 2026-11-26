@@ -67,7 +67,7 @@ trait BeyondGPSTrait
 {
     try {
         $response = Http::connectTimeout(8)
-            ->timeout(20)
+            ->timeout(25)
             ->retry(2, 700)
             ->post($endpoint, [
                 'User' => $username,

@@ -11,4 +11,14 @@ class CategoriasGastos extends Model
     use HasFactory;
     use Auditable;
     protected $table = 'categorias_gastos';
+
+    protected $fillable = [
+        'categoria',
+        'is_active',
+    ];
+
+    public function conceptos()
+    {
+        return $this->hasMany(GastoConcepto::class, 'categoria_gasto_id');
+    }
 }

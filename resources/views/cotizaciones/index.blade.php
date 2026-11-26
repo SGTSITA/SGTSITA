@@ -7,7 +7,12 @@
         #myGrid {
             height: 600px;
             width: 100%;
+        }
 
+        #myGrid .ag-cell,
+        #myGrid .ag-cell-value {
+            user-select: text !important;
+            -webkit-user-select: text !important;
         }
 
         .card {
@@ -346,6 +351,9 @@
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        window.canVerProveedorSeguimiento = @json(auth()->user()->can('ver-proveedor-seguimiento'));
+    </script>
     <!-- Nuestro JavaScript unificado -->
     <script
         src="{{ asset('js/sgt/cotizaciones/cotizaciones_list.js') }}?v={{ filemtime(public_path('js/sgt/cotizaciones/cotizaciones_list.js')) }}">
