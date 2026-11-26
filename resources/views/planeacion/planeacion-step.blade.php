@@ -420,8 +420,13 @@
                         });
 
                         let moneyformatInput = document.querySelectorAll('.moneyformat');
-
-                        moneyformatInput.forEach((r) => r.value = moneyFormat(r.value))
+                        moneyformatInput.forEach((r) => {
+                            if (r.value && r.value.trim() !== "") {
+                                r.value = moneyFormat(reverseMoneyFormat(r.value).trim());
+                            } else {
+                                r.value = moneyFormat(0);
+                            }
+                        });
 
                     });
 
@@ -481,7 +486,7 @@
                     <span class="input-group-text bg-gradient-success text-white">
                       <i class="ni ni-money-coins"></i>
                     </span>
-                    <input type="number" step="0.01" min="0" class="form-control" name="gasto_monto[]" placeholder="0.00" required>
+                    <input type="text" inputmode="decimal" class="form-control numeric-input" name="gasto_monto[]" placeholder="0.00" oninput="allowOnlyDecimals(event)" autocomplete="off" required>
                   </div>
                 </div>
 

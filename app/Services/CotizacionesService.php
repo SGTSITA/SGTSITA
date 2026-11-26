@@ -253,6 +253,8 @@ class CotizacionesService
                 'Origen' => $cotizacion->origen,
                 'destino' => $cotizacion->destino,
                 'Destino' => $cotizacion->destino,
+                'proveedor' => optional($cotizacion->Proveedor)->nombre ?? optional($cotizacion->Proveedor)->razon_social ?? 'N/A',
+                'id_proveedor' => $cotizacion->id_proveedor,
                 'contenedor' => $contenedor,
                 'NumContenedor' => $contenedor,
                 'labelContenedor' => $doc ? $doc->num_contenedor : 'N/A',

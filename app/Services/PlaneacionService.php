@@ -392,7 +392,7 @@ class PlaneacionService
      */
     public function asignacion(array $data, int $idEmpresa, $user): array
     {
-        $cantineroViaje = !empty($data['txtDineroViaje']) ? floatval($data['txtDineroViaje']) : 0.0;
+        $cantineroViaje = !empty($data['txtDineroViaje']) ? floatval(preg_replace('/[^0-9.]/', '', strval($data['txtDineroViaje']))) : 0.0;
         $idBancoViaje = !empty($data['cmbBanco']) ? intval($data['cmbBanco']) : null;
         $fechaAplicacionDinero = $data['FechaAplicacionDinero'] ?? now()->format('d/m/Y');
 
@@ -492,13 +492,13 @@ class PlaneacionService
                 $asignaciones->id_dolys = $data['cmbDoly'] ?? null;
                 $asignaciones->id_camion = $data['cmbCamion'] ?? null;
                 $asignaciones->id_operador = $data['cmbOperador'] ?? null;
-                $asignaciones->sueldo_viaje = $data['txtSueldoOperador'] ?? 0;
+                $sueldoOperador = !empty($data['txtSueldoOperador']) ? floatval(preg_replace('/[^0-9.]/', '', strval($data['txtSueldoOperador']))) : 0.0;
+                $asignaciones->sueldo_viaje = $sueldoOperador;
                 $asignaciones->estatus_pagado = 'Pendiente Pago';
                 $asignaciones->dinero_viaje = $cantineroViaje;
                 $asignaciones->id_banco1_dinero_viaje = $idBancoViaje;
                 $asignaciones->cantidad_banco1_dinero_viaje = $cantineroViaje;
 
-                $sueldoOperador = floatval($data['txtSueldoOperador'] ?? 0);
                 $resta = $sueldoOperador - $cantineroViaje;
                 $asignaciones->pago_operador = $resta;
                 $asignaciones->restante_pago_operador = $resta;
@@ -920,8 +920,8 @@ class PlaneacionService
             $isElemental = !empty($data['elemental']);
 
             if (!$isElemental) {
-                $sueldoOperador = !empty($data['txtSueldoOperador']) ? floatval(str_replace(',', '', $data['txtSueldoOperador'])) : 0.0;
-                $dineroViaje = !empty($data['txtDineroViaje']) ? floatval(str_replace(',', '', $data['txtDineroViaje'])) : 0.0;
+                $sueldoOperador = !empty($data['txtSueldoOperador']) ? floatval(preg_replace('/[^0-9.]/', '', strval($data['txtSueldoOperador']))) : 0.0;
+                $dineroViaje = !empty($data['txtDineroViaje']) ? floatval(preg_replace('/[^0-9.]/', '', strval($data['txtDineroViaje']))) : 0.0;
                 $nuevoBancoDinero = !empty($data['cmbBanco']) ? intval($data['cmbBanco']) : null;
 
                 $nuevaFechaAppDinero = null;

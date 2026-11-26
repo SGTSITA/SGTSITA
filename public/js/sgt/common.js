@@ -136,3 +136,102 @@ function conocerDiaSemanaFecha(fecha) {
     const dia = new Date(fecha).getDay();
     return dias[dia];
 }
+
+// =========================================================================
+// Estrategia ágil de captura de números y moneda en SGT
+// (Limpia al foco si es 0, selecciona todo si es > 0, formatea en blur)
+// =========================================================================
+(function ($) {
+    if (!$ || window._sgtNumericCaptureInitialized) return;
+    window._sgtNumericCaptureInitialized = true;
+
+    let focusSelectTarget = null;
+
+    // 1. Campos de moneda (.moneyformat)
+    $(document).on("focus", ".moneyformat", function (e) {
+        if (this.readOnly || this.disabled) return;
+        if ($(this).hasClass("calculo-cotizacion") || $(this).hasClass("calculo-proveedor")) return;
+
+        var val = this.value;
+        var cleanVal = reverseMoneyFormat(val).trim();
+        var num = parseFloat(cleanVal);
+
+        if (!cleanVal || isNaN(num) || num === 0) {
+            this.value = "";
+            focusSelectTarget = null;
+        } else {
+            this.value = cleanVal;
+            focusSelectTarget = this;
+            setTimeout(() => {
+                if (document.activeElement === this) {
+                    try {
+                        this.select();
+                    } catch (err) {}
+                }
+            }, 10);
+        }
+    });
+
+    $(document).on("blur", ".moneyformat", function (e) {
+        if (this.readOnly || this.disabled) return;
+        if ($(this).hasClass("calculo-cotizacion") || $(this).hasClass("calculo-proveedor")) return;
+
+        focusSelectTarget = null;
+        var cleanVal = reverseMoneyFormat(this.value).trim();
+        var num = parseFloat(cleanVal);
+
+        if (!cleanVal || isNaN(num) || num === 0) {
+            this.value = moneyFormat(0);
+        } else {
+            this.value = moneyFormat(num);
+        }
+    });
+
+    // 2. Campos numéricos y decimales (.numeric-input, type=number, litros, gastos montos)
+    const numericSelectors = ".numeric-input, input[name='gasto_monto[]'], input[name='gasto_litros[]'], #litros_diesel, #litros_urea";
+
+    $(document).on("focus", numericSelectors, function (e) {
+        if (this.readOnly || this.disabled) return;
+
+        var cleanVal = String(this.value || "").trim();
+        var num = parseFloat(cleanVal);
+
+        if (!cleanVal || isNaN(num) || num === 0) {
+            this.value = "";
+            focusSelectTarget = null;
+        } else {
+            focusSelectTarget = this;
+            setTimeout(() => {
+                if (document.activeElement === this) {
+                    try {
+                        this.select();
+                    } catch (err) {}
+                }
+            }, 10);
+        }
+    });
+
+    $(document).on("blur", numericSelectors, function (e) {
+        if (this.readOnly || this.disabled) return;
+        focusSelectTarget = null;
+        var cleanVal = String(this.value || "").trim();
+        var num = parseFloat(cleanVal);
+
+        if (!cleanVal || isNaN(num)) {
+            this.value = "";
+        }
+    });
+
+    // Evitar que el mouseup deseleccione el texto recién enfocado
+    $(document).on("mouseup", ".moneyformat, " + numericSelectors, function (e) {
+        if (this.readOnly || this.disabled) return;
+        if (focusSelectTarget === this) {
+            focusSelectTarget = null;
+            e.preventDefault();
+            try {
+                this.select();
+            } catch (err) {}
+        }
+    });
+})(window.jQuery || $);
+

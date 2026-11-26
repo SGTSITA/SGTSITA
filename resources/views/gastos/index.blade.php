@@ -9,11 +9,19 @@
         <div class="card-header bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h5 class="mb-0">Gastos</h5>
-                <p class="text-sm text-muted mb-0">Modulo unificado para gastos del periodo, viaje, cotización.</p>
+                <p class="text-sm text-muted mb-0">Módulo unificado para gastos del periodo, viaje, cotización.</p>
             </div>
-            <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalGastoNew">
-                <i class="fa fa-plus"></i> Registrar gasto
-            </button>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-primary mb-0" id="btnAbrirReporteUnificado">
+                    <i class="fa fa-table me-1"></i> Reporte Unificado (Matriz)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-dark mb-0" id="btnAbrirCatalogoCategorias">
+                    <i class="fa fa-tags me-1"></i> Categorías / Subcategorías
+                </button>
+                <button type="button" class="btn btn-sm btn-info mb-0" data-bs-toggle="modal" data-bs-target="#modalGastoNew">
+                    <i class="fa fa-plus me-1"></i> Registrar gasto
+                </button>
+            </div>
         </div>
 
         <!-- Cards de Totales -->
@@ -125,6 +133,10 @@
                         <button type="button" class="btn btn-sm btn-success mb-0 px-2 text-nowrap" id="btnPayMultiple"
                             title="Pagar seleccionados">
                             Pagar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning mb-0 px-2 text-nowrap" id="btnReclasificarMultiple"
+                            title="Reclasificar seleccionados">
+                            <i class="fa fa-tags"></i>
                         </button>
                     </div>
                 </div>
@@ -920,6 +932,8 @@
     {{-- Sub-modales para operaciones bancarias in-situ desde el registro de gasto --}}
     @include('gastos.modals.modal_movimiento_in_gasto')
     @include('gastos.modals.modal_transferencia_in_gasto')
+    @include('gastos.modals.modal_catalogo_categorias')
+    @include('gastos.modals.modal_reclasificar_gasto')
 @endsection
 
 @section('js_custom')
@@ -941,6 +955,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="{{ asset('js/sgt/gastos/reporte_unificado_y_categorias.js') }}?v={{ filemtime(public_path('js/sgt/gastos/reporte_unificado_y_categorias.js')) }}"></script>
 
     <script>
         window.mesinicio = null;
@@ -1171,6 +1186,17 @@
                         abrirModalEditar(params.data);
                     });
                     this.eGui.appendChild(btnEditar);
+
+                    const btnReclasificar = document.createElement('button');
+                    btnReclasificar.className = 'btn btn-xs btn-outline-info my-0 py-1 px-2';
+                    btnReclasificar.innerHTML = '<i class="fa fa-tags"></i>';
+                    btnReclasificar.title = 'Reclasificar categoría / subcategoría';
+                    btnReclasificar.addEventListener('click', () => {
+                        if (typeof abrirModalReclasificarIndividual === 'function') {
+                            abrirModalReclasificarIndividual(params.data);
+                        }
+                    });
+                    this.eGui.appendChild(btnReclasificar);
                 }
 
                 // HISTORIAL

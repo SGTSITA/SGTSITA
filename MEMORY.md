@@ -2,6 +2,12 @@
 Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
 
 ## Estado actual
+- **Spec 030 (Columna Proveedor y Copiado en Seguimiento + Reporte Unificado y Reclasificación de Gastos):**
+  - Columna PROVEEDOR agregada en `/cotizaciones/index` (AG Grid) inmediatamente después de `Destino`, visible exclusivamente para usuarios con permiso `'ver-proveedor-seguimiento'` (con migración de permiso Spatie).
+  - Copiado de celdas habilitado en AG Grid (`enableCellTextSelection: true`, `ensureDomOrder: true`, CSS `user-select: text !important`) más botón de copiado rápido al portapapeles en `# Contenedor` con feedback Toast.
+  - Reporte Unificado de Gastos en Matriz Pivote en vista dedicada estandarizada Metronic (`/gastos/reporte-unificado`), abierta en nueva pestaña con sincronización automática del periodo activo en pantalla; calendario unificado con `initSgtDateRange` (exactas mismas opciones, rangos rápidos 'Últimos 7 días', 'Últimos 30 días', 'Este mes', 'Mes anterior', 'Personalizado' y límites de BD que en `/gastos`); switch interactivo `checkOmitirVacias` para ocultar columnas en cero (mostrando solo categorías con movimientos como en el Excel del contador) o alternar a ver todas; selector de agrupación dinámica (`Subcategorías`, `Concepto libre`, y modo compacto `Solo Categorías` de 2 columnas: Categoría e Importe Total tanto en web como en Excel sin columnas redundantes); empty-state con botones de acción rápida y exportación Excel 100% sincronizada con los filtros.
+  - Catálogo interactivo de Categorías y Subcategorías en `/gastos` con creación y edición in-situ (`CategoriasGastos` y `GastoConcepto`); desactivado el focus-trap de Bootstrap (`data-bs-focus="false"`) para permitir foco y escritura fluida en los prompts de edición de SweetAlert2.
+  - Módulo y endpoints de Reclasificación de Gastos individuales y masivos (`reclasificarGasto` y `reclasificarMultiple`).
 - **Spec 029 (Columna Cliente y Filtro Multi-Check Sincronizado — `/cotizaciones/costos-multiple`):**
   - Columna CLIENTE añadida después de `# CONTENEDOR` en ambas pestañas Handsontable con renderizador truncado (`width: 170px`) y fijación izquierda (`fixedColumnsLeft: 2`).
   - Barra de Filtros compacta en una sola fila continua; checkboxes nítidos (`19x19px` azul con palomita blanca), resaltado integral de fila seleccionada (`#ebf5ff`, borde `#b9dcff`).
@@ -14,6 +20,10 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Detección y absorción de precarga en nueva planeación (`GET /planeaciones/equipos/{id}/combustible-precargado` y `/resumen-gastos-cancelacion`) tanto en step como en edit sin generar nueva salida bancaria.
 - **Segregación y Gestión de Comprobaciones en Editar Planeación (`/planeaciones/viajes/editar/{id}`):**
   - Comprobaciones del chofer (`tipo_gasto = 'operador'` o comprobaciones legacy) segregadas de campos editables de planeación; no exigen banco. Botón de eliminación/rechazo (`/cotizaciones/gastos-operador/eliminar`) sincronizado con `gastos`, `viaticos_operadores` y `gastos_operadores`. Sueldo y Dinero de viaje excluidos de esta tabla. Acceso flexibilizado para empresa asignada o cliente.
+- **Captura Ágil de Campos Numéricos y Moneda en Planeación (Step Propios y Editar Planeación):**
+  - Implementada la misma estrategia ágil de captura de cotizaciones en `public/js/sgt/common.js`: al enfocar (`focus`) un campo con valor `0`, `0.00`, `$0.00` o vacío, se limpia automáticamente para teclear directo sin tener que borrar; si contiene un valor mayor a cero, se desformatea a número limpio y se selecciona todo el texto (`select()`) con prevención de deselección en `mouseup` para sustitución inmediata.
+  - Al desenfocar (`blur`), se restaura el formato correspondiente (`moneyFormat` para `.moneyformat` y formato decimal para litros y montos).
+  - Aplicado a sueldo operador, dinero de viaje, litros diésel, litros urea y gastos adicionales (tanto en `/planeaciones/planeacion-step` como en `/planeaciones/viajes/editar/{id}`). En `PlaneacionService` se blindó la recepción de valores monetarios con limpieza regex defensiva.
 - **Spec 019 (Thin Controllers & Reusable Services) — VALIDADA EN DEMO (SGT, MEC y MEP):**
   - `PlaneacionService`, `CotizacionesService`, `CuentasCobrarService`, `MepService`, `EquipoService` y `OperadorService` centralizan lógica de negocio.
   - Unicidad de `id_viaje` por cotización en `resolverViajeDesdeRequest` y `CoordenadasService::baseQuery` evitando duplicados en rastreo.

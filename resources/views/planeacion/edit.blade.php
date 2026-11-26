@@ -198,9 +198,10 @@
                                     <div class="input-group">
                                         <span class="input-group-text bg-gradient-success text-white"><i
                                                 class="ni ni-money-coins text-sm"></i></span>
-                                        <input class="form-control" name="txtSueldoOperador" id="txtSueldoOperador"
+                                        <input class="form-control moneyformat" name="txtSueldoOperador" id="txtSueldoOperador"
                                             type="text"
-                                            value="{{ $asignacion ? number_format($asignacion->sueldo_viaje, 2) : '0.00' }}"
+                                            value="{{ $asignacion && $asignacion->sueldo_viaje > 0 ? number_format($asignacion->sueldo_viaje, 2) : '0.00' }}"
+                                            oninput="allowOnlyDecimals(event)" autocomplete="off"
                                             required>
                                     </div>
                                 </div>
@@ -211,9 +212,10 @@
                                     <div class="input-group">
                                         <span class="input-group-text bg-gradient-success text-white"><i
                                                 class="ni ni-money-coins text-sm"></i></span>
-                                        <input class="form-control" name="txtDineroViaje" id="txtDineroViaje"
+                                        <input class="form-control moneyformat" name="txtDineroViaje" id="txtDineroViaje"
                                             type="text"
-                                            value="{{ $asignacion ? number_format($asignacion->dinero_viaje, 2) : '0.00' }}"
+                                            value="{{ $asignacion && $asignacion->dinero_viaje > 0 ? number_format($asignacion->dinero_viaje, 2) : '0.00' }}"
+                                            oninput="allowOnlyDecimals(event)" autocomplete="off"
                                             required>
                                     </div>
                                 </div>
@@ -246,9 +248,10 @@
                                 @endphp
                                 <div class="col-md-4 form-group mt-2">
                                     <label class="form-label font-weight-bold" for="litros_diesel">Litros Diésel</label>
-                                    <input type="number" step="0.001" class="form-control text-end"
+                                    <input type="text" inputmode="decimal" class="form-control text-end numeric-input"
                                         id="litros_diesel" name="litros_diesel"
-                                        value="{{ $cotizacion->litros_diesel ?? 0 }}">
+                                        value="{{ !empty($cotizacion->litros_diesel) && $cotizacion->litros_diesel > 0 ? $cotizacion->litros_diesel : '0.000' }}"
+                                        placeholder="0.000" oninput="allowOnlyDecimals(event)" autocomplete="off">
                                     @if($bitacora && $bitacora->costo)
                                         <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
                                             <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo, 2) }}</span>
@@ -270,8 +273,10 @@
                                 </div>
                                 <div class="col-md-4 form-group mt-2">
                                     <label class="form-label font-weight-bold" for="litros_urea">Litros Urea</label>
-                                    <input type="number" step="0.001" class="form-control text-end" id="litros_urea"
-                                        name="litros_urea" value="{{ $cotizacion->litros_urea ?? 0 }}">
+                                    <input type="text" inputmode="decimal" class="form-control text-end numeric-input" id="litros_urea"
+                                        name="litros_urea"
+                                        value="{{ !empty($cotizacion->litros_urea) && $cotizacion->litros_urea > 0 ? $cotizacion->litros_urea : '0.000' }}"
+                                        placeholder="0.000" oninput="allowOnlyDecimals(event)" autocomplete="off">
                                     @if($bitacora && $bitacora->costo_urea)
                                         <div class="mt-1 small text-muted d-flex justify-content-between align-items-center">
                                             <span><strong>Importe (App):</strong> ${{ number_format($bitacora->costo_urea, 2) }}</span>
@@ -395,10 +400,10 @@
                                                         <span class="input-group-text bg-gradient-success text-white">
                                                             <i class="ni ni-money-coins"></i>
                                                         </span>
-                                                        <input type="number" step="0.01" min="0"
-                                                            class="form-control" name="gasto_monto[]"
-                                                            value="{{ floatval($gasto->monto_total) }}"
-                                                            placeholder="0.00" required>
+                                                        <input type="text" inputmode="decimal"
+                                                            class="form-control numeric-input" name="gasto_monto[]"
+                                                            value="{{ floatval($gasto->monto_total) > 0 ? number_format($gasto->monto_total, 2, '.', '') : '0.00' }}"
+                                                            placeholder="0.00" oninput="allowOnlyDecimals(event)" autocomplete="off" required>
                                                     </div>
                                                 </div>
 
@@ -540,6 +545,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Formatear campos monetarios iniciales (.moneyformat)
+            document.querySelectorAll('.moneyformat').forEach(function(r) {
+                if (r.value && r.value.trim() !== '') {
+                    var num = parseFloat(reverseMoneyFormat(r.value).trim()) || 0;
+                    r.value = moneyFormat(num);
+                } else {
+                    r.value = moneyFormat(0);
+                }
+            });
+
             // Manejo de Planeación Elemental en Edición
             const toggleElementalEdit = document.getElementById('toggleElementalEdit');
             const reqFieldsEdit = [
@@ -665,7 +680,7 @@
                             <span class="input-group-text bg-gradient-success text-white">
                                 <i class="ni ni-money-coins"></i>
                             </span>
-                            <input type="number" step="0.01" min="0" class="form-control" name="gasto_monto[]" placeholder="0.00" required>
+                            <input type="text" inputmode="decimal" class="form-control numeric-input" name="gasto_monto[]" placeholder="0.00" oninput="allowOnlyDecimals(event)" autocomplete="off" required>
                         </div>
                     </div>
 
@@ -938,6 +953,12 @@
 
                 const formData = new FormData(form);
                 if (!isElemental) {
+                    const sueldoInput = document.getElementById("txtSueldoOperador");
+                    const dineroInput = document.getElementById("txtDineroViaje");
+                    const sueldoLimpio = sueldoInput ? reverseMoneyFormat(sueldoInput.value).trim() : "0";
+                    const dineroLimpio = dineroInput ? reverseMoneyFormat(dineroInput.value).trim() : "0";
+                    formData.set('txtSueldoOperador', sueldoLimpio || "0");
+                    formData.set('txtDineroViaje', dineroLimpio || "0");
                     formData.set('filasOtrosGastos', JSON.stringify(gastosValidos));
                 } else {
                     formData.delete('filasOtrosGastos');
