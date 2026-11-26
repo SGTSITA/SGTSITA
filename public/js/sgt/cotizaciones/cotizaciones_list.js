@@ -134,15 +134,15 @@ document.addEventListener("DOMContentLoaded", function () {
             field: "contenedor",
             sortable: true,
             filter: true,
-            minWidth: 160,
-            autoHeight: true, // Permite que la fila se ajuste en altura
+            width: 230,
+            minWidth: 215,
             cellRenderer: (params) => {
                 if (!params.value) return '';
                 const escaped = String(params.value).replace(/'/g, "\\'");
                 return `
-                    <div class="d-flex align-items-center justify-content-between w-100 py-1">
-                        <span class="me-2">${params.value}</span>
-                        <button type="button" class="btn btn-xs btn-link text-primary p-0 m-0 border-0" 
+                    <div class="d-flex align-items-center justify-content-between w-100 text-nowrap">
+                        <span class="me-2 text-nowrap fw-semibold">${params.value}</span>
+                        <button type="button" class="btn btn-xs btn-link text-primary p-0 m-0 border-0 flex-shrink-0" 
                                 onclick="copiarTextoAlPortapapeles(event, '${escaped}')" 
                                 title="Copiar contenedor">
                             <i class="fa fa-copy"></i>
@@ -152,12 +152,13 @@ document.addEventListener("DOMContentLoaded", function () {
             },
             cellStyle: (params) => {
                 const styles = {
-                    "white-space": "normal",
-                    "line-height": "1.5",
+                    "white-space": "nowrap",
+                    "display": "flex",
+                    "align-items": "center",
                 };
 
                 // Si la cotización es tipo "Full", aplicar fondo
-                if (params.data.tipo === "Full") {
+                if (params.data && params.data.tipo === "Full") {
                     styles["background-color"] = "#ffe5b4";
                 }
 
