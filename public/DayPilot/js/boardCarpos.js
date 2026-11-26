@@ -457,9 +457,33 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
 
             const rowDieselPrecarga = document.getElementById("info_diesel_reasignado_row");
             const textoDieselPrecarga = document.getElementById("info_diesel_reasignado_texto");
+            const listaHistorialDiesel = document.getElementById("info_diesel_historial_list");
+
             if (rowDieselPrecarga && textoDieselPrecarga) {
                 if (response.diesel_precarga) {
-                    textoDieselPrecarga.textContent = `${response.diesel_precarga.monto_formateado} (Reasignado de ${response.diesel_precarga.origen_contenedor_num || 'Viaje previo'})`;
+                    const origen = response.diesel_precarga.origen_contenedor_num || response.diesel_precarga.origen_contenedor || 'Viaje previo';
+                    textoDieselPrecarga.innerHTML = `Precarga Diésel: <b>${origen}</b> (${response.diesel_precarga.monto_formateado})`;
+                    
+                    if (listaHistorialDiesel) {
+                        listaHistorialDiesel.innerHTML = "";
+                        const historial = Array.isArray(response.diesel_precarga.historial) ? response.diesel_precarga.historial : [];
+                        if (historial.length > 0) {
+                            historial.forEach((h, idx) => {
+                                const li = document.createElement("li");
+                                li.className = "py-1 border-bottom";
+                                const badgeClass = h.accion === "deshecho_a_tanque" ? "bg-warning text-dark" : "bg-success text-white";
+                                const accionTexto = h.accion === "deshecho_a_tanque" ? "Deshecho a tanque" : "Aplicado a viaje";
+                                li.innerHTML = `<span class="badge bg-secondary me-1" style="font-size: 10px;">${idx + 1}</span>
+                                    <strong class="text-primary">${h.contenedor || 'S/N'}</strong>
+                                    <span class="text-muted ms-1">(${h.fecha || 'Fecha N/D'})</span>
+                                    <span class="badge ${badgeClass} ms-1" style="font-size: 9px;">${accionTexto}</span>`;
+                                listaHistorialDiesel.appendChild(li);
+                            });
+                        } else {
+                            listaHistorialDiesel.innerHTML = `<li class="text-muted">Origen inicial: <b>${origen}</b></li>`;
+                        }
+                    }
+
                     rowDieselPrecarga.classList.remove("d-none");
                 } else {
                     rowDieselPrecarga.classList.add("d-none");

@@ -22,11 +22,27 @@ const gridOptionsOperador = {
         { field: "IdGasto", hide: true },
         {
             field: "Gasto",
-            width: 260,
+            width: 320,
             cellRenderer: (params) => {
                 let text = params.value || "";
                 if (params.data && params.data.OrigenContenedor) {
-                    text += ` <span class="badge badge-sm bg-gradient-info text-white ms-1" title="Reasignado de viaje cancelado"><i class="fas fa-gas-pump"></i> De: ${params.data.OrigenContenedor}</span>`;
+                    const origen = params.data.OrigenContenedor;
+                    const historial = Array.isArray(params.data.Historial) ? params.data.Historial : [];
+                    let tooltipHistorial = `Precarga inicial: ${origen}`;
+                    if (historial.length > 0) {
+                        tooltipHistorial += "\n\nTrazabilidad:";
+                        historial.forEach((h, i) => {
+                            tooltipHistorial += `\n${i + 1}. [${h.fecha || 'N/D'}] ${h.contenedor || 'S/N'} (${h.accion || ''})`;
+                        });
+                    }
+                    const encodedHistorial = encodeURIComponent(JSON.stringify(historial));
+                    text += ` <span class="badge badge-sm bg-gradient-info text-white ms-1 cursor-pointer precarga-badge-info"
+                        style="cursor: pointer;"
+                        data-origen="${origen}"
+                        data-historial="${encodedHistorial}"
+                        title="${tooltipHistorial.replace(/"/g, '&quot;')}">
+                        <i class="fas fa-gas-pump me-1"></i> Precarga: <b>${origen}</b>
+                    </span>`;
                 }
                 return text;
             },
@@ -402,3 +418,49 @@ if (btnElminar)
     btnElminar.addEventListener("click", () => {
         eliminarGastoOperador();
     });
+
+// Event listener para mostrar SweetAlert2 interactivo con la trazabilidad completa del diésel al dar clic en el badge
+$(document).on("click", ".precarga-badge-info", function (e) {
+    e.stopPropagation();
+    const origen = $(this).data("origen") || "S/N";
+    const historialRaw = $(this).data("historial");
+    let historial = [];
+    try {
+        historial = JSON.parse(decodeURIComponent(historialRaw));
+    } catch (err) {}
+
+    let html = `<div class="text-start" style="font-size: 13px;">
+        <p class="mb-2"><strong>Contenedor origen:</strong> <span class="badge bg-primary text-white">${origen}</span></p>
+        <div class="border-top pt-2 mt-2">
+            <strong>Historial de reasignaciones por fecha:</strong>`;
+
+    if (Array.isArray(historial) && historial.length > 0) {
+        html += `<ul class="list-unstyled mt-2 mb-0">`;
+        historial.forEach((h, i) => {
+            const accionBadge = h.accion === 'deshecho_a_tanque' 
+                ? '<span class="badge bg-warning text-dark">Deshecho a tanque</span>'
+                : '<span class="badge bg-success text-white">Aplicado a viaje</span>';
+            html += `<li class="py-1 border-bottom d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge bg-secondary me-1">${i + 1}</span>
+                    <strong class="text-primary">${h.contenedor || 'S/N'}</strong>
+                    <small class="text-muted d-block ms-4">${h.fecha || 'Fecha N/D'}</small>
+                </div>
+                <div>${accionBadge}</div>
+            </li>`;
+        });
+        html += `</ul>`;
+    } else {
+        html += `<p class="text-muted mt-2 mb-0">Diésel precargado proveniente del viaje previo.</p>`;
+    }
+
+    html += `</div></div>`;
+
+    Swal.fire({
+        title: '<i class="fas fa-gas-pump text-info me-2"></i> Trazabilidad del Diésel',
+        html: html,
+        icon: 'info',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#17c1e8',
+    });
+});

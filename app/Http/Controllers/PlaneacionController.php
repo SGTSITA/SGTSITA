@@ -434,14 +434,21 @@ class PlaneacionController extends Controller
                   ->orWhere('concepto', 'like', '%diésel%')
                   ->orWhere('concepto', 'like', '%GDI02%');
             })
+            ->where(function ($q) {
+                $q->where('es_precarga_combustible', true)
+                  ->orWhereNotNull('origen_contenedor_num')
+                  ->orWhereNotNull('historial_reasignaciones');
+            })
             ->first();
 
-            if ($gastoDiesel && $gastoDiesel->es_precarga_combustible) {
+            if ($gastoDiesel) {
                 $dieselPrecarga = [
                     'monto' => $gastoDiesel->monto_total,
                     'monto_formateado' => '$' . number_format($gastoDiesel->monto_total, 2),
-                    'historial' => $gastoDiesel->historial_reasignaciones,
+                    'historial' => $gastoDiesel->historial_reasignaciones ?? [],
                     'origen_contenedor' => $gastoDiesel->origen_contenedor_num,
+                    'origen_contenedor_num' => $gastoDiesel->origen_contenedor_num,
+                    'es_activa' => (bool) $gastoDiesel->es_precarga_combustible,
                 ];
             }
         }

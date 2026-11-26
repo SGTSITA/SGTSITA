@@ -372,19 +372,39 @@
                                                     </select>
                                                     @if (!empty($gasto->origen_contenedor_num))
                                                         @php
-                                                            $cadenaHistorial = collect($gasto->historial_reasignaciones ?? [])
-                                                                ->pluck('contenedor')
-                                                                ->filter()
-                                                                ->unique()
-                                                                ->implode(' ➔ ');
+                                                            $historialItems = collect($gasto->historial_reasignaciones ?? []);
+                                                            $collapseId = 'collapsePrecarga_' . ($gasto->id ?? uniqid());
                                                         @endphp
-                                                        <div class="mt-1">
-                                                            <span class="badge badge-sm bg-gradient-info text-white" title="Historial completo: {{ $cadenaHistorial ?: $gasto->origen_contenedor_num }}">
-                                                                <i class="fas fa-gas-pump me-1"></i> Precarga de: <b>{{ $gasto->origen_contenedor_num }}</b>
-                                                                @if ($cadenaHistorial && $cadenaHistorial !== $gasto->origen_contenedor_num)
-                                                                    <small class="ms-1 opacity-75">({{ $cadenaHistorial }})</small>
-                                                                @endif
-                                                            </span>
+                                                        <div class="mt-2">
+                                                            <a class="btn btn-xs bg-gradient-info text-white text-decoration-none shadow-none mb-1 d-inline-flex align-items-center gap-1"
+                                                               data-bs-toggle="collapse" href="#{{ $collapseId }}" role="button" aria-expanded="false">
+                                                                <i class="fas fa-gas-pump"></i>
+                                                                <span>Precarga Diésel Activa: <b>{{ $gasto->origen_contenedor_num }}</b></span>
+                                                                <i class="fas fa-chevron-down ms-1" style="font-size: 10px;"></i>
+                                                            </a>
+                                                            <div class="collapse" id="{{ $collapseId }}">
+                                                                <div class="card card-body p-2 border shadow-none bg-light text-start mt-1" style="font-size: 12px;">
+                                                                    <div class="fw-bold text-dark border-bottom pb-1 mb-1">
+                                                                        <i class="fas fa-history me-1"></i> Trazabilidad del Diésel:
+                                                                    </div>
+                                                                    @if ($historialItems->isNotEmpty())
+                                                                        <ul class="list-unstyled mb-0 ps-1">
+                                                                            @foreach ($historialItems as $idx => $h)
+                                                                                <li class="py-1 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                                                                    <span class="badge bg-secondary me-1" style="font-size: 10px;">{{ $idx + 1 }}</span>
+                                                                                    <strong class="text-primary">{{ $h['contenedor'] ?? 'S/N' }}</strong>
+                                                                                    <span class="text-muted ms-1">({{ !empty($h['fecha']) ? \Carbon\Carbon::parse($h['fecha'])->format('d/m/Y H:i') : 'Fecha N/D' }})</span>
+                                                                                    <span class="badge {{ ($h['accion'] ?? '') === 'deshecho_a_tanque' ? 'bg-warning text-dark' : 'bg-success text-white' }} ms-1" style="font-size: 9px;">
+                                                                                        {{ ($h['accion'] ?? '') === 'deshecho_a_tanque' ? 'Deshecho a tanque' : 'Aplicado a viaje' }}
+                                                                                    </span>
+                                                                                </li>
+                                                                            @endforeach
+                                                                        </ul>
+                                                                    @else
+                                                                        <div class="text-muted">Origen inicial: <b>{{ $gasto->origen_contenedor_num }}</b></div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -427,23 +447,6 @@
                                                                 {{ $item['display'] }}</option>
                                                         @endforeach
                                                     </select>
-                                                    @if (!empty($gasto->origen_contenedor_num))
-                                                        @php
-                                                            $cadenaHistorial = collect($gasto->historial_reasignaciones ?? [])
-                                                                ->pluck('contenedor')
-                                                                ->filter()
-                                                                ->unique()
-                                                                ->implode(' ➔ ');
-                                                        @endphp
-                                                        <div class="mt-1">
-                                                            <span class="badge badge-sm bg-gradient-info text-white" title="Historial completo: {{ $cadenaHistorial ?: $gasto->origen_contenedor_num }}">
-                                                                <i class="fas fa-gas-pump me-1"></i> Precarga de: <b>{{ $gasto->origen_contenedor_num }}</b>
-                                                                @if ($cadenaHistorial && $cadenaHistorial !== $gasto->origen_contenedor_num)
-                                                                    <small class="ms-1 opacity-75">({{ $cadenaHistorial }})</small>
-                                                                @endif
-                                                            </span>
-                                                        </div>
-                                                    @endif
                                                 </div>
 
                                                 <div class="col-md-2 fecha-col"
