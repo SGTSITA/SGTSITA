@@ -471,8 +471,9 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                             historial.forEach((h, idx) => {
                                 const li = document.createElement("li");
                                 li.className = "py-1 border-bottom";
-                                const badgeClass = h.accion === "deshecho_a_tanque" ? "bg-warning text-dark" : "bg-success text-white";
-                                const accionTexto = h.accion === "deshecho_a_tanque" ? "Deshecho a tanque" : "Aplicado a viaje";
+                                const isTanque = h.accion === "deshecho_a_tanque" || h.accion === "cancelado_y_precargado";
+                                const badgeClass = isTanque ? "bg-warning text-dark" : "bg-success text-white";
+                                const accionTexto = isTanque ? "Deshecho a tanque" : "Aplicado a viaje";
                                 li.innerHTML = `<span class="badge bg-secondary me-1" style="font-size: 10px;">${idx + 1}</span>
                                     <strong class="text-primary">${h.contenedor || 'S/N'}</strong>
                                     <span class="text-muted ms-1">(${h.fecha || 'Fecha N/D'})</span>

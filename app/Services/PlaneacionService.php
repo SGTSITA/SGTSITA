@@ -210,7 +210,7 @@ class PlaneacionService
                                 'contenedor' => $documenCotizacion->num_contenedor,
                                 'cotizacion_id' => $cotizaciones->id,
                                 'equipo_id' => $idTracto,
-                                'accion' => 'cancelado_y_precargado',
+                                'accion' => 'deshecho_a_tanque',
                                 'usuario_id' => auth()->id(),
                             ];
 

@@ -59,8 +59,11 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function cargarCatalogosModal() {
-        fetch("/gastos/catalogos/categorias-conceptos")
+    function asegurarCatalogosCargados() {
+        if (cacheCategorias && cacheCategorias.length > 0) {
+            return Promise.resolve({ categorias: cacheCategorias, conceptos: cacheConceptos });
+        }
+        return fetch("/gastos/catalogos/categorias-conceptos")
             .then(res => res.json())
             .then(res => {
                 if (res.TMensaje === "success" && res.catalogos) {
@@ -69,9 +72,25 @@ document.addEventListener("DOMContentLoaded", function () {
                     renderizarTablaCategorias();
                     renderizarSelectsCategorias();
                     renderizarTablaSubcategorias();
+                    return { categorias: cacheCategorias, conceptos: cacheConceptos };
                 }
+                return { categorias: [], conceptos: [] };
             })
-            .catch(err => console.error("Error al cargar catálogos:", err));
+            .catch(err => {
+                console.error("Error al cargar catálogos:", err);
+                return { categorias: [], conceptos: [] };
+            });
+    }
+
+    // Cargar catálogos al inicializar la vista para que estén disponibles de inmediato
+    asegurarCatalogosCargados();
+
+    function cargarCatalogosModal() {
+        asegurarCatalogosCargados().then(() => {
+            renderizarTablaCategorias();
+            renderizarSelectsCategorias();
+            renderizarTablaSubcategorias();
+        });
     }
 
     function renderizarSelectsCategorias() {
@@ -363,11 +382,19 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("divReclasificarConceptoActual").style.display = "block";
         document.getElementById("reclasificarConceptoTxt").value = gasto.concepto || "";
 
-        renderizarSelectsCategorias();
-        document.getElementById("reclasificarSelectCategoria").value = gasto.categoria_gasto_id || "";
-        cargarSubcategoriasParaReclasificar(gasto.categoria_gasto_id, gasto.gasto_concepto_id);
+        const catId = gasto.categoria_gasto_id || (gasto.categoria ? gasto.categoria.id : "");
+        const subcatId = gasto.gasto_concepto_id || "";
 
-        const modalBs = new bootstrap.Modal(modalReclasificar);
+        asegurarCatalogosCargados().then(() => {
+            renderizarSelectsCategorias();
+            const selectCat = document.getElementById("reclasificarSelectCategoria");
+            if (selectCat) {
+                selectCat.value = catId || "";
+            }
+            cargarSubcategoriasParaReclasificar(catId, subcatId);
+        });
+
+        const modalBs = bootstrap.Modal.getOrCreateInstance(modalReclasificar);
         modalBs.show();
     };
 
@@ -394,11 +421,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("reclasificarAlertInfo").innerText = `Se asignará la nueva categoría y subcategoría a los ${seleccionados.length} gastos seleccionados.`;
             document.getElementById("divReclasificarConceptoActual").style.display = "none";
 
-            renderizarSelectsCategorias();
-            document.getElementById("reclasificarSelectCategoria").value = "";
-            selectSubcatReclasificar.innerHTML = '<option value="">-- Sin Subcategoría / General --</option>';
+            asegurarCatalogosCargados().then(() => {
+                renderizarSelectsCategorias();
+                document.getElementById("reclasificarSelectCategoria").value = "";
+                selectSubcatReclasificar.innerHTML = '<option value="">-- Sin Subcategoría / General --</option>';
+            });
 
-            const modalBs = new bootstrap.Modal(modalReclasificar);
+            const modalBs = bootstrap.Modal.getOrCreateInstance(modalReclasificar);
             modalBs.show();
         });
     }
