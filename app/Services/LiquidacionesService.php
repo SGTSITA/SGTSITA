@@ -1286,11 +1286,23 @@ class LiquidacionesService
             ->whereIn('id_contenedor', $viajes)
             ->orderBy('id_contenedor')
             ->get()->map(function ($dinero) {
+                $fechaEntrega = '';
+                if (!empty($dinero->fecha_entrega_monto)) {
+                    try {
+                        $fechaCarbon = $dinero->fecha_entrega_monto instanceof Carbon
+                            ? $dinero->fecha_entrega_monto->copy()
+                            : Carbon::parse($dinero->fecha_entrega_monto);
+                        $fechaEntrega = $fechaCarbon->setTimezone('America/Mexico_City')->format('d-m-Y');
+                    } catch (\Throwable $e) {
+                        $fechaEntrega = (string) $dinero->fecha_entrega_monto;
+                    }
+                }
+
                 return [
                     'num_contenedor' => $dinero->DocCotizacion?->num_contenedor ?? 'N/A',
                     'monto' => $dinero->monto,
                     'motivo' => $dinero->motivo,
-                    'fecha_entrega_monto' => $dinero->fecha_entrega_monto,
+                    'fecha_entrega_monto' => $fechaEntrega,
                 ];
             });
 
@@ -1312,6 +1324,22 @@ class LiquidacionesService
             ->where('id_operador', $operadorId)
             ->get()
             ->filter(fn ($p) => $p->saldo_calculado > 0)
+            ->map(function ($p) {
+                $pArr = $p->toArray();
+                $fechaPrestamo = '';
+                if (!empty($p->fecha_prestamo)) {
+                    try {
+                        $fechaCarbon = $p->fecha_prestamo instanceof Carbon
+                            ? $p->fecha_prestamo->copy()
+                            : Carbon::parse($p->fecha_prestamo);
+                        $fechaPrestamo = $fechaCarbon->setTimezone('America/Mexico_City')->format('d-m-Y');
+                    } catch (\Throwable $e) {
+                        $fechaPrestamo = (string) $p->fecha_prestamo;
+                    }
+                }
+                $pArr['fecha_prestamo'] = $fechaPrestamo;
+                return $pArr;
+            })
             ->values();
 
         return [

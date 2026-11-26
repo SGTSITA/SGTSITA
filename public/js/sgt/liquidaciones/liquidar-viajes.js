@@ -647,6 +647,18 @@ function renderJustificados(data) {
         .join("");
 }
 
+function formatearFechaSgt(val) {
+    if (!val) return "";
+    if (typeof val === "string" && val.includes("T")) {
+        const datePart = val.split("T")[0];
+        const parts = datePart.split("-");
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+    }
+    return val;
+}
+
 function renderDineroViaje(data) {
     const tbody = document.querySelector("#tablaDineroViaje tbody");
 
@@ -664,7 +676,7 @@ function renderDineroViaje(data) {
             <td>${d.num_contenedor}</td>
             <td>${d.motivo}</td>
             <td class="text-end">${currencyFormatter(d.monto)}</td>
-            <td>${d.fecha_entrega_monto}</td>
+            <td>${formatearFechaSgt(d.fecha_entrega_monto)}</td>
         </tr>
     `,
         )
@@ -681,7 +693,7 @@ function renderDeudas(data) {
             (d) => `
         <tr>
             <td>${d.tipo}</td>
-            <td>${d.fecha_prestamo}</td>
+            <td>${formatearFechaSgt(d.fecha_prestamo)}</td>
             <td class="text-end">${currencyFormatter(d.cantidad)}</td>
             <td class="text-end">${currencyFormatter(d.total_pagado)}</td>
             <td class="text-end">${currencyFormatter(d.cantidad - d.total_pagado)}</td>
