@@ -462,6 +462,27 @@ class PlaneacionController extends Controller
         ]);
     }
 
+    public function guardarMensajeWhatsApp(Request $request)
+    {
+        $asignacion = Asignaciones::find($request->id_asignacion ?? $request->asignacion_id);
+        if ($asignacion) {
+            $asignacion->mensaje_compartido = $request->mensaje;
+            $asignacion->save();
+            return response()->json([
+                'ok' => true,
+                'success' => true,
+                'msg' => 'Mensaje guardado correctamente',
+                'message' => 'Mensaje guardado correctamente'
+            ]);
+        }
+        return response()->json([
+            'ok' => false,
+            'success' => false,
+            'msg' => 'Asignación no encontrada',
+            'message' => 'Asignación no encontrada'
+        ], 404);
+    }
+
     public function initBoard(Request $request)
     {
         $data = $this->planeacionService->initBoard($request->all(), (int) Auth::user()->id_empresa, Auth::user());
