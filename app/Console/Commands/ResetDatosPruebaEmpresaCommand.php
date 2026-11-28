@@ -26,6 +26,10 @@ use App\Models\Poliza;
 use App\Models\PolizaMovimiento;
 use App\Models\Bancos;
 use App\Models\CatBancoCuentasMovimientos;
+use App\Models\Liquidaciones;
+use App\Models\LiquidacionContenedor;
+use App\Models\LiquidacionAjuste;
+use App\Models\LiquidacionAjusteDetalle;
 
 class ResetDatosPruebaEmpresaCommand extends Command
 {
@@ -93,13 +97,47 @@ class ResetDatosPruebaEmpresaCommand extends Command
             ->get();
         $polizaIds = $polizas->pluck('id')->toArray();
 
-        // 4. Recolección de Bancos y Movimientos
+        // 4. Recolección de Bancos y Operadores
         $bancos = Bancos::where('id_empresa', $empresaId)->get();
         $bancosIds = $bancos->pluck('id')->toArray();
+        $operadorIds = Operador::where('id_empresa', $empresaId)->pluck('id')->toArray();
 
-        $movimientosQueryBuilder = function () use ($bancosIds, $asignacionIds, $gastoIds, $cotizacionIds, $documIds) {
+        // 5. Recolección de Liquidaciones y Ajustes
+        $liquidaciones = Liquidaciones::where(function ($q) use ($operadorIds, $bancosIds, $documIds) {
+            $hasCondition = false;
+            if (!empty($operadorIds)) {
+                $q->whereIn('id_operador', $operadorIds);
+                $hasCondition = true;
+            }
+            if (!empty($bancosIds)) {
+                if ($hasCondition) {
+                    $q->orWhereIn('id_banco', $bancosIds);
+                } else {
+                    $q->whereIn('id_banco', $bancosIds);
+                    $hasCondition = true;
+                }
+            }
+            if (!empty($documIds)) {
+                $q->orWhereHas('Viajes', function ($vQ) use ($documIds) {
+                    $vQ->whereIn('id_contenedor', $documIds);
+                });
+                $hasCondition = true;
+            }
+            if (!$hasCondition) {
+                $q->whereRaw('1 = 0');
+            }
+        })->get();
+        $liquidacionIds = $liquidaciones->pluck('id')->toArray();
+
+        $ajustes = LiquidacionAjuste::where('id_empresa', $empresaId)
+            ->orWhereIn('id_liquidacion', $liquidacionIds)
+            ->get();
+        $ajusteIds = $ajustes->pluck('id')->toArray();
+
+        // 6. Constructor de consulta para movimientos bancarios operativos
+        $movimientosQueryBuilder = function () use ($bancosIds, $asignacionIds, $gastoIds, $cotizacionIds, $documIds, $liquidacionIds) {
             return CatBancoCuentasMovimientos::whereIn('cuenta_bancaria_id', $bancosIds)
-                ->where(function ($q) use ($asignacionIds, $gastoIds, $cotizacionIds, $documIds) {
+                ->where(function ($q) use ($asignacionIds, $gastoIds, $cotizacionIds, $documIds, $liquidacionIds) {
                     $q->whereIn('referenciaable_type', [
                         Asignaciones::class,
                         Gasto::class,
@@ -107,9 +145,12 @@ class ResetDatosPruebaEmpresaCommand extends Command
                         DineroContenedor::class,
                         Prestamo::class,
                         Cotizaciones::class,
+                        Liquidaciones::class,
+                        LiquidacionAjuste::class,
                     ])
                     ->orWhereIn('referenciaable_id', $asignacionIds)
                     ->orWhereIn('referenciaable_id', $gastoIds)
+                    ->orWhereIn('referenciaable_id', $liquidacionIds)
                     ->orWhere('origen', 'sistema')
                     ->orWhere('concepto', 'like', '%viaje%')
                     ->orWhere('concepto', 'like', '%diesel%')
@@ -118,13 +159,14 @@ class ResetDatosPruebaEmpresaCommand extends Command
                     ->orWhere('concepto', 'like', '%burrero%')
                     ->orWhere('concepto', 'like', '%GDI%')
                     ->orWhere('concepto', 'like', '%GBV%')
-                    ->orWhere('concepto', 'like', '%Dinero para viaje%');
+                    ->orWhere('concepto', 'like', '%Dinero para viaje%')
+                    ->orWhere('concepto', 'like', '%Liquidación%')
+                    ->orWhere('concepto', 'like', '%Liquidacion%');
                 });
         };
         $totalMovimientos = !empty($bancosIds) ? $movimientosQueryBuilder()->count() : 0;
 
-        // 5. Recolección de Préstamos (relacionados por origen_asignacion_id, id_banco o id_operador de la empresa)
-        $operadorIds = Operador::where('id_empresa', $empresaId)->pluck('id')->toArray();
+        // 7. Recolección de Préstamos (relacionados por origen_asignacion_id, id_banco o id_operador de la empresa)
         $prestamos = Prestamo::where(function ($q) use ($asignacionIds, $bancosIds, $operadorIds) {
             $hasCondition = false;
             if (!empty($asignacionIds)) {
@@ -159,6 +201,8 @@ class ResetDatosPruebaEmpresaCommand extends Command
         $this->line(" - Cotizaciones a reestablecer (estatus='Aprobada', estatus_planeacion=0): " . count($cotizacionIds));
         $this->line(" - Asignaciones de viaje a eliminar: " . count($asignacionIds));
         $this->line(" - Gastos operativos de la empresa a eliminar: " . count($gastoIds));
+        $this->line(" - Liquidaciones de operador a eliminar: " . count($liquidacionIds));
+        $this->line(" - Ajustes de liquidación a eliminar: " . count($ajusteIds));
         $this->line(" - Pólizas contables operativas a eliminar: " . count($polizaIds));
         $this->line(" - Movimientos bancarios operativos a eliminar: {$totalMovimientos}");
         $this->line(" - Préstamos generados por cancelaciones a eliminar: " . count($prestamoIds));
@@ -180,6 +224,8 @@ class ResetDatosPruebaEmpresaCommand extends Command
             $documIds,
             $asignacionIds,
             $gastoIds,
+            $liquidacionIds,
+            $ajusteIds,
             $polizaIds,
             $bancosIds,
             $movimientosQueryBuilder,
@@ -243,18 +289,30 @@ class ResetDatosPruebaEmpresaCommand extends Command
                 Prestamo::whereIn('id', $prestamoIds)->delete();
             }
 
-            // E. Eliminar pólizas contables y sus movimientos
+            // E. Eliminar liquidaciones de operador y ajustes
+            if (!empty($ajusteIds)) {
+                LiquidacionAjusteDetalle::whereIn('id_ajuste', $ajusteIds)->delete();
+                LiquidacionAjuste::whereIn('id', $ajusteIds)->delete();
+            }
+
+            if (!empty($liquidacionIds)) {
+                PagoPrestamo::whereIn('id_liquidacion', $liquidacionIds)->delete();
+                LiquidacionContenedor::whereIn('id_liquidacion', $liquidacionIds)->delete();
+                Liquidaciones::whereIn('id', $liquidacionIds)->delete();
+            }
+
+            // F. Eliminar pólizas contables y sus movimientos
             if (!empty($polizaIds)) {
                 PolizaMovimiento::whereIn('poliza_id', $polizaIds)->delete();
                 Poliza::whereIn('id', $polizaIds)->delete();
             }
 
-            // F. Eliminar movimientos bancarios operativos
+            // G. Eliminar movimientos bancarios operativos
             if (!empty($bancosIds)) {
                 $movimientosQueryBuilder()->delete();
             }
 
-            // G. Recalcular saldo de las cuentas bancarias de la empresa
+            // H. Recalcular saldo de las cuentas bancarias de la empresa
             foreach ($bancos as $banco) {
                 $saldoBase = (float) ($banco->inicial_saldo ?? $banco->saldo_inicial ?? 0);
                 $restantes = CatBancoCuentasMovimientos::where('cuenta_bancaria_id', $banco->id)

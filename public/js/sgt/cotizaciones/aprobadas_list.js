@@ -877,6 +877,7 @@ async function programarViaje() {
             if (motivoVal !== "" || monto > 0) {
                 gastosValidos.push({
                     id: gastoId,
+                    id_precarga: gastoId,
                     motivo: motivoVal,
                     conceptoOtro: conceptoOtro,
                     monto,

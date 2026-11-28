@@ -15,6 +15,8 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - Botón condicional "Guardar Todo" en el tab header si ambas grillas tienen cambios; modal SweetAlert estandarizado para prevenir pérdida de datos en `keydown` (F5, Ctrl+R), links `<a>`, consultar/limpiar y navegación atrás (`popstate`).
 - **Spec 028 (Gestión Inteligente y Reasignación de Gastos al Deshacer Planeación — `/planeaciones`):**
   - Detección elemental vs completa: si no hay movimientos bancarios, desprograma directo.
+  - Terminología en futuro en modal de cancelación: preguntas y opciones conjugadas en tiempo futuro ("¿El operador devolverá...?", "No devolverá...", "¿Qué destino tendrá este combustible?", "Permanecerá en el tanque...").
+  - Centrado perfecto del punto blanco (`::after`) en radio buttons marcados/seleccionados (`top: 50%`, `left: 50%`, `transform: translate(-50%, -50%)`, `position: relative !important`).
   - Dinero para viaje a Préstamo: si el operador no devolvió el anticipo, se preserva el movimiento bancario y se crea `Prestamo` a su nombre con póliza contable (`1.1.2.3.001` vs `Bancos`) para amortización en liquidación.
   - Diésel en tanque como precarga: marcado con `es_precarga_combustible = true`, `id_equipo_precarga` y trazabilidad histórica en JSON (`historial_reasignaciones`).
   - Detección y absorción de precarga en nueva planeación (`GET /planeaciones/equipos/{id}/combustible-precargado` y `/resumen-gastos-cancelacion`) tanto en step como en edit sin generar nueva salida bancaria.
@@ -41,7 +43,7 @@ Memoria viva del proyecto entre sesiones (máximo ~100 líneas).
   - En Liquidados CxC y CxP: interruptor agregado tanto junto a "Seleccionar todo" como en barra de exportación para empresas globales (`requiere_unidad_gasto == 1`), sincronizados por JS y con fallback desmarcado por defecto.
   - En CxP (`ReporteriaService::exportLiquidadosCxp`, `LiquidadosCxpExport` y `pdf.blade.php`), soporta `$separarUnidades` para agrupar por unidad, mostrar "Unidad / Tracto" en lugar de contratista y totalizar por unidades distintas.
   - Corregido `pdf.blade.php` de documentos para evaluar `$esEmpresaGlobal = !empty($separarUnidades)` en lugar de hardcodear `esGlobalMultiEquipo()`, respetando cuando el switch está desmarcado.
-  - Comando `php artisan empresa:reset-pruebas` para reestablecer contenedores a Aprobada, limpiar gastos y contabilidad operativa conservando saldos iniciales de bancos.
+  - Comando `php artisan empresa:reset-pruebas` para reestablecer contenedores a Aprobada, limpiar gastos, liquidaciones (`liquidaciones`, `liquidaciones_contenedores`, `liquidacion_ajustes`), asignaciones y contabilidad operativa conservando saldos iniciales de bancos.
 - **Modal Detalle Planeación (`/planeaciones/monitor/board/info-viaje`):**
   - Mapeo de proveedor, transportista, operador, teléfono, marca e IMEI en consulta SQL por `docum_cotizacion.id` con fallbacks automáticos mediante relaciones Eloquent (`Asignaciones` -> `Operador`, `Camion`, `Chasis`, `Proveedor`).
   - Variables de frontend blindadas en `boardCarpos.js` y `boardClient.js` con soporte para `Transporte Propio` y `response.nombre`.
