@@ -696,6 +696,20 @@ class PlaneacionService
 
         foreach ($filas as $gastoItem) {
             $gastoId = !empty($gastoItem['id']) ? intval($gastoItem['id']) : (!empty($gastoItem['id_precarga']) ? intval($gastoItem['id_precarga']) : null);
+            if (!$gastoId) {
+                $motivoItem = $gastoItem['motivo'] ?? '';
+                if ($motivoItem === 'GDI02' || str_contains(strtolower($motivoItem), 'diesel') || str_contains(strtolower($motivoItem), 'diésel')) {
+                    $idTracto = $asignacion->id_camion ?: $asignacion->id_equipo;
+                    if ($idTracto) {
+                        $gastoAuto = Gasto::where('id_equipo_precarga', $idTracto)
+                            ->where('es_precarga_combustible', true)
+                            ->first();
+                        if ($gastoAuto) {
+                            $gastoId = $gastoAuto->id;
+                        }
+                    }
+                }
+            }
             if ($gastoId) {
                 $gastoPrecarga = Gasto::where('id', $gastoId)->where('es_precarga_combustible', true)->first();
                 if ($gastoPrecarga) {
@@ -1158,6 +1172,20 @@ class PlaneacionService
 
         foreach ($otrosGastos as $gasto) {
             $gastoId = !empty($gasto['id']) ? intval($gasto['id']) : (!empty($gasto['id_precarga']) ? intval($gasto['id_precarga']) : null);
+            if (!$gastoId) {
+                $motivoItem = $gasto['motivo'] ?? '';
+                if ($motivoItem === 'GDI02' || str_contains(strtolower($motivoItem), 'diesel') || str_contains(strtolower($motivoItem), 'diésel')) {
+                    $idTracto = $asignacion->id_camion ?: $asignacion->id_equipo;
+                    if ($idTracto) {
+                        $gastoAuto = Gasto::where('id_equipo_precarga', $idTracto)
+                            ->where('es_precarga_combustible', true)
+                            ->first();
+                        if ($gastoAuto) {
+                            $gastoId = $gastoAuto->id;
+                        }
+                    }
+                }
+            }
             if ($gastoId) {
                 $gastoPrecarga = Gasto::where('id', $gastoId)->where('es_precarga_combustible', true)->first();
                 if ($gastoPrecarga) {

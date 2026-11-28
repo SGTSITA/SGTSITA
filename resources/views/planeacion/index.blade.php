@@ -6,7 +6,23 @@
 
 @section('content')
     <style>
-
+        /* Centrado perfecto del punto blanco al estar marcado o seleccionado */
+        .form-check-input[type='radio'],
+        .swal2-popup .form-check-input[type='radio'] {
+            position: relative !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer;
+        }
+        .form-check-input[type='radio']:after,
+        .swal2-popup .form-check-input[type='radio']:after {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            margin: 0 !important;
+        }
 
         /* Estilo general del modal */
         #viajeModal .modal-content {

@@ -397,10 +397,9 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
 
             asignacionId = response.documentos.asignacionId;
             if (nombreProveedor) {
-                nombreProveedor.textContent =
-                    response.documentos.id_proveedor
-                        ? (response.documentos.nombre_proveedor ?? "--")
-                        : (response.documentos.Empresa ?? "Transporte Propio");
+                nombreProveedor.textContent = response.documentos.id_proveedor
+                    ? (response.documentos.nombre_proveedor ?? "--")
+                    : (response.documentos.Empresa ?? "Transporte Propio");
             }
             if (contactoEntrega) {
                 contactoEntrega.textContent =
@@ -455,28 +454,47 @@ function getInfoViaje(startDate, endDate, numContenedor_, idContendor) {
                 response.documentos.id_equipo_chasis ?? "NA";
             imei_chasis.textContent = response.documentos.imei_chasis ?? "NA";
 
-            const rowDieselPrecarga = document.getElementById("info_diesel_reasignado_row");
-            const textoDieselPrecarga = document.getElementById("info_diesel_reasignado_texto");
-            const listaHistorialDiesel = document.getElementById("info_diesel_historial_list");
+            const rowDieselPrecarga = document.getElementById(
+                "info_diesel_reasignado_row",
+            );
+            const textoDieselPrecarga = document.getElementById(
+                "info_diesel_reasignado_texto",
+            );
+            const listaHistorialDiesel = document.getElementById(
+                "info_diesel_historial_list",
+            );
 
             if (rowDieselPrecarga && textoDieselPrecarga) {
                 if (response.diesel_precarga) {
-                    const origen = response.diesel_precarga.origen_contenedor_num || response.diesel_precarga.origen_contenedor || 'Viaje previo';
+                    const origen =
+                        response.diesel_precarga.origen_contenedor_num ||
+                        response.diesel_precarga.origen_contenedor ||
+                        "Viaje previo";
                     textoDieselPrecarga.innerHTML = `Precarga Diésel: <b>${origen}</b> (${response.diesel_precarga.monto_formateado})`;
-                    
+
                     if (listaHistorialDiesel) {
                         listaHistorialDiesel.innerHTML = "";
-                        const historial = Array.isArray(response.diesel_precarga.historial) ? response.diesel_precarga.historial : [];
+                        const historial = Array.isArray(
+                            response.diesel_precarga.historial,
+                        )
+                            ? response.diesel_precarga.historial
+                            : [];
                         if (historial.length > 0) {
                             historial.forEach((h, idx) => {
                                 const li = document.createElement("li");
                                 li.className = "py-1 border-bottom";
-                                const isTanque = h.accion === "deshecho_a_tanque" || h.accion === "cancelado_y_precargado";
-                                const badgeClass = isTanque ? "bg-warning text-dark" : "bg-success text-white";
-                                const accionTexto = isTanque ? "Deshecho a tanque" : "Aplicado a viaje";
+                                const isTanque =
+                                    h.accion === "deshecho_a_tanque" ||
+                                    h.accion === "cancelado_y_precargado";
+                                const badgeClass = isTanque
+                                    ? "bg-warning text-dark"
+                                    : "bg-success text-white";
+                                const accionTexto = isTanque
+                                    ? "Deshecho a tanque"
+                                    : "Aplicado a viaje";
                                 li.innerHTML = `<span class="badge bg-secondary me-1" style="font-size: 10px;">${idx + 1}</span>
-                                    <strong class="text-primary">${h.contenedor || 'S/N'}</strong>
-                                    <span class="text-muted ms-1">(${h.fecha || 'Fecha N/D'})</span>
+                                    <strong class="text-primary">${h.contenedor || "S/N"}</strong>
+                                    <span class="text-muted ms-1">(${h.fecha || "Fecha N/D"})</span>
                                     <span class="badge ${badgeClass} ms-1" style="font-size: 9px;">${accionTexto}</span>`;
                                 listaHistorialDiesel.appendChild(li);
                             });
@@ -732,14 +750,16 @@ function anularPlaneacion(idContenendor, numContenedor) {
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
-        }
+        },
     });
 
     fetch(`/planeaciones/viaje/${idContenendor}/resumen-gastos-cancelacion`)
         .then((response) => response.json())
         .then((res) => {
             if (!res.success) {
-                throw new Error(res.message || "No se pudo obtener el resumen financiero");
+                throw new Error(
+                    res.message || "No se pudo obtener el resumen financiero",
+                );
             }
 
             // 1. Caso Planeación Elemental (sin dinero ni diésel)
@@ -754,11 +774,15 @@ function anularPlaneacion(idContenendor, numContenedor) {
                     confirmButtonColor: "#f1416c",
                 }).then((confirmRes) => {
                     if (confirmRes.isConfirmed) {
-                        ejecutarAnulacionPlaneacion(idContenendor, numContenedor, {
-                            _token: _token,
-                            idContenendor: idContenendor,
-                            numContenedor: numContenedor,
-                        });
+                        ejecutarAnulacionPlaneacion(
+                            idContenendor,
+                            numContenedor,
+                            {
+                                _token: _token,
+                                idContenendor: idContenendor,
+                                numContenedor: numContenedor,
+                            },
+                        );
                     }
                 });
                 return;
@@ -766,7 +790,24 @@ function anularPlaneacion(idContenendor, numContenedor) {
 
             // 2. Caso Planeación Completa con Dinero para Viaje y/o Diésel
             let htmlContent = `<div class="text-start fs-7" style="max-height: 400px; overflow-y: auto;">`;
-            htmlContent += `<p class="mb-3 text-dark">El viaje cuenta con movimientos financieros emitidos. Elige el destino de cada concepto para mantener la conciliación contable:</p>`;
+            htmlContent += `
+            <style>
+                .swal2-popup .form-check-input[type='radio'] {
+                    position: relative !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    cursor: pointer;
+                }
+                .swal2-popup .form-check-input[type='radio']:after {
+                    position: absolute !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    margin: 0 !important;
+                }
+            </style>`;
+            htmlContent += `<p class="mb-3 text-dark">El viaje cuenta con movimientos financieros emitidos. Selecciona el destino que se dará a cada concepto al cancelar la planeación para mantener la conciliación contable:</p>`;
 
             // Sección Dinero para Viaje
             if (res.dinero_viaje) {
@@ -775,27 +816,27 @@ function anularPlaneacion(idContenendor, numContenedor) {
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-hand-holding-usd text-warning fs-3 me-2"></i>
                         <div>
-                            <div class="fw-bolder text-dark">Dinero para Viaje: <span class="text-danger">${res.dinero_viaje.monto_formateado}</span></div>
-                            <div class="text-muted fs-8">Operador: <b>${res.dinero_viaje.operador_nombre}</b> | Banco: <b>${res.dinero_viaje.banco_nombre}</b></div>
+                            <div class="fw-bolder text-dark">Dinero para Viaje: <span class="text-danger">${res.dinero_viaje.monto_formateado}</span> de  <b>${res.dinero_viaje.banco_nombre}</b></div>
+                            <div class="text-muted fs-10">Operador: ${res.dinero_viaje.operador_nombre}</div>
                         </div>
                     </div>
-                    <div class="fw-bold fs-8 text-dark mb-1">¿El operador devolvió este dinero al banco / caja?</div>
+                    <div class="fw-bold fs-8 text-dark mb-1">¿El operador devolverá este dinero al banco?</div>
                     <div class="form-check form-check-custom form-check-solid mb-1">
                         <input class="form-check-input" type="radio" name="opt_dinero_viaje" id="opt_dinero_prestamo" value="prestamo" checked>
                         <label class="form-check-label fs-8" for="opt_dinero_prestamo">
-                            <b>No devolvió el dinero</b> — Cargar como <b>Préstamo a Operador</b> (Conservar salida bancaria y descontar en liquidación).
+                            <b>No devolverá el dinero</b> — Se registrará como <b>Préstamo al Operador</b> (Se conservará la salida bancaria y se descontará en su liquidación).
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid">
                         <input class="form-check-input" type="radio" name="opt_dinero_viaje" id="opt_dinero_devolucion" value="devolucion">
                         <label class="form-check-label fs-8" for="opt_dinero_devolucion">
-                            <b>Sí devolvió el dinero</b> — Cancelar salida bancaria (Restituir saldo al banco).
+                            <b>Sí devolverá el dinero</b> — Se cancelará la salida bancaria (Se restituirá el saldo a la cuenta bancaria).
                         </label>
                     </div>
                 </div>`;
             }
 
-            // Sección Sueldo de Operador
+            /* Sección Sueldo de Operador
             if (res.sueldo_viaje) {
                 htmlContent += `
                 <div class="card bg-light-secondary border p-3 mb-3">
@@ -803,44 +844,50 @@ function anularPlaneacion(idContenendor, numContenedor) {
                         <i class="fas fa-user-tag text-secondary fs-3 me-2"></i>
                         <div>
                             <div class="fw-bolder text-dark">Sueldo de Operador Asignado: <span class="text-success">${res.sueldo_viaje.monto_formateado}</span></div>
-                            <div class="text-muted fs-8">Operador: <b>${res.sueldo_viaje.operador_nombre}</b> | Al desprogramar, se anula la asignación y no se computará en la liquidación.</div>
+                            <div class="text-muted fs-8">Operador: <b>${res.sueldo_viaje.operador_nombre}</b> | Al desprogramar, se anulará la asignación y no se computará en la liquidación.</div>
                         </div>
                     </div>
                 </div>`;
             }
+                */
 
             // Sección Diésel / Combustible
             if (res.diesel) {
-                const unidadNombre = res.unidad?.nombre || res.tracto?.nombre || res.tracto?.descripcion || res.tracto?.id_equipo || 'Unidad asignada';
-                const origenTexto = res.diesel.origen_contenedor_num 
-                    ? `<span class="badge badge-light-info ms-1">Precarga origen: ${res.diesel.origen_contenedor_num}</span>` 
-                    : '';
+                const unidadNombre =
+                    res.unidad?.nombre ||
+                    res.tracto?.nombre ||
+                    res.tracto?.descripcion ||
+                    res.tracto?.id_equipo ||
+                    "Unidad asignada";
+                const origenTexto = res.diesel.origen_contenedor_num
+                    ? `<span class="badge badge-light-info ms-1">Precarga origen: ${res.diesel.origen_contenedor_num}</span>`
+                    : "";
                 htmlContent += `
                 <div class="card bg-light-primary border border-primary p-3 mb-3">
                     <div class="d-flex align-items-center mb-2">
                         <i class="fas fa-gas-pump text-primary fs-3 me-2"></i>
                         <div>
                             <div class="fw-bolder text-dark">Diésel Asignado: <span class="text-primary">${res.diesel.monto_formateado}</span> ${origenTexto}</div>
-                            <div class="text-muted fs-8">Unidad: <b>${unidadNombre}</b></div>
+                            <div class="text-muted fs-10">Unidad: <b>${unidadNombre}</b></div>
                         </div>
                     </div>
-                    <div class="fw-bold fs-8 text-dark mb-1">¿Qué destino tuvo este combustible?</div>
+                    <div class="fw-bold fs-8 text-dark mb-1">¿Qué destino tendrá este combustible?</div>
                     <div class="form-check form-check-custom form-check-solid mb-1">
                         <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_precarga" value="precarga" checked>
                         <label class="form-check-label fs-8" for="opt_diesel_precarga">
-                            <b>Queda en el tanque de la unidad</b> — Dejar como <b>Precarga disponible</b> para ser absorbida en el próximo viaje de esta unidad.
+                            <b>Permanecerá en el tanque de la unidad</b> — Se dejará como <b>Precarga disponible</b> para ser absorbida en el próximo viaje de esta unidad.
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid mb-1">
                         <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_unidad" value="gasto_unidad">
                         <label class="form-check-label fs-8" for="opt_diesel_unidad">
-                            <b>Se consumió en taller / traslados</b> — Reclasificar como gasto operativo directo de la unidad.
+                            <b>Se consumirá en taller / traslados</b> — Se registrará como gasto operativo directo de la unidad.
                         </label>
                     </div>
                     <div class="form-check form-check-custom form-check-solid">
                         <input class="form-check-input" type="radio" name="opt_diesel" id="opt_diesel_cancelar" value="cancelar">
                         <label class="form-check-label fs-8" for="opt_diesel_cancelar">
-                            <b>No se cargó / Cancelado con proveedor</b> — Anular gasto y orden bancaria.
+                            <b>No se cargará / Se cancelará con el proveedor</b> — Se anulará el gasto y la orden bancaria.
                         </label>
                     </div>
                 </div>`;
@@ -858,27 +905,38 @@ function anularPlaneacion(idContenendor, numContenedor) {
                 cancelButtonText: "Cancelar",
                 confirmButtonColor: "#f1416c",
                 preConfirm: () => {
-                    const dineroAccion = document.querySelector('input[name="opt_dinero_viaje"]:checked')?.value || 'prestamo';
-                    const dieselAccion = document.querySelector('input[name="opt_diesel"]:checked')?.value || 'precarga';
+                    const dineroAccion =
+                        document.querySelector(
+                            'input[name="opt_dinero_viaje"]:checked',
+                        )?.value || "prestamo";
+                    const dieselAccion =
+                        document.querySelector(
+                            'input[name="opt_diesel"]:checked',
+                        )?.value || "precarga";
                     return {
                         dinero_viaje_accion: dineroAccion,
                         diesel_accion: dieselAccion,
                     };
-                }
+                },
             }).then((modalResult) => {
                 if (modalResult.isConfirmed && modalResult.value) {
                     ejecutarAnulacionPlaneacion(idContenendor, numContenedor, {
                         _token: _token,
                         idContenendor: idContenendor,
                         numContenedor: numContenedor,
-                        dinero_viaje_accion: modalResult.value.dinero_viaje_accion,
+                        dinero_viaje_accion:
+                            modalResult.value.dinero_viaje_accion,
                         diesel_accion: modalResult.value.diesel_accion,
                     });
                 }
             });
         })
         .catch((error) => {
-            Swal.fire("Error", error.message || "No pudimos consultar el resumen del viaje", "error");
+            Swal.fire(
+                "Error",
+                error.message || "No pudimos consultar el resumen del viaje",
+                "error",
+            );
         });
 }
 
@@ -889,7 +947,7 @@ function ejecutarAnulacionPlaneacion(idContenendor, numContenedor, payload) {
         allowOutsideClick: false,
         didOpen: () => {
             Swal.showLoading();
-        }
+        },
     });
 
     fetch(`/planeaciones/viaje/programa/anular`, {
@@ -903,10 +961,10 @@ function ejecutarAnulacionPlaneacion(idContenendor, numContenedor, payload) {
         .then((data) => {
             Swal.fire(data.Titulo, data.Mensaje, data.TMensaje);
             if (data.TMensaje == "success") {
-                if (typeof dp !== 'undefined' && dp.events) {
+                if (typeof dp !== "undefined" && dp.events) {
                     dp.events.remove(idContenendor);
                 }
-                if (typeof getCotizacionesList === 'function') {
+                if (typeof getCotizacionesList === "function") {
                     getCotizacionesList();
                 }
             }

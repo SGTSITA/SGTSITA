@@ -571,6 +571,19 @@
                                 conceptoInput.required = false;
                                 conceptoInput.value = '';
                             }
+
+                            if (e.target.value === 'GDI02' && typeof gastoPrecargaDisponible !== 'undefined' && gastoPrecargaDisponible) {
+                                row.dataset.gastoId = gastoPrecargaDisponible.id;
+                                let idInp = row.querySelector('.gasto-id-input');
+                                if (!idInp) {
+                                    idInp = document.createElement('input');
+                                    idInp.type = 'hidden';
+                                    idInp.className = 'gasto-id-input';
+                                    idInp.name = 'gasto_id[]';
+                                    row.prepend(idInp);
+                                }
+                                idInp.value = gastoPrecargaDisponible.id;
+                            }
                             actualizarDisponibles();
                         }
                     });
@@ -695,8 +708,15 @@
 
                             if (filaDiesel) {
                                 filaDiesel.dataset.gastoId = gastoPrecargaDisponible.id;
-                                const idInput = filaDiesel.querySelector('.gasto-id-input');
-                                if (idInput) idInput.value = gastoPrecargaDisponible.id;
+                                let idInput = filaDiesel.querySelector('.gasto-id-input');
+                                if (!idInput) {
+                                    idInput = document.createElement('input');
+                                    idInput.type = 'hidden';
+                                    idInput.className = 'gasto-id-input';
+                                    idInput.name = 'gasto_id[]';
+                                    filaDiesel.prepend(idInput);
+                                }
+                                idInput.value = gastoPrecargaDisponible.id;
 
                                 const selMotivo = filaDiesel.querySelector('.gasto-select');
                                 if (selMotivo) {

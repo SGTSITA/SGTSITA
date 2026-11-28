@@ -17127,6 +17127,7 @@ fieldset:disabled .btn {
 }
 .form-check:not(.form-switch) .form-check-input[type='radio'] {
     transition: border 0s;
+    position: relative;
 }
 .form-check:not(.form-switch) .form-check-input[type='radio']:after {
     transition: opacity 0.25s ease-in-out;
@@ -17137,6 +17138,9 @@ fieldset:disabled .btn {
     border-radius: 50%;
     background-color: #fff;
     opacity: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 .form-check:not(.form-switch) .form-check-input[type='radio']:checked {
     padding: 6px;

@@ -126,7 +126,7 @@
                         <div class="d-none mt-2 mb-2" id="info_diesel_reasignado_row">
                             <label class="text-xs fw-bold text-muted text-uppercase mb-1 d-block">Diésel Precargado:</label>
                             <a class="btn btn-xs bg-gradient-info text-white text-decoration-none shadow-none mb-1 d-inline-flex align-items-center gap-1"
-                               data-bs-toggle="collapse" href="#collapseModalInfoDiesel" role="button" aria-expanded="false">
+                               data-bs-toggle="collapse" data-toggle="collapse" href="#collapseModalInfoDiesel" role="button" aria-expanded="false">
                                 <i class="fas fa-gas-pump"></i>
                                 <span id="info_diesel_reasignado_texto">Diésel Precargado</span>
                                 <i class="fas fa-chevron-down ms-1" style="font-size: 10px;"></i>

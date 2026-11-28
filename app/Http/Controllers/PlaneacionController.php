@@ -421,18 +421,51 @@ class PlaneacionController extends Controller
         }
 
         $dieselPrecarga = null;
-        if ($asignaciones) {
-            $gastoDiesel = \App\Models\Gasto::where(function ($q) use ($asignaciones) {
-                $q->where('origen_legacy_id', $asignaciones->id)
-                  ->orWhereHas('vinculos', function ($v) use ($asignaciones) {
-                      $v->where('vinculable_type', \App\Models\Asignaciones::class)
-                        ->where('vinculable_id', $asignaciones->id);
-                  });
+        if ($asignaciones || $docCotizacion || $cotizacion) {
+            $idAsig = $asignaciones?->id;
+            $idDoc = $docCotizacion?->id;
+            $idCot = $cotizacion?->id;
+
+            $gastoDiesel = \App\Models\Gasto::where(function ($q) use ($idAsig, $idDoc, $idCot) {
+                if ($idAsig) {
+                    $q->where('origen_legacy_id', $idAsig)
+                      ->orWhereHas('imputaciones', function ($imp) use ($idAsig) {
+                          $imp->where('imputable_type', \App\Models\Asignaciones::class)
+                              ->where('imputable_id', $idAsig);
+                      });
+                }
+                if ($idCot) {
+                    $q->orWhere('origen_cotizacion_id', $idCot);
+                }
+                $q->orWhereHas('vinculos', function ($v) use ($idAsig, $idDoc, $idCot) {
+                    $v->where(function ($vQ) use ($idAsig, $idDoc, $idCot) {
+                        if ($idAsig) {
+                            $vQ->where(function ($sq) use ($idAsig) {
+                                $sq->where('vinculable_type', \App\Models\Asignaciones::class)
+                                   ->where('vinculable_id', $idAsig);
+                            });
+                        }
+                        if ($idDoc) {
+                            $vQ->orWhere(function ($sq) use ($idDoc) {
+                                $sq->where('vinculable_type', \App\Models\DocumCotizacion::class)
+                                   ->where('vinculable_id', $idDoc);
+                            });
+                        }
+                        if ($idCot) {
+                            $vQ->orWhere(function ($sq) use ($idCot) {
+                                $sq->where('vinculable_type', \App\Models\Cotizaciones::class)
+                                   ->where('vinculable_id', $idCot);
+                            });
+                        }
+                    });
+                });
             })
             ->where(function ($q) {
                 $q->where('concepto', 'like', '%diesel%')
                   ->orWhere('concepto', 'like', '%diésel%')
-                  ->orWhere('concepto', 'like', '%GDI02%');
+                  ->orWhere('concepto', 'like', '%GDI02%')
+                  ->orWhere('origen_legacy', 'like', '%Diesel%')
+                  ->orWhere('origen_legacy', 'like', '%GDI02%');
             })
             ->where(function ($q) {
                 $q->where('es_precarga_combustible', true)
@@ -442,12 +475,21 @@ class PlaneacionController extends Controller
             ->first();
 
             if ($gastoDiesel) {
+                $historial = is_array($gastoDiesel->historial_reasignaciones)
+                    ? $gastoDiesel->historial_reasignaciones
+                    : (json_decode($gastoDiesel->historial_reasignaciones, true) ?? []);
+
+                $origenContenedor = $gastoDiesel->origen_contenedor_num;
+                if (empty($origenContenedor) && !empty($historial)) {
+                    $origenContenedor = $historial[0]['contenedor'] ?? null;
+                }
+
                 $dieselPrecarga = [
                     'monto' => $gastoDiesel->monto_total,
                     'monto_formateado' => '$' . number_format($gastoDiesel->monto_total, 2),
-                    'historial' => $gastoDiesel->historial_reasignaciones ?? [],
-                    'origen_contenedor' => $gastoDiesel->origen_contenedor_num,
-                    'origen_contenedor_num' => $gastoDiesel->origen_contenedor_num,
+                    'historial' => $historial,
+                    'origen_contenedor' => $origenContenedor ?: 'Viaje previo',
+                    'origen_contenedor_num' => $origenContenedor ?: 'Viaje previo',
                     'es_activa' => (bool) $gastoDiesel->es_precarga_combustible,
                 ];
             }
